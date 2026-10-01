@@ -11,3 +11,16 @@
 .dt-addr-matches {
     box-shadow: var(--dt-shadow-raised);
 }
+
+/*
+    Each match is an address to pick, not a link in running text: no underline until the pointer
+    is on it. The buttons are written in this component's own markup and carry its scope, so no
+    `::deep`.
+*/
+.dt-addr-matches .btn {
+    text-decoration: none;
+}
+
+.dt-addr-matches .btn:hover {
+    text-decoration: underline;
+}

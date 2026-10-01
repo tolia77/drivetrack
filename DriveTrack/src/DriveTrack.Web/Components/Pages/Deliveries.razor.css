@@ -135,6 +135,14 @@
         Bootstrap sets it, the row sat half a step right of its own heading.
     */
     padding-inline: 0;
+
+    /* A place is a value that opens the map, not a link in running text: no underline
+       until the pointer is on it, which is what says it can be pressed. */
+    text-decoration: none;
+}
+
+.dt-deliveries td.dt-delivery-place .btn:hover {
+    text-decoration: underline;
 }
 
 /*
