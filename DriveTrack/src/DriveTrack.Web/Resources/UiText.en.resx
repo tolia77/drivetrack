@@ -837,10 +837,10 @@
   </data>
   <!-- Endonyms, identical to the neutral catalogue's: see the comment there. -->
   <data name="LanguageUkrainian" xml:space="preserve">
-    <value>Українська</value>
+    <value>УК</value>
   </data>
   <data name="LanguageEnglish" xml:space="preserve">
-    <value>English</value>
+    <value>EN</value>
   </data>
   <!-- The profile screen's cards (the DriveTrack screens design, "Profile"). -->
   <data name="YourDetails" xml:space="preserve">

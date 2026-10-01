@@ -58,6 +58,7 @@ public class CircuitCancellationTests
     private static readonly string[] ExpectedScreens =
     [
         "DriveTrack.Web.Components.Account.Profile",
+        "DriveTrack.Web.Components.Layout.NavMenu",
         "DriveTrack.Web.Components.Pages.Admin.Clients",
         "DriveTrack.Web.Components.Pages.Admin.Dispatchers",
         "DriveTrack.Web.Components.Pages.Admin.Notifications",

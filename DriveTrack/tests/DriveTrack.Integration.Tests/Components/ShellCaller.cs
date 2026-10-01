@@ -1,5 +1,6 @@
 using System.Globalization;
 using DriveTrack.Application.Authorization;
+using DriveTrack.Application.Users;
 using DriveTrack.Domain.Identity;
 using DriveTrack.Integration.Tests.Support;
 using Microsoft.AspNetCore.Components;
@@ -42,6 +43,7 @@ internal static class ShellCaller
             configureServices: services =>
             {
                 services.AddSingleton<ICurrentUser>(new StubCurrentUser(role));
+                services.AddSingleton<IUserService>(new StubUsers(role));
                 services.AddSingleton<NavigationManager>(new StubNavigationManager(path));
                 services.AddSingleton<AntiforgeryStateProvider, StubAntiforgeryStateProvider>();
             },
@@ -72,6 +74,7 @@ internal static class ShellCaller
             services =>
             {
                 services.AddSingleton<ICurrentUser>(new StubCurrentUser(role));
+                services.AddSingleton<IUserService>(new StubUsers(role));
                 services.AddSingleton<NavigationManager>(navigation);
                 services.AddSingleton<AntiforgeryStateProvider, StubAntiforgeryStateProvider>();
             },
@@ -104,6 +107,51 @@ internal static class ShellCaller
     }
 
     /// <summary>A navigation manager rooted at the application's base, so NavLink can resolve hrefs.</summary>
+    /// <summary>
+    /// The caller's own profile, which the foot reads for its name and role. Answered without a
+    /// database; every other member throws, because a rendered menu reaches none of them.
+    /// </summary>
+    private sealed class StubUsers(UserRole? role) : IUserService
+    {
+        public Task<UserProfile> GetProfileAsync(UserId userId, CancellationToken cancellationToken) =>
+            Task.FromResult(new UserProfile(
+                userId,
+                "Ірина",
+                "Бондар",
+                "iryna@drivetrack.test",
+                role ?? throw new InvalidOperationException("There is no authenticated caller."),
+                null,
+                null));
+
+        public Task<AuthenticatedSession> RegisterClientAsync(
+            RegisterClientCommand command,
+            CancellationToken cancellationToken) =>
+            throw new NotSupportedException("A rendered menu does not open an account.");
+
+        public Task<AuthenticatedSession> SignInAsync(
+            SignInCommand command,
+            CancellationToken cancellationToken) =>
+            throw new NotSupportedException("A rendered menu does not sign anybody in.");
+
+        public Task<UserProfile> UpdateProfileAsync(
+            UserId userId,
+            UpdateProfileCommand command,
+            CancellationToken cancellationToken) =>
+            throw new NotSupportedException("A rendered menu must not write.");
+
+        public Task ChangePasswordAsync(
+            UserId userId,
+            ChangePasswordCommand command,
+            CancellationToken cancellationToken) =>
+            throw new NotSupportedException("A rendered menu must not write.");
+
+        public Task<UserProfile> ChangeEmailAsync(
+            UserId userId,
+            ChangeEmailCommand command,
+            CancellationToken cancellationToken) =>
+            throw new NotSupportedException("A rendered menu must not write.");
+    }
+
     private sealed class StubNavigationManager : NavigationManager
     {
         public StubNavigationManager(string? path) =>

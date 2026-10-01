@@ -393,46 +393,52 @@ public class CultureSwitchTests(PostgresFixture postgres)
             SharedMarkup.ReadComponent("Layout", "NavMenu.razor"),
             StringComparison.Ordinal);
 
-        // Both cultures, spelled exactly as Program.cs matches them: a button carrying "en" or "uk"
-        // would be refused by the endpoint and the page would come back unchanged.
-        Assert.Contains("name=\"culture\" value=\"uk-UA\"", html, StringComparison.Ordinal);
-        Assert.Contains("name=\"culture\" value=\"en-US\"", html, StringComparison.Ordinal);
+        // One field named `culture`, and both cultures spelled exactly as Program.cs matches them:
+        // an option carrying "en" or "uk" would be refused by the endpoint and the page would come
+        // back unchanged.
+        Assert.Contains("name=\"culture\"", html, StringComparison.Ordinal);
+        OptionFor("uk-UA", html);
+        OptionFor("en-US", html);
 
-        // Both languages are named as their own speakers write them, and both catalogues carry the
-        // same two words - so these two assertions hold under either culture, which is the point:
-        // an English reader looking at a Ukrainian page can still find "English" on it.
+        // The select posts the moment it changes. A DOM attribute rather than a Blazor handler,
+        // because the sign-in page renders this menu with no circuit behind it.
+        Assert.Contains("onchange=\"this.form.submit()\"", html, StringComparison.Ordinal);
+
+        // Both languages are named by their own short codes, and both catalogues carry the same
+        // two - so these two assertions hold under either culture, which is the point: an English
+        // reader looking at a Ukrainian page can still find "EN" on it.
         Assert.Contains(Catalogue("UiText.resx", "LanguageUkrainian"), html, StringComparison.Ordinal);
         Assert.Contains(Catalogue("UiText.resx", "LanguageEnglish"), html, StringComparison.Ordinal);
 
-        // Which language is in force, on the button that is in force. Without this, inverting
-        // IsUkrainian breaks nothing a test can see - the endonyms are culture-invariant, so the
-        // marker is the only thing in this control that moves with the culture.
-        Assert.Contains("aria-current=\"true\"", ButtonFor("uk-UA", html), StringComparison.Ordinal);
-        Assert.DoesNotContain("aria-current", ButtonFor("en-US", html), StringComparison.Ordinal);
+        // Which language is in force, on the option that is in force. Without this, inverting
+        // IsUkrainian breaks nothing a test can see - the codes are culture-invariant, so the
+        // selection is the only thing in this control that moves with the culture.
+        Assert.Contains("selected", OptionFor("uk-UA", html), StringComparison.Ordinal);
+        Assert.DoesNotContain("selected", OptionFor("en-US", html), StringComparison.Ordinal);
 
         var english = await ShellCaller.RenderAsync<NavMenu>(role, English, path);
 
-        Assert.Contains("aria-current=\"true\"", ButtonFor("en-US", english), StringComparison.Ordinal);
-        Assert.DoesNotContain("aria-current", ButtonFor("uk-UA", english), StringComparison.Ordinal);
+        Assert.Contains("selected", OptionFor("en-US", english), StringComparison.Ordinal);
+        Assert.DoesNotContain("selected", OptionFor("uk-UA", english), StringComparison.Ordinal);
 
         // And the rest of the control did follow the culture, which the endonyms cannot show: the
-        // form's accessible name is ordinary UI text and is translated.
+        // select's accessible name is ordinary UI text and is translated.
         Assert.Contains(Catalogue("UiText.resx", "Language"), html, StringComparison.Ordinal);
         Assert.Contains(Catalogue("UiText.en.resx", "Language"), english, StringComparison.Ordinal);
     }
 
-    /// <summary>The opening tag of the switcher button carrying the given culture value.</summary>
-    /// <param name="culture">The culture the button posts.</param>
+    /// <summary>The opening tag of the switcher option carrying the given culture value.</summary>
+    /// <param name="culture">The culture the option posts.</param>
     /// <param name="html">The rendered menu.</param>
-    private static string ButtonFor(string culture, string html)
+    private static string OptionFor(string culture, string html)
     {
         var match = Regex.Match(
             html,
-            "<button[^>]*value=\"" + Regex.Escape(culture) + "\"[^>]*>",
+            "<option[^>]*value=\"" + Regex.Escape(culture) + "\"[^>]*>",
             RegexOptions.None,
             TimeSpan.FromSeconds(5));
 
-        Assert.True(match.Success, $"The menu rendered no switcher button for {culture}.");
+        Assert.True(match.Success, $"The menu rendered no switcher option for {culture}.");
 
         return match.Value;
     }

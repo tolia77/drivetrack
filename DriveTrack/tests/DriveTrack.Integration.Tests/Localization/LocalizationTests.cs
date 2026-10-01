@@ -44,11 +44,10 @@ public class LocalizationTests(PostgresFixture postgres)
     /// <summary>
     /// The two keys exempt from the per-catalogue language guards, in both directions.
     /// <para>
-    /// The language switcher names each language as its own speakers write it - Українська and
-    /// English - and both catalogues carry the same two words, because a reader who cannot read the
-    /// page they are on has to be able to find their own language on it. "Англійська" is invisible
-    /// to the English reader the control exists for, and "Ukrainian" is invisible to the Ukrainian
-    /// one. So the guards treat these two as proper nouns, exactly as
+    /// The language switcher names each language by the short code its own speakers write - УК and
+    /// EN - and both catalogues carry the same two, because a reader who cannot read the page they
+    /// are on has to be able to find their own language on it. "АН" is invisible to the English
+    /// reader the control exists for, and "UK" is invisible to the Ukrainian one. So the guards treat these two as proper nouns, exactly as
     /// <see cref="UserFacingTextTests"/> treats the brand name, and for the same reason: a name in
     /// its own script is not an untranslated string.
     /// </para>

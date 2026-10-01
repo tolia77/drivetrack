@@ -278,6 +278,14 @@ public class NavigationTests
         Assert.Contains("profile", links);
         Assert.Contains(string.Empty, links);
 
+        // The way to the profile is the caller's own name in the foot, and only that: no second
+        // profile entry among the destinations.
+        var me = SharedMarkup.ElementWithClass(html, "a", "dt-nav__me");
+
+        Assert.Matches(@"<a[^>]*class=""dt-nav__me""[^>]*href=""profile""", html);
+        Assert.Contains("Ірина Бондар", System.Net.WebUtility.HtmlDecode(me), StringComparison.Ordinal);
+        Assert.Equal(1, SharedMarkup.Occurrences(html, @"href=""profile"""));
+
         // FR-77: the fleet screens are offered to the two roles that run dispatch and to nobody
         // else. Rendered per role rather than read off the table, because no arrangement of words
         // in the markup can tell a dispatcher's menu from a client's.

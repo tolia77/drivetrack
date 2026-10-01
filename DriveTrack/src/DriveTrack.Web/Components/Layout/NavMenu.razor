@@ -2,7 +2,9 @@
 @inject IStringLocalizer<UiText> Localizer
 @inject ICurrentUser Caller
 @inject NavigationManager Navigation
-@implements IDisposable
+@inject IUserService Users
+@inherits CircuitScopedComponent
+@implements IAsyncDisposable
 
 @* FR-77 / FR-12 / NFR-25: the shell every screen shares.
 
@@ -177,75 +179,107 @@
        would sit directly under the last link and land somewhere different on every screen. *@
     <div class="dt-nav__spacer"></div>
 
-    @* The pinned foot. The account actions are not destinations: they change who the caller is
-       rather than where they are, so they sit outside the destination table. *@
+    @* The pinned foot, as the design draws it: who the caller is, then one row holding the account
+       actions and the language. The account actions are not destinations - they change who the
+       caller is rather than where they are - so they sit outside the destination table. *@
     <div class="dt-nav__foot">
-        @* NavigationShell's user block. The design fills it with the caller's name and role, and
-           this product's shell knows neither: ICurrentUser answers a role that may be read exactly
-           once per render - it is what the destination table is built from - and there is no
-           display name anywhere in the claim set. What the block can honestly hold is the caller's
-           own record, so the profile destination is rendered here rather than among the places to
-           go: it is the one link in the menu that is about who you are rather than where. *@
+        @* The caller's name and role, and the way to their own profile: the whole block is the
+           link, so there is no separate profile entry among the places to go. The claim set
+           carries no display name, so the name is the caller's own profile, read once when the
+           menu is built. If that read fails the link stays, under the screen's name instead - a
+           missing name is not worth losing the only way to the profile over. *@
         @if (destinations.Contains(NavDestination.Profile))
         {
-            <div class="dt-nav__user">
-                <a class="dt-nav__link" href="profile" aria-current="@(here == "profile" ? "page" : null)">
-                    <Icon Name="IconName.Profile" />@Localizer["Profile"]
-                </a>
+            <a class="dt-nav__me" href="profile" aria-current="@(here == "profile" ? "page" : null)">
+                @if (_me is not null)
+                {
+                    <span class="dt-nav__avatar" aria-hidden="true">@Initials</span>
+                    <span class="dt-nav__who">
+                        <span class="dt-nav__name">@_me.FirstName @_me.LastName</span>
+                        @* One branch per role rather than a composed key: a key built at run time
+                           is a key no test can see, and the catalogue is closed in both directions. *@
+                        @if (_me.Role == UserRole.Admin)
+                        {
+                            <span class="dt-nav__role">@Localizer["RoleAdmin"]</span>
+                        }
+                        @if (_me.Role == UserRole.Dispatcher)
+                        {
+                            <span class="dt-nav__role">@Localizer["RoleDispatcher"]</span>
+                        }
+                        @if (_me.Role == UserRole.Driver)
+                        {
+                            <span class="dt-nav__role">@Localizer["RoleDriver"]</span>
+                        }
+                        @if (_me.Role == UserRole.Client)
+                        {
+                            <span class="dt-nav__role">@Localizer["RoleClient"]</span>
+                        }
+                    </span>
+                }
+                @if (_me is null)
+                {
+                    <span class="dt-nav__avatar" aria-hidden="true"><Icon Name="IconName.Profile" /></span>
+                    <span class="dt-nav__who">
+                        <span class="dt-nav__name">@Localizer["Profile"]</span>
+                    </span>
+                }
+            </a>
+        }
+
+        <div class="dt-nav__foot-row">
+            @* The account actions as one group taking the row's room, the select at its end. A
+               visitor has two, stacked: side by side, "Зареєструватися" alone leaves no room in
+               the sidebar for the select. *@
+            <div class="dt-nav__account">
+                @if (isSignedIn)
+                {
+                    <form method="post" action="/sign-out">
+                        <AntiforgeryToken />
+                        <button class="dt-nav__link" type="submit">
+                            <Icon Name="IconName.SignOut" />@Localizer["SignOut"]
+                        </button>
+                    </form>
+                }
+
+                @if (!isSignedIn)
+                {
+                    <a class="dt-nav__link" href="sign-in">
+                        <Icon Name="IconName.SignIn" />@Localizer["SignIn"]
+                    </a>
+                    <a class="dt-nav__link" href="register">
+                        <Icon Name="IconName.Register" />@Localizer["Register"]
+                    </a>
+                }
             </div>
-        }
 
-        @* NFR-14: the language switch, offered to every caller including an anonymous one - the
-           sign-in page is a screen too, and somebody who cannot read it cannot sign in to change
-           anything.
+            @* NFR-14: the language switch, offered to every caller including an anonymous one - the
+               sign-in page is a screen too, and somebody who cannot read it cannot sign in to
+               change anything.
 
-           A real form posting to /set-culture rather than an @onclick handler, and that is not a
-           style choice: the language is carried by a cookie, and a Blazor Server component cannot
-           write one. By the time its circuit is live the response that would have carried
-           Set-Cookie finished long ago. So this copies the sign-out idiom exactly - method="post",
-           an antiforgery token, and a full-page navigation that comes back in the other language.
+               A real form posting to /set-culture rather than an @onclick handler, and that is not
+               a style choice: the language is carried by a cookie, and a Blazor Server component
+               cannot write one. By the time its circuit is live the response that would have
+               carried Set-Cookie finished long ago. So this copies the sign-out idiom exactly -
+               method="post", an antiforgery token, and a full-page navigation that comes back in
+               the other language.
 
-           Each language names itself in the catalogue's own words, so the two buttons read
-           "Українська / English" whichever page they are read on. aria-current marks the one
-           already in force; it is not disabled, because a control that vanishes from the tab order
-           is a control a keyboard user cannot find again.
+               The design draws it as the Select component: a native <select> whose change submits
+               its form. A plain DOM attribute rather than an @onchange handler, for the reason the
+               menu's disclosure is a <details>: five screens render this menu with no circuit
+               behind them, and the sign-in page is one of them.
 
-           The design draws this as `role="radiogroup"` with two `role="radio"` settings, and the
-           pill track below is that visual. The roles themselves are deliberately not adopted: these
-           are submit buttons that navigate the moment they are pressed, which is not a radio
-           group's promise - that pattern offers arrow-key selection between options and a separate
-           moment where the choice is committed, and neither exists here. Claiming it would override
-           the buttons' own role, suppress the form, and state the current setting twice.
-           aria-current is the single statement of which language is in force, and `.dt-lang` paints
-           the highlight off that same attribute. *@
-        <form class="dt-lang" method="post" action="/set-culture" aria-label="@Localizer["Language"]">
-            <AntiforgeryToken />
-            <input type="hidden" name="returnUrl" value="@ReturnUrl" />
-            <button type="submit" name="culture" value="uk-UA"
-                    aria-current="@(IsUkrainian ? "true" : null)">@Localizer["LanguageUkrainian"]</button>
-            <button type="submit" name="culture" value="en-US"
-                    aria-current="@(IsUkrainian ? null : "true")">@Localizer["LanguageEnglish"]</button>
-        </form>
-
-        @if (isSignedIn)
-        {
-            <form method="post" action="/sign-out">
+               Each language is named by its own short code, identical in both catalogues, so a
+               reader who cannot read the page can still find their own language on it. *@
+            <form class="dt-lang" method="post" action="/set-culture">
                 <AntiforgeryToken />
-                <button class="dt-nav__link" type="submit">
-                    <Icon Name="IconName.SignOut" />@Localizer["SignOut"]
-                </button>
+                <input type="hidden" name="returnUrl" value="@ReturnUrl" />
+                <select class="dt-lang__select" name="culture" aria-label="@Localizer["Language"]"
+                        onchange="this.form.submit()">
+                    <option value="uk-UA" selected="@IsUkrainian">@Localizer["LanguageUkrainian"]</option>
+                    <option value="en-US" selected="@IsEnglish">@Localizer["LanguageEnglish"]</option>
+                </select>
             </form>
-        }
-
-        @if (!isSignedIn)
-        {
-            <a class="dt-nav__link" href="sign-in">
-                <Icon Name="IconName.SignIn" />@Localizer["SignIn"]
-            </a>
-            <a class="dt-nav__link" href="register">
-                <Icon Name="IconName.Register" />@Localizer["Register"]
-            </a>
-        }
+        </div>
     </div>
 </nav>
 
@@ -273,9 +307,53 @@
             "uk",
             StringComparison.Ordinal);
 
-    protected override void OnInitialized() => Navigation.LocationChanged += OnLocationChanged;
+    private static bool IsEnglish => !IsUkrainian;
 
-    public void Dispose() => Navigation.LocationChanged -= OnLocationChanged;
+    private UserProfile? _me;
+
+    // The avatar's two letters: the first of each name, upper-cased in the culture being read.
+    private string Initials => _me is null
+        ? string.Empty
+        : string.Concat(
+            _me.FirstName.AsSpan(0, Math.Min(1, _me.FirstName.Length)),
+            _me.LastName.AsSpan(0, Math.Min(1, _me.LastName.Length)))
+            .ToUpper(CultureInfo.CurrentCulture);
+
+    protected override async Task OnInitializedAsync()
+    {
+        Navigation.LocationChanged += OnLocationChanged;
+
+        if (!Caller.IsAuthenticated)
+        {
+            return;
+        }
+
+        try
+        {
+            _me = await Users.GetProfileAsync(Caller.UserId, CircuitToken);
+        }
+        catch (DriveTrackException)
+        {
+            // The foot draws without the name rather than failing the frame every screen sits in.
+            _me = null;
+        }
+    }
+
+    // Through IAsyncDisposable rather than IDisposable, as ProofCapture does: the renderer disposes
+    // a component through DisposeAsync when it has one and never also through Dispose, so this is
+    // the one place both the base's token and the subscription are let go. The token first, and
+    // the subscription guarded: a menu that was never attached has no NavigationManager to leave.
+    public ValueTask DisposeAsync()
+    {
+        Dispose();
+
+        if (Navigation is not null)
+        {
+            Navigation.LocationChanged -= OnLocationChanged;
+        }
+
+        return ValueTask.CompletedTask;
+    }
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs args) =>
         InvokeAsync(StateHasChanged);

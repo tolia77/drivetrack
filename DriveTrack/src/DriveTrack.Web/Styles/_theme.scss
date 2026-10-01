@@ -97,7 +97,7 @@ h1:focus {
 //
 // `focus-ring` is teal-700, which holds comfortably against a white card and reaches about
 // 2.1:1 against `nav-bg` - under the 3:1 a non-text indicator has to clear. So the navigation's
-// focusable controls (the destination links, the two language buttons and the toggler) take
+// focusable controls (the destination links, the language select and the toggler) take
 // `focus-ring-on-dark`, which the palette declares for exactly this and which holds at 7:1.
 //
 // The navigation itself is the anchor, because it is the element that paints `nav-bg`: the rule is
@@ -107,8 +107,9 @@ h1:focus {
 // that give a clicked control `:focus` and never `:focus-visible`.
 .dt-nav :focus-visible,
 .dt-nav .dt-nav__link:focus,
+.dt-nav .dt-nav__me:focus,
 .dt-nav .dt-nav__toggle:focus,
-.dt-nav .dt-lang button:focus {
+.dt-nav .dt-lang__select:focus {
     outline: var(--dt-border-width-focus) solid var(--dt-focus-ring-on-dark);
     outline-offset: var(--dt-border-width-focus);
 }
@@ -235,16 +236,95 @@ $dt-breakpoint-phone-max: $dt-breakpoint-phone - 0.02px;
     padding-top: var(--dt-space-3);
 }
 
-// The caller's own account, which is what the design puts at the top of the foot.
-.dt-nav__user {
+// Who the caller is, at the top of the foot: an initials avatar beside the name and
+// the role, the whole block a link to their profile. The name is cut with an ellipsis rather than wrapped, so a long one
+// cannot push the foot's controls down the column.
+.dt-nav__me {
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    gap: var(--dt-space-2);
+    min-width: 0;
+    padding: var(--dt-space-1) var(--dt-space-2);
+    border-radius: var(--dt-radius-sm);
+    text-decoration: none;
 }
 
-// The sign-out control is a form post rather than a handler - a Blazor Server
-// component cannot end a cookie session - so the form is a layout element here and
-// has to let its button fill the row the way every other foot item does.
-.dt-nav__foot form {
+// The block is the link to the caller's own profile, so it answers the pointer. It
+// is not filled on the profile screen itself: it is who the caller is, not a place
+// in the list, and `aria-current` alone says which screen they are on.
+.dt-nav__me:hover {
+    background-color: var(--dt-nav-hover-bg);
+}
+
+.dt-nav__avatar .dt-icon {
+    margin-inline-end: 0;
+}
+
+.dt-nav__avatar {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--dt-control-height-sm);
+    height: var(--dt-control-height-sm);
+    border-radius: var(--dt-radius-pill);
+    background-color: var(--dt-nav-hover-bg);
+    color: var(--dt-ink-inverse);
+    font-size: var(--dt-small-font-size);
+    line-height: var(--dt-small-line-height);
+    font-weight: var(--dt-h1-font-weight);
+}
+
+.dt-nav__who {
+    min-width: 0;
+}
+
+.dt-nav__name {
+    display: block;
+    overflow: hidden;
+    color: var(--dt-ink-inverse);
+    font-size: var(--dt-label-font-size);
+    line-height: var(--dt-label-line-height);
+    font-weight: var(--dt-label-font-weight);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dt-nav__role {
+    display: block;
+    color: var(--dt-nav-ink);
+    font-size: var(--dt-small-font-size);
+    line-height: var(--dt-small-line-height);
+}
+
+// One row under the name: the account actions take the room, the language select
+// sits at the end at its own width. The actions are smaller than a destination -
+// they are not places to go - and come back up to the touch floor on a phone.
+.dt-nav__foot-row {
+    display: flex;
+    align-items: center;
+    gap: var(--dt-space-2);
+}
+
+.dt-nav__foot-row .dt-nav__link {
+    min-height: var(--dt-control-height-sm);
+    padding: var(--dt-space-1) var(--dt-space-2);
+    font-size: var(--dt-label-font-size);
+    line-height: var(--dt-label-line-height);
+}
+
+// The account actions, stacked, taking the room the select leaves. The sign-out
+// control is a form post rather than a handler - a Blazor Server component cannot
+// end a cookie session - so its form is a layout element that lets its button fill
+// the group the way an anchor would.
+.dt-nav__account {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.dt-nav__account form {
     display: flex;
 }
 
@@ -322,36 +402,39 @@ $dt-breakpoint-phone-max: $dt-breakpoint-phone - 0.02px;
     display: none;
 }
 
-// The language switcher: ONE control with two settings rather than two
-// destinations, which is what the pill track says. The highlight is driven by the
-// `aria-current` the buttons already carried - the design draws it off
-// `aria-checked`, and this product has no radio group to carry one, because these
-// are submit buttons that navigate the moment they are pressed.
+// The language switcher: the Select component on the dark navigation. A native
+// <select> with the user agent's arrow taken off and one drawn in its place from two
+// gradients in the nav ink, so it matches the surface it sits on in every browser.
 .dt-lang {
-    display: flex;
-    gap: var(--dt-space-1);
-    padding: var(--dt-space-1);
-    border: var(--dt-border-width) solid var(--dt-nav-control-border);
-    border-radius: var(--dt-radius-pill);
-    background-color: var(--dt-nav-hover-bg);
+    flex: none;
 }
 
-.dt-lang button {
-    flex: 1 1 0;
-    min-height: var(--dt-control-height);
-    padding: 0 var(--dt-space-3);
-    border: 0;
-    border-radius: var(--dt-radius-pill);
-    background: none;
-    color: var(--dt-nav-ink);
+.dt-lang__select {
+    height: var(--dt-control-height-sm);
+    padding: 0 var(--dt-space-5) 0 var(--dt-space-2);
+    border: var(--dt-border-width) solid var(--dt-nav-control-border);
+    border-radius: var(--dt-radius-sm);
+    background-color: var(--dt-nav-hover-bg);
+    background-image:
+        linear-gradient(45deg, transparent 50%, var(--dt-nav-ink) 50%),
+        linear-gradient(135deg, var(--dt-nav-ink) 50%, transparent 50%);
+    background-position:
+        calc(100% - var(--dt-space-3)) 50%,
+        calc(100% - var(--dt-space-2)) 50%;
+    background-size: var(--dt-space-1) var(--dt-space-1);
+    background-repeat: no-repeat;
+    color: var(--dt-ink-inverse);
     font-family: var(--dt-font-sans);
     font-size: var(--dt-small-font-size);
     line-height: var(--dt-small-line-height);
     font-weight: var(--dt-label-font-weight);
+    appearance: none;
     cursor: pointer;
 }
 
-.dt-lang button[aria-current] {
+// The open list is drawn by the operating system on a light ground, so its options
+// take the card's colours rather than inheriting the nav's light-on-dark ink.
+.dt-lang__select option {
     background-color: var(--dt-surface-card);
     color: var(--dt-ink);
 }
@@ -402,6 +485,13 @@ $dt-breakpoint-phone-max: $dt-breakpoint-phone - 0.02px;
 
     .dt-main {
         padding: var(--dt-space-4);
+    }
+
+    // The foot's smaller controls come back up to the touch floor on a phone, where
+    // the open menu is the whole screen and a thumb is what presses them.
+    .dt-nav__foot-row .dt-nav__link,
+    .dt-lang__select {
+        min-height: var(--dt-touch-target);
     }
 }
 
