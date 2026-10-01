@@ -114,7 +114,7 @@ public class ProfileScreenTests
         Assert.Contains(@"id=""profile-phone""", client, StringComparison.Ordinal);
 
         var row = SharedMarkup.TextOf(
-            WebUtility.HtmlDecode(SharedMarkup.ElementWithClass(client, "dl", "row")));
+            WebUtility.HtmlDecode(SharedMarkup.ElementWithClass(client, "dl", "dt-profile-facts")));
 
         Assert.Contains("+380441234567", row, StringComparison.Ordinal);
 

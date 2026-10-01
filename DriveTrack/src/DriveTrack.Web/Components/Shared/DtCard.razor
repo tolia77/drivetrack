@@ -1,8 +1,7 @@
 @* Card: the white container content sits in on the tinted page.
 
    Collections go in DtDataTable; everything else goes in one of these. The head is optional because
-   a card is sometimes just a surface - the profile screen's three panels each have a title and an
-   action, and a summary block on a phone has neither. What is not optional is that the title is an
+   a card is sometimes just a surface - the profile screen's cards each have a title, and a summary block on a phone has neither. What is not optional is that the title is an
    <h2>: the screen owns the one <h1>, and a card that titled itself with a <div> would leave a
    reader moving by heading with nothing to move to.
 
@@ -45,9 +44,7 @@
     /// naming what it acts on.
     /// </summary>
     /// <remarks>
-    /// A few, and they wrap: the profile screen's one card carries edit, change password and change
-    /// email, which are three ways of changing the one record rather than three cards' worth of
-    /// work. What the head will not carry is a row long enough to compete with the title it sits
+    /// A few, and they wrap. What the head will not carry is a row long enough to compete with the title it sits
     /// beside - at which point the extra actions belong in the body with what they act on.
     /// </remarks>
     [Parameter]

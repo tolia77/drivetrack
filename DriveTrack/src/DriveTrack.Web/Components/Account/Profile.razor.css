@@ -1,65 +1,124 @@
 /*
-    The two things this screen asks of its own card, and nothing else.
+    The "Profile" screen of the DriveTrack screens design: a two-column grid capped in width, the
+    details card across both columns, the address and password cards side by side below it. One
+    column below the phone edge, where the grid's single track is the stack.
 
-    Not a stacking rule. `_bootstrap-bridge.scss` moves the framework's `sm` onto
-    `$dt-breakpoint-phone`, so `.col-sm-4` / `.col-sm-8` only take effect from 641px - the same
-    edge the shell switches on - and below it `.row > *` already gives every `<dt>` and `<dd>` the
-    full width. There is no band where this list is two columns under a phone shell, and a rule
-    stacking it here would match the widths at which it is already stacked.
+    One `::deep`, for the details card spanning both columns: that rule lands on DtCard's own root,
+    which carries DtCard's scope rather than this screen's. Everything else styled here is written
+    in this component's own markup and carries its scope.
 
-    No `::deep`: the `<dt>`, the `<dd>` and the card's three actions are all written in this
-    component's own markup and carry its scope. `.dt-profile-card` is the class handed to DtCard,
-    and it is only the ancestor in the selector - the scope attribute lands on the last element,
-    which is this screen's.
-
-    NFR-29: nothing here is a palette value but the touch target, which is a `--dt-*` reference.
-    The breakpoint is geometry the palette does not name, and a media query cannot read a custom
-    property in any case - `_theme.scss` writes the same edge as `$dt-breakpoint-phone-max`.
+    NFR-29: every value is a `--dt-*` reference; the width cap is `content-narrow`. The avatar's 56px is the touch target plus a
+    space step rather than a literal. The breakpoint is geometry the palette does not name, and a
+    media query cannot read a custom property in any case - `_theme.scss` writes the same edge as
+    `$dt-breakpoint-phone-max`.
 */
-
-/*
-    A long value breaks inside the card rather than widening it. Two of these rows hold a string
-    with no space in it to break at - an email address and a driver's licence number - and on a
-    390px screen an address at a long domain pushes the card past the viewport and hands the page
-    a sideways scroller. `anywhere` rather than `break-word`, as `ChatLine.razor.css` writes it for
-    the same problem: it lets the intrinsic width shrink too.
-
-    Unconditional, because the value is no shorter above the breakpoint - it is only the column
-    that is wider.
-*/
-.dt-profile-card dl.row dd {
-    overflow-wrap: anywhere;
+.dt-profile-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--dt-space-5);
+    align-items: start;
+    max-width: var(--dt-content-narrow);
 }
 
-@media (max-width: 640.98px) {
-    /*
-        Every control in the card is at least `touch-target` tall. The three actions are `btn-sm`,
-        which is the right size in a card head beside a title on a desktop and a 31px target on a
-        phone - the same floor the collapsing tables hold their row actions to, and for the same
-        reason: a control that small is one a thumb misses.
-    */
-    .dt-profile-card .btn {
-        min-height: var(--dt-touch-target);
+@media (min-width: 641px) {
+    .dt-profile-layout {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .dt-profile-layout ::deep .dt-profile-card {
+        grid-column: span 2;
     }
 }
 
-/*
-    Three actions, in a column.
-
-    This is the only card in the product offering more than one, and three labelled
-    buttons in a row across the head crowd the title and set the card's minimum
-    width by themselves. Stacked they are one column at the trailing edge, each
-    label whole, and the head is as wide as the record below it needs.
-
-    `.dt-card__actions` is DtCard's element, but it is only the ancestor here - the
-    scope attribute lands on the buttons, which are written in this screen's own
-    `Actions` fragment, so no `::deep` is needed.
-*/
-.dt-card__actions .btn {
-    width: 100%;
+/* The details: the initials beside a two-column list of label and value. */
+.dt-profile-details {
+    display: flex;
+    gap: var(--dt-space-4);
+    align-items: flex-start;
 }
 
-.dt-profile-card .dt-card__actions {
+.dt-profile-avatar {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: calc(var(--dt-touch-target) + var(--dt-space-3));
+    height: calc(var(--dt-touch-target) + var(--dt-space-3));
+    border-radius: var(--dt-radius-pill);
+    background-color: var(--dt-surface-sunken);
+    color: var(--dt-ink);
+    font-size: var(--dt-h3-font-size);
+    line-height: var(--dt-h3-line-height);
+    font-weight: var(--dt-h1-font-weight);
+}
+
+.dt-profile-facts {
+    flex-grow: 1;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
+    gap: var(--dt-space-2) var(--dt-space-4);
+    margin: 0;
+}
+
+.dt-profile-facts dt {
+    color: var(--dt-ink-muted);
+    font-size: var(--dt-label-font-size);
+    line-height: var(--dt-label-line-height);
+    font-weight: var(--dt-label-font-weight);
+}
+
+/*
+    A long value breaks inside the card rather than widening it: a licence number has no space to
+    break at, and on a 390px screen it would hand the page a sideways scroller. `anywhere` rather
+    than `break-word` so the intrinsic width shrinks too.
+*/
+.dt-profile-facts dd {
+    margin: 0;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.dt-profile-name {
+    font-weight: var(--dt-label-font-weight);
+}
+
+/* The two credential cards: label, value, hint, and the action at the start of the line. */
+.dt-credential {
+    display: flex;
     flex-direction: column;
-    align-items: stretch;
+    align-items: flex-start;
+    gap: var(--dt-space-3);
+}
+
+.dt-credential__label {
+    display: block;
+    color: var(--dt-ink-muted);
+    font-size: var(--dt-label-font-size);
+    line-height: var(--dt-label-line-height);
+    font-weight: var(--dt-label-font-weight);
+}
+
+.dt-credential__value {
+    display: block;
+    overflow-wrap: anywhere;
+}
+
+.dt-credential__mask {
+    font-family: var(--dt-font-mono);
+    letter-spacing: var(--dt-space-1);
+}
+
+.dt-credential__hint {
+    margin: 0;
+    color: var(--dt-ink-muted);
+    font-size: var(--dt-small-font-size);
+    line-height: var(--dt-small-line-height);
+}
+
+@media (max-width: 640.98px) {
+    /* A control a thumb can hit: the same floor the collapsing tables hold their row actions to. */
+    .dt-profile-layout .btn {
+        min-height: var(--dt-touch-target);
+    }
 }

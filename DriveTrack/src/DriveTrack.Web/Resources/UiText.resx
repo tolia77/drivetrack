@@ -952,4 +952,23 @@
   <data name="LanguageEnglish" xml:space="preserve">
     <value>English</value>
   </data>
+  <!-- The profile screen's cards (the DriveTrack screens design, "Profile"). -->
+  <data name="YourDetails" xml:space="preserve">
+    <value>Ваші дані</value>
+  </data>
+  <data name="EditProfile" xml:space="preserve">
+    <value>Редагувати профіль</value>
+  </data>
+  <data name="FullName" xml:space="preserve">
+    <value>Ім’я</value>
+  </data>
+  <data name="CurrentEmail" xml:space="preserve">
+    <value>Поточна адреса</value>
+  </data>
+  <data name="EmailHint" xml:space="preserve">
+    <value>З цією адресою ви входите в систему.</value>
+  </data>
+  <data name="PasswordHint" xml:space="preserve">
+    <value>Щоб змінити пароль, потрібен поточний.</value>
+  </data>
 </root>

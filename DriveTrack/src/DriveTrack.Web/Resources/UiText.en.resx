@@ -842,4 +842,23 @@
   <data name="LanguageEnglish" xml:space="preserve">
     <value>English</value>
   </data>
+  <!-- The profile screen's cards (the DriveTrack screens design, "Profile"). -->
+  <data name="YourDetails" xml:space="preserve">
+    <value>Your details</value>
+  </data>
+  <data name="EditProfile" xml:space="preserve">
+    <value>Edit profile</value>
+  </data>
+  <data name="FullName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="CurrentEmail" xml:space="preserve">
+    <value>Current email</value>
+  </data>
+  <data name="EmailHint" xml:space="preserve">
+    <value>You sign in with this address.</value>
+  </data>
+  <data name="PasswordHint" xml:space="preserve">
+    <value>Changing it asks for your current password.</value>
+  </data>
 </root>
