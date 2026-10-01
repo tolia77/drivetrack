@@ -304,9 +304,6 @@
   <data name="Save" xml:space="preserve">
     <value>Save</value>
   </data>
-  <data name="Create" xml:space="preserve">
-    <value>Create</value>
-  </data>
   <data name="EditClientTitle" xml:space="preserve">
     <value>Editing a client</value>
   </data>
@@ -860,5 +857,27 @@
   </data>
   <data name="PasswordHint" xml:space="preserve">
     <value>Changing it asks for your current password.</value>
+  </data>
+  <!-- Each screen's create action named for what it brings into being, rather than one shared
+       "Create": a driver, a vehicle and a dispatcher join the fleet, so they are added; a shift is
+       scheduled; a delivery is a new order, so it is created. Add is the dispatcher dialog's
+       confirm, under a title that already names what is being added. -->
+  <data name="AddDriver" xml:space="preserve">
+    <value>Add driver</value>
+  </data>
+  <data name="AddVehicle" xml:space="preserve">
+    <value>Add vehicle</value>
+  </data>
+  <data name="ScheduleShift" xml:space="preserve">
+    <value>Schedule shift</value>
+  </data>
+  <data name="CreateDelivery" xml:space="preserve">
+    <value>Create delivery</value>
+  </data>
+  <data name="AddDispatcher" xml:space="preserve">
+    <value>Add dispatcher</value>
+  </data>
+  <data name="Add" xml:space="preserve">
+    <value>Add</value>
   </data>
 </root>

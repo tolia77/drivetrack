@@ -28,7 +28,7 @@
     </h1>
 
     <button type="button" class="btn btn-primary dt-dispatcher-new" @onclick="ShowCreateAsync">
-        <Icon Name="IconName.Create" />@Localizer["Create"]
+        <Icon Name="IconName.Create" />@Localizer["AddDispatcher"]
     </button>
 </div>
 
@@ -137,7 +137,7 @@
            early return here at all, so a second click opened a second dispatcher account. *@
         <button type="button" class="btn btn-primary dt-dispatcher-create" disabled="@_creating"
                 @onclick="CreateAsync">
-            <Icon Name="IconName.Confirm" />@Localizer["Create"]
+            <Icon Name="IconName.Confirm" />@Localizer["Add"]
         </button>
         <button type="button" class="btn btn-outline-secondary dt-dispatcher-create-cancel" @onclick="CancelCreateAsync">
             <Icon Name="IconName.Close" />@Localizer["Cancel"]
