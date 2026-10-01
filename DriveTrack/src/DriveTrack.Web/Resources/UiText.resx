@@ -970,8 +970,8 @@
     <value>Щоб змінити пароль, потрібен поточний.</value>
   </data>
   <!-- Each screen's create action named for what it brings into being, rather than one shared
-       "Create": a driver, a vehicle and a dispatcher join the fleet, so they are added; a shift is
-       scheduled; a delivery is a new order, so it is created. Add is the dispatcher dialog's
+       "Create": a driver, a vehicle, a shift and a dispatcher are added; a delivery is a new order,
+       so it is created. Add is the dispatcher dialog's
        confirm, under a title that already names what is being added. -->
   <data name="AddDriver" xml:space="preserve">
     <value>Додати водія</value>
@@ -979,8 +979,8 @@
   <data name="AddVehicle" xml:space="preserve">
     <value>Додати автомобіль</value>
   </data>
-  <data name="ScheduleShift" xml:space="preserve">
-    <value>Запланувати зміну</value>
+  <data name="AddShift" xml:space="preserve">
+    <value>Додати зміну</value>
   </data>
   <data name="CreateDelivery" xml:space="preserve">
     <value>Створити доставку</value>
