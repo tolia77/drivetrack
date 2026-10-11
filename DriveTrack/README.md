@@ -28,6 +28,10 @@ first code that reads or writes an object. Nothing in the app calls S3 before th
 Stop with `docker compose -f compose.dev.yaml down`; add `-v` to discard the database and
 object-store volumes.
 
+The `keys` volume holds the ASP.NET Data Protection key ring that encrypts the session cookie, so
+sign-ins survive the app container being recreated. Discarding it — `down -v`, or pruning
+volumes — makes every issued cookie unreadable and signs every browser out.
+
 There is no `compose.yaml`, so a bare `docker compose up` finds nothing: the `-f` says which
 file you mean. `compose.dev.yaml` is the only stack, and it declares its own compose project,
 `drivetrack-dev`, so its containers, network and volumes are named the same way on every

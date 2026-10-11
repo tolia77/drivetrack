@@ -73,6 +73,12 @@ internal sealed class ComposeStack
     public string GarageConfigMountTarget(string service) =>
         MountTargetOf(service, "./" + GarageConfigFile);
 
+    /// <summary>The path a compose service mounts a named volume at.</summary>
+    /// <param name="service">The service name, as it appears under <c>services:</c>.</param>
+    /// <param name="volume">The volume's name, as the mount's source side spells it.</param>
+    /// <exception cref="InvalidOperationException">The service mounts no such volume.</exception>
+    public string VolumeTargetOf(string service, string volume) => MountTargetOf(service, volume);
+
     /// <summary>The image a compose service runs.</summary>
     /// <param name="service">The service name, as it appears under <c>services:</c>.</param>
     /// <exception cref="InvalidOperationException">No such service, or it declares no image.</exception>

@@ -254,6 +254,9 @@
   <data name="NoAccount" xml:space="preserve">
     <value>Ще не маєте облікового запису?</value>
   </data>
+  <data name="RememberMe" xml:space="preserve">
+    <value>Запам’ятати мене</value>
+  </data>
   <!-- Story 3.2: the shared component vocabulary and the two dead-end surfaces. -->
   <data name="Close" xml:space="preserve">
     <value>Закрити</value>

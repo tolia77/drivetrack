@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
@@ -30,6 +31,12 @@ const string CorsPolicyName = "DriveTrackCors";
 // compose topology terminates plain HTTP, so the default stays SameAsRequest; a deployment that does
 // terminate TLS sets Session__CookieSecurePolicy=Always and gets the flag without a rebuild.
 const string SessionCookieSecurePolicyKey = "Session:CookieSecurePolicy";
+
+// Where the Data Protection key ring lives. The session cookie is encrypted with these keys, so a ring
+// kept inside the container dies with it and every cookie issued before a recreate stops decrypting -
+// everyone is signed out. Absent leaves the framework default (tests, a run on the host); compose
+// pins it to a directory backed by a named volume, so the ring outlives the container.
+const string DataProtectionKeysPathKey = "DataProtection:KeysPath";
 
 // NFR-14: the cookie carrying the reader's language. Named rather than left at the framework's
 // .AspNetCore.Culture for the reason the session cookie is named drivetrack.session - every cookie
@@ -155,6 +162,24 @@ var sessionCookieSecurePolicy = RequireCookieSecurePolicy(
     builder.Configuration[SessionCookieSecurePolicyKey],
     SessionCookieSecurePolicyKey);
 
+// Checked here for the same reason, but only for blankness: an emptied line is refused at start-up
+// rather than surfacing at the first request that touches the key ring (the sign-in page's antiforgery
+// token). A path that is relative, missing or unwritable is not checked and still fails lazily there.
+var dataProtectionKeysPath = RequireKeysPath(
+    builder.Configuration[DataProtectionKeysPathKey],
+    DataProtectionKeysPathKey);
+
+// The application name is set explicitly because the default is derived from the content root path,
+// so the same key ring read by a build from a different directory would decrypt nothing.
+var dataProtection = builder.Services.AddDataProtection().SetApplicationName("DriveTrack");
+
+if (dataProtectionKeysPath is not null)
+{
+    // Keys are written in plaintext, which is accepted for the dev stack: the volume is reachable only
+    // from this machine's Docker. A TLS or production deployment should add ProtectKeysWith* here.
+    dataProtection.PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath));
+}
+
 builder.Services.AddAuthentication(SelectorScheme)
     .AddPolicyScheme(SelectorScheme, SelectorScheme, options =>
         options.ForwardDefaultSelector = context =>
@@ -173,7 +198,10 @@ builder.Services.AddAuthentication(SelectorScheme)
         // FR-79: forbidden and unauthenticated are different failures. A signed-in caller the
         // handler refuses is told they lack access, not told to sign in - which they already have.
         options.AccessDeniedPath = "/access-denied";
-        options.ExpireTimeSpan = TimeSpan.FromHours(8);
+        // Seven days, sliding: a dispatcher or driver who uses the system on any day of the week is
+        // never asked to sign in again. The window applies to a remembered sign-in's cookie expiry as
+        // well as to the ticket; an unremembered sign-in still ends with the browser session.
+        options.ExpireTimeSpan = TimeSpan.FromDays(7);
         options.SlidingExpiration = true;
 
         // AD-7's third suppression. This handler serves the Blazor shell as well as anything else
@@ -662,6 +690,31 @@ static CookieSecurePolicy RequireCookieSecurePolicy(string? configured, string k
             + "in the order listed above, which no name reveals and nothing here promises to keep, "
             + "so a digit selects a policy by accident. A blank value is refused rather than taken "
             + "as absent, so an emptied line is never mistaken for a request for the default.");
+}
+
+// The Data Protection key path, checked with the same anatomy as the Secure policy above. Absent takes
+// the framework default; blank is a line somebody emptied and is refused rather than read as absent.
+static string? RequireKeysPath(string? configured, string key)
+{
+    if (configured is null)
+    {
+        return null;
+    }
+
+    if (!string.IsNullOrWhiteSpace(configured))
+    {
+        return configured;
+    }
+
+    var variable = key.Replace(":", "__", StringComparison.Ordinal);
+
+    throw new InvalidOperationException(
+        $"Configuration value '{key}' is blank, which names no directory for the Data Protection key "
+            + $"ring. Set the '{variable}' environment variable to a directory that outlives the "
+            + "container - compose.dev.yaml pins it to a path backed by a named volume, see there - "
+            + "or remove it entirely to take the framework default. A blank value is "
+            + "refused rather than taken as absent, so an emptied line is never mistaken for a "
+            + "request for the default.");
 }
 
 /// <summary>

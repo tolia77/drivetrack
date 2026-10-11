@@ -60,6 +60,18 @@
                 <DtFieldError Field="Password" Failures="_failures" />
             </div>
 
+            @* Unticked by default: a driver's phone is often a shared one, and a sign-in that outlived
+               the browser there would hand the next person the previous one's account. Ticked, the
+               session cookie is persistent and survives a browser restart for the sliding window
+               Program.cs sets. The label wraps the input so the whole phrase is the hit area, as on
+               the delivery board's filter. *@
+            <div class="mb-4">
+                <label class="dt-check" for="sign-in-remember">
+                    <InputCheckbox id="sign-in-remember" @bind-Value="Form!.RememberMe" />
+                    @Localizer["RememberMe"]
+                </label>
+            </div>
+
             @* NFR-24: the glyph the navigation gives this destination, beside the word. No
                `disabled` binding, and there is nowhere for one to come from - the page renders
                once per request with no circuit behind it to flip an attribute, and the browser's
@@ -108,7 +120,12 @@
 
             // The cookie scheme by name: the default scheme is the path selector, which has nothing
             // of its own to sign in with.
-            await HttpContext.SignInAsync(AuthenticationSchemes.Cookie, ClaimsFactory.Build(session));
+            // IsPersistent is what puts an expiry on the cookie; without it the cookie is a browser-
+            // session one and is dropped when the browser quits, however long the ticket would live.
+            await HttpContext.SignInAsync(
+                AuthenticationSchemes.Cookie,
+                ClaimsFactory.Build(session),
+                new AuthenticationProperties { IsPersistent = Form.RememberMe });
 
             Navigation.NavigateTo(LandingRoute.For(session.Role));
         }
@@ -130,5 +147,7 @@
         public string? Email { get; set; }
 
         public string? Password { get; set; }
+
+        public bool RememberMe { get; set; }
     }
 }

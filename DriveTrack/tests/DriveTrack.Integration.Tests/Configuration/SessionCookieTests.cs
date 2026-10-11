@@ -4,6 +4,7 @@ using DriveTrack.Integration.Tests.Support;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Net.Http.Headers;
 using Npgsql;
 
 namespace DriveTrack.Integration.Tests.Configuration;
@@ -46,6 +47,16 @@ public class SessionCookieTests(PostgresFixture postgres)
     private const string PolicyKey = "Session:CookieSecurePolicy";
 
     private const string EnvironmentPolicyKey = "Session__CookieSecurePolicy";
+
+    private const string KeysPathKey = "DataProtection:KeysPath";
+
+    /// <summary>
+    /// When the last form post left, so an expiry is measured from the request that set it rather
+    /// than from before a host boot of unknown length. xUnit builds a fresh instance per case.
+    /// </summary>
+    private DateTimeOffset _postedAt;
+
+    private const string EnvironmentKeysPathKey = "DataProtection__KeysPath";
 
     /// <summary>The cookie the sign-in form issues, named as <c>Program.cs</c> names it.</summary>
     private const string SessionCookieName = "drivetrack.session";
@@ -250,6 +261,256 @@ public class SessionCookieTests(PostgresFixture postgres)
         Assert.Equal(nameof(CookieSecurePolicy.SameAsRequest), defaulted, StringComparer.Ordinal);
     }
 
+    [Fact]
+    public async Task An_unremembered_sign_in_issues_an_httponly_browser_session_cookie()
+    {
+        // Unticked is the default, and a shared phone is why: the cookie must carry neither an
+        // expiry nor a max-age, so it ends when the browser does. HttpOnly is asserted on every
+        // shape of the cookie, because no page script may ever read the session.
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var cookie = Parsed(await SessionCookieAsync(settings: null, secure: false, cancellationToken));
+
+        Assert.True(cookie.HttpOnly, "The unremembered session cookie is readable from script.");
+        Assert.Null(cookie.Expires);
+        Assert.Null(cookie.MaxAge);
+    }
+
+    [Fact]
+    public async Task A_remembered_sign_in_issues_an_httponly_cookie_that_lives_seven_days()
+    {
+        // The fix for "signed out every morning": a persistent cookie, expiring at the end of the
+        // seven-day sliding window rather than when the browser quits or after eight idle hours.
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var cookie = Parsed(await SessionCookieAsync(
+            settings: null,
+            secure: false,
+            cancellationToken,
+            rememberMe: true));
+
+        Assert.True(cookie.HttpOnly, "The remembered session cookie is readable from script.");
+        AssertSevenDaysFromThePost(cookie);
+    }
+
+    [Fact]
+    public async Task Registration_signs_in_persistently_and_httponly()
+    {
+        // The account was created on this device a moment ago, so the sign-in that follows is
+        // remembered without asking.
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var cookie = Parsed(await RegisteredSessionCookieAsync(cancellationToken));
+
+        Assert.True(cookie.HttpOnly, "The session cookie registration issued is readable from script.");
+        AssertSevenDaysFromThePost(cookie);
+    }
+
+    [Fact]
+    public async Task A_configured_keys_path_receives_the_key_ring_by_the_first_request()
+    {
+        // The other half of surviving a container recreate: the key that encrypts the cookie has to
+        // land in the directory compose backs with a volume, not in the container's own filesystem.
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var keys = Directory.CreateTempSubdirectory("drivetrack-keys-");
+
+        try
+        {
+            await SessionCookieAsync(
+                new Dictionary<string, string?>(StringComparer.Ordinal) { [KeysPathKey] = keys.FullName },
+                secure: false,
+                cancellationToken);
+
+            Assert.NotEmpty(keys.GetFiles("key-*.xml"));
+        }
+        finally
+        {
+            keys.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task The_sign_in_page_renders_an_unticked_remember_me_checkbox()
+    {
+        // The box itself, as the browser receives it. Without this, deleting it from SignIn.razor
+        // would leave every case green: the remembered case would post a field no page offers.
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        await using var factory = await ApiFactory.CreateAsync(
+            postgres.ConnectionString,
+            cancellationToken,
+            useProbeAuthentication: false);
+
+        using var client = factory.CreateClient();
+
+        var html = await client.GetStringAsync(new Uri("/sign-in", UriKind.Relative), cancellationToken);
+
+        var input = RememberMeInput(html);
+
+        Assert.Contains("type=\"checkbox\"", input, StringComparison.Ordinal);
+        Assert.Equal("Form.RememberMe", AttributeOf(input, "name"));
+
+        // Unticked by default: a shared phone must not remember anyone unasked.
+        Assert.DoesNotContain("checked", input, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_session_cookie_survives_a_restart_onto_the_same_key_directory()
+    {
+        // The container recreate, in miniature: host A issues the cookie, host A goes away, and host
+        // B - a fresh process with nothing in memory - starts on the same key directory. B reading
+        // the cookie is the whole of "still signed in after `up --force-recreate`".
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var keys = Directory.CreateTempSubdirectory("drivetrack-keys-");
+        var elsewhere = Directory.CreateTempSubdirectory("drivetrack-keys-");
+
+        try
+        {
+            var cookie = await SessionCookieAsync(KeysAt(keys), secure: false, cancellationToken, rememberMe: true);
+            var pair = cookie.Split(';')[0];
+
+            using (var same = await ProfileAsync(KeysAt(keys), pair, cancellationToken))
+            {
+                Assert.Equal(HttpStatusCode.OK, same.StatusCode);
+            }
+
+            // And the negative, so the 200 above is the key ring's doing: a host on an empty
+            // directory mints a ring of its own, cannot decrypt the cookie, and sends the browser
+            // to sign in - which is exactly what every recreate did before the volume existed.
+            using var other = await ProfileAsync(KeysAt(elsewhere), pair, cancellationToken);
+
+            Assert.Equal(HttpStatusCode.Redirect, other.StatusCode);
+            Assert.Contains(
+                "/sign-in",
+                other.Headers.Location?.OriginalString ?? string.Empty,
+                StringComparison.Ordinal);
+        }
+        finally
+        {
+            keys.Delete(recursive: true);
+            elsewhere.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public void A_configured_keys_path_is_not_refused()
+    {
+        AssertStoppedAtTheDatabase(StartupFailure(KeysPathKey, Path.GetTempPath()));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void A_blank_keys_path_refuses_to_start_naming_the_key(string configured)
+    {
+        // Absent takes the framework default; blank is an emptied line, refused with the anatomy the
+        // Secure policy's refusal has: both spellings of the key, and where the value is set.
+        var failure = StartupFailure(KeysPathKey, configured);
+
+        Assert.NotNull(failure);
+
+        var refusal = Chain(failure)
+            .OfType<InvalidOperationException>()
+            .FirstOrDefault(exception => exception.Message.Contains(KeysPathKey, StringComparison.Ordinal));
+
+        Assert.NotNull(refusal);
+        Assert.Contains(EnvironmentKeysPathKey, refusal.Message, StringComparison.Ordinal);
+        Assert.Contains("compose.dev.yaml", refusal.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Compose_pins_the_keys_path_to_a_volume_mount()
+    {
+        // The path is only worth configuring if a named volume sits behind it; a pinned path with no
+        // mount is a key ring that still dies with the container.
+        var pinned = ComposeStack.Dev.EnvironmentValueOf("app", EnvironmentKeysPathKey);
+
+        Assert.Equal(pinned, ComposeStack.Dev.VolumeTargetOf("app", "keys"));
+    }
+
+    /// <summary>A host's settings with the key ring kept in <paramref name="keys"/>.</summary>
+    private static Dictionary<string, string?> KeysAt(DirectoryInfo keys) =>
+        new(StringComparer.Ordinal) { [KeysPathKey] = keys.FullName };
+
+    /// <summary>
+    /// Boots a fresh host with <paramref name="settings"/> and asks it for <c>/profile</c> carrying
+    /// <paramref name="cookie"/>, answering the response unfollowed.
+    /// </summary>
+    private async Task<HttpResponseMessage> ProfileAsync(
+        IReadOnlyDictionary<string, string?> settings,
+        string cookie,
+        CancellationToken cancellationToken)
+    {
+        await using var factory = await ApiFactory.CreateAsync(
+            postgres.ConnectionString,
+            cancellationToken,
+            useProbeAuthentication: false,
+            settings: settings);
+
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false,
+            HandleCookies = false,
+        });
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri("/profile", UriKind.Relative));
+        request.Headers.Add("Cookie", cookie);
+
+        var response = await client.SendAsync(request, cancellationToken);
+
+        // Buffered before the host goes away, so the caller reads a finished response.
+        await response.Content.LoadIntoBufferAsync(cancellationToken);
+
+        return response;
+    }
+
+    /// <summary>
+    /// Asserts the cookie expires seven days after the form was posted. The header carries whole
+    /// seconds, so the bounds are a minute either side of the window; measured from the POST rather
+    /// than from before the host booted, so a slow boot cannot push the lifetime out of range.
+    /// </summary>
+    private void AssertSevenDaysFromThePost(SetCookieHeaderValue cookie)
+    {
+        Assert.NotNull(cookie.Expires);
+
+        var lifetime = cookie.Expires.Value - _postedAt;
+
+        Assert.InRange(
+            lifetime,
+            TimeSpan.FromDays(7) - TimeSpan.FromMinutes(1),
+            TimeSpan.FromDays(7) + TimeSpan.FromMinutes(1));
+    }
+
+    /// <summary>The rendered "Remember me" input element, found by the id SignIn.razor gives it.</summary>
+    private static string RememberMeInput(string html)
+    {
+        var match = System.Text.RegularExpressions.Regex.Match(
+            html,
+            "<input[^>]*id=\"sign-in-remember\"[^>]*>",
+            System.Text.RegularExpressions.RegexOptions.None,
+            TimeSpan.FromSeconds(5));
+
+        Assert.True(match.Success, "The sign-in page rendered no input with id 'sign-in-remember'.");
+
+        return match.Value;
+    }
+
+    /// <summary>One attribute's value out of a rendered element.</summary>
+    private static string AttributeOf(string element, string attribute)
+    {
+        var match = System.Text.RegularExpressions.Regex.Match(
+            element,
+            $"\\s{attribute}=\"([^\"]*)\"",
+            System.Text.RegularExpressions.RegexOptions.None,
+            TimeSpan.FromSeconds(5));
+
+        Assert.True(match.Success, $"The element carries no '{attribute}' attribute: {element}");
+
+        return match.Groups[1].Value;
+    }
+
     /// <summary>The one setting a behavioural case boots its host with.</summary>
     private static Dictionary<string, string?> Configured(string policy) =>
         new(StringComparer.Ordinal) { [PolicyKey] = policy };
@@ -269,10 +530,73 @@ public class SessionCookieTests(PostgresFixture postgres)
     /// inside the pipeline and therefore the only way <c>SameAsRequest</c> and <c>None</c> can be
     /// told apart at all.
     /// </param>
-    private async Task<string> SessionCookieAsync(
+    /// <param name="rememberMe">
+    /// Ticks the form's "Remember me" box: the name and value are read off the input the page
+    /// rendered, which is what a browser posts for a checked box; false leaves the field out of the
+    /// post, as an unticked box does.
+    /// </param>
+    private Task<string> SessionCookieAsync(
         IReadOnlyDictionary<string, string?>? settings,
         bool secure,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool rememberMe = false)
+    {
+        var fields = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["Form.Email"] = TestConfiguration.AdminEmail,
+            ["Form.Password"] = TestConfiguration.AdminPassword,
+            ["_handler"] = "signIn",
+        };
+
+        return SessionCookieFromFormAsync(
+            "/sign-in",
+            fields,
+            settings,
+            secure,
+            cancellationToken,
+            rememberMe ? html => TickRememberMe(html, fields) : null);
+    }
+
+    /// <summary>Adds the rendered "Remember me" input's own name and value to the post.</summary>
+    private static void TickRememberMe(string html, Dictionary<string, string> fields)
+    {
+        var input = RememberMeInput(html);
+
+        fields[AttributeOf(input, "name")] = AttributeOf(input, "value");
+    }
+
+    /// <summary>
+    /// Registers a fresh client through the real <c>/register</c> form and answers the session
+    /// cookie's <c>Set-Cookie</c> value, as <see cref="SessionCookieAsync"/> does for sign-in.
+    /// </summary>
+    private Task<string> RegisteredSessionCookieAsync(CancellationToken cancellationToken) =>
+        SessionCookieFromFormAsync(
+            "/register",
+            new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Form.FirstName"] = "Олена",
+                ["Form.LastName"] = "Коваль",
+                ["Form.Email"] = $"remember-{Guid.NewGuid():N}@example.com",
+                ["Form.PhoneNumber"] = "+380441234567",
+                ["Form.Password"] = "Passw0rd-Test",
+                ["Form.PasswordConfirmation"] = "Passw0rd-Test",
+                ["_handler"] = "register",
+            },
+            settings: null,
+            secure: false,
+            cancellationToken);
+
+    /// <summary>
+    /// Loads <paramref name="path"/>, posts <paramref name="fields"/> back to it with the antiforgery
+    /// pair the page issued, and answers the <c>Set-Cookie</c> value the session cookie arrived in.
+    /// </summary>
+    private async Task<string> SessionCookieFromFormAsync(
+        string path,
+        Dictionary<string, string> fields,
+        IReadOnlyDictionary<string, string?>? settings,
+        bool secure,
+        CancellationToken cancellationToken,
+        Action<string>? fromPage = null)
     {
         // useProbeAuthentication: false, so the cookie scheme under test is the production one rather
         // than the probe scheme the rest of the suite defaults to.
@@ -294,7 +618,7 @@ public class SessionCookieTests(PostgresFixture postgres)
             BaseAddress = new Uri(secure ? "https://localhost" : "http://localhost"),
         });
 
-        using var page = await client.GetAsync(new Uri("/sign-in", UriKind.Relative), cancellationToken);
+        using var page = await client.GetAsync(new Uri(path, UriKind.Relative), cancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, page.StatusCode);
 
@@ -304,15 +628,13 @@ public class SessionCookieTests(PostgresFixture postgres)
             ? string.Join("; ", issued.Select(value => value.Split(';')[0]))
             : string.Empty;
 
-        using var form = new FormUrlEncodedContent(new Dictionary<string, string>(StringComparer.Ordinal)
-        {
-            ["Form.Email"] = TestConfiguration.AdminEmail,
-            ["Form.Password"] = TestConfiguration.AdminPassword,
-            ["_handler"] = "signIn",
-            ["__RequestVerificationToken"] = AntiforgeryToken(html),
-        });
+        fields["__RequestVerificationToken"] = AntiforgeryToken(html);
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, new Uri("/sign-in", UriKind.Relative))
+        fromPage?.Invoke(html);
+
+        using var form = new FormUrlEncodedContent(fields);
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(path, UriKind.Relative))
         {
             Content = form,
         };
@@ -321,6 +643,8 @@ public class SessionCookieTests(PostgresFixture postgres)
         {
             request.Headers.Add("Cookie", antiforgery);
         }
+
+        _postedAt = DateTimeOffset.UtcNow;
 
         using var response = await client.SendAsync(request, cancellationToken);
 
@@ -337,11 +661,21 @@ public class SessionCookieTests(PostgresFixture postgres)
 
         Assert.True(
             session is not null,
-            "The sign-in form issued no session cookie, so its Secure attribute cannot be read. "
+            $"The {path} form issued no session cookie, so its attributes cannot be read. "
                 + $"Response: {(int)response.StatusCode}, Location: "
                 + $"{response.Headers.Location?.OriginalString ?? "(none)"}, body: {body}");
 
         return session;
+    }
+
+    /// <summary>The cookie's attributes, parsed rather than searched for as substrings.</summary>
+    private static SetCookieHeaderValue Parsed(string setCookie)
+    {
+        Assert.True(
+            SetCookieHeaderValue.TryParse(setCookie, out var parsed),
+            $"The session cookie's Set-Cookie value does not parse: {setCookie}");
+
+        return parsed;
     }
 
     /// <summary>
@@ -434,14 +768,17 @@ public class SessionCookieTests(PostgresFixture postgres)
     /// for null, with that entry genuinely absent - and answers whatever start-up threw, or null if
     /// it threw nothing.
     /// </summary>
-    private static Exception? StartupFailure(string? configured)
+    private static Exception? StartupFailure(string? configured) => StartupFailure(PolicyKey, configured);
+
+    /// <summary>As above, for any one key.</summary>
+    private static Exception? StartupFailure(string key, string? configured)
     {
         var settings = TestConfiguration.Defaults();
         settings["ConnectionStrings:Default"] = UnreachableConnectionString;
 
         if (configured is not null)
         {
-            settings[PolicyKey] = configured;
+            settings[key] = configured;
         }
 
         using var factory = new ConfiguredHost(settings);

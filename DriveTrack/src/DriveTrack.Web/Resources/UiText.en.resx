@@ -253,6 +253,9 @@
   <data name="NoAccount" xml:space="preserve">
     <value>Do not have an account yet?</value>
   </data>
+  <data name="RememberMe" xml:space="preserve">
+    <value>Remember me</value>
+  </data>
   <data name="Close" xml:space="preserve">
     <value>Close</value>
   </data>

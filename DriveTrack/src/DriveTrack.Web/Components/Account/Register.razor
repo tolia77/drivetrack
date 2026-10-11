@@ -126,7 +126,12 @@
                     Form!.PasswordConfirmation),
                 HttpContext.RequestAborted);
 
-            await HttpContext.SignInAsync(AuthenticationSchemes.Cookie, ClaimsFactory.Build(session));
+            // Always persistent: the person has just created the account on this very device, so there
+            // is no one else's session it could outlive.
+            await HttpContext.SignInAsync(
+                AuthenticationSchemes.Cookie,
+                ClaimsFactory.Build(session),
+                new AuthenticationProperties { IsPersistent = true });
 
             Navigation.NavigateTo(LandingRoute.For(session.Role));
         }
