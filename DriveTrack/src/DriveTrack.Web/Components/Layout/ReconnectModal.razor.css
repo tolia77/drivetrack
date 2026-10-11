@@ -118,6 +118,25 @@
     }
 }
 
+/*
+    Reduced motion: no fade. Removing the animation alone is not enough - the dialog's resting
+    state is `opacity: 0`, which the fade-in's fill is what lifts - so the open dialog and its
+    scrim are stated fully opaque here, or the dialog would open invisible.
+*/
+@media (prefers-reduced-motion: reduce) {
+    #components-reconnect-modal,
+    #components-reconnect-modal[open],
+    #components-reconnect-modal::backdrop {
+        animation: none;
+        transition: none;
+    }
+
+    #components-reconnect-modal[open],
+    #components-reconnect-modal::backdrop {
+        opacity: 1;
+    }
+}
+
 .components-reconnect-container {
     display: flex;
     flex-direction: column;
@@ -152,8 +171,11 @@
     min-height: var(--dt-control-height);
 }
 
-    #components-reconnect-modal button:hover {
-        background-color: var(--dt-action-edit-hover);
+    /* Pointer devices only: on a touch screen `:hover` sticks to whatever was last tapped. */
+    @media (hover: hover) {
+        #components-reconnect-modal button:hover {
+            background-color: var(--dt-action-edit-hover);
+        }
     }
 
     #components-reconnect-modal button:active {

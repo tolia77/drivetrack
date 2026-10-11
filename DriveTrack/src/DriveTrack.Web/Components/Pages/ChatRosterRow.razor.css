@@ -34,8 +34,11 @@
     cursor: pointer;
 }
 
-.dt-chat-thread:hover {
-    background-color: var(--dt-surface-hover);
+/* Pointer devices only: on a touch screen `:hover` sticks to whatever was last tapped. */
+@media (hover: hover) {
+    .dt-chat-thread:hover {
+        background-color: var(--dt-surface-hover);
+    }
 }
 
 /*

@@ -76,35 +76,42 @@
                recognisably the board. *@
             <DtCard Title="@Localizer["DeliveriesTitle"]">
                 <ChildContent>
-                    <table class="dt-landing-board dt-type-table">
-                        <thead>
-                            <tr>
-                                <th>@Localizer["DeliveryWindow"]</th>
-                                <th>@Localizer["Dropoff"]</th>
-                                <th>@Localizer["Status"]</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>
-                                    09:00–11:00
-                                    <DtBadge Variant="DtBadgeVariant.Overdue">@Localizer["Overdue"]</DtBadge>
-                                </td>
-                                <td>вул. Хрещатик, 22</td>
-                                <td><DeliveryStatusLabel Status="DeliveryStatus.InTransit" /></td>
-                            </tr>
-                            <tr>
-                                <td>11:00–13:00</td>
-                                <td>просп. Перемоги, 5</td>
-                                <td><DeliveryStatusLabel Status="DeliveryStatus.Pending" /></td>
-                            </tr>
-                            <tr>
-                                <td>13:00–15:00</td>
-                                <td>вул. Саксаганського, 40</td>
-                                <td><DeliveryStatusLabel Status="DeliveryStatus.Delivered" /></td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    @* The table keeps its natural width and scrolls inside the card on a phone,
+                       rather than pushing the whole page wider than the screen. `tabindex="-1"`
+                       because Chrome makes a scrolling box keyboard-focusable on its own, and a
+                       focus stop inside an `aria-hidden` illustration is one a screen reader
+                       lands on and cannot name. *@
+                    <div class="dt-landing-board-scroll" tabindex="-1">
+                        <table class="dt-landing-board dt-type-table">
+                            <thead>
+                                <tr>
+                                    <th>@Localizer["DeliveryWindow"]</th>
+                                    <th>@Localizer["Dropoff"]</th>
+                                    <th>@Localizer["Status"]</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        09:00–11:00
+                                        <DtBadge Variant="DtBadgeVariant.Overdue">@Localizer["Overdue"]</DtBadge>
+                                    </td>
+                                    <td>вул. Хрещатик, 22</td>
+                                    <td><DeliveryStatusLabel Status="DeliveryStatus.InTransit" /></td>
+                                </tr>
+                                <tr>
+                                    <td>11:00–13:00</td>
+                                    <td>просп. Перемоги, 5</td>
+                                    <td><DeliveryStatusLabel Status="DeliveryStatus.Pending" /></td>
+                                </tr>
+                                <tr>
+                                    <td>13:00–15:00</td>
+                                    <td>вул. Саксаганського, 40</td>
+                                    <td><DeliveryStatusLabel Status="DeliveryStatus.Delivered" /></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </ChildContent>
             </DtCard>
         </div>

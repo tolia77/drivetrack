@@ -141,8 +141,11 @@
     text-decoration: none;
 }
 
-.dt-deliveries td.dt-delivery-place .btn:hover {
-    text-decoration: underline;
+/* Pointer devices only: on a touch screen `:hover` sticks to whatever was last tapped. */
+@media (hover: hover) {
+    .dt-deliveries td.dt-delivery-place .btn:hover {
+        text-decoration: underline;
+    }
 }
 
 /*

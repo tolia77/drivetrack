@@ -31,9 +31,14 @@
     repeated here rather than approximated as `min-width: 641px`, which would leave a sliver of
     widths where the shell is a sidebar and the hero is still stacked.
 */
+/*
+    `minmax(0, 1fr)` rather than `1fr` here and on the role cards: a bare `1fr` track will not shrink
+    below its content's min-content width, and the board's nowrap headings made that wider than a
+    phone.
+*/
 .dt-landing-hero {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: var(--dt-space-6);
     align-items: center;
 }
@@ -68,6 +73,11 @@
     gap: var(--dt-space-2);
 }
 
+/* The board keeps its natural width and scrolls inside its card instead of widening the page. */
+.dt-landing-board-scroll {
+    overflow-x: auto;
+}
+
 /*
     The illustration's table. Ruled rather than striped, and the heading rule is the control edge
     while the row rules are hairlines - the same two weights DataTable uses, so the picture and the
@@ -100,17 +110,17 @@
 
 .dt-landing-roles {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--dt-space-5);
 }
 
 @media (max-width: 640.98px) {
     .dt-landing-hero {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
         gap: var(--dt-space-5);
     }
 
     .dt-landing-roles {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
     }
 }

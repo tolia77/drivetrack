@@ -26,7 +26,7 @@ export function attach(element, component) {
     }
 
     const context = element.getContext("2d");
-    const state = { context, component, drawing: false, marked: false, listeners: {} };
+    const state = { context, component, drawing: false, marked: false, lastPoint: null, listeners: {} };
 
     // The backing store is sized from the laid-out box and the device pixel ratio. Without this the
     // canvas defaults to 300x150 regardless of its CSS size, and the drawing arrives stretched and
@@ -38,28 +38,18 @@ export function attach(element, component) {
     context.lineJoin = "round";
     context.strokeStyle = readInk(element);
 
-    const point = (event) => {
-        const box = element.getBoundingClientRect();
-
-        return { x: event.clientX - box.left, y: event.clientY - box.top };
-    };
+    // The box is passed in rather than read here, so a move carrying a dozen coalesced samples
+    // forces one layout read rather than a dozen.
+    const point = (event, box = element.getBoundingClientRect()) =>
+        ({ x: event.clientX - box.left, y: event.clientY - box.top });
 
     const onDown = (event) => {
         state.drawing = true;
 
-        // Reported on the transition only. Every later stroke of the same signature finds the flag
-        // already set and says nothing, which is what keeps this one message rather than one per
-        // press on a pad somebody is still writing on.
-        if (!state.marked) {
-            state.marked = true;
-
-            report(state);
-        }
-
-        const { x, y } = point(event);
-
-        context.beginPath();
-        context.moveTo(x, y);
+        // A press alone marks nothing. A bare tap leaves no ink on the canvas, and a pad that called
+        // itself signed over an empty canvas would send a blank PNG the validator accepts and nobody
+        // can read. The pad is marked by the first move that actually puts ink down.
+        state.lastPoint = point(event);
 
         // The stroke follows the pointer off the element and back, which is what makes a signature
         // drawn quickly with a finger one line rather than several.
@@ -75,10 +65,41 @@ export function attach(element, component) {
             return;
         }
 
-        const { x, y } = point(event);
+        // Coalesced events are the points the browser gathered between two animation frames. Drawing
+        // only the dispatched one turns a quick curve into a polygon; drawing every one keeps it a
+        // curve. Each segment is its own short path from the previous point, so one stroke() costs
+        // the same however long the signature has grown.
+        const samples = event.getCoalescedEvents?.() ?? [event];
+        const box = element.getBoundingClientRect();
+        let inked = false;
 
-        context.lineTo(x, y);
-        context.stroke();
+        for (const sample of samples.length ? samples : [event]) {
+            const next = point(sample, box);
+            const from = state.lastPoint ?? next;
+
+            // A move that goes nowhere - a finger's jitter at the point it pressed - draws nothing,
+            // and must not be what marks the pad.
+            if (next.x === from.x && next.y === from.y) {
+                continue;
+            }
+
+            context.beginPath();
+            context.moveTo(from.x, from.y);
+            context.lineTo(next.x, next.y);
+            context.stroke();
+
+            state.lastPoint = next;
+            inked = true;
+        }
+
+        // Reported on the transition only, and only once ink is actually down. Every later move
+        // finds the flag already set and says nothing, which is what keeps this one message per
+        // signature rather than one per pointermove on a pad somebody is still writing on.
+        if (inked && !state.marked) {
+            state.marked = true;
+
+            report(state);
+        }
 
         event.preventDefault();
     };
@@ -89,6 +110,7 @@ export function attach(element, component) {
         }
 
         state.drawing = false;
+        state.lastPoint = null;
 
         if (element.hasPointerCapture(event.pointerId)) {
             element.releasePointerCapture(event.pointerId);
@@ -157,6 +179,11 @@ export function clear(element) {
 
     state.context.clearRect(0, 0, element.width, element.height);
     state.marked = false;
+
+    // A wipe in the middle of a stroke ends that stroke: without this the next move would draw a
+    // line from a point on the canvas that no longer exists, and mark the pad again with it.
+    state.drawing = false;
+    state.lastPoint = null;
 }
 
 /**

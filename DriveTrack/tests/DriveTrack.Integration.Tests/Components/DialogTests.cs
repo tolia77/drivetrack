@@ -109,7 +109,7 @@ public class DialogTests
         // would close the dialog, including the one on the confirm button.
         var module = SharedMarkup.ReadShared("DtDialog.razor.js");
 
-        const string Guard = "event.target === element";
+        const string Guard = "backdropPress && event.target === element";
         const string Close = "element.close();";
 
         var guard = module.IndexOf(Guard, StringComparison.Ordinal);
@@ -125,6 +125,35 @@ public class DialogTests
         var between = module[(guard + Guard.Length)..close];
 
         Assert.DoesNotContain(";", between, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_press_closes_the_dialog_only_when_it_began_and_ended_on_the_backdrop()
+    {
+        // A drag across the panel's edge in either direction fires its click on the dialog itself -
+        // the nearest common ancestor of the press and the release. Judged on the click alone it
+        // closes the dialog and throws the form away, so the press's origin is recorded on
+        // pointerdown, its end on pointerup, and the click consults both.
+        // Read as source: there is no JavaScript runner in this solution.
+        var module = SharedMarkup.ReadShared("DtDialog.razor.js");
+
+        Assert.Matches(@"addEventListener\(\s*""pointerdown""", module);
+        Assert.Matches(@"addEventListener\(\s*""pointerup""", module);
+        Assert.Matches(
+            @"pressedOnBackdrop\s*=\s*event\.target\s*===\s*element",
+            HandlerBody(module, "onPointerDown"));
+        Assert.Matches(
+            @"releasedOnBackdrop\s*=\s*event\.target\s*===\s*element",
+            HandlerBody(module, "onPointerUp"));
+
+        // Within the click handler itself, so the declarations above it cannot satisfy these: the
+        // guard needs both halves, and both flags reset on every click, or one backdrop press would
+        // license the next drag across the edge.
+        var click = HandlerBody(module, "onClick");
+
+        Assert.Matches(@"backdropPress\s*=\s*pressedOnBackdrop\s*&&\s*releasedOnBackdrop", click);
+        Assert.Matches(@"pressedOnBackdrop\s*=\s*false", click);
+        Assert.Matches(@"releasedOnBackdrop\s*=\s*false", click);
     }
 
     [Fact]
@@ -225,6 +254,23 @@ public class DialogTests
         // Once per confirmation: the latch, and the reset that lets the same prompt be used again.
         Assert.Contains("if (_confirmed)", source, StringComparison.Ordinal);
         Assert.Contains("_confirmed = false;", source, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The body of the arrow-function handler <paramref name="name"/> declared inside <c>open()</c>,
+    /// up to the eight-space-indented close that ends a handler at that depth.
+    /// </summary>
+    private static string HandlerBody(string module, string name)
+    {
+        var start = module.IndexOf($"const {name} = (event) => {{", StringComparison.Ordinal);
+
+        Assert.True(start >= 0, $"The dialog's module defines no {name} handler.");
+
+        var end = module.IndexOf("\n        };", start, StringComparison.Ordinal);
+
+        Assert.True(end > start, $"{name} is never closed.");
+
+        return module[start..end];
     }
 
     private static Task<string> RenderConfirmationAsync() =>

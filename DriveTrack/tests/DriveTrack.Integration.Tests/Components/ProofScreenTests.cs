@@ -237,9 +237,44 @@ public class ProofScreenTests
         // capture still sends the drawing that was supposed to be gone.
         Assert.Matches(@"state\.marked\s*=\s*false", ClearBody(module));
 
+        // A wipe mid-stroke ends the stroke, or the next move draws from a point that is gone.
+        Assert.Matches(@"state\.lastPoint\s*=\s*null", ClearBody(module));
+        Assert.Matches(@"state\.drawing\s*=\s*false", ClearBody(module));
+
         // And the component's end of both.
         Assert.Contains("[JSInvokable]", component, StringComparison.Ordinal);
         Assert.Matches(@"InvokeVoidAsync\(\s*""attach"",\s*_element,\s*_self\s*\)", component);
+    }
+
+    [Fact]
+    public void A_bare_tap_does_not_mark_the_pad_only_the_first_ink_does()
+    {
+        // A press with no movement leaves the canvas blank. Marking on pointerdown made a tap read as
+        // "signed" and sent a transparent PNG; the mark belongs to the first move that draws.
+        var module = SharedMarkup.ReadShared("DtSignaturePad.razor.js");
+
+        var down = HandlerBody(module, "onDown");
+        var move = HandlerBody(module, "onMove");
+
+        Assert.DoesNotMatch(@"state\.marked\s*=\s*true", down);
+        Assert.DoesNotContain("report(", down, StringComparison.Ordinal);
+
+        Assert.Matches(@"state\.marked\s*=\s*true", move);
+        Assert.Contains("report(state)", move, StringComparison.Ordinal);
+
+        // And only when this move actually stroked a segment: a zero-length move - jitter at the
+        // press point - leaves the canvas blank and must not mark it.
+        Assert.Matches(@"inked\s*&&\s*!\s*state\.marked", move);
+        Assert.Matches(@"next\.x\s*===\s*from\.x\s*&&\s*next\.y\s*===\s*from\.y", move);
+
+        // One layout read per move, not one per coalesced sample.
+        Assert.Matches(@"point\(\s*sample\s*,\s*box\s*\)", move);
+
+        // Every point the browser gathered between frames, each drawn as its own segment from the
+        // last, rather than one ever-growing path re-stroked on every move.
+        Assert.Contains("getCoalescedEvents", move, StringComparison.Ordinal);
+        Assert.Contains("state.lastPoint", move, StringComparison.Ordinal);
+        Assert.Contains("beginPath()", move, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -370,6 +405,27 @@ public class ProofScreenTests
 
         // And the sentence a driver acts on instead, rather than a silent dead button.
         Assert.Contains("Визначаємо місце", SharedMarkup.TextOf(html), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The body of the arrow-function handler <paramref name="name"/> declared inside <c>attach()</c>,
+    /// so an assertion about one handler cannot be satisfied by the same line in another.
+    /// </summary>
+    /// <param name="module">The module's source.</param>
+    /// <param name="name">The handler's constant name, such as <c>onDown</c>.</param>
+    private static string HandlerBody(string module, string name)
+    {
+        var start = module.IndexOf($"const {name} = (event) => {{", StringComparison.Ordinal);
+
+        Assert.True(start >= 0, $"The pad's module defines no {name} handler.");
+
+        // To the four-space-indented closing of the arrow function, which is where a handler
+        // declared inside attach() ends.
+        var end = module.IndexOf("\n    };", start, StringComparison.Ordinal);
+
+        Assert.True(end > start, $"{name} is never closed.");
+
+        return module[start..end];
     }
 
     /// <summary>

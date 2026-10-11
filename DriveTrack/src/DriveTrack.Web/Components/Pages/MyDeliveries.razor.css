@@ -174,9 +174,12 @@ td.dt-my-delivery-package > span:not(.dt-my-delivery-label) {
     text-decoration: none;
 }
 
-.dt-my-delivery-pickup:hover,
-.dt-my-delivery-dropoff:hover {
-    text-decoration: underline;
+/* Pointer devices only: on a touch screen `:hover` sticks to whatever was last tapped. */
+@media (hover: hover) {
+    .dt-my-delivery-pickup:hover,
+    .dt-my-delivery-dropoff:hover {
+        text-decoration: underline;
+    }
 }
 
 /*

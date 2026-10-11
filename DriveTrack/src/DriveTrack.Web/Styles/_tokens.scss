@@ -100,6 +100,7 @@ $dt-family-mono:              ui-monospace, SFMono-Regular, Menlo, Consolas, "Li
 $dt-font-size-12:             0.75rem;    // 12px
 $dt-font-size-13:             0.8125rem;  // 13px
 $dt-font-size-14:             0.875rem;   // 14px
+$dt-font-size-16:             1rem;       // 16px
 $dt-font-size-17:             1.0625rem;  // 17px
 $dt-font-size-22:             1.375rem;   // 22px
 $dt-font-size-32:             2rem;       // 32px
@@ -259,10 +260,15 @@ $dt-font-mono:                $dt-family-mono;  // Plates, licence numbers and I
 $dt-display-font-size:        $dt-font-size-32;   // Landing page headline only.
 $dt-display-line-height:      $dt-line-height-40;
 $dt-display-font-weight:      $dt-font-weight-700;
+// Large type set at the font's default tracking reads loose on every face that is not
+// optically sized for display - which is every system face outside Apple's. Tightened
+// a little at the top of the ramp only; the text sizes keep the face's own spacing.
+$dt-display-letter-spacing:   -0.02em;
 
 $dt-h1-font-size:             $dt-font-size-22;   // Screen title, one per screen.
 $dt-h1-line-height:           $dt-line-height-30;
 $dt-h1-font-weight:           $dt-font-weight-600;
+$dt-h1-letter-spacing:        -0.01em;
 
 $dt-h2-font-size:             $dt-font-size-17;   // Card and dialog titles.
 $dt-h2-line-height:           $dt-line-height-24;
@@ -291,6 +297,11 @@ $dt-small-font-weight:        $dt-font-weight-400;
 $dt-code-font-size:           $dt-font-size-12;   // Plate numbers, licence numbers, IDs.
 $dt-code-line-height:         $dt-line-height-16;
 $dt-code-font-weight:         $dt-font-weight-400;
+
+// A text field's size on a phone. iOS Safari zooms the page into any field whose text
+// is smaller than 16px when it takes focus, and does not zoom back out - so below the
+// phone breakpoint a field is set at 16px, and the page stays where the user left it.
+$dt-control-font-size-phone:  $dt-font-size-16;
 
 
 // -----------------------------------------------------------------------------
@@ -373,9 +384,11 @@ $dt-tokens: (
     "display-font-size":        $dt-display-font-size,
     "display-line-height":      $dt-display-line-height,
     "display-font-weight":      $dt-display-font-weight,
+    "display-letter-spacing":   $dt-display-letter-spacing,
     "h1-font-size":             $dt-h1-font-size,
     "h1-line-height":           $dt-h1-line-height,
     "h1-font-weight":           $dt-h1-font-weight,
+    "h1-letter-spacing":        $dt-h1-letter-spacing,
     "h2-font-size":             $dt-h2-font-size,
     "h2-line-height":           $dt-h2-line-height,
     "h2-font-weight":           $dt-h2-font-weight,
@@ -397,6 +410,7 @@ $dt-tokens: (
     "code-font-size":           $dt-code-font-size,
     "code-line-height":         $dt-code-line-height,
     "code-font-weight":         $dt-code-font-weight,
+    "control-font-size-phone":  $dt-control-font-size-phone,
 
     "space-1":                  $dt-space-1,
     "space-2":                  $dt-space-2,

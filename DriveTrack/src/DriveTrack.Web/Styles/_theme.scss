@@ -93,6 +93,48 @@ h1:focus {
     outline-offset: var(--dt-border-width-focus);
 }
 
+// Press feedback. Every action here is a round trip to the server, and until it
+// answers the page has nothing to show for the press - so the control answers it
+// itself, at once, by settling slightly under the finger. The transition list keeps
+// the framework's own and adds the transform, because `transition` replaces rather
+// than extends.
+.btn {
+    transition: $btn-transition, transform 100ms ease-out;
+}
+
+// The framework's `.btn:hover` fills from `--bs-btn-hover-*`, and on a touch screen a
+// tapped button stays in `:hover` until the next tap lands elsewhere - so the hover
+// fill is pointed back at the resting one where there is no hovering pointer. After
+// the framework's variant classes in source order, so this wins at equal specificity.
+@media (hover: none) {
+    .btn {
+        --bs-btn-hover-bg: var(--bs-btn-bg);
+        --bs-btn-hover-color: var(--bs-btn-color);
+        --bs-btn-hover-border-color: var(--bs-btn-border-color);
+    }
+}
+
+.dt-nav__link {
+    transition: transform 100ms ease-out;
+}
+
+.btn:active:not(:disabled):not(.disabled),
+.dt-nav__link:active {
+    transform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .btn,
+    .dt-nav__link {
+        transition: none;
+    }
+
+    .btn:active:not(:disabled):not(.disabled),
+    .dt-nav__link:active {
+        transform: none;
+    }
+}
+
 // The same ring, on the one surface where it cannot be seen.
 //
 // `focus-ring` is teal-700, which holds comfortably against a white card and reaches about
@@ -252,8 +294,14 @@ $dt-breakpoint-phone-max: $dt-breakpoint-phone - 0.02px;
 // The block is the link to the caller's own profile, so it answers the pointer. It
 // is not filled on the profile screen itself: it is who the caller is, not a place
 // in the list, and `aria-current` alone says which screen they are on.
-.dt-nav__me:hover {
-    background-color: var(--dt-nav-hover-bg);
+//
+// Behind `(hover: hover)` because a touch screen has no pointer resting anywhere: a tap
+// leaves the element in `:hover` until the next tap lands elsewhere, so the fill would
+// stay painted on whatever was last touched.
+@media (hover: hover) {
+    .dt-nav__me:hover {
+        background-color: var(--dt-nav-hover-bg);
+    }
 }
 
 .dt-nav__avatar .dt-icon {
@@ -352,9 +400,12 @@ $dt-breakpoint-phone-max: $dt-breakpoint-phone - 0.02px;
     cursor: pointer;
 }
 
-.dt-nav__link:hover {
-    background-color: var(--dt-nav-hover-bg);
-    color: var(--dt-ink-inverse);
+// Pointer devices only, for the reason `.dt-nav__me:hover` gives.
+@media (hover: hover) {
+    .dt-nav__link:hover {
+        background-color: var(--dt-nav-hover-bg);
+        color: var(--dt-ink-inverse);
+    }
 }
 
 // The current destination, painted off the attribute a screen reader is told about
@@ -493,6 +544,15 @@ $dt-breakpoint-phone-max: $dt-breakpoint-phone - 0.02px;
     .dt-lang__select {
         min-height: var(--dt-touch-target);
     }
+
+    // iOS Safari zooms into any field set smaller than 16px when it takes focus, and leaves the
+    // page zoomed. Every field - the framework's and the language switcher - is set at the
+    // control size the palette declares for a phone, so focusing one moves nothing.
+    .form-control,
+    .form-select,
+    .dt-lang__select {
+        font-size: var(--dt-control-font-size-phone);
+    }
 }
 
 
@@ -576,6 +636,7 @@ $dt-breakpoint-phone-max: $dt-breakpoint-phone - 0.02px;
     font-size: var(--dt-display-font-size);
     line-height: var(--dt-display-line-height);
     font-weight: var(--dt-display-font-weight);
+    letter-spacing: var(--dt-display-letter-spacing);
 }
 
 .dt-type-h1 {
@@ -583,6 +644,7 @@ $dt-breakpoint-phone-max: $dt-breakpoint-phone - 0.02px;
     font-size: var(--dt-h1-font-size);
     line-height: var(--dt-h1-line-height);
     font-weight: var(--dt-h1-font-weight);
+    letter-spacing: var(--dt-h1-letter-spacing);
 }
 
 .dt-type-h2 {
@@ -748,6 +810,23 @@ $dt-breakpoint-phone-max: $dt-breakpoint-phone - 0.02px;
 
 .dt-status--running::before {
     border-radius: 50%;
+}
+
+// Forced colours (Windows High Contrast) replace every background with the system
+// canvas, and the markers above are painted as backgrounds - so each would vanish and
+// leave the label's shape, the one cue that is not colour, missing. The marker opts
+// out of the override and paints in the system text colour; the pending ring, which
+// is a border on a transparent box, takes it as its border instead.
+@media (forced-colors: active) {
+    .dt-status::before {
+        forced-color-adjust: none;
+        background-color: canvastext;
+    }
+
+    .dt-status--pending::before {
+        background-color: transparent;
+        border-color: canvastext;
+    }
 }
 
 

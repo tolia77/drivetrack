@@ -173,6 +173,57 @@ public class PhoneLayoutTests
     }
 
     /// <summary>
+    /// A field is set at 16px on a phone, so iOS does not zoom the page into it on focus.
+    /// </summary>
+    /// <remarks>
+    /// Safari zooms into any focused field whose text is under 16px and leaves the page zoomed when
+    /// focus moves on. The body ramp is 14px, so every field inherits a size that triggers it unless
+    /// the phone block lifts it. Read off the source for the selectors and off the compiled bundle
+    /// for the figure, so a token renamed or re-valued fails here rather than on a handset.
+    /// </remarks>
+    [Fact]
+    public void A_field_is_set_large_enough_on_a_phone_that_focusing_it_does_not_zoom_the_page()
+    {
+        var block = PhoneBlockCarrying(Theme(), ".form-select");
+
+        Assert.Contains(".form-control", block, StringComparison.Ordinal);
+        Assert.Contains(".dt-lang__select", block, StringComparison.Ordinal);
+        Assert.Contains("font-size: var(--dt-control-font-size-phone)", block, StringComparison.Ordinal);
+
+        var compiled = File.ReadAllText(Path.Combine(
+            RepositoryLayout.ProjectDirectory("DriveTrack.Web"), "wwwroot", "css", "app.css"));
+
+        Assert.Matches(@"--dt-control-font-size-phone:\s*1rem\b", compiled);
+    }
+
+    /// <summary>
+    /// The landing page fits a phone. A bare <c>1fr</c> track will not shrink below its content's
+    /// min-content width, and the preview board's nowrap headings made that 427px - so the whole
+    /// page scrolled sideways on a 375px handset while every render test stayed green.
+    /// </summary>
+    [Fact]
+    public async Task The_landing_grids_can_shrink_and_the_board_scrolls_inside_its_card()
+    {
+        var css = WithoutComments(SharedMarkup.ReadComponent("Pages", "Home.razor.css"));
+
+        Assert.DoesNotMatch(@"grid-template-columns:[^;]*(?<!minmax\(0,\s*)\b1fr", css);
+        Assert.Matches(@"\.dt-landing-board-scroll\s*\{[^}]*overflow-x:\s*auto", css);
+
+        // Rendered rather than read off the markup: what the scroll needs is the table inside the
+        // wrapper in the output, and a closing tag moved above the table leaves the class in the
+        // file while the board widens the page again.
+        var html = await ShellCaller.RenderAsync<DriveTrack.Web.Components.Pages.Home>(role: null);
+
+        Assert.Matches(
+            @"<table\b[^>]*class=""dt-landing-board(?![\w-])",
+            BodyOf(html, "dt-landing-board-scroll"));
+
+        // Out of the tab order: Chrome makes a scrolling box focusable on its own, and this one is
+        // inside an `aria-hidden` illustration.
+        Assert.Matches(@"<div\b[^>]*class=""dt-landing-board-scroll""[^>]*\btabindex=""-1""", html);
+    }
+
+    /// <summary>
     /// The one phone media query in the theme that states a rule for <paramref name="selector"/>,
     /// braces balanced.
     /// </summary>

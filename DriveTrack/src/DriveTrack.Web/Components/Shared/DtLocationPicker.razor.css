@@ -21,6 +21,9 @@
     text-decoration: none;
 }
 
-.dt-addr-matches .btn:hover {
-    text-decoration: underline;
+/* Pointer devices only: on a touch screen `:hover` sticks to whatever was last tapped. */
+@media (hover: hover) {
+    .dt-addr-matches .btn:hover {
+        text-decoration: underline;
+    }
 }
