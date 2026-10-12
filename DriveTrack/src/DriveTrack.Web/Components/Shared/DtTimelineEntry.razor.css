@@ -1,36 +1,82 @@
 /*
-    NFR-29: every palette value here is a `--dt-*` token. The dot's box is geometry - a circle sized
-    against the text beside it - and is outside the scan, as the status shapes in `_theme.scss` are.
+    NFR-29: every palette value here is a `--dt-*` token. Positions and the rail's offset are
+    geometry - where a line sits relative to a circle - and are outside the scan, as the status
+    shapes in `_theme.scss` are; they are still written in tokens, so the rail moves with the dot.
 */
 
 /*
-    A rule between entries rather than a card around each one: the timeline is one sequence, and a
-    card per line would read as a set of unrelated notices.
+    One rail rather than a rule between entries: the timeline is one sequence, and a border under
+    each line would cut it into a set of unrelated notices. The dot column is the dot's own width,
+    and the gap after it is the same field-to-field gap the form below uses.
 */
 .dt-timeline-entry {
-    display: flex;
-    align-items: flex-start;
+    position: relative;
+    display: grid;
+    grid-template-columns: var(--dt-space-5) minmax(0, 1fr);
     gap: var(--dt-space-3);
-    padding: var(--dt-space-3);
-    border-bottom: var(--dt-border-width) solid var(--dt-border);
+    padding-bottom: var(--dt-space-4);
 }
 
 /*
-    The dot. Muted rather than coloured by outcome: the StatusLabels beside it already carry the
-    delivery's colour, and a second coloured mark on the same line would be two things saying the
-    same thing in two different hues.
+    The rail: from under this entry's dot to the bottom of the entry, where the next dot begins.
+    Centred on the dot by offsetting half the dot less half the rail's own width.
+*/
+.dt-timeline-entry::before {
+    content: "";
+    position: absolute;
+    left: calc((var(--dt-space-5) - var(--dt-border-width-focus)) / 2);
+    top: var(--dt-space-5);
+    bottom: 0;
+    border-left: var(--dt-border-width-focus) solid var(--dt-border);
+}
+
+/* Nothing follows the last entry, so no rail runs on into empty panel. */
+.dt-timeline-entry:last-child::before {
+    display: none;
+}
+
+/*
+    The dot. Muted by default: the StatusLabels beside it already carry the delivery's colour, and
+    a coloured mark on every line would be the same thing said twice in two hues. The one
+    exception is the current entry below.
 */
 .dt-timeline-dot {
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    flex: none;
-    width: var(--dt-control-height-sm);
-    height: var(--dt-control-height-sm);
-    border: var(--dt-border-width) solid var(--dt-border);
-    border-radius: 50%;
+    width: var(--dt-space-5);
+    height: var(--dt-space-5);
+    border: var(--dt-border-width-focus) solid var(--dt-border-control);
+    border-radius: var(--dt-radius-pill);
     background-color: var(--dt-surface-card);
     color: var(--dt-ink-muted);
+    /* The glyph is sized by the text it sits in, so the small size keeps it inside the ring. */
+    font-size: var(--dt-small-font-size);
+}
+
+/*
+    The move that put the delivery where it is now: its dot wears that status's text colour, ring
+    and glyph both, so "where is it" is answered at a glance down the rail.
+*/
+.dt-timeline-dot-pending {
+    border-color: var(--dt-status-pending-text);
+    color: var(--dt-status-pending-text);
+}
+
+.dt-timeline-dot-transit {
+    border-color: var(--dt-status-transit-text);
+    color: var(--dt-status-transit-text);
+}
+
+.dt-timeline-dot-delivered {
+    border-color: var(--dt-status-delivered-text);
+    color: var(--dt-status-delivered-text);
+}
+
+.dt-timeline-dot-failed {
+    border-color: var(--dt-status-failed-text);
+    color: var(--dt-status-failed-text);
 }
 
 .dt-timeline-line {
@@ -40,12 +86,21 @@
     min-width: 0;
 }
 
-/* Who and when: quieter than the change itself, because the change is what a reader scans for. */
+/*
+    Who and when. The person is in ink - the screen's actor span sets the weight - and the instant
+    beside them is the quieter, smaller fact.
+*/
 .dt-timeline-meta {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--dt-space-2);
+    gap: var(--dt-space-1) var(--dt-space-2);
+    color: var(--dt-ink);
+    font-size: var(--dt-body-font-size);
+    line-height: var(--dt-body-line-height);
+}
+
+.dt-timeline-when {
     color: var(--dt-ink-muted);
     font-size: var(--dt-small-font-size);
     line-height: var(--dt-small-line-height);
@@ -55,7 +110,7 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--dt-space-2);
+    gap: var(--dt-space-1) var(--dt-space-2);
 }
 
 .dt-timeline-arrow {
@@ -63,14 +118,14 @@
 }
 
 /*
-    The note sits in its own box on the page surface, so a sentence somebody typed is visibly a
+    The note sits in its own sunken box, so a sentence somebody typed is visibly a
     quotation rather than another of the line's own facts.
 */
 .dt-timeline-note {
     margin: var(--dt-space-1) 0 0;
     padding: var(--dt-space-2) var(--dt-space-3);
     border-radius: var(--dt-radius-sm);
-    background-color: var(--dt-surface-page);
+    background-color: var(--dt-surface-sunken);
     color: var(--dt-ink);
     font-size: var(--dt-body-font-size);
     line-height: var(--dt-body-line-height);

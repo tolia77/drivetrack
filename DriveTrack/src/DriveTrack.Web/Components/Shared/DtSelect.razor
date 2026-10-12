@@ -20,6 +20,7 @@
 <select id="@Id"
         class="form-select dt-select @Class"
         disabled="@Disabled"
+        aria-describedby="@AriaDescribedBy"
         value="@BindConverter.FormatValue(Value)"
         @onchange="ChangedAsync">
     @ChildContent
@@ -40,6 +41,13 @@
     /// </summary>
     [Parameter]
     public bool Disabled { get; set; }
+
+    /// <summary>
+    /// The id of the hint that describes this select, or null for none - in which case the
+    /// attribute is not rendered at all.
+    /// </summary>
+    [Parameter]
+    public string? AriaDescribedBy { get; set; }
 
     /// <summary>The selected value.</summary>
     [Parameter]

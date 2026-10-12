@@ -556,13 +556,38 @@
   <data name="TimelineNote" xml:space="preserve">
     <value>Коментар</value>
   </data>
-  <data name="AddNote" xml:space="preserve">
-    <value>Додати коментар</value>
+  <data name="TimelineHistory" xml:space="preserve">
+    <value>Історія</value>
   </data>
-  <!-- The label above the transition buttons. There is one button per status the lifecycle allows
-       from the current one (AD-10), so the label names the action and the buttons name the states. -->
-  <data name="ChangeStatus" xml:space="preserve">
-    <value>Змінити стан:</value>
+  <data name="TimelineAddHeading" xml:space="preserve">
+    <value>Додати до історії</value>
+  </data>
+  <data name="TimelineNewStatus" xml:space="preserve">
+    <value>Новий стан</value>
+  </data>
+  <!-- The first option of the timeline's status select reads "TimelineKeep <current status>
+       TimelineNoteOnly"; the hint under it reads "TimelineMoveFrom <status> TimelineMoveTo <moves>".
+       The statuses are the shared labels, so only the words around them live here. -->
+  <data name="TimelineKeep" xml:space="preserve">
+    <value>Залишити</value>
+  </data>
+  <data name="TimelineNoteOnly" xml:space="preserve">
+    <value>— лише коментар</value>
+  </data>
+  <data name="TimelineMoveFrom" xml:space="preserve">
+    <value>Зі стану</value>
+  </data>
+  <data name="TimelineMoveTo" xml:space="preserve">
+    <value>можна перейти до:</value>
+  </data>
+  <data name="TimelineNotePlaceholder" xml:space="preserve">
+    <value>Що сталося? Це прочитають клієнт і адміністратор.</value>
+  </data>
+  <data name="TimelineNoteHint" xml:space="preserve">
+    <value>Необов’язковий, коли змінюєте стан.</value>
+  </data>
+  <data name="TimelineSubmit" xml:space="preserve">
+    <value>Додати до історії</value>
   </data>
   <!-- FR-104: the second way to set a point on the delivery form, beside the map. The hint says
        what the floor is, because a search that silently refuses two characters reads as broken. -->

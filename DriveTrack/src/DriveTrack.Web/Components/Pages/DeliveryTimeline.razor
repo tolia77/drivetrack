@@ -1,14 +1,20 @@
 @* FR-105 to FR-108: a delivery's append-only history, and the two things a viewer may append to it.
 
-   One component for both screens. The dispatch board and the own-deliveries screen show the same
-   history and offer the same note field; what differs is whether the transition buttons are drawn,
-   and that is a parameter rather than a role test - the guard inside IDeliveryService is the
-   decision, and this only avoids offering an action that could only ever be refused (FR-12).
+   One component for both screens, and it owns its dialog. The dispatch board and the own-deliveries
+   screen show the same history and offer the same compose box; what differs is whether the status
+   select is drawn, and that is a parameter rather than a role test - the guard inside
+   IDeliveryService is the decision, and this only avoids offering an action that could only ever be
+   refused (FR-12).
 
-   The buttons come from Delivery.NextStatuses, which is AD-10's single declaration of the
-   lifecycle. Reading it is not writing it: re-listing the transitions here would be exactly the
-   second copy that decision exists to prevent. No Delivery instance crosses the boundary - only the
-   static call and the DeliveryStatus enum both screens already bind.
+   The dialog lives here rather than in the host because its footer is this panel's: the one submit
+   reads both the select and the comment, and a host-owned footer would have to reach into the panel
+   to press it. A host renders this component only while a row is chosen; it opens itself after its
+   first render, and OnClosed hands the row back so the next open is a fresh panel with an empty box.
+
+   The moves come from Delivery.NextStatuses, which is AD-10's single declaration of the lifecycle.
+   Reading it is not writing it: re-listing the transitions here would be exactly the second copy
+   that decision exists to prevent. No Delivery instance crosses the boundary - only the static call
+   and the DeliveryStatus enum both screens already bind.
 
    The @@if blocks below are independent rather than if/else chains, and every handler is built in
    code rather than written as a lambda in an attribute: an `else` reads to NFR-14's source scan as
@@ -18,146 +24,220 @@
 @inject IStringLocalizer<UiText> Localizer
 @inherits CircuitScopedComponent
 
-@* NFR-3: a refusal resolves through the same catalogue the REST envelope uses, so the dialog and
-   the wire cannot disagree about what went wrong. It keeps what the note box below has not
-   claimed: DELIVERY_INVALID_STATUS_TRANSITION and DELIVERY_PROOF_REQUIRED are about the delivery
-   rather than about anything typed here, and neither names a field. *@
-<DtFailureBanner Failures="_failures" InlineFields="@InlineFields" />
+<DtDialog @ref="_dialog"
+          Title="@Localizer["TimelineTitle"]"
+          Subtitle="@RouteLine"
+          Medium="true"
+          OnClosed="ClosedAsync">
+    <HeadContent>
+        @* Where the delivery is now, beside the dismiss: the one fact a reader opened the history to
+           check, and it follows the panel's own idea of the status, so a move made here shows at
+           once. *@
+        <span class="dt-timeline-current">
+            <DeliveryStatusLabel Status="_status" />
+        </span>
+    </HeadContent>
+    <ChildContent>
+        @* NFR-3: a refusal resolves through the same catalogue the REST envelope uses, so the dialog
+           and the wire cannot disagree about what went wrong. It keeps what the comment box below
+           has not claimed: DELIVERY_INVALID_STATUS_TRANSITION and DELIVERY_PROOF_REQUIRED are about
+           the delivery rather than about anything typed here, and neither names a field. *@
+        <DtFailureBanner Failures="_failures" InlineFields="@InlineFields" />
 
-@if (_loading)
-{
-    <p class="dt-timeline-empty" role="status">@Localizer["Loading"]</p>
-}
+        <section class="dt-timeline-history" aria-labelledby="@_historyHeadingId">
+            <h3 id="@_historyHeadingId" class="dt-type-h3 dt-timeline-heading">@Localizer["TimelineHistory"]</h3>
 
-@if (!_loading && _entries.Count == 0)
-{
-    <p class="dt-timeline-empty">@Localizer["TimelineEmpty"]</p>
-}
+            @if (_loading)
+            {
+                <p class="dt-timeline-empty" role="status">@Localizer["Loading"]</p>
+            }
 
-<ol class="dt-timeline-list">
-    @* Oldest first, as the repository ordered them (FR-108). Nothing here re-sorts: a second
-       ordering would be a second answer to "what happened when". *@
-    @foreach (var entry in _entries)
-    {
-        @* One shared entry per line: the dot's glyph, the two StatusLabels and the note box are
-           the same on every timeline, and the only thing this screen knows that the component
-           cannot is who the actor may be named as. That is the fragment below. *@
-        <DtTimelineEntry PreviousStatus="entry.PreviousStatus"
-                         NewStatus="entry.NewStatus"
-                         When="@Occurred(entry)"
-                         Note="@entry.Note">
-            <Actor>
-                @* AD-17: the name when this viewer may be told it, the role badge either way. The
-                   service decided which; a null name here means "withheld", never "missing" - the
-                   column forbids the second reading, and a client who may not be told who drove
-                   still reads that a driver did.
+            @if (!_loading && _entries.Count == 0)
+            {
+                <p class="dt-timeline-empty">@Localizer["TimelineEmpty"]</p>
+            }
 
-                   The role is a Badge rather than a StatusLabel, and that is the rule the design
-                   states outright: a claim about a person is never dressed in the chrome a
-                   delivery's status wears. Every role wears the same badge, because roles are not
-                   ranked and a colour apiece would rank them. *@
-                @if (entry.ActorName is not null)
+            <ol class="dt-timeline-list">
+                @* Oldest first, as the repository ordered them (FR-108). Nothing here re-sorts: a
+                   second ordering would be a second answer to "what happened when". *@
+                @foreach (var entry in _entries)
                 {
-                    <span class="dt-timeline-actor">@entry.ActorName</span>
-                }
-                @if (entry.ActorRole == UserRole.Admin)
-                {
-                    <DtBadge Variant="DtBadgeVariant.Role">@Localizer["RoleAdmin"]</DtBadge>
-                }
-                @if (entry.ActorRole == UserRole.Dispatcher)
-                {
-                    <DtBadge Variant="DtBadgeVariant.Role">@Localizer["RoleDispatcher"]</DtBadge>
-                }
-                @if (entry.ActorRole == UserRole.Driver)
-                {
-                    <DtBadge Variant="DtBadgeVariant.Role">@Localizer["RoleDriver"]</DtBadge>
-                }
-                @if (entry.ActorRole == UserRole.Client)
-                {
-                    <DtBadge Variant="DtBadgeVariant.Role">@Localizer["RoleClient"]</DtBadge>
-                }
-            </Actor>
-        </DtTimelineEntry>
-    }
-</ol>
+                    @* One shared entry per line: the dot's glyph, the rail, the two StatusLabels and
+                       the note box are the same on every timeline, and the only things this screen
+                       knows that the component cannot are who the actor may be named as and which
+                       move is the current one. *@
+                    <DtTimelineEntry PreviousStatus="entry.PreviousStatus"
+                                     NewStatus="entry.NewStatus"
+                                     When="@Occurred(entry)"
+                                     Note="@entry.Note"
+                                     Current="IsCurrent(entry)">
+                        <Actor>
+                            @* AD-17: the name when this viewer may be told it, the role badge either
+                               way. The service decided which; a null name here means "withheld",
+                               never "missing" - a client who may not be told who drove still reads
+                               that a driver did.
 
-@* FR-107: anyone who can see the delivery may say something about it, including the client who may
-   never change its status. *@
-<div class="dt-timeline-compose">
-    <label class="form-label" for="@_noteFieldId">@Localizer["TimelineNote"]</label>
-    @* The column's own bound, read from the entity that declares it: an over-long note is stopped
-       in the browser rather than costing a refused round trip to be told the same thing. *@
-    <textarea id="@_noteFieldId" class="form-control"
-              maxlength="@TimelineEntry.NoteMaximumLength" @bind="_note"></textarea>
-    <DtFieldError Field="Note" Failures="_failures" />
-    @* Disabled while a note is in flight: the circuit yields at the await, so a second click would
-       write the same note onto the timeline twice.
-       And while the reload that follows one is in flight, which no other screen needs: every other
-       handler closes its dialog before refetching, and this panel stays on screen with its box
-       already emptied. Without `_loading` the button comes back enabled the moment the finally
-       clears the flag, and a click landing in that window posts the now-null note - bannering a
-       refusal over a note that saved. *@
-    <button type="button" class="btn btn-primary btn-sm dt-timeline-add-note"
-            disabled="@(_addingNote || _loading)" @onclick="AddNoteAsync">
-        <Icon Name="IconName.Create" />@Localizer["AddNote"]
-    </button>
-</div>
+                               The role is a Badge rather than a StatusLabel: a claim about a person
+                               is never dressed in the chrome a delivery's status wears, and every
+                               role wears the same badge because roles are not ranked. *@
+                            @if (entry.ActorName is not null)
+                            {
+                                <span class="dt-timeline-actor">@entry.ActorName</span>
+                            }
+                            @if (entry.ActorRole == UserRole.Admin)
+                            {
+                                <DtBadge Variant="DtBadgeVariant.Role">@Localizer["RoleAdmin"]</DtBadge>
+                            }
+                            @if (entry.ActorRole == UserRole.Dispatcher)
+                            {
+                                <DtBadge Variant="DtBadgeVariant.Role">@Localizer["RoleDispatcher"]</DtBadge>
+                            }
+                            @if (entry.ActorRole == UserRole.Driver)
+                            {
+                                <DtBadge Variant="DtBadgeVariant.Role">@Localizer["RoleDriver"]</DtBadge>
+                            }
+                            @if (entry.ActorRole == UserRole.Client)
+                            {
+                                <DtBadge Variant="DtBadgeVariant.Role">@Localizer["RoleClient"]</DtBadge>
+                            }
+                        </Actor>
+                    </DtTimelineEntry>
+                }
+            </ol>
+        </section>
 
-<div class="dt-timeline-actions">
-    @if (Offered.Count > 0)
-    {
-        <h3 class="dt-type-h3 dt-timeline-actions-label">@Localizer["ChangeStatus"]</h3>
-    }
-    @* One button per legal move, and none at all from Delivered, which is terminal. A delivery in a
-       status the caller may not advance simply offers nothing to press. *@
-    @foreach (var next in Offered)
-    {
-        <button type="button" class="btn btn-outline-secondary btn-sm dt-timeline-status"
-                @onclick="ChangeHandler(next)">
-            <Icon Name="IconName.Confirm" /><DeliveryStatusLabel Status="next" />
+        @* FR-107: anyone who can see the delivery may say something about it, including the client
+           who may never change its status. FR-106: a status change carries its comment on the same
+           entry, so the select and the box are one compose step with one submit. *@
+        <section class="dt-timeline-compose" aria-labelledby="@_composeHeadingId">
+            <h3 id="@_composeHeadingId" class="dt-type-h3 dt-timeline-heading">@Localizer["TimelineAddHeading"]</h3>
+
+            @* Drawn only when there is a move to offer: a client, or a delivery in a terminal status,
+               sees the comment box alone rather than a select whose only option is "keep". *@
+            @if (Offered.Count > 0)
+            {
+                <div class="dt-timeline-field">
+                    <label class="form-label" for="@_statusFieldId">@Localizer["TimelineNewStatus"]</label>
+                    <DtSelect TValue="DeliveryStatus?"
+                              Id="@_statusFieldId"
+                              Class="dt-timeline-next-status"
+                              Disabled="Busy"
+                              AriaDescribedBy="@_moveHintId"
+                              @bind-Value="_next">
+                        @* The empty value is "keep": a note on its own, which is what null means to
+                           the submit below. *@
+                        <option value="">@Localizer["TimelineKeep"] @CurrentWord @Localizer["TimelineNoteOnly"]</option>
+                        @foreach (var next in Offered)
+                        {
+                            <option value="@next">@StatusWord(next)</option>
+                        }
+                    </DtSelect>
+                    <div id="@_moveHintId" class="form-text dt-timeline-move-hint">
+                        @Localizer["TimelineMoveFrom"] <strong>@CurrentWord</strong> @Localizer["TimelineMoveTo"] @OfferedWords
+                    </div>
+                </div>
+            }
+
+            @* The textarea and its DtFieldError share a parent: that is the shape the theme's
+               refused-field outline and the banner's reveal both look for. *@
+            <div class="dt-timeline-field">
+                <label class="form-label" for="@_noteFieldId">@Localizer["TimelineNote"]</label>
+                @* The column's own bound, read from the entity that declares it: an over-long note is
+                   stopped in the browser rather than costing a refused round trip. *@
+                <textarea id="@_noteFieldId" class="form-control dt-timeline-note-input"
+                          placeholder="@Localizer["TimelineNotePlaceholder"]"
+                          aria-describedby="@NoteHintReference"
+                          disabled="@Busy"
+                          maxlength="@TimelineEntry.NoteMaximumLength" @bind="_note"></textarea>
+                <DtFieldError Field="Note" Failures="_failures" />
+                @* Only beside the select: the hint is about changing the status, so a viewer who is
+                   offered no change - a client, a delivery already Delivered - is told nothing. *@
+                @if (Offered.Count > 0)
+                {
+                    <div id="@_noteHintId" class="form-text dt-timeline-note-hint">@Localizer["TimelineNoteHint"]</div>
+                }
+            </div>
+        </section>
+    </ChildContent>
+    <Actions>
+        @* The one submit. Disabled while a write is in flight: the circuit yields at the await, so a
+           second click would write the same entry twice. And while the reload that follows one is
+           in flight, which no other dialog needs: this panel stays open with its box already
+           emptied, and a click landing in that window would post an empty note - bannering a
+           refusal over an entry that saved. *@
+        <button type="button" class="btn btn-secondary dt-timeline-submit"
+                disabled="@(_submitting || _loading)" @onclick="SubmitAsync">
+            <Icon Name="IconName.Create" />@Localizer["TimelineSubmit"]
         </button>
-    }
-</div>
+        @* Cancel too: closing mid-write disposes the panel before OnChanged fires, and the row
+           behind the dialog would keep the status it had before the write landed. *@
+        <button type="button" class="btn btn-outline-secondary dt-timeline-cancel"
+                disabled="@Busy" @onclick="CancelAsync">
+            <Icon Name="IconName.Close" />@Localizer["Cancel"]
+        </button>
+    </Actions>
+</DtDialog>
 
 @code {
     /// <summary>
     /// The boxes this screen renders a <c>DtFieldError</c> for. Stated once and bound by every
-    /// banner on the page: the list repeated per banner is exactly the drift FR-83 is broken by,
-    /// and a screen carries the banner more than once because a dialog opened with showModal()
-    /// leaves the page behind it inert.
+    /// banner on the page: the list repeated per banner is exactly the drift FR-83 is broken by.
     /// </summary>
     private const string InlineFields = "Note";
 
     /// <summary>
-    /// Generated rather than fixed: two of these on one screen must not share an id, or the note
-    /// label would point at the wrong field.
+    /// Generated rather than fixed: two of these on one screen must not share an id, or a label
+    /// would point at the wrong field.
     /// </summary>
     private readonly string _noteFieldId = $"dt-timeline-note-{Guid.NewGuid():N}";
 
+    /// <inheritdoc cref="_noteFieldId" />
+    private readonly string _statusFieldId = $"dt-timeline-next-{Guid.NewGuid():N}";
+
+    /// <inheritdoc cref="_noteFieldId" />
+    private readonly string _moveHintId = $"dt-timeline-move-hint-{Guid.NewGuid():N}";
+
+    /// <inheritdoc cref="_noteFieldId" />
+    private readonly string _noteHintId = $"dt-timeline-note-hint-{Guid.NewGuid():N}";
+
+    /// <inheritdoc cref="_noteFieldId" />
+    private readonly string _historyHeadingId = $"dt-timeline-history-{Guid.NewGuid():N}";
+
+    /// <inheritdoc cref="_noteFieldId" />
+    private readonly string _composeHeadingId = $"dt-timeline-compose-{Guid.NewGuid():N}";
+
+    private DtDialog? _dialog;
     private IReadOnlyList<TimelineEntryView> _entries = [];
     private IReadOnlyList<ScreenFailure> _failures = [];
     private string? _note;
     private bool _loading = true;
 
     /// <summary>
-    /// True while a note is in flight, which is what disables the add-note button for as long as it
-    /// lasts. The circuit yields at the await, so without it a second click would write the same
-    /// note onto the timeline twice. The status actions below are not covered: they are not a form
-    /// submit, and a repeated transition is refused by the capability rather than duplicated.
+    /// The status the select is set to, or null for "keep" - a note on its own. Reset to null
+    /// after every write and whenever a reload leaves it naming a move that is no longer legal.
     /// </summary>
-    private bool _addingNote;
+    private DeliveryStatus? _next;
+
+    /// <summary>
+    /// True while an entry is in flight, which is what disables the submit for as long as it
+    /// lasts. The circuit yields at the await, so without it a second click would write the same
+    /// entry onto the timeline twice.
+    /// </summary>
+    private bool _submitting;
 
     /// <summary>
     /// The delivery whose history is loaded, or zero before the first load. Compared against
-    /// <see cref="DeliveryId"/> so a re-render with the same parameters does not refetch, and a
-    /// dialog reopened on another delivery does.
+    /// <see cref="DeliveryId"/> so a re-render with the same parameters does not refetch.
     /// </summary>
     private int _loaded;
 
+    /// <summary>The index of the entry whose dot is tinted, or -1 when none moved anything.</summary>
+    private int _currentEntry = -1;
+
     /// <summary>
-    /// The status the transition buttons are computed from. Seeded from <see cref="Status"/> and
-    /// then advanced by what the service actually wrote, so the panel shows the moves available
-    /// from where the delivery is now rather than from where it was when the dialog opened.
+    /// The status the select is computed from. Seeded from <see cref="Status"/> and then advanced by
+    /// what the service actually wrote, so the panel offers the moves available from where the
+    /// delivery is now rather than from where it was when the dialog opened.
     /// </summary>
     private DeliveryStatus _status;
 
@@ -171,8 +251,24 @@
     [EditorRequired]
     public DeliveryStatus Status { get; set; }
 
+    /// <summary>Where the parcel is collected, for the head's route line; null draws no line.</summary>
+    [Parameter]
+    public LocationView? Pickup { get; set; }
+
+    /// <summary>Where it goes, for the head's route line.</summary>
+    [Parameter]
+    public LocationView? Dropoff { get; set; }
+
+    /// <summary>What is being moved, for the head's route line.</summary>
+    [Parameter]
+    public string? PackageDetails { get; set; }
+
+    /// <summary>How heavy it is, for the head's route line.</summary>
+    [Parameter]
+    public decimal PackageWeightKg { get; set; }
+
     /// <summary>
-    /// Whether to draw the transition buttons. False hides them; it does not authorize anything —
+    /// Whether to draw the status select. False hides it; it does not authorize anything -
     /// <c>IAccessGuard.RequireAssignedDriver</c> decides, and it runs whether or not this panel was
     /// ever rendered (FR-12).
     /// </summary>
@@ -187,11 +283,44 @@
     public EventCallback OnChanged { get; set; }
 
     /// <summary>
-    /// The statuses this panel offers a button for: what the lifecycle allows from where the
-    /// delivery is, or nothing at all when this viewer has no lifecycle action (FR-90).
+    /// Raised once the dialog has closed, however it was dismissed, so the host can drop the row
+    /// and with it this panel.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnClosed { get; set; }
+
+    /// <summary>
+    /// The statuses the select offers: what the lifecycle allows from where the delivery is, or
+    /// nothing at all when this viewer has no lifecycle action (FR-90).
     /// </summary>
     private IReadOnlyList<DeliveryStatus> Offered =>
         AllowStatusChange ? Delivery.NextStatuses(_status) : [];
+
+    /// <summary>
+    /// True while a write or the reload after it is in flight. Every control that could start a
+    /// second write, change what the first one sends, or close the panel under it is disabled.
+    /// </summary>
+    private bool Busy => _submitting || _loading;
+
+    /// <summary>The note hint's id while it renders, so the textarea names it; null otherwise.</summary>
+    private string? NoteHintReference => Offered.Count > 0 ? _noteHintId : null;
+
+    /// <summary>The current status in words, for the keep option and the move hint.</summary>
+    private string CurrentWord => StatusWord(_status);
+
+    /// <summary>The offered moves in words, in the lifecycle's own order.</summary>
+    private string OfferedWords => string.Join(", ", Offered.Select(StatusWord));
+
+    /// <summary>
+    /// The head's muted line: pickup → dropoff · package · weight. Null when the host passed no
+    /// route, so a panel rendered without one draws no empty line.
+    /// </summary>
+    private string? RouteLine => Pickup is null || Dropoff is null
+        ? null
+        : LocationText.Describe(Pickup) + " → " + LocationText.Describe(Dropoff)
+            + " · " + PackageDetails
+            + " · " + PackageWeightKg.ToString(System.Globalization.CultureInfo.CurrentCulture)
+            + " " + Localizer["WeightUnit"];
 
     /// <inheritdoc />
     protected override async Task OnParametersSetAsync()
@@ -205,22 +334,31 @@
         _status = Status;
         _failures = [];
         _note = null;
+        _next = null;
 
         await LoadAsync();
     }
 
-    /// <summary>A transition button's action, bound as a delegate so no lambda lives in markup.</summary>
-    private Func<Task> ChangeHandler(DeliveryStatus next) => () => ChangeStatusAsync(next);
+    /// <inheritdoc />
+    /// <remarks>
+    /// The panel opens itself: the host renders it only once a row is chosen, so its first render
+    /// is the moment the viewer asked for it.
+    /// </remarks>
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _dialog is not null)
+        {
+            await _dialog.ShowAsync();
+        }
+    }
 
     /// <summary>
     /// Where the delivery stands according to its own history: the newest entry that moved it, or
     /// <paramref name="fallback"/> when nothing in the history did.
     /// </summary>
     /// <remarks>
-    /// Internal and static so it can be asserted directly. Static rendering dispatches no events, so
-    /// the reload this feeds is unreachable from a render test; the repository's convention for that
-    /// is to lift the decision out of the handler and pin it one level down, as
-    /// <c>MyDeliveries.OffersStatusChange</c> does.
+    /// Internal and static so it can be asserted directly: static rendering dispatches no events,
+    /// so the reload this feeds is unreachable from a render test.
     /// <para>
     /// Walked from the end because the repository orders entries oldest-first (FR-108), and skipping
     /// the ones with no status is what keeps a note appended after the last move from reading as a
@@ -234,30 +372,66 @@
         IReadOnlyList<TimelineEntryView> entries,
         DeliveryStatus fallback)
     {
+        var index = CurrentEntry(entries);
+
+        return index < 0 ? fallback : entries[index].NewStatus!.Value;
+    }
+
+    /// <summary>
+    /// The index of the newest entry that moved the delivery - the one whose dot wears the current
+    /// status's colour - or -1 when no entry moved anything.
+    /// </summary>
+    /// <param name="entries">The delivery's history, oldest first.</param>
+    /// <returns>The index, or -1.</returns>
+    internal static int CurrentEntry(IReadOnlyList<TimelineEntryView> entries)
+    {
         ArgumentNullException.ThrowIfNull(entries);
 
         for (var index = entries.Count - 1; index >= 0; index--)
         {
-            if (entries[index].NewStatus is { } moved)
+            if (entries[index].NewStatus is not null)
             {
-                return moved;
+                return index;
             }
         }
 
-        return fallback;
+        return -1;
     }
+
+    /// <summary>
+    /// Whether <paramref name="entry"/> is the one whose dot is tinted. By reference rather than by
+    /// value: entries are records, and two identical notes are still two lines.
+    /// </summary>
+    private bool IsCurrent(TimelineEntryView entry) =>
+        _currentEntry >= 0 && ReferenceEquals(_entries[_currentEntry], entry);
 
     /// <summary>
     /// The instant in local time (AD-13: storage is offset zero, and the conversion happens here,
     /// in the presentation layer, and nowhere else).
     /// </summary>
     /// <remarks>
-    /// Routed through a method rather than formatted in markup, as the two delivery tables do it:
-    /// NFR-14's scan strips a Razor expression only up to its first closing bracket, so a
-    /// <c>.ToString(...)</c> tail would be left in the text node and read as a rendered English word.
+    /// Routed through a method rather than formatted in markup: NFR-14's scan strips a Razor
+    /// expression only up to its first closing bracket, so a <c>.ToString(...)</c> tail would be
+    /// left in the text node and read as a rendered English word.
     /// </remarks>
     private static string Occurred(TimelineEntryView entry) =>
         entry.OccurredAt.ToLocalTime().ToString("g", System.Globalization.CultureInfo.CurrentCulture);
+
+    /// <summary>
+    /// A status in words, for places that can hold only text - an &lt;option&gt; and the hint. The
+    /// same keys <c>DeliveryStatusLabel</c> reads, so the two cannot name a status differently.
+    /// </summary>
+    private string StatusWord(DeliveryStatus status) => status switch
+    {
+        DeliveryStatus.Pending => Localizer["StatusPending"],
+        DeliveryStatus.InTransit => Localizer["StatusInTransit"],
+        DeliveryStatus.Delivered => Localizer["StatusDelivered"],
+        DeliveryStatus.Failed => Localizer["StatusFailed"],
+        _ => throw new ArgumentOutOfRangeException(
+            nameof(status),
+            status,
+            "No status label is defined for this delivery status."),
+    };
 
     private async Task LoadAsync()
     {
@@ -268,8 +442,9 @@
         try
         {
             _entries = await Timeline.ListTimelineAsync(DeliveryId, CircuitToken);
+            _currentEntry = CurrentEntry(_entries);
 
-            // The buttons are computed from _status, so a reload has to move it as well as the list.
+            // The select is computed from _status, so a reload has to move it as well as the list.
             // This is the arm that makes the refusal path work: after a 409 caused by somebody
             // else's move, refetching the entries without re-reading where they leave the delivery
             // would redraw the panel around the status it already had, and every retry would be
@@ -282,6 +457,7 @@
             // is still usable, and taking the whole circuit down for one panel would lose it.
             _failures = FailureKeys.For(failure);
             _entries = [];
+            _currentEntry = -1;
         }
         finally
         {
@@ -289,83 +465,133 @@
             // spinning forever, which reads to a user as a hung dialog.
             _loading = false;
         }
+
+        // A move chosen before the reload may no longer be legal from where the delivery now is;
+        // left selected, the next submit would be refused for a choice the select no longer shows.
+        _next = KeptChoice(_next, Offered);
     }
 
-    private async Task AddNoteAsync()
+    /// <summary>
+    /// The select's choice after a reload: kept while it is still one of the offered moves, null
+    /// ("keep") once it is not.
+    /// </summary>
+    /// <param name="chosen">What the select held before the reload.</param>
+    /// <param name="offered">The moves offered from where the delivery now is.</param>
+    /// <returns>The choice, or null.</returns>
+    internal static DeliveryStatus? KeptChoice(DeliveryStatus? chosen, IReadOnlyList<DeliveryStatus> offered)
     {
-        if (_addingNote)
+        ArgumentNullException.ThrowIfNull(offered);
+
+        return chosen is { } status && offered.Contains(status) ? status : null;
+    }
+
+    /// <summary>
+    /// What the submit sends: a note on its own for "keep", or a status change carrying the
+    /// comment on the same entry (FR-106). Internal and static so the routing can be asserted
+    /// directly - static rendering dispatches no events.
+    /// </summary>
+    /// <param name="next">The select's choice, null for "keep".</param>
+    /// <param name="note">The comment as typed.</param>
+    /// <returns>An <see cref="AddDeliveryNoteCommand"/> or a <see cref="ChangeDeliveryStatusCommand"/>.</returns>
+    internal static object CommandFor(DeliveryStatus? next, string? note) =>
+        next is { } status
+            ? new ChangeDeliveryStatusCommand(status, note)
+            : new AddDeliveryNoteCommand(note);
+
+    /// <summary>
+    /// The footer's one submit: "keep" appends a note, a chosen status moves the delivery and
+    /// carries the comment on the same entry (FR-106).
+    /// </summary>
+    private async Task SubmitAsync()
+    {
+        if (_submitting)
         {
             return;
         }
 
         // Set before the await and cleared in the finally: the button is disabled from the moment
-        // the first click is handled until the server has answered, so a second click has nothing
-        // to act on.
-        _addingNote = true;
+        // the first click is handled until the server has answered.
+        _submitting = true;
+
+        // Read once: the select may re-render under the await, and the write that is in flight is
+        // the one the viewer chose when they pressed.
+        var next = _next;
 
         try
         {
-            await Timeline.AddNoteAsync(
-                DeliveryId,
-                new AddDeliveryNoteCommand(_note),
-                CircuitToken);
+            var command = CommandFor(next, _note);
+
+            if (command is ChangeDeliveryStatusCommand change)
+            {
+                var entry = await Timeline.ChangeStatusAsync(DeliveryId, change, CircuitToken);
+
+                // From what was written, not from what was asked for: the two agree, and reading
+                // the answer is what keeps this panel honest if they ever stop agreeing.
+                _status = entry.NewStatus ?? _status;
+            }
+
+            if (command is AddDeliveryNoteCommand note)
+            {
+                await Timeline.AddNoteAsync(DeliveryId, note, CircuitToken);
+            }
 
             _failures = [];
             _note = null;
+            _next = null;
         }
         catch (DriveTrackException failure)
         {
             _failures = FailureKeys.For(failure);
+
+            // A refused move is reloaded: the most likely reason a legal-looking move is refused
+            // is that somebody else already made one, so the panel's idea of where the parcel is
+            // has to be replaced rather than left offering the move that was just rejected. A
+            // refused note changed nothing, so the box keeps what was typed and nothing reloads.
+            //
+            // And the host is told: the reload found a status the row behind the dialog does not
+            // show yet, because somebody else moved the delivery.
+            if (next is not null)
+            {
+                await LoadAsync();
+
+                await OnChanged.InvokeAsync();
+            }
 
             return;
         }
         finally
         {
-            _addingNote = false;
+            _submitting = false;
         }
 
         // Outside the try. The entry has committed, so a failure refreshing the panel afterwards is
-        // a failed read, and reporting it as a refused note would tell the viewer their correction
-        // was lost when it was not.
+        // a failed read, and reporting it as a refused write would tell the viewer their entry was
+        // lost when it was not.
         await LoadAsync();
 
         await OnChanged.InvokeAsync();
     }
 
-    private async Task ChangeStatusAsync(DeliveryStatus next)
+    /// <summary>Closes the dialog; <see cref="ClosedAsync"/> does the forgetting.</summary>
+    private async Task CancelAsync()
     {
-        try
+        if (_dialog is not null)
         {
-            var entry = await Timeline.ChangeStatusAsync(
-                DeliveryId,
-
-                // The note travels with the change (FR-106) rather than as a second entry: "failed,
-                // nobody at the address" is one fact, and splitting it would leave a later reader
-                // joining two rows by their timestamps.
-                new ChangeDeliveryStatusCommand(next, _note),
-                CircuitToken);
-
-            // From what was written, not from what was asked for: the two agree, and reading the
-            // answer is what keeps this panel honest if they ever stop agreeing.
-            _status = entry.NewStatus ?? _status;
-            _failures = [];
-            _note = null;
+            await _dialog.CloseAsync();
         }
-        catch (DriveTrackException failure)
-        {
-            _failures = FailureKeys.For(failure);
+    }
 
-            // Reloaded even on a refusal, and this is the arm that matters: the most likely reason a
-            // legal-looking move is refused is that somebody else already made one, so the panel's
-            // idea of where the parcel is has to be replaced rather than left offering the buttons
-            // that were just rejected.
-            await LoadAsync();
+    /// <summary>
+    /// Every dismissal - Cancel, the head's dismiss, Escape, the backdrop - ends here. The box and
+    /// the choice are dropped before the host is told, so even a host that kept this panel alive
+    /// would open it next time empty.
+    /// </summary>
+    private async Task ClosedAsync()
+    {
+        _note = null;
+        _next = null;
+        _failures = [];
 
-            return;
-        }
-
-        await LoadAsync();
-
-        await OnChanged.InvokeAsync();
+        await OnClosed.InvokeAsync();
     }
 }

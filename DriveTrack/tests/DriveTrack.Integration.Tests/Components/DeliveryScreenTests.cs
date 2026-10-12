@@ -195,19 +195,20 @@ public class DeliveryScreenTests
         // And the count, because the named checks above only rule out the dialogs that exist today:
         // a further one, added for some later capability, would slip past every one of them.
         //
-        // Four for a driver, and each is an operation they genuinely have. The timeline is story
-        // 5.3's; story 6.1 added the capture a driver performs at the door (FR-119) and the proof
-        // either role may read afterwards (FR-122); the fourth is FR-21's read-only map, which the
-        // dispatch board always had and this screen did not. The number is pinned rather than
-        // relaxed for the reason it was pinned at one: it is the only assertion that notices a
-        // dialog belonging to another role arriving here by a paste.
-        Assert.Equal(4, SharedMarkup.Occurrences(mine, "<dialog"));
+        // Three for a driver, and each is an operation they genuinely have: story 6.1's capture a
+        // driver performs at the door (FR-119) and the proof either role may read afterwards
+        // (FR-122), and FR-21's read-only map, which the dispatch board always had and this screen
+        // did not. The timeline (story 5.3) is a fourth, but it owns its dialog and is rendered
+        // only once a row is chosen, so it is not on the page until then. The number is pinned
+        // rather than relaxed for the reason it was pinned at one: it is the only assertion that
+        // notices a dialog belonging to another role arriving here by a paste.
+        Assert.Equal(3, SharedMarkup.Occurrences(mine, "<dialog"));
     }
 
     [Fact]
     public async Task A_client_is_offered_the_request_action_and_the_form_behind_it()
     {
-        // FR-89 to FR-91 at the surface the intent names. The same screen, the same four dialogs a
+        // FR-89 to FR-91 at the surface the intent names. The same screen, the same dialogs a
         // driver gets, plus one: the request form, which exists for exactly one role.
         var mine = await RenderMyDeliveriesAsync(role: UserRole.Client);
 
@@ -246,7 +247,9 @@ public class DeliveryScreenTests
         Assert.DoesNotContain("dt-delivery-edit", mine, StringComparison.Ordinal);
         Assert.DoesNotContain("dt-confirm-accept", mine, StringComparison.Ordinal);
 
-        Assert.Equal(5, SharedMarkup.Occurrences(mine, "<dialog"));
+        // The driver's three plus the request form; the timeline's dialog is not on the page until
+        // a row is chosen.
+        Assert.Equal(4, SharedMarkup.Occurrences(mine, "<dialog"));
     }
 
     [Fact]

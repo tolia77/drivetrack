@@ -21,16 +21,20 @@ namespace DriveTrack.Integration.Tests.Components;
 public class SubFlowStylesheetTests
 {
     /// <summary>
-    /// Every button in the timeline panel clears the phone hit floor, and only on a phone.
+    /// Every control in the timeline panel clears the phone hit floor, and only on a phone.
     /// </summary>
     /// <remarks>
     /// Gated, unlike <c>ProofCapture</c>, which floors its controls at every width. That panel is a
     /// driver's capture flow and a driver is holding a phone; this one is opened from the dispatch
-    /// board as well as from own-deliveries, so an ungated floor would grow deliberately small
-    /// buttons on a desktop. The gate is the claim as much as the floor is.
+    /// board as well as from own-deliveries, so an ungated floor would grow its controls on a
+    /// desktop. The gate is the claim as much as the floor is.
+    /// <para>
+    /// The select is rendered by <c>DtSelect</c>, so its selector has to cross into the child
+    /// through <c>::deep</c>; written without it, the rule compiles, ships and matches nothing.
+    /// </para>
     /// </remarks>
     [Fact]
-    public void The_timeline_panels_buttons_clear_the_thumb_floor_on_a_phone()
+    public void The_timeline_panels_controls_clear_the_thumb_floor_on_a_phone()
     {
         var css = WithoutComments(SharedMarkup.ReadComponent("Pages", "DeliveryTimeline.razor.css"));
 
@@ -38,13 +42,17 @@ public class SubFlowStylesheetTests
 
         Assert.True(query.Success, "The timeline stylesheet states no phone breakpoint.");
 
-        // Both blocks, because the note action and the transitions are separate groups and a floor
-        // on one of them is the other one missed.
-        foreach (var block in new[] { "dt-timeline-compose", "dt-timeline-actions" })
+        foreach (var selector in new[]
+                 {
+                     @"::deep\s+\.dt-timeline-next-status",
+                     @"\.dt-timeline-note-input",
+                     @"\.dt-timeline-submit",
+                     @"\.dt-timeline-cancel",
+                 })
         {
             Assert.Matches(
                 new Regex(
-                    @"\." + Regex.Escape(block) + @"\s+\.btn\b[^{]*\{[^}]*min-height:\s*var\(--dt-touch-target\)",
+                    selector + @"\b[^{]*\{[^}]*min-height:\s*var\(--dt-touch-target\)",
                     RegexOptions.Singleline,
                     TimeSpan.FromSeconds(5)),
                 query.Value);

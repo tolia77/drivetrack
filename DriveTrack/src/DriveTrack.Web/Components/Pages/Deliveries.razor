@@ -549,24 +549,27 @@
 
 @* FR-105 to FR-108: the delivery's history, and the two things dispatch may append to it. The panel
    is built only once a row has been chosen, so the screen costs no timeline read until somebody
-   asks for one — and the same dialog serves every row. *@
-@* OnClosed drops the row, which disposes the panel inside. That is what makes each open a fresh
-   read: the panel caches the entries and the status it computes its buttons from, and a dialog left
-   holding them would offer moves from where the delivery was when it was last opened. *@
-<DtDialog @ref="_timelineDialog" Title="@Localizer["TimelineTitle"]" OnClosed="CloseTimeline">
-    <ChildContent>
-        @if (_timeline is not null)
-        {
-            @* AllowStatusChange is true for every caller who reaches this screen: the Roles
-               attribute already narrowed them to dispatch, and RequireAssignedDriver is what
-               actually decides (FR-12, FR-34). *@
-            <DeliveryTimeline DeliveryId="_timeline.Id"
-                              Status="_timeline.Status"
-                              AllowStatusChange="true"
-                              OnChanged="LoadAsync" />
-        }
-    </ChildContent>
-</DtDialog>
+   asks for one.
+
+   The panel owns its dialog and opens itself on its first render; OnClosed drops the row, which
+   disposes it. That is what makes each open a fresh read: the panel caches the entries and the
+   status it computes its select from, and a panel left alive would offer moves from where the
+   delivery was when it was last opened, with the last comment still in the box.
+
+   AllowStatusChange is true for every caller who reaches this screen: the Roles attribute already
+   narrowed them to dispatch, and RequireAssignedDriver is what actually decides (FR-12, FR-34). *@
+@if (_timeline is not null)
+{
+    <DeliveryTimeline DeliveryId="_timeline.Id"
+                      Status="_timeline.Status"
+                      Pickup="_timeline.Pickup"
+                      Dropoff="_timeline.Dropoff"
+                      PackageDetails="@_timeline.PackageDetails"
+                      PackageWeightKg="_timeline.PackageWeightKg"
+                      AllowStatusChange="true"
+                      OnChanged="LoadAsync"
+                      OnClosed="CloseTimeline" />
+}
 
 @* FR-122. Built only once a row has been chosen, for the reason the history panel is: the board
    costs no proof read until somebody asks for one, and dropping the row on close makes each open a
@@ -661,7 +664,6 @@
 
     private DtDialog? _formDialog;
     private DtDialog? _mapDialog;
-    private DtDialog? _timelineDialog;
     private DtDialog? _proofDialog;
     private DtConfirmDialog? _deleteDialog;
 
@@ -1137,15 +1139,16 @@
         }
     }
 
-    private async Task ShowTimelineAsync(DeliverySummary delivery)
+    /// <summary>
+    /// Chooses the row whose history to open. Rendering the panel is what opens it: it shows its
+    /// own dialog after its first render.
+    /// </summary>
+    private Task ShowTimelineAsync(DeliverySummary delivery)
     {
         _failures = [];
         _timeline = delivery;
 
-        if (_timelineDialog is not null)
-        {
-            await _timelineDialog.ShowAsync();
-        }
+        return Task.CompletedTask;
     }
 
     /// <summary>

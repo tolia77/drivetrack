@@ -720,6 +720,7 @@ public class DesignTokenTests
         "touch-target",
         "nav-width",
         "dialog-narrow",
+        "dialog-medium",
         "dialog-wide",
         "map-height",
     ];

@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+using DriveTrack.Application.Common;
 using DriveTrack.Application.Deliveries;
 using DriveTrack.Domain.Deliveries;
 using DriveTrack.Domain.Identity;
@@ -61,7 +63,11 @@ public class DeliveryTimelineTests
     public async Task A_note_only_entry_renders_its_note_and_no_status()
     {
         // FR-107: an entry may carry only a note, and the panel must not invent a transition for it.
-        var html = await RenderAsync([Note("Залишено на рецепції")]);
+        // Read from the list alone: the dialog's head carries the delivery's current status.
+        var html = SharedMarkup.ElementWithClass(
+            await RenderAsync([Note("Залишено на рецепції")]),
+            "ol",
+            "dt-timeline-list");
 
         Assert.Contains("Залишено на рецепції", html, StringComparison.Ordinal);
         Assert.DoesNotContain("Очікує", html, StringComparison.Ordinal);
@@ -126,37 +132,65 @@ public class DeliveryTimelineTests
     [InlineData(DeliveryStatus.Pending)]
     [InlineData(DeliveryStatus.InTransit)]
     [InlineData(DeliveryStatus.Failed)]
-    [InlineData(DeliveryStatus.Delivered)]
-    public async Task The_buttons_are_exactly_the_moves_the_lifecycle_allows(DeliveryStatus status)
+    public async Task The_select_offers_keep_and_exactly_the_moves_the_lifecycle_allows(DeliveryStatus status)
     {
-        // AD-10 read rather than restated: the panel offers whatever Delivery.NextStatuses answers,
-        // so the screen cannot drift from the rule the service enforces. Delivered offers nothing,
-        // which is what "terminal" looks like to a user.
+        // AD-10 read rather than restated: the select offers whatever Delivery.NextStatuses answers,
+        // so the screen cannot drift from the rule the service enforces.
         //
         // Which statuses, not just how many. Counting alone would pass a panel that offered the one
-        // wrong move from Pending - a driver would press "Доставлено" and get a 409 for a button the
-        // screen drew.
+        // wrong move from Pending - a driver would choose "Доставлено" and get a 409 for an option
+        // the screen drew.
         var expected = Delivery.NextStatuses(status);
         var html = await RenderAsync([], status, allowStatusChange: true);
 
-        var actions = SharedMarkup.ElementWithClass(html, "div", "dt-timeline-actions");
+        var options = Options(SharedMarkup.ElementWithClass(html, "select", "dt-timeline-next-status"));
 
-        Assert.Equal(expected.Count, SharedMarkup.Occurrences(actions, "dt-timeline-status"));
+        // The first option is "keep": an empty value, naming the status the delivery stays in.
+        Assert.Equal(string.Empty, options[0].Value);
+        Assert.Contains(Labels[status], options[0].Text, StringComparison.Ordinal);
+
+        var moves = options.Skip(1).ToArray();
+
+        Assert.Equal(expected.Count, moves.Length);
 
         foreach (var offered in Enum.GetValues<DeliveryStatus>())
         {
             Assert.Equal(
                 expected.Contains(offered),
-                actions.Contains(Labels[offered], StringComparison.Ordinal));
+                moves.Any(option => option.Value == offered.ToString() && option.Text == Labels[offered]));
+        }
+
+        // And the hint under it names the same moves from the same status.
+        var hint = SharedMarkup.TextOf(SharedMarkup.ElementWithClass(html, "div", "dt-timeline-move-hint"));
+
+        Assert.Contains(Labels[status], hint, StringComparison.Ordinal);
+
+        foreach (var offered in expected)
+        {
+            Assert.Contains(Labels[offered], hint, StringComparison.Ordinal);
         }
     }
 
     [Fact]
-    public async Task The_buttons_follow_the_history_rather_than_the_status_the_panel_opened_with()
+    public async Task A_terminal_delivery_offers_no_select_and_no_hint_but_still_the_comment_box()
+    {
+        // The I/O matrix's terminal row: Delivered has no move, so a select whose only option is
+        // "keep" would be a control with nothing to decide. The comment and the submit stay,
+        // because FR-107's note is open whatever the status.
+        var html = await RenderAsync([], DeliveryStatus.Delivered, allowStatusChange: true);
+
+        Assert.DoesNotContain("dt-timeline-next-status", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("dt-timeline-move-hint", html, StringComparison.Ordinal);
+        Assert.Contains("<textarea", html, StringComparison.Ordinal);
+        Assert.Contains("dt-timeline-submit", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task The_select_follows_the_history_rather_than_the_status_the_panel_opened_with()
     {
         // The refusal path, at the surface a viewer sees it. A status change is refused with a 409
         // when somebody else moved the delivery first, and the panel answers by reloading; if that
-        // reload replaced only the list, the buttons would still be the ones that were just
+        // reload replaced only the list, the select would still offer the move that was just
         // rejected and every retry would fail identically with nothing on screen having changed.
         //
         // Static rendering cannot press a button, but it can arrange the same state: a panel opened
@@ -166,14 +200,214 @@ public class DeliveryTimelineTests
             DeliveryStatus.Pending,
             allowStatusChange: true);
 
-        var actions = SharedMarkup.ElementWithClass(html, "div", "dt-timeline-actions");
+        var moves = Options(SharedMarkup.ElementWithClass(html, "select", "dt-timeline-next-status"))
+            .Skip(1)
+            .Select(option => option.Value)
+            .ToArray();
 
-        foreach (var offered in Enum.GetValues<DeliveryStatus>())
+        Assert.Equal(
+            Delivery.NextStatuses(DeliveryStatus.InTransit).Select(status => status.ToString()).ToArray(),
+            moves);
+
+        // And the head's status label moved with it.
+        var head = SharedMarkup.ElementWithClass(html, "span", "dt-timeline-current");
+
+        Assert.Contains(Labels[DeliveryStatus.InTransit], SharedMarkup.TextOf(head), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task The_dialog_has_the_artboards_structure()
+    {
+        // The acceptance criterion: head (title, route line, status, dismiss), History, Add to the
+        // timeline, and a footer holding Cancel and the one submit.
+        var html = await RenderAsync(
+            [Change("Тарас Шевченко", UserRole.Dispatcher)],
+            DeliveryStatus.Pending,
+            allowStatusChange: true,
+            route: true);
+
+        var head = SharedMarkup.ElementWithClass(html, "div", "dt-dialog-heading");
+
+        Assert.Contains("Історія доставки", head, StringComparison.Ordinal);
+
+        var route = SharedMarkup.TextOf(SharedMarkup.ElementWithClass(html, "p", "dt-dialog-subtitle"));
+
+        Assert.Contains("вул. Антоновича, 50", route, StringComparison.Ordinal);
+        Assert.Contains("→", route, StringComparison.Ordinal);
+        Assert.Contains("вул. Хрещатик, 22", route, StringComparison.Ordinal);
+        Assert.Contains("1 коробка", route, StringComparison.Ordinal);
+        Assert.Contains("кг", route, StringComparison.Ordinal);
+
+        Assert.Contains("dt-timeline-current", html, StringComparison.Ordinal);
+        Assert.Contains("dt-dialog-dismiss", html, StringComparison.Ordinal);
+        Assert.Contains("dt-dialog-medium", html, StringComparison.Ordinal);
+
+        Assert.Contains(">Історія</h3>", html, StringComparison.Ordinal);
+        Assert.Contains(">Додати до історії</h3>", html, StringComparison.Ordinal);
+
+        // The status comes first, the comment after it, in the compose section.
+        Assert.True(
+            html.IndexOf("dt-timeline-next-status", StringComparison.Ordinal)
+                < html.IndexOf("<textarea", StringComparison.Ordinal),
+            "The status select is not drawn above the comment box.");
+
+        var footer = SharedMarkup.ElementWithClass(html, "div", "dt-dialog-actions");
+
+        Assert.Equal(1, SharedMarkup.Occurrences(footer, "dt-timeline-submit"));
+        Assert.Equal(1, SharedMarkup.Occurrences(footer, "dt-timeline-cancel"));
+        Assert.Contains("Скасувати", footer, StringComparison.Ordinal);
+
+        // One submit: no per-status buttons survive anywhere in the panel. Three buttons in all -
+        // the head's dismiss, the submit and Cancel.
+        Assert.Equal(3, SharedMarkup.Occurrences(html, "<button"));
+    }
+
+    [Fact]
+    public async Task Only_the_newest_move_tints_its_dot()
+    {
+        // The dot of the move that put the delivery where it is wears that status's colour; the
+        // creation entry before it and the note after it stay muted.
+        var html = await RenderAsync(
+        [
+            new(1, null, UserRole.Dispatcher, null, DeliveryStatus.Pending, null, Noon),
+            Change(actorName: null, UserRole.Driver),
+            Note("Залишено на рецепції"),
+        ]);
+
+        Assert.Equal(1, SharedMarkup.Occurrences(html, "dt-timeline-dot-"));
+        Assert.Contains("dt-timeline-dot-transit", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Keep_sends_a_note_carrying_the_comment()
+    {
+        var command = Web.Components.Pages.DeliveryTimeline.CommandFor(null, "Залишено на рецепції");
+
+        var note = Assert.IsType<AddDeliveryNoteCommand>(command);
+
+        Assert.Equal("Залишено на рецепції", note.Note);
+    }
+
+    [Fact]
+    public void A_chosen_status_sends_one_change_carrying_the_status_and_the_comment()
+    {
+        // FR-106: one entry, not a move followed by a separate note.
+        var command = Web.Components.Pages.DeliveryTimeline.CommandFor(
+            DeliveryStatus.Failed,
+            "Нікого немає вдома");
+
+        var change = Assert.IsType<ChangeDeliveryStatusCommand>(command);
+
+        Assert.Equal(DeliveryStatus.Failed, change.Status);
+        Assert.Equal("Нікого немає вдома", change.Note);
+    }
+
+    [Fact]
+    public void A_choice_the_reload_no_longer_offers_falls_back_to_keep()
+    {
+        // After a 409 the delivery may be somewhere the chosen move does not start from; left
+        // selected, the next submit would be refused for a choice the select no longer shows.
+        Assert.Null(Web.Components.Pages.DeliveryTimeline.KeptChoice(
+            DeliveryStatus.Delivered,
+            Delivery.NextStatuses(DeliveryStatus.Failed)));
+
+        Assert.Null(Web.Components.Pages.DeliveryTimeline.KeptChoice(
+            DeliveryStatus.InTransit,
+            []));
+    }
+
+    [Fact]
+    public void A_choice_still_offered_is_kept()
+    {
+        Assert.Equal(
+            DeliveryStatus.Failed,
+            Web.Components.Pages.DeliveryTimeline.KeptChoice(
+                DeliveryStatus.Failed,
+                Delivery.NextStatuses(DeliveryStatus.InTransit)));
+
+        Assert.Null(Web.Components.Pages.DeliveryTimeline.KeptChoice(
+            null,
+            Delivery.NextStatuses(DeliveryStatus.InTransit)));
+    }
+
+    [Fact]
+    public async Task The_creation_entry_wears_the_create_glyph_and_a_move_still_wears_edit()
+    {
+        // Compared against the Icon component's own render rather than a transcribed path, so the
+        // assertion is about which glyph the entry chose, not about the glyph's geometry.
+        var create = await IconAsync(Web.Components.Shared.IconName.Create);
+        var edit = await IconAsync(Web.Components.Shared.IconName.Edit);
+
+        Assert.NotEqual(create, edit);
+
+        var created = await DotAsync(null, DeliveryStatus.Pending);
+        var moved = await DotAsync(DeliveryStatus.Pending, DeliveryStatus.InTransit);
+
+        Assert.Contains(create, created, StringComparison.Ordinal);
+        Assert.Contains(edit, moved, StringComparison.Ordinal);
+        Assert.DoesNotContain(create, moved, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(DeliveryStatus.Pending, true)]
+    [InlineData(DeliveryStatus.Delivered, false)]
+    public async Task The_comment_hint_appears_only_beside_a_status_select(DeliveryStatus status, bool offered)
+    {
+        // The hint is about changing the status, so a viewer with no change to make - here a
+        // delivery already Delivered - is not told about one.
+        var html = await RenderAsync([], status, allowStatusChange: true);
+
+        Assert.Equal(offered, html.Contains("dt-timeline-note-hint", StringComparison.Ordinal));
+        Assert.Equal(offered, html.Contains("aria-describedby", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task A_client_is_not_told_about_a_status_change()
+    {
+        var html = await RenderAsync([], DeliveryStatus.InTransit, allowStatusChange: false);
+
+        Assert.DoesNotContain("dt-timeline-note-hint", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Each_hint_is_named_by_the_control_it_describes()
+    {
+        var html = await RenderAsync([], DeliveryStatus.InTransit, allowStatusChange: true);
+
+        foreach (var (control, hint) in new[]
+                 {
+                     ("select", "dt-timeline-move-hint"),
+                     ("textarea", "dt-timeline-note-hint"),
+                 })
         {
-            Assert.Equal(
-                Delivery.NextStatuses(DeliveryStatus.InTransit).Contains(offered),
-                actions.Contains(Labels[offered], StringComparison.Ordinal));
+            var id = Regex.Match(
+                    html,
+                    @"<div\b[^>]*\bid=""(?<id>[^""]+)""[^>]*\b" + hint + @"\b",
+                    RegexOptions.None,
+                    TimeSpan.FromSeconds(5))
+                .Groups["id"].Value;
+
+            Assert.False(string.IsNullOrEmpty(id), $"The {hint} carries no id.");
+            Assert.Matches(
+                new Regex(
+                    "<" + control + @"\b[^>]*aria-describedby=""" + Regex.Escape(id) + @"""",
+                    RegexOptions.None,
+                    TimeSpan.FromSeconds(5)),
+                html);
         }
+    }
+
+    [Fact]
+    public void The_current_entry_is_the_newest_that_moved_the_delivery()
+    {
+        IReadOnlyList<TimelineEntryView> history =
+        [
+            Change(actorName: null, UserRole.Dispatcher),
+            Note("Залишено на рецепції"),
+        ];
+
+        Assert.Equal(0, Web.Components.Pages.DeliveryTimeline.CurrentEntry(history));
+        Assert.Equal(-1, Web.Components.Pages.DeliveryTimeline.CurrentEntry([Note("Спробуємо завтра")]));
     }
 
     [Fact]
@@ -252,18 +486,20 @@ public class DeliveryTimelineTests
     [InlineData(DeliveryStatus.Pending)]
     [InlineData(DeliveryStatus.InTransit)]
     [InlineData(DeliveryStatus.Failed)]
-    public async Task A_viewer_with_no_lifecycle_action_is_offered_no_button(DeliveryStatus status)
+    public async Task A_viewer_with_no_lifecycle_action_is_offered_no_select(DeliveryStatus status)
     {
         // FR-90 at the component tier: a client sees the history and the note field and nothing to
         // press. It hides rather than decides - IAccessGuard refuses the request either way - but
         // offering an action that could only ever be refused is worse than offering none.
         var html = await RenderAsync([], status, allowStatusChange: false);
 
-        Assert.DoesNotContain("dt-timeline-status", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("dt-timeline-next-status", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("dt-timeline-move-hint", html, StringComparison.Ordinal);
 
-        // And the note field is still there, because FR-107 is open to everyone who can see the
-        // delivery. Losing it with the buttons would be the easy mistake.
-        Assert.Contains("dt-timeline-add-note", html, StringComparison.Ordinal);
+        // And the comment box and its submit are still there, because FR-107 is open to everyone
+        // who can see the delivery. Losing them with the select would be the easy mistake.
+        Assert.Contains("<textarea", html, StringComparison.Ordinal);
+        Assert.Contains("dt-timeline-submit", html, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -288,15 +524,65 @@ public class DeliveryTimelineTests
     private static Task<string> RenderAsync(
         IReadOnlyList<TimelineEntryView> entries,
         DeliveryStatus status = DeliveryStatus.Pending,
-        bool allowStatusChange = false) =>
-        ComponentRenderer.RenderAsync<Web.Components.Pages.DeliveryTimeline>(
-            new Dictionary<string, object?>
-            {
-                ["DeliveryId"] = 1,
-                ["Status"] = status,
-                ["AllowStatusChange"] = allowStatusChange,
-            },
+        bool allowStatusChange = false,
+        bool route = false)
+    {
+        var parameters = new Dictionary<string, object?>
+        {
+            ["DeliveryId"] = 1,
+            ["Status"] = status,
+            ["AllowStatusChange"] = allowStatusChange,
+        };
+
+        if (route)
+        {
+            parameters["Pickup"] = new LocationView(new MapLocation(50.43, 30.52), "вул. Антоновича, 50");
+            parameters["Dropoff"] = new LocationView(new MapLocation(50.45, 30.52), "вул. Хрещатик, 22");
+            parameters["PackageDetails"] = "1 коробка";
+            parameters["PackageWeightKg"] = 12m;
+        }
+
+        return ComponentRenderer.RenderAsync<Web.Components.Pages.DeliveryTimeline>(
+            parameters,
             services => services.AddSingleton<IDeliveryService>(new StubTimeline(entries)));
+    }
+
+    /// <summary>
+    /// The value and the text of every option in a select's inner HTML, in order. An empty value
+    /// renders as a bare <c>value</c> attribute, which reads back as the empty string.
+    /// </summary>
+    private static (string Value, string Text)[] Options(string select) =>
+        Regex.Matches(
+                select,
+                @"<option\b(?<attributes>[^>]*)>(?<text>[^<]*)</option>",
+                RegexOptions.None,
+                TimeSpan.FromSeconds(5))
+            .Select(match => (
+                Regex.Match(
+                        match.Groups["attributes"].Value,
+                        @"\bvalue=""(?<value>[^""]*)""",
+                        RegexOptions.None,
+                        TimeSpan.FromSeconds(5))
+                    .Groups["value"].Value,
+                Regex.Replace(match.Groups["text"].Value, @"\s+", " ", RegexOptions.None, TimeSpan.FromSeconds(5)).Trim()))
+            .ToArray();
+
+    private static Task<string> IconAsync(Web.Components.Shared.IconName name) =>
+        ComponentRenderer.RenderAsync<Web.Components.Shared.Icon>(
+            new Dictionary<string, object?> { ["Name"] = name });
+
+    /// <summary>The rendered dot of one shared entry.</summary>
+    private static async Task<string> DotAsync(DeliveryStatus? previous, DeliveryStatus? next) =>
+        SharedMarkup.ElementWithClass(
+            await ComponentRenderer.RenderAsync<Web.Components.Shared.DtTimelineEntry>(
+                new Dictionary<string, object?>
+                {
+                    ["PreviousStatus"] = previous,
+                    ["NewStatus"] = next,
+                    ["When"] = "07.09.2026 12:00",
+                }),
+            "span",
+            "dt-timeline-dot");
 
     /// <summary>A status change, with the actor disclosed or withheld.</summary>
     private static TimelineEntryView Change(string? actorName, UserRole role) =>

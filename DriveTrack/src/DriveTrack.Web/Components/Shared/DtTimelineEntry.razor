@@ -1,9 +1,14 @@
 @* TimelineEntry: one line of a delivery's append-only history (FR-105 to FR-108).
 
-   A status change, a note, or both. The dot's glyph is the entry's own summary - Confirm for a
-   delivery that arrived, Warning for one that did not, Edit for any other move, Chat for a line
-   that only says something - so a reader scanning the column sees the shape of the history before
-   reading a word of it.
+   A status change, a note, or both. The dot's glyph is the entry's own summary - Create for the
+   entry that brought the delivery into being, Confirm for a delivery that arrived, Warning for one
+   that did not, Edit for any other move, Chat for a line that only says something - so a reader
+   scanning the column sees the shape of the history before reading a word of it.
+
+   The dots hang on one rail: a line runs from each dot down to the next, and none runs on past the
+   last, so the column reads as a single sequence rather than as a stack of separate notices. The
+   dot of the move that put the delivery where it is now wears that status's colour, which is how
+   the eye finds "where it is" without reading the labels.
 
    Entries are never edited or deleted, so there are no row actions here and there is no place to
    put one: that is the component saying what the record is, not an omission.
@@ -13,7 +18,7 @@
    arrow between nothing and nothing. *@
 
 <li class="dt-timeline-entry">
-    <span class="dt-timeline-dot dt-icon-only" aria-hidden="true">
+    <span class="@DotClass" aria-hidden="true">
         <Icon Name="@Glyph" />
     </span>
 
@@ -75,6 +80,27 @@
     public string? Note { get; set; }
 
     /// <summary>
+    /// True on the entry whose move put the delivery where it is now. Its dot is tinted with the
+    /// colour of the status it moved to; every other dot stays muted. The screen decides which
+    /// entry that is, because only the screen holds the whole list.
+    /// </summary>
+    [Parameter]
+    public bool Current { get; set; }
+
+    /// <summary>
+    /// The dot's classes: the tint is added only on the current entry, and only when that entry
+    /// has a status to be tinted with.
+    /// </summary>
+    private string DotClass => (Current, NewStatus) switch
+    {
+        (true, DeliveryStatus.Pending) => "dt-timeline-dot dt-icon-only dt-timeline-dot-pending",
+        (true, DeliveryStatus.InTransit) => "dt-timeline-dot dt-icon-only dt-timeline-dot-transit",
+        (true, DeliveryStatus.Delivered) => "dt-timeline-dot dt-icon-only dt-timeline-dot-delivered",
+        (true, DeliveryStatus.Failed) => "dt-timeline-dot dt-icon-only dt-timeline-dot-failed",
+        _ => "dt-timeline-dot dt-icon-only",
+    };
+
+    /// <summary>
     /// The dot's glyph, read off what the entry did rather than passed in: the mapping is the same
     /// on every timeline, and a parameter would be an invitation for one screen to disagree.
     /// </summary>
@@ -86,6 +112,9 @@
     /// </remarks>
     private IconName Glyph => (PreviousStatus, NewStatus) switch
     {
+        // Nowhere to somewhere, and that somewhere the first status: the delivery was created.
+        (null, DeliveryStatus.Pending) => IconName.Create,
+
         (_, DeliveryStatus.Delivered) => IconName.Confirm,
         (_, DeliveryStatus.Failed) => IconName.Warning,
 

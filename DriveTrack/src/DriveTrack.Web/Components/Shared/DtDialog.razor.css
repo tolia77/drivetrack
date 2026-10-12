@@ -39,6 +39,14 @@
 }
 
 /*
+    The medium panel: between the two, for a dialog that stacks a read-only history above a short
+    form. Same `width`, so a phone is unaffected.
+*/
+.dt-dialog-medium {
+    max-width: var(--dt-dialog-medium);
+}
+
+/*
     The scrim. `::backdrop` is the browser's own pseudo-element for a modal dialog - the same
     mechanism ReconnectModal already styles - so the overlay needs no extra element and no z-index
     of its own.
@@ -81,6 +89,31 @@
 
 .dt-dialog-title {
     margin: 0;
+}
+
+/*
+    The heading block takes the slack and may shrink: a long route line wraps under the title
+    rather than pushing the dismiss off the panel's edge.
+*/
+.dt-dialog-heading {
+    flex: 1;
+    min-width: 0;
+}
+
+.dt-dialog-subtitle {
+    margin: 0;
+    color: var(--dt-ink-muted);
+    font-size: var(--dt-small-font-size);
+    line-height: var(--dt-small-line-height);
+    overflow-wrap: anywhere;
+}
+
+/* What a screen puts beside the dismiss, and the dismiss: one row, never wrapped apart. */
+.dt-dialog-head-end {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: var(--dt-space-3);
 }
 
 /*

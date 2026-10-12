@@ -230,21 +230,24 @@
 
 @* Built only once a row has been chosen, so the screen costs no timeline read until somebody asks
    for one - and dropped again on close, so each open builds a new panel rather than reusing one
-   holding the status the delivery had when it was last opened. *@
-<DtDialog @ref="_timelineDialog" Title="@Localizer["TimelineTitle"]" OnClosed="CloseTimeline">
-    <ChildContent>
-        @if (_timeline is not null)
-        {
-            @* The flag draws or hides the transition buttons; it authorizes nothing. A client who
-               reached this markup another way is still refused by IAccessGuard, and a driver is
-               still refused on a delivery that is not theirs (FR-12, FR-26). *@
-            <DeliveryTimeline DeliveryId="_timeline.Id"
-                              Status="_timeline.Status"
-                              AllowStatusChange="_offersStatusChange"
-                              OnChanged="LoadAsync" />
-        }
-    </ChildContent>
-</DtDialog>
+   holding the status the delivery had when it was last opened. The panel owns its dialog and opens
+   itself on its first render.
+
+   The flag draws or hides the status select; it authorizes nothing. A client who reached this
+   markup another way is still refused by IAccessGuard, and a driver is still refused on a delivery
+   that is not theirs (FR-12, FR-26). *@
+@if (_timeline is not null)
+{
+    <DeliveryTimeline DeliveryId="_timeline.Id"
+                      Status="_timeline.Status"
+                      Pickup="_timeline.Pickup"
+                      Dropoff="_timeline.Dropoff"
+                      PackageDetails="@_timeline.PackageDetails"
+                      PackageWeightKg="_timeline.PackageWeightKg"
+                      AllowStatusChange="_offersStatusChange"
+                      OnChanged="LoadAsync"
+                      OnClosed="CloseTimeline" />
+}
 
 @* Built only once a row has been chosen, for the reason the timeline panel is: the screen costs no
    proof read until somebody asks for one, and each open builds a new panel rather than reusing one
@@ -432,7 +435,6 @@
     private readonly HashSet<int> _captured = [];
 
     private DtDialog? _mapDialog;
-    private DtDialog? _timelineDialog;
     private DtDialog? _captureDialog;
     private DtDialog? _proofDialog;
 
@@ -764,14 +766,15 @@
     private Func<Task> TimelineHandler(AssignedDeliverySummary delivery) =>
         () => ShowTimelineAsync(delivery);
 
-    private async Task ShowTimelineAsync(AssignedDeliverySummary delivery)
+    /// <summary>
+    /// Chooses the row whose history to open. Rendering the panel is what opens it: it shows its
+    /// own dialog after its first render.
+    /// </summary>
+    private Task ShowTimelineAsync(AssignedDeliverySummary delivery)
     {
         _timeline = delivery;
 
-        if (_timelineDialog is not null)
-        {
-            await _timelineDialog.ShowAsync();
-        }
+        return Task.CompletedTask;
     }
 
     /// <summary>

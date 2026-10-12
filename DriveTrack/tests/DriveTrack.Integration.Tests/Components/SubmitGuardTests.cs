@@ -35,7 +35,7 @@ public class SubmitGuardTests
     /// the re-entry assertion for that reason, and from nothing else.
     /// <para>
     /// Composite bindings are why every row is matched on "the binding mentions the flag" rather
-    /// than on equality — the timeline's <c>@(_addingNote || _loading)</c> is one too. This constant
+    /// than on equality — the timeline's <c>@(_submitting || _loading)</c> is one too. This constant
     /// marks the missing C# check, not the shape of the attribute.
     /// </para>
     /// </summary>
@@ -75,7 +75,7 @@ public class SubmitGuardTests
         ("Pages/Admin/Clients.razor", "SaveAsync", "_saving", "dt-client-save"),
         ("Pages/Admin/Dispatchers.razor", "CreateAsync", "_creating", "dt-dispatcher-create"),
         ("Pages/Admin/Dispatchers.razor", "SaveAsync", "_saving", "dt-dispatcher-save"),
-        ("Pages/DeliveryTimeline.razor", "AddNoteAsync", "_addingNote", "dt-timeline-add-note"),
+        ("Pages/DeliveryTimeline.razor", "SubmitAsync", "_submitting", "dt-timeline-submit"),
     ];
 
     /// <summary>
