@@ -569,6 +569,24 @@ $dt-breakpoint-phone-max: $dt-breakpoint-phone - 0.02px;
     outline: var(--dt-border-width-focus) solid var(--dt-danger);
 }
 
+// A refused field. Refusals come back from the server and are drawn by DtFieldError beside the
+// control they are about, so the control never receives Blazor's `.invalid`; the wrapper holding
+// both is what knows. The edge is drawn inset over the control's own border, so it neither shifts
+// the layout nor runs past an input group; focused, it steps out to the focus ring's gap and
+// stays red, so the reader can still see which box they are fixing - except inside an input group,
+// where it stays inset for the reason the focus ring does.
+:has(> .dt-field-error) > :is(.form-control, .form-select),
+:has(> .dt-field-error) > .input-group > .form-control,
+:has(> .dt-field-error) > .dt-map,
+:has(> .dt-field-error) > .dt-signature .dt-signature-pad {
+    outline: var(--dt-border-width-focus) solid var(--dt-danger);
+    outline-offset: calc(-1 * var(--dt-border-width-focus));
+}
+
+:has(> .dt-field-error) > :is(.form-control, .form-select):focus {
+    outline-offset: var(--dt-border-width-focus);
+}
+
 .validation-message {
     color: var(--dt-danger);
     font-size: var(--dt-small-font-size);
