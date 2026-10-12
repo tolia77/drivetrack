@@ -18,3 +18,13 @@
     /* The end margin is the gap in every icon-and-text pair, so the pairs line up across the app. */
     margin-inline-end: var(--dt-space-1);
 }
+
+/*
+    A glyph with no word beside it has no gap to keep: inside a disc or an icon-only button the end
+    margin pushed every glyph a few pixels off centre. Written here, against the icon's own scope,
+    because a container rule elsewhere loses to this file's `.dt-icon` on source order - the scoped
+    bundle loads after the theme, which is why the old nav-only overrides never took effect.
+*/
+.dt-icon-only > .dt-icon {
+    margin-inline-end: 0;
+}

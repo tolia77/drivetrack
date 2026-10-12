@@ -52,7 +52,7 @@
 <nav class="dt-nav" aria-label="@Localizer["NavigationMenu"]">
     @* NFR-25: the mark and the wordmark travel together, on every screen. *@
     <a class="dt-nav__brand" href="@Landing">
-        <span class="dt-nav__mark"><Icon Name="IconName.Location" /></span>DriveTrack
+        <span class="dt-nav__mark dt-icon-only"><Icon Name="IconName.Location" /></span>DriveTrack
     </a>
 
     @* NFR-22: below the phone breakpoint the links and the foot are behind this control.
@@ -193,7 +193,7 @@
             <a class="dt-nav__me" href="profile" aria-current="@(here == "profile" ? "page" : null)">
                 @if (_me is not null)
                 {
-                    <span class="dt-nav__avatar" aria-hidden="true">@Initials</span>
+                    <span class="dt-nav__avatar dt-icon-only" aria-hidden="true">@Initials</span>
                     <span class="dt-nav__who">
                         <span class="dt-nav__name">@_me.FirstName @_me.LastName</span>
                         @* One branch per role rather than a composed key: a key built at run time
@@ -218,7 +218,7 @@
                 }
                 @if (_me is null)
                 {
-                    <span class="dt-nav__avatar" aria-hidden="true"><Icon Name="IconName.Profile" /></span>
+                    <span class="dt-nav__avatar dt-icon-only" aria-hidden="true"><Icon Name="IconName.Profile" /></span>
                     <span class="dt-nav__who">
                         <span class="dt-nav__name">@Localizer["Profile"]</span>
                     </span>

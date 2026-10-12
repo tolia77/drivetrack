@@ -265,10 +265,6 @@ $dt-breakpoint-phone-max: $dt-breakpoint-phone - 0.02px;
 
 // Every glyph in the product carries an end margin, because that margin is the gap
 // in an icon-and-text pair. Inside the mark there is no text for it to be beside.
-.dt-nav__mark .dt-icon {
-    margin-inline-end: 0;
-}
-
 .dt-nav__links,
 .dt-nav__foot {
     display: flex;
@@ -312,10 +308,6 @@ $dt-breakpoint-phone-max: $dt-breakpoint-phone - 0.02px;
     .dt-nav__me:hover {
         background-color: var(--dt-nav-hover-bg);
     }
-}
-
-.dt-nav__avatar .dt-icon {
-    margin-inline-end: 0;
 }
 
 .dt-nav__avatar {

@@ -33,9 +33,15 @@
 @if (Message is not null)
 {
     <div class="@BannerClass" role="@BannerRole">
-        <span class="dt-banner__icon" aria-hidden="true">
-            <Icon Name="@MessageGlyph" />
-        </span>
+        @* A refusal carries no disc: the tinted area and the sentence in it say enough, and a
+           warning mark on every error read as alarm rather than information. A confirmation or a
+           satisfiable rule keeps its glyph, because there the disc is what tells it from a refusal. *@
+        @if (MessageGlyph is { } glyph)
+        {
+            <span class="dt-banner__icon dt-icon-only" aria-hidden="true">
+                <Icon Name="@glyph" />
+            </span>
+        }
         <div class="dt-banner__body dt-type-body">
             <p class="dt-banner__title">@Message</p>
         </div>
@@ -46,14 +52,6 @@
     @* One source of truth for the face: the refusal list is always a refusal, so it asks
        BannerClass for the danger face rather than restating the string BannerClass produces. *@
     <div class="@RefusalClass" role="alert">
-        @* The kind is carried by a solid disc with an inverse glyph rather than by the tint alone:
-           the fill marks the area and the disc says what kind of area it is, which is the rule that
-           colour never works by itself. Forbidden for a refusal of the caller, NotFound for a
-           record that is gone, and the warning mark for everything else. *@
-        <span class="dt-banner__icon" aria-hidden="true">
-            <Icon Name="@RefusalGlyph" />
-        </span>
-
         <div class="dt-banner__body dt-type-body">
             @* One refusal is a sentence; several are a list. A single-item list reads as though the
                product expected more to go wrong than did. *@
@@ -181,38 +179,15 @@
     private string BannerRole => Variant == DtBannerVariant.Danger ? "alert" : "status";
 
     /// <summary>
-    /// The glyph in the screen's own banner: Confirm for a confirmation, and the warning mark for
-    /// anything else. Read off the face rather than passed in - which is the design's rule, and a
-    /// rule a screen would only be able to disagree with.
+    /// The glyph in the screen's own banner: Confirm for a confirmation, the warning mark for a rule
+    /// the reader can satisfy, and none for a refusal. Read off the face rather than passed in.
     /// </summary>
-    private IconName MessageGlyph =>
-        Variant == DtBannerVariant.Success ? IconName.Confirm : IconName.Warning;
-
-    /// <summary>
-    /// The glyph in the refusal list's disc. Forbidden when the caller was refused, NotFound when
-    /// the record is gone, and the warning mark for everything else.
-    /// </summary>
-    private IconName RefusalGlyph
+    private IconName? MessageGlyph => Variant switch
     {
-        get
-        {
-            foreach (var failure in Unclaimed)
-            {
-                if (failure.MessageKey.EndsWith("_FORBIDDEN", StringComparison.Ordinal)
-                    || failure.MessageKey.EndsWith("_UNAUTHENTICATED", StringComparison.Ordinal))
-                {
-                    return IconName.Forbidden;
-                }
-
-                if (failure.MessageKey.EndsWith("_NOT_FOUND", StringComparison.Ordinal))
-                {
-                    return IconName.NotFound;
-                }
-            }
-
-            return IconName.Warning;
-        }
-    }
+        DtBannerVariant.Success => IconName.Confirm,
+        DtBannerVariant.Warning => IconName.Warning,
+        _ => null,
+    };
 
     /// <summary>
     /// The localized name of the offending input, or null when there is none to show.
