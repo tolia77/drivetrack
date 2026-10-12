@@ -26,8 +26,9 @@
     @* Inside the panel, on the same measure as the form it refuses: a refusal wider than the boxes
        it is about reads as a notice about the page rather than about the form.
 
-       AUTH_EMAIL_ALREADY_IN_USE is a 409 carrying no field, so it stays here while every refusal a
-       rule states about one box moves under that box. *@
+       Every refusal about one box moves under that box - AUTH_EMAIL_ALREADY_IN_USE included,
+       which the service raises with no field and FailureKeys pins to Email. What is left here is
+       what no box on the form is about. *@
     <DtFailureBanner Failures="_failures" InlineFields="@InlineFields" />
 
     <DtCard>

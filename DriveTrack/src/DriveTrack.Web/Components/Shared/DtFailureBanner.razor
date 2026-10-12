@@ -1,5 +1,7 @@
 @inject IStringLocalizer<ErrorMessages> Errors
 @inject IStringLocalizer<FieldNames> Fields
+@inject IJSRuntime JS
+@implements IAsyncDisposable
 
 @* The one place a refused action is reported on a screen (NFR-4, NFR-14).
 
@@ -30,9 +32,14 @@
    both lost every real refusal the moment it had a sentence to show, which is the FR-83 guarantee
    turned upside down. Neither can now destroy the other, and a screen carrying both marks two
    areas because it has two different things to say. *@
+@* The reveal's anchor: always rendered, so there is an element to scope from even when every
+   refusal was claimed by a box and this banner draws nothing. Hidden, so it occupies no space. *@
+<span class="dt-failure-anchor" hidden @ref="_anchor"></span>
 @if (Message is not null)
 {
-    <div class="@BannerClass" role="@BannerRole">
+    @* tabindex="-1" for the same reason as the refusal list: a danger sentence is an error the
+       reveal may move focus to, and without it focus() would silently do nothing. *@
+    <div class="@BannerClass" role="@BannerRole" tabindex="@MessageTabIndex">
         @* A refusal carries no disc: the tinted area and the sentence in it say enough, and a
            warning mark on every error read as alarm rather than information. A confirmation or a
            satisfiable rule keeps its glyph, because there the disc is what tells it from a refusal. *@
@@ -51,7 +58,9 @@
 {
     @* One source of truth for the face: the refusal list is always a refusal, so it asks
        BannerClass for the danger face rather than restating the string BannerClass produces. *@
-    <div class="@RefusalClass" role="alert">
+    @* tabindex="-1": when no box claimed the refusal, this is where the reveal moves focus, so a
+       screen reader announces it from where the user now is rather than from the top. *@
+    <div class="@RefusalClass" role="alert" tabindex="-1">
         <div class="dt-banner__body dt-type-body">
             @* One refusal is a sentence; several are a list. A single-item list reads as though the
                product expected more to go wrong than did. *@
@@ -88,6 +97,22 @@
 }
 
 @code {
+    /// <summary>
+    /// The path the collocated module is served from - the plain one, for the reason
+    /// <c>DtDialog</c> gives: MapStaticAssets serves it beside the fingerprinted href, and it is the
+    /// one an <c>import()</c> can name from C#.
+    /// </summary>
+    private const string ModulePath = "./Components/Shared/DtFailureBanner.razor.js";
+
+    private ElementReference _anchor;
+    private IJSObjectReference? _module;
+
+    /// <summary>The list last seen, compared by reference to tell a new refusal from a re-render.</summary>
+    private IReadOnlyList<ScreenFailure>? _seen;
+
+    /// <summary>Set when a new non-empty list arrived and has not yet been revealed.</summary>
+    private bool _revealPending;
+
     /// <summary>
     /// The refusals to show, in the order the screen collected them. Empty renders nothing, which is
     /// why a screen can bind this unconditionally instead of guarding it.
@@ -179,6 +204,12 @@
     private string BannerRole => Variant == DtBannerVariant.Danger ? "alert" : "status";
 
     /// <summary>
+    /// <c>-1</c> for a danger sentence, so the reveal can focus it; nothing for the other two, which
+    /// the reveal never looks for.
+    /// </summary>
+    private string? MessageTabIndex => Variant == DtBannerVariant.Danger ? "-1" : null;
+
+    /// <summary>
     /// The glyph in the screen's own banner: Confirm for a confirmation, the warning mark for a rule
     /// the reader can satisfy, and none for a refusal. Read off the face rather than passed in.
     /// </summary>
@@ -215,6 +246,15 @@
             return null;
         }
 
+        // A field pinned from the code rather than named by a validator. It reaches the banner only
+        // on a screen that does not render that box - the capacity refusal on the vehicle screen -
+        // and labelling it there would name an input the form does not have.
+        if (Enum.TryParse<ErrorCode>(failure.MessageKey, out var code)
+            && string.Equals(FailureKeys.FieldOf(code), field, StringComparison.Ordinal))
+        {
+            return null;
+        }
+
         var localized = Fields[field];
 
         if (localized.ResourceNotFound)
@@ -229,5 +269,75 @@
         return Errors[failure.MessageKey].Value.StartsWith(name, StringComparison.CurrentCultureIgnoreCase)
             ? null
             : localized.Value;
+    }
+
+    /// <summary>
+    /// Notes a refusal worth revealing: a new list, by reference, that is not empty. Screens assign
+    /// a fresh list for every refusal - <c>FailureKeys.For</c> builds one each time - so the same
+    /// refusal twice in a row is still revealed twice, while typing after a refusal re-renders with
+    /// the same list and moves nothing.
+    /// </summary>
+    protected override void OnParametersSet()
+    {
+        if (ReferenceEquals(Failures, _seen))
+        {
+            return;
+        }
+
+        _seen = Failures;
+        _revealPending = Failures is { Count: > 0 };
+    }
+
+    /// <summary>
+    /// Scrolls the first error on the screen into view and focuses it, once the render that drew it
+    /// has reached the page. Never runs under static rendering, which is what keeps sign-in and
+    /// register script-free: their full-page POST already lands at the top with the boxes outlined.
+    /// </summary>
+    /// <param name="firstRender">Unused: a refusal can arrive on any render.</param>
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_revealPending)
+        {
+            return;
+        }
+
+        _revealPending = false;
+
+        try
+        {
+            _module ??= await JS.InvokeAsync<IJSObjectReference>("import", ModulePath);
+            await _module.InvokeVoidAsync("reveal", _anchor);
+        }
+        catch (JSDisconnectedException)
+        {
+            // The circuit went away between the refusal and the reveal; there is no page to move.
+        }
+        catch (TaskCanceledException)
+        {
+            // The same, observed as a cancelled call rather than a disconnect.
+        }
+        catch (JSException)
+        {
+            // The module failed to load or threw. The reveal is best-effort: the refusal is already
+            // on the page, and a broken scroll must not take the circuit down with it.
+        }
+    }
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        if (_module is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await _module.DisposeAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+            // The circuit went away before the component did; there is no module left to release.
+        }
     }
 }

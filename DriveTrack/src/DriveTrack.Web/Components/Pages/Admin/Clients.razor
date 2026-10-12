@@ -33,8 +33,8 @@
     </h1>
 </div>
 
-@* What the dialog's boxes have not claimed: a delete refusal, and AUTH_EMAIL_ALREADY_IN_USE, which
-   is a 409 naming no field. *@
+@* What the dialog's boxes have not claimed: a delete refusal, say. AUTH_EMAIL_ALREADY_IN_USE is
+   raised with no field, but FailureKeys pins it to Email, so it lands under the address box. *@
 <DtFailureBanner Failures="_failures" InlineFields="@InlineFields" />
 
 @* `dt-table-cards` is where this screen opts into the shared collapse: below the phone breakpoint

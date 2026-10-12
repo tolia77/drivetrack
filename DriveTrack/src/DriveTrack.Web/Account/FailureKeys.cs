@@ -16,7 +16,8 @@ internal static class FailureKeys
 {
     /// <summary>
     /// The failures a screen renders: one per offending field on a validation failure, otherwise a
-    /// single entry naming no field and carrying the code itself.
+    /// single entry carrying the code itself - naming the input it is about when the code is one
+    /// of the few <see cref="FieldOf"/> maps, and no field otherwise.
     /// <para>
     /// The field travels with the key, because most rules share <c>COMMON_VALIDATION_FAILED</c> and
     /// the key alone cannot say which input was refused. <c>Distinct</c> is on the pair, so two
@@ -39,8 +40,38 @@ internal static class FailureKeys
                 .ToArray();
         }
 
-        return [new ScreenFailure(null, failure.Code.ToString())];
+        return [new ScreenFailure(FieldOf(failure.Code), failure.Code.ToString())];
     }
+
+    /// <summary>
+    /// The input a refusal is really about, for the few codes the service raises with no field.
+    /// <para>
+    /// The service has no reason to name a field here - for a REST caller the code alone is the
+    /// whole answer, and the envelope, its status and its payload stay exactly as they were. A form
+    /// is different: a capacity refusal is about the weight box whose hint already shows the limit,
+    /// and reporting it in a banner at the top of a long dialog, while the dispatcher is scrolled
+    /// down at Save, is reporting it where nobody is looking. So the adapter attaches the field,
+    /// and <see cref="Unclaimed"/> still hands it to the banner on any screen that does not render
+    /// that box.
+    /// </para>
+    /// <para>
+    /// Not-found, forbidden and transition codes are deliberately absent: they are about the
+    /// action or the record, not about any one input.
+    /// </para>
+    /// </summary>
+    private static readonly IReadOnlyDictionary<ErrorCode, string> FieldByCode =
+        new Dictionary<ErrorCode, string>
+        {
+            [ErrorCode.DELIVERY_EXCEEDS_VEHICLE_CAPACITY] = "PackageWeightKg",
+            [ErrorCode.AUTH_EMAIL_ALREADY_IN_USE] = "Email",
+            [ErrorCode.AUTH_CURRENT_PASSWORD_INCORRECT] = "CurrentPassword",
+            [ErrorCode.FLEET_LICENSE_PLATE_IN_USE] = "LicensePlate",
+        };
+
+    /// <summary>The field a field-less refusal belongs to, or null when it belongs to none.</summary>
+    /// <param name="code">The refusal's code.</param>
+    /// <returns>The CLR property name of the input, as a <c>DtFieldError</c> spells it.</returns>
+    public static string? FieldOf(ErrorCode code) => FieldByCode.GetValueOrDefault(code);
 
     /// <summary>
     /// The failures a single field-level control shows: those naming exactly that field.

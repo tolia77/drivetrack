@@ -22,7 +22,9 @@
    read as alarm rather than as an instruction. *@
 @foreach (var failure in Claimed)
 {
-    <div class="form-text dt-field-error" role="alert">
+    @* tabindex="-1": where the reveal puts focus when the box has no input of its own to take
+       it - the signature pad, the photo picker. *@
+    <div class="form-text dt-field-error" role="alert" tabindex="-1">
         @Errors[failure.MessageKey]
     </div>
 }

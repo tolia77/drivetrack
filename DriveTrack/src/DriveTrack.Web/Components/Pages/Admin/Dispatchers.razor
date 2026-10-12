@@ -97,8 +97,9 @@
         @* Repeated inside the dialog, not only at the top of the page: a native <dialog> opened with
            showModal() sits in the top layer with everything behind it inert, so a banner rendered up
            there is invisible to the administrator who just pressed Create and got a 409. That 409
-           - AUTH_EMAIL_ALREADY_IN_USE - names no field, which is why it stays in the banner while
-           the shape refusals below move under their boxes. *@
+           - AUTH_EMAIL_ALREADY_IN_USE - is raised with no field, but FailureKeys pins it to Email,
+           so it moves under the address box with the shape refusals; what stays here is what no
+           box is about. *@
         <DtFailureBanner Failures="_failures" InlineFields="@InlineFields" />
         <div class="mb-4">
             <label class="form-label" for="new-dispatcher-first-name">@Localizer["FirstName"]</label>

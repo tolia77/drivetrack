@@ -266,8 +266,12 @@
     /// banner of the other two.
     /// <para>
     /// The phone number joins it only for a client, for the reason DR-3 offers that box only to a
-    /// client. Everything not named here still reaches the banner, which is where
-    /// <c>AUTH_CURRENT_PASSWORD_INCORRECT</c> lands - the service raises it with no field at all.
+    /// client. Everything not named here still reaches the banner. <c>AUTH_CURRENT_PASSWORD_INCORRECT</c>
+    /// and <c>AUTH_EMAIL_ALREADY_IN_USE</c> are raised with no field, but <c>FailureKeys</c> pins
+    /// them to <c>CurrentPassword</c> and <c>Email</c>. Only one dialog renders each of those boxes
+    /// while all three claim them; that holds because each dialog's own save raises only its own
+    /// code - the password change is the only one that can refuse the current password, and the
+    /// e-mail change the only one that can refuse an address.
     /// </para>
     /// </summary>
     private string InlineFields => _isClient

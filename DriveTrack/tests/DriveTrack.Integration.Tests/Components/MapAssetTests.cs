@@ -87,6 +87,7 @@ public class MapAssetTests
 
     [Theory]
     [InlineData("Shared/DtDialog.razor", "Components/Shared/DtDialog.razor.js")]
+    [InlineData("Shared/DtFailureBanner.razor", "Components/Shared/DtFailureBanner.razor.js")]
     [InlineData("Shared/DtMap.razor", "Components/Shared/DtMap.razor.js")]
     // Story 6.1's two. The signature pad is a shared component like the two above it; the capture
     // panel is a screen, which is why the component argument is a path under Components/ rather
@@ -136,6 +137,7 @@ public class MapAssetDeliveryTests(PostgresFixture postgres)
     // asks for. Rename either file - or drop it from the static asset manifest - and every dialog
     // and every map is dead on arrival with the rest of this class still green.
     [InlineData("Components/Shared/DtDialog.razor.js")]
+    [InlineData("Components/Shared/DtFailureBanner.razor.js")]
     [InlineData("Components/Shared/DtMap.razor.js")]
     // Story 6.1's two, for the same reason and with a sharper consequence: a signature pad that
     // cannot import its module is a canvas nobody can draw on, and a capture panel that cannot
