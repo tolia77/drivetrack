@@ -575,15 +575,23 @@ $dt-breakpoint-phone-max: $dt-breakpoint-phone - 0.02px;
 // the layout nor runs past an input group; focused, it steps out to the focus ring's gap and
 // stays red, so the reader can still see which box they are fixing - except inside an input group,
 // where it stays inset for the reason the focus ring does.
+//
+// The `.valid.modified` lines are not redundant. Blazor's own validation can pass a value the server
+// then refuses (a weight that is a fine number but too heavy for the driver's vehicle), and its
+// green `.valid.modified` outline outranks a bare class pair - so the refused state says so at that
+// specificity too, or the box reads as accepted directly above the sentence refusing it.
 :has(> .dt-field-error) > :is(.form-control, .form-select),
+:has(> .dt-field-error) > :is(.form-control, .form-select).valid.modified,
 :has(> .dt-field-error) > .input-group > .form-control,
+:has(> .dt-field-error) > .input-group > .form-control.valid.modified,
 :has(> .dt-field-error) > .dt-map,
 :has(> .dt-field-error) > .dt-signature .dt-signature-pad {
     outline: var(--dt-border-width-focus) solid var(--dt-danger);
     outline-offset: calc(-1 * var(--dt-border-width-focus));
 }
 
-:has(> .dt-field-error) > :is(.form-control, .form-select):focus {
+:has(> .dt-field-error) > :is(.form-control, .form-select):focus,
+:has(> .dt-field-error) > :is(.form-control, .form-select).valid.modified:focus {
     outline-offset: var(--dt-border-width-focus);
 }
 
