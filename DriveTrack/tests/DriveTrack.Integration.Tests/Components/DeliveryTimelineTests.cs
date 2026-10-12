@@ -208,39 +208,22 @@ public class DeliveryTimelineTests
         Assert.Equal(
             Delivery.NextStatuses(DeliveryStatus.InTransit).Select(status => status.ToString()).ToArray(),
             moves);
-
-        // And the head's status label moved with it.
-        var head = SharedMarkup.ElementWithClass(html, "span", "dt-timeline-current");
-
-        Assert.Contains(Labels[DeliveryStatus.InTransit], SharedMarkup.TextOf(head), StringComparison.Ordinal);
     }
 
     [Fact]
     public async Task The_dialog_has_the_artboards_structure()
     {
-        // The acceptance criterion: head (title, route line, status, dismiss), History, Add to the
-        // timeline, and a footer holding Cancel and the one submit.
+        // The acceptance criterion: the shared dialog's own head (title, dismiss), History, Add to
+        // the timeline, and a footer holding Cancel and the one submit.
         var html = await RenderAsync(
             [Change("Тарас Шевченко", UserRole.Dispatcher)],
             DeliveryStatus.Pending,
-            allowStatusChange: true,
-            route: true);
+            allowStatusChange: true);
 
-        var head = SharedMarkup.ElementWithClass(html, "div", "dt-dialog-heading");
+        var head = SharedMarkup.ElementWithClass(html, "div", "dt-dialog-head");
 
         Assert.Contains("Історія доставки", head, StringComparison.Ordinal);
-
-        var route = SharedMarkup.TextOf(SharedMarkup.ElementWithClass(html, "p", "dt-dialog-subtitle"));
-
-        Assert.Contains("вул. Антоновича, 50", route, StringComparison.Ordinal);
-        Assert.Contains("→", route, StringComparison.Ordinal);
-        Assert.Contains("вул. Хрещатик, 22", route, StringComparison.Ordinal);
-        Assert.Contains("1 коробка", route, StringComparison.Ordinal);
-        Assert.Contains("кг", route, StringComparison.Ordinal);
-
-        Assert.Contains("dt-timeline-current", html, StringComparison.Ordinal);
-        Assert.Contains("dt-dialog-dismiss", html, StringComparison.Ordinal);
-        Assert.Contains("dt-dialog-medium", html, StringComparison.Ordinal);
+        Assert.Contains("dt-dialog-dismiss", head, StringComparison.Ordinal);
 
         Assert.Contains(">Історія</h3>", html, StringComparison.Ordinal);
         Assert.Contains(">Додати до історії</h3>", html, StringComparison.Ordinal);
@@ -524,8 +507,7 @@ public class DeliveryTimelineTests
     private static Task<string> RenderAsync(
         IReadOnlyList<TimelineEntryView> entries,
         DeliveryStatus status = DeliveryStatus.Pending,
-        bool allowStatusChange = false,
-        bool route = false)
+        bool allowStatusChange = false)
     {
         var parameters = new Dictionary<string, object?>
         {
@@ -533,14 +515,6 @@ public class DeliveryTimelineTests
             ["Status"] = status,
             ["AllowStatusChange"] = allowStatusChange,
         };
-
-        if (route)
-        {
-            parameters["Pickup"] = new LocationView(new MapLocation(50.43, 30.52), "вул. Антоновича, 50");
-            parameters["Dropoff"] = new LocationView(new MapLocation(50.45, 30.52), "вул. Хрещатик, 22");
-            parameters["PackageDetails"] = "1 коробка";
-            parameters["PackageWeightKg"] = 12m;
-        }
 
         return ComponentRenderer.RenderAsync<Web.Components.Pages.DeliveryTimeline>(
             parameters,

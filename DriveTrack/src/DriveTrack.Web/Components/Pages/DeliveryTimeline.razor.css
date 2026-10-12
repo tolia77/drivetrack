@@ -96,12 +96,6 @@
     overflow-wrap: anywhere;
 }
 
-/* The head's status label sits on the dismiss's centre line. */
-.dt-timeline-current {
-    display: inline-flex;
-    align-items: center;
-}
-
 /*
     Below the phone breakpoint, every control in this panel is at least `touch-target` tall - the
     select, the comment box and the two footer buttons, which DtDialog already stretches to the full

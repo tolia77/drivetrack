@@ -154,7 +154,6 @@ $dt-touch-target:             2.75rem;      // Minimum hit area on phone screens
 $dt-icon-size:                1.15em;    // Icon box, relative to the adjacent text.
 $dt-nav-width:                14.5rem;     // Sidebar width above the phone breakpoint.
 $dt-dialog-narrow:            30rem;     // Max width of a form dialog. Bootstrap .modal default.
-$dt-dialog-medium:            45rem;     // Max width of a dialog holding a history above a form: the delivery timeline.
 $dt-dialog-wide:              60rem;     // Max width of a dialog with two map columns. Bootstrap .modal-lg / -xl.
 $dt-content-narrow:           62.5rem;   // Max width of a screen of cards rather than a table: the profile.
 $dt-map-height:               13.75rem;     // Map height in pickers and proof view.
@@ -438,7 +437,6 @@ $dt-tokens: (
     "icon-size":                $dt-icon-size,
     "nav-width":                $dt-nav-width,
     "dialog-narrow":            $dt-dialog-narrow,
-    "dialog-medium":            $dt-dialog-medium,
     "dialog-wide":              $dt-dialog-wide,
     "content-narrow":           $dt-content-narrow,
     "map-height":               $dt-map-height,

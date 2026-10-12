@@ -26,27 +26,12 @@
            default close - the foot's appears only when a screen supplied no actions of its own,
            and a test that could not tell the two apart would pass on a dialog with no way out. *@
         <div class="dt-dialog-head">
-            @* The heading block: the title, and under it the one muted line a dialog may carry to
-               say what it is about - the timeline's route - so the reader need not hold the row
-               they pressed in their head. *@
-            <div class="dt-dialog-heading">
-                <h2 id="@_titleId" class="dt-dialog-title dt-type-h2">@Title</h2>
-                @if (Subtitle is not null)
-                {
-                    <p class="dt-dialog-subtitle">@Subtitle</p>
-                }
-            </div>
+            <h2 id="@_titleId" class="dt-dialog-title dt-type-h2">@Title</h2>
 
-            @* The trailing block: whatever the screen puts beside the dismiss - a status label, for
-               the timeline - and the dismiss itself, always last and always there. *@
-            <div class="dt-dialog-head-end">
-                @HeadContent
-
-                <button type="button" class="btn btn-link dt-dialog-dismiss dt-icon-only"
-                        aria-label="@Localizer["Close"]" @onclick="CloseAsync">
-                    <Icon Name="IconName.Close" />
-                </button>
-            </div>
+            <button type="button" class="btn btn-link dt-dialog-dismiss dt-icon-only"
+                    aria-label="@Localizer["Close"]" @onclick="CloseAsync">
+                <Icon Name="IconName.Close" />
+            </button>
         </div>
 
         @* The body scrolls and the head and foot do not, so a long form on a short screen still
@@ -96,20 +81,6 @@
     [EditorRequired]
     public string? Title { get; set; }
 
-    /// <summary>
-    /// One muted line under the title saying what the dialog is about, already localized, or null
-    /// for none. Every dialog that does not set it renders exactly as it did.
-    /// </summary>
-    [Parameter]
-    public string? Subtitle { get; set; }
-
-    /// <summary>
-    /// Content drawn in the head beside the dismiss, before it - a status label, say. Null draws
-    /// nothing, so the dismiss stays the only thing at the head's trailing edge.
-    /// </summary>
-    [Parameter]
-    public RenderFragment? HeadContent { get; set; }
-
     /// <summary>The dialog's body.</summary>
     [Parameter]
     public RenderFragment? ChildContent { get; set; }
@@ -138,24 +109,11 @@
     public bool Wide { get; set; }
 
     /// <summary>
-    /// Widens the panel to the medium ceiling: a history above a form, where the narrow width
-    /// would wrap every entry's meta line and the wide one leaves a line of prose too long to
-    /// read. <see cref="Wide"/> wins when both are set.
-    /// </summary>
-    [Parameter]
-    public bool Medium { get; set; }
-
-    /// <summary>
     /// The panel's classes, resolved here rather than written as a ternary in the attribute — the
     /// reason <c>DtFailureBanner</c> resolves its label into a local. Unset <see cref="Wide"/>
     /// leaves the class exactly as it was, so every existing dialog renders unchanged.
     /// </summary>
-    private string PanelClass => (Wide, Medium) switch
-    {
-        (true, _) => "dt-dialog dt-dialog-wide",
-        (false, true) => "dt-dialog dt-dialog-medium",
-        _ => "dt-dialog",
-    };
+    private string PanelClass => Wide ? "dt-dialog dt-dialog-wide" : "dt-dialog";
 
     /// <summary>Opens the dialog modally.</summary>
     public async Task ShowAsync()

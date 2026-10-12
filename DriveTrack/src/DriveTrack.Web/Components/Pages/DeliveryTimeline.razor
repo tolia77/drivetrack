@@ -26,17 +26,7 @@
 
 <DtDialog @ref="_dialog"
           Title="@Localizer["TimelineTitle"]"
-          Subtitle="@RouteLine"
-          Medium="true"
           OnClosed="ClosedAsync">
-    <HeadContent>
-        @* Where the delivery is now, beside the dismiss: the one fact a reader opened the history to
-           check, and it follows the panel's own idea of the status, so a move made here shows at
-           once. *@
-        <span class="dt-timeline-current">
-            <DeliveryStatusLabel Status="_status" />
-        </span>
-    </HeadContent>
     <ChildContent>
         @* NFR-3: a refusal resolves through the same catalogue the REST envelope uses, so the dialog
            and the wire cannot disagree about what went wrong. It keeps what the comment box below
@@ -251,22 +241,6 @@
     [EditorRequired]
     public DeliveryStatus Status { get; set; }
 
-    /// <summary>Where the parcel is collected, for the head's route line; null draws no line.</summary>
-    [Parameter]
-    public LocationView? Pickup { get; set; }
-
-    /// <summary>Where it goes, for the head's route line.</summary>
-    [Parameter]
-    public LocationView? Dropoff { get; set; }
-
-    /// <summary>What is being moved, for the head's route line.</summary>
-    [Parameter]
-    public string? PackageDetails { get; set; }
-
-    /// <summary>How heavy it is, for the head's route line.</summary>
-    [Parameter]
-    public decimal PackageWeightKg { get; set; }
-
     /// <summary>
     /// Whether to draw the status select. False hides it; it does not authorize anything -
     /// <c>IAccessGuard.RequireAssignedDriver</c> decides, and it runs whether or not this panel was
@@ -310,17 +284,6 @@
 
     /// <summary>The offered moves in words, in the lifecycle's own order.</summary>
     private string OfferedWords => string.Join(", ", Offered.Select(StatusWord));
-
-    /// <summary>
-    /// The head's muted line: pickup → dropoff · package · weight. Null when the host passed no
-    /// route, so a panel rendered without one draws no empty line.
-    /// </summary>
-    private string? RouteLine => Pickup is null || Dropoff is null
-        ? null
-        : LocationText.Describe(Pickup) + " → " + LocationText.Describe(Dropoff)
-            + " · " + PackageDetails
-            + " · " + PackageWeightKg.ToString(System.Globalization.CultureInfo.CurrentCulture)
-            + " " + Localizer["WeightUnit"];
 
     /// <inheritdoc />
     protected override async Task OnParametersSetAsync()
