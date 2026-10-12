@@ -93,6 +93,16 @@ h1:focus {
     outline-offset: var(--dt-border-width-focus);
 }
 
+// Inside an input group the gap has nowhere to go: the controls sit flush, so a ring drawn
+// outside one runs across its neighbour and past the group's edge. There the ring is drawn
+// inset instead, over the control's own border, so it traces exactly the shape that has focus.
+.input-group > .form-control:focus,
+.input-group > .form-select:focus,
+.input-group > .btn:focus,
+.input-group > .btn:focus-visible {
+    outline-offset: calc(-1 * var(--dt-border-width-focus));
+}
+
 // Press feedback. Every action here is a round trip to the server, and until it
 // answers the page has nothing to show for the press - so the control answers it
 // itself, at once, by settling slightly under the finger. The transition list keeps
