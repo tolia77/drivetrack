@@ -145,9 +145,9 @@ public class DeliveryTimelineTests
 
         var options = Options(SharedMarkup.ElementWithClass(html, "select", "dt-timeline-next-status"));
 
-        // The first option is "keep": an empty value, naming the status the delivery stays in.
+        // The first option is "keep": an empty value reading "<current status> (поточний)".
         Assert.Equal(string.Empty, options[0].Value);
-        Assert.Contains(Labels[status], options[0].Text, StringComparison.Ordinal);
+        Assert.Equal(Labels[status] + " (поточний)", options[0].Text);
 
         var moves = options.Skip(1).ToArray();
 
@@ -160,19 +160,10 @@ public class DeliveryTimelineTests
                 moves.Any(option => option.Value == offered.ToString() && option.Text == Labels[offered]));
         }
 
-        // And the hint under it names the same moves from the same status.
-        var hint = SharedMarkup.TextOf(SharedMarkup.ElementWithClass(html, "div", "dt-timeline-move-hint"));
-
-        Assert.Contains(Labels[status], hint, StringComparison.Ordinal);
-
-        foreach (var offered in expected)
-        {
-            Assert.Contains(Labels[offered], hint, StringComparison.Ordinal);
-        }
     }
 
     [Fact]
-    public async Task A_terminal_delivery_offers_no_select_and_no_hint_but_still_the_comment_box()
+    public async Task A_terminal_delivery_offers_no_select_but_still_the_comment_box()
     {
         // The I/O matrix's terminal row: Delivered has no move, so a select whose only option is
         // "keep" would be a control with nothing to decide. The comment and the submit stay,
@@ -180,7 +171,6 @@ public class DeliveryTimelineTests
         var html = await RenderAsync([], DeliveryStatus.Delivered, allowStatusChange: true);
 
         Assert.DoesNotContain("dt-timeline-next-status", html, StringComparison.Ordinal);
-        Assert.DoesNotContain("dt-timeline-move-hint", html, StringComparison.Ordinal);
         Assert.Contains("<textarea", html, StringComparison.Ordinal);
         Assert.Contains("dt-timeline-submit", html, StringComparison.Ordinal);
     }
@@ -353,13 +343,12 @@ public class DeliveryTimelineTests
     }
 
     [Fact]
-    public async Task Each_hint_is_named_by_the_control_it_describes()
+    public async Task The_comment_hint_is_named_by_the_textarea()
     {
         var html = await RenderAsync([], DeliveryStatus.InTransit, allowStatusChange: true);
 
         foreach (var (control, hint) in new[]
                  {
-                     ("select", "dt-timeline-move-hint"),
                      ("textarea", "dt-timeline-note-hint"),
                  })
         {
@@ -477,7 +466,6 @@ public class DeliveryTimelineTests
         var html = await RenderAsync([], status, allowStatusChange: false);
 
         Assert.DoesNotContain("dt-timeline-next-status", html, StringComparison.Ordinal);
-        Assert.DoesNotContain("dt-timeline-move-hint", html, StringComparison.Ordinal);
 
         // And the comment box and its submit are still there, because FR-107 is open to everyone
         // who can see the delivery. Losing them with the select would be the easy mistake.

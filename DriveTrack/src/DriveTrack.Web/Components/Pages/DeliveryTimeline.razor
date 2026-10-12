@@ -112,19 +112,15 @@
                               Id="@_statusFieldId"
                               Class="dt-timeline-next-status"
                               Disabled="Busy"
-                              AriaDescribedBy="@_moveHintId"
                               @bind-Value="_next">
                         @* The empty value is "keep": a note on its own, which is what null means to
                            the submit below. *@
-                        <option value="">@Localizer["TimelineKeep"] @CurrentWord @Localizer["TimelineNoteOnly"]</option>
+                        <option value="">@CurrentWord @Localizer["TimelineCurrent"]</option>
                         @foreach (var next in Offered)
                         {
                             <option value="@next">@StatusWord(next)</option>
                         }
                     </DtSelect>
-                    <div id="@_moveHintId" class="form-text dt-timeline-move-hint">
-                        @Localizer["TimelineMoveFrom"] <strong>@CurrentWord</strong> @Localizer["TimelineMoveTo"] @OfferedWords
-                    </div>
                 </div>
             }
 
@@ -183,9 +179,6 @@
 
     /// <inheritdoc cref="_noteFieldId" />
     private readonly string _statusFieldId = $"dt-timeline-next-{Guid.NewGuid():N}";
-
-    /// <inheritdoc cref="_noteFieldId" />
-    private readonly string _moveHintId = $"dt-timeline-move-hint-{Guid.NewGuid():N}";
 
     /// <inheritdoc cref="_noteFieldId" />
     private readonly string _noteHintId = $"dt-timeline-note-hint-{Guid.NewGuid():N}";
@@ -279,11 +272,8 @@
     /// <summary>The note hint's id while it renders, so the textarea names it; null otherwise.</summary>
     private string? NoteHintReference => Offered.Count > 0 ? _noteHintId : null;
 
-    /// <summary>The current status in words, for the keep option and the move hint.</summary>
+    /// <summary>The current status in words, for the keep option.</summary>
     private string CurrentWord => StatusWord(_status);
-
-    /// <summary>The offered moves in words, in the lifecycle's own order.</summary>
-    private string OfferedWords => string.Join(", ", Offered.Select(StatusWord));
 
     /// <inheritdoc />
     protected override async Task OnParametersSetAsync()

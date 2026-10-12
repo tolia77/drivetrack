@@ -547,17 +547,8 @@
   <data name="TimelineNewStatus" xml:space="preserve">
     <value>New status</value>
   </data>
-  <data name="TimelineKeep" xml:space="preserve">
-    <value>Keep</value>
-  </data>
-  <data name="TimelineNoteOnly" xml:space="preserve">
-    <value>— note only</value>
-  </data>
-  <data name="TimelineMoveFrom" xml:space="preserve">
-    <value>From</value>
-  </data>
-  <data name="TimelineMoveTo" xml:space="preserve">
-    <value>you can move to:</value>
+  <data name="TimelineCurrent" xml:space="preserve">
+    <value>(current)</value>
   </data>
   <data name="TimelineNotePlaceholder" xml:space="preserve">
     <value>What happened? The client and the admin read this.</value>
