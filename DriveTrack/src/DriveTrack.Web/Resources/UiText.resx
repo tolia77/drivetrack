@@ -127,14 +127,8 @@
   <data name="Resume" xml:space="preserve">
     <value>Відновити</value>
   </data>
-  <data name="HomeHeroBadge" xml:space="preserve">
-    <value>Керування доставками</value>
-  </data>
   <data name="HomeHeroTitle" xml:space="preserve">
     <value>Кожна доставка вашого кур’єрського парку в одному місці</value>
-  </data>
-  <data name="HomeHeroNote" xml:space="preserve">
-    <value>Диспетчери та водії отримують облікові записи від адміністратора.</value>
   </data>
   <data name="HomeForDispatchers" xml:space="preserve">
     <value>Для диспетчерів</value>

@@ -127,14 +127,8 @@
   <data name="Resume" xml:space="preserve">
     <value>Resume</value>
   </data>
-  <data name="HomeHeroBadge" xml:space="preserve">
-    <value>Delivery management</value>
-  </data>
   <data name="HomeHeroTitle" xml:space="preserve">
     <value>Every delivery of your courier fleet in one place</value>
-  </data>
-  <data name="HomeHeroNote" xml:space="preserve">
-    <value>Dispatchers and drivers get their accounts from an administrator.</value>
   </data>
   <data name="HomeForDispatchers" xml:space="preserve">
     <value>For dispatchers</value>
