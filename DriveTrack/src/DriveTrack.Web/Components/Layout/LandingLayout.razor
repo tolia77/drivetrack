@@ -1,0 +1,18 @@
+@inherits LayoutComponentBase
+
+@* The landing page's frame: the page itself and nothing around it.
+
+   The landing page is public marketing, and the design draws it with a header and a footer of its
+   own rather than inside the application's sidebar - so it is the one screen that does not sit in
+   MainLayout's shell. The page brings its own header, language switch and way in.
+
+   FR-13: the page's failures pass through the one boundary, as every screen in MainLayout's do.
+
+   The connection dock stays, for the reason MainLayout keeps it outside its grid: it belongs to the
+   circuit rather than to any screen, and the landing page runs on a circuit like every other. *@
+
+<SessionExpiryBoundary>
+    @Body
+</SessionExpiryBoundary>
+
+<DtConnectionDock />

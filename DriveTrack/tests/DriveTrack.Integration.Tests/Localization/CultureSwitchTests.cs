@@ -387,9 +387,15 @@ public class CultureSwitchTests(PostgresFixture postgres)
         // The token itself is asserted against the source rather than the render: the harness stubs
         // AntiforgeryStateProvider with one that answers null, so <AntiforgeryToken /> emits nothing
         // here. That a real token reaches a real page is proven over HTTP by every other test in
-        // this file, each of which reads one off /sign-in and posts it.
+        // this file, each of which reads one off /sign-in and posts it. The form is the shared
+        // DtLanguageSwitch, which the menu and the landing page both draw, so the token is in its
+        // source - and the menu has to be drawing that component rather than a form of its own.
         Assert.Contains(
             "<AntiforgeryToken />",
+            SharedMarkup.ReadShared("DtLanguageSwitch.razor"),
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "<DtLanguageSwitch ReturnUrl=\"@ReturnUrl\" />",
             SharedMarkup.ReadComponent("Layout", "NavMenu.razor"),
             StringComparison.Ordinal);
 
@@ -403,6 +409,10 @@ public class CultureSwitchTests(PostgresFixture postgres)
         // The select posts the moment it changes. A DOM attribute rather than a Blazor handler,
         // because the sign-in page renders this menu with no circuit behind it.
         Assert.Contains("onchange=\"this.form.submit()\"", html, StringComparison.Ordinal);
+
+        // On the navigation's dark ground, so the dark face: the light one is the landing header's.
+        Assert.Contains("class=\"dt-lang__select\"", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("dt-lang__select--light", html, StringComparison.Ordinal);
 
         // Both languages are named by their own short codes, and both catalogues carry the same
         // two - so these two assertions hold under either culture, which is the point: an English

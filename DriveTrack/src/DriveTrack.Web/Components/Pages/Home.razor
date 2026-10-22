@@ -1,17 +1,26 @@
 @page "/"
+@layout LandingLayout
 @attribute [AllowAnonymous]
 @inject ICurrentUser Caller
 @inject IStringLocalizer<UiText> Localizer
+@inject IUserService Users
+@inherits CircuitScopedComponent
 
 <PageTitle>DriveTrack</PageTitle>
 
 @* FR-99: one landing page, two audiences.
 
-   The hero states what the product is and offers the way in; the three cards below say what each
-   role actually does with it, which is the question a visitor arrives with. The design draws only
-   the anonymous state, and the signed-in one survives beside it: anyone with a session is offered
-   the way into the application instead of the two entry points, and where that is belongs to
-   LandingRoute, which is the one place that knows where a role lands.
+   The public marketing page the design draws ("Landing page (public)"): its own header and footer
+   rather than the application's sidebar - LandingLayout is the frame - and between them the hero,
+   what the product does, who it is for, how the work runs, the questions people ask first, and a
+   last call to action.
+
+   The design draws the anonymous state, and the signed-in one beside it ("Landing header · signed
+   in"): anyone with a session is shown who they are and offered one way into the application in
+   place of every sign-in and register entry point on the page - the header, the hero, the footer -
+   and the closing call to action, which exists only to sign somebody up, is not drawn at all. Where
+   that way in goes belongs to LandingRoute, which is the one place that knows where a role lands,
+   and the button names the place it goes to.
 
    NFR-24: every action carries an icon AND its text. An icon on its own is a guess.
 
@@ -19,127 +28,496 @@
    signed-in branch can read the role it needs without a second notion of who the caller is. *@
 
 <div class="dt-landing">
-    <section class="dt-landing-hero">
-        <div class="dt-landing-pitch">
+    <header class="dt-landing-header">
+        <div class="dt-landing-wrap dt-landing-headrow">
+            @* NFR-25: the shell's own lock-up - the same mark, the same glyph - so the page a visitor
+               starts on and the frame they sign in to are recognisably one product. *@
+            <a class="dt-landing-brand" href="#top">
+                <span class="dt-nav__mark dt-icon-only"><Icon Name="IconName.Location" /></span>DriveTrack
+            </a>
 
-            <h1 class="dt-type-display dt-landing-title">@Localizer["HomeHeroTitle"]</h1>
+            <nav class="dt-landing-sections" aria-label="@Localizer["LandingSections"]">
+                <a class="dt-landing-section-link" href="#features">@Localizer["LandingNavFeatures"]</a>
+                <a class="dt-landing-section-link" href="#roles">@Localizer["LandingNavRoles"]</a>
+                <a class="dt-landing-section-link" href="#how">@Localizer["LandingNavHow"]</a>
+                <a class="dt-landing-section-link" href="#faq">@Localizer["LandingNavFaq"]</a>
+            </nav>
 
-            <p class="dt-landing-lead dt-muted">@Localizer["HomeStatus"]</p>
+            <div class="dt-landing-account">
+                <DtLanguageSwitch ReturnUrl="/" Tone="DtLanguageTone.Light" />
 
-            @if (Caller.IsAuthenticated)
-            {
-                <div class="dt-landing-actions">
-                    <a class="btn btn-primary" href="@LandingRoute.For(Caller.Role)">
-                        <Icon Name="IconName.Home" />@Localizer["GoToApp"]
-                    </a>
-                </div>
-            }
+                @* The claim set carries no display name, so the name is the caller's own profile,
+                   read once, and it is only ever read for a signed-in caller. If that read fails
+                   the button stays and the name goes - a missing name is not worth losing the way
+                   in over. *@
+                @if (_me is not null)
+                {
+                    <span class="dt-landing-me">
+                        <span class="dt-landing-avatar" aria-hidden="true">@Initials</span>@_me.FirstName @_me.LastName
+                    </span>
+                }
 
-            @if (!Caller.IsAuthenticated)
-            {
-                <div class="dt-landing-actions">
-                    <a class="btn btn-primary" href="register">
-                        <Icon Name="IconName.Register" />@Localizer["Register"]
-                    </a>
+                @if (Caller.IsAuthenticated)
+                {
+                    <a class="btn btn-primary" href="@LandingRoute.For(Caller.Role)">@WayIn</a>
+                }
+
+                @if (!Caller.IsAuthenticated)
+                {
                     <a class="btn btn-outline-secondary" href="sign-in">
                         <Icon Name="IconName.SignIn" />@Localizer["SignIn"]
                     </a>
-                </div>
-            }
+                    <a class="btn btn-primary" href="register">
+                        <Icon Name="IconName.Register" />@Localizer["LandingCreateAccount"]
+                    </a>
+                }
+            </div>
         </div>
+    </header>
 
-        @* An illustration of the product rather than a piece of it: three invented deliveries, drawn
-           in the real vocabulary - the status labels a dispatcher reads, the overdue badge, the
-           column headings the dispatch board uses - so what a visitor is shown is what they will
-           later see. Hidden from assistive technology for the same reason: a screen reader has
-           nothing to do with a picture of a table whose rows do not exist, and the sentence beside
-           it already says what the product does.
+    <main>
+        <section class="dt-landing-section dt-landing-hero-section" id="top">
+            <div class="dt-landing-wrap dt-landing-hero">
+                <div class="dt-landing-pitch">
+                    <h1 class="dt-type-display dt-landing-title">@Localizer["LandingHeroTitle"]</h1>
 
-           The rows are written as literals rather than as resource keys. The addresses and the time
-           windows are decorative filler, and a key apiece would put invented data in the
-           translation catalogue, where a translator would have to render three Kyiv street names
-           into English - which is not a thing that should happen to a street name. *@
-        <div class="dt-landing-preview" aria-hidden="true">
-            @* The card head carries its title and nothing else. The design draws a create action
-               beside it, and this is the one part of the illustration that could not be borrowed:
-               painted in the real create colour it is pixel-identical to the button that makes a
-               delivery, and `aria-hidden` keeps it from assistive technology but not from a thumb -
-               on a phone it lands directly under the page's own call to action, where a tap that
-               does nothing is the likeliest tap on the screen. A board with its rows is still
-               recognisably the board. *@
-            <DtCard Title="@Localizer["DeliveriesTitle"]">
-                <ChildContent>
-                    @* The table keeps its natural width and scrolls inside the card on a phone,
-                       rather than pushing the whole page wider than the screen. `tabindex="-1"`
-                       because Chrome makes a scrolling box keyboard-focusable on its own, and a
-                       focus stop inside an `aria-hidden` illustration is one a screen reader
-                       lands on and cannot name. *@
-                    <div class="dt-landing-board-scroll" tabindex="-1">
-                        <table class="dt-landing-board dt-type-table">
-                            <thead>
-                                <tr>
-                                    <th>@Localizer["DeliveryWindow"]</th>
-                                    <th>@Localizer["Dropoff"]</th>
-                                    <th>@Localizer["Status"]</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>
-                                        09:00–11:00
-                                        <DtBadge Variant="DtBadgeVariant.Overdue">@Localizer["Overdue"]</DtBadge>
-                                    </td>
-                                    <td>вул. Хрещатик, 22</td>
-                                    <td><DeliveryStatusLabel Status="DeliveryStatus.InTransit" /></td>
-                                </tr>
-                                <tr>
-                                    <td>11:00–13:00</td>
-                                    <td>просп. Перемоги, 5</td>
-                                    <td><DeliveryStatusLabel Status="DeliveryStatus.Pending" /></td>
-                                </tr>
-                                <tr>
-                                    <td>13:00–15:00</td>
-                                    <td>вул. Саксаганського, 40</td>
-                                    <td><DeliveryStatusLabel Status="DeliveryStatus.Delivered" /></td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <p class="dt-landing-lead dt-muted">@Localizer["LandingHeroLead"]</p>
+
+                    <div class="dt-landing-actions">
+                        @if (Caller.IsAuthenticated)
+                        {
+                            <a class="btn btn-primary" href="@LandingRoute.For(Caller.Role)">@WayIn</a>
+                        }
+
+                        @if (!Caller.IsAuthenticated)
+                        {
+                            <a class="btn btn-primary" href="register">
+                                <Icon Name="IconName.Register" />@Localizer["LandingCreateClientAccount"]
+                            </a>
+                        }
+
+                        <a class="btn btn-outline-secondary" href="#how">
+                            <Icon Name="IconName.Timeline" />@Localizer["LandingSeeHow"]
+                        </a>
                     </div>
-                </ChildContent>
-            </DtCard>
+                </div>
+
+                @* An illustration of the product rather than a piece of it: four invented deliveries,
+                   drawn in the real vocabulary - the status labels a dispatcher reads, the overdue
+                   badge, the column headings the dispatch board uses, the note a cut-off page carries
+                   - so what a visitor is shown is what they will later see. Hidden from assistive
+                   technology for the same reason: a screen reader has nothing to do with a picture of
+                   a table whose rows do not exist, and the sentence beside it already says what the
+                   product does.
+
+                   The window cell is the board's own (`dt-table-window`): one unbroken range, with
+                   the overdue badge under it rather than beside it, as the board draws it.
+
+                   The rows are written as literals rather than as resource keys. The addresses, the
+                   driver names and the time windows are decorative filler, and a key apiece would put
+                   invented data in the translation catalogue, where a translator would have to render
+                   four Kyiv street names into English - which is not a thing that should happen to a
+                   street name, or to a person's. *@
+                <div class="dt-landing-preview" aria-hidden="true">
+                    @* The create action the design draws in the card head is a picture of a button,
+                       not one: a span, inside an `aria-hidden` illustration. Below the phone
+                       breakpoint it is not drawn - stacked, it lands directly under the page's own
+                       call to action, where a tap that does nothing is the likeliest tap on the
+                       screen. *@
+                    <DtCard Title="@Localizer["DeliveriesTitle"]">
+                        <Actions>
+                            <span class="btn btn-primary btn-sm dt-landing-preview-create">
+                                <Icon Name="IconName.Create" />@Localizer["CreateDelivery"]
+                            </span>
+                        </Actions>
+                        <ChildContent>
+                            @* The table keeps its natural width and scrolls inside the card on a
+                               phone, rather than pushing the whole page wider than the screen.
+                               `tabindex="-1"` because Chrome makes a scrolling box
+                               keyboard-focusable on its own, and a focus stop inside an
+                               `aria-hidden` illustration is one a screen reader lands on and cannot
+                               name. *@
+                            <div class="dt-landing-board-scroll" tabindex="-1">
+                                <table class="dt-landing-board dt-type-table">
+                                    <thead>
+                                        <tr>
+                                            <th>@Localizer["DeliveryWindow"]</th>
+                                            <th>@Localizer["Driver"]</th>
+                                            <th>@Localizer["Dropoff"]</th>
+                                            <th>@Localizer["Status"]</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="dt-table-window">
+                                                09:00–11:00
+                                                <DtBadge Variant="DtBadgeVariant.Overdue">@Localizer["Overdue"]</DtBadge>
+                                            </td>
+                                            <td>Олена Коваленко</td>
+                                            <td>вул. Хрещатик, 22</td>
+                                            <td><DeliveryStatusLabel Status="DeliveryStatus.InTransit" /></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="dt-table-window">11:00–13:00</td>
+                                            <td class="dt-muted">@Localizer["NoDriver"]</td>
+                                            <td>просп. Перемоги, 5</td>
+                                            <td><DeliveryStatusLabel Status="DeliveryStatus.Pending" /></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="dt-table-window">13:00–15:00</td>
+                                            <td>Тарас Мельник</td>
+                                            <td>вул. Саксаганського, 40</td>
+                                            <td><DeliveryStatusLabel Status="DeliveryStatus.Delivered" /></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="dt-table-window">15:00–17:00</td>
+                                            <td>Тарас Мельник</td>
+                                            <td>вул. Жилянська, 75</td>
+                                            <td><DeliveryStatusLabel Status="DeliveryStatus.Failed" /></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <p class="dt-landing-board-note">
+                                <Icon Name="IconName.Warning" />@Localizer["DeliveriesTruncated"]
+                            </p>
+                        </ChildContent>
+                    </DtCard>
+                </div>
+            </div>
+        </section>
+
+        @* What the product does, one card per part of the record. Each glyph is the one the
+           navigation uses for the screen that part lives on. *@
+        <section class="dt-landing-section dt-landing-section--tint" id="features">
+            <div class="dt-landing-wrap">
+                <div class="dt-landing-head">
+                    <span class="dt-landing-eyebrow">@Localizer["LandingNavFeatures"]</span>
+                    <h2 class="dt-type-h1 dt-landing-h2">@Localizer["LandingFeaturesTitle"]</h2>
+                    <p class="dt-landing-sub dt-muted">@Localizer["LandingFeaturesLead"]</p>
+                </div>
+
+                <div class="dt-landing-grid dt-landing-grid--3">
+                    <article class="dt-card dt-landing-tile">
+                        <span class="dt-landing-glyph dt-icon-only" aria-hidden="true"><Icon Name="IconName.Deliveries" /></span>
+                        <h3 class="dt-type-h2 dt-landing-tile-title">@Localizer["LandingFeatureBoard"]</h3>
+                        <p class="dt-landing-tile-body dt-muted">@Localizer["LandingFeatureBoardBody"]</p>
+                    </article>
+                    <article class="dt-card dt-landing-tile">
+                        <span class="dt-landing-glyph dt-icon-only" aria-hidden="true"><Icon Name="IconName.Location" /></span>
+                        <h3 class="dt-type-h2 dt-landing-tile-title">@Localizer["LandingFeatureMap"]</h3>
+                        <p class="dt-landing-tile-body dt-muted">@Localizer["LandingFeatureMapBody"]</p>
+                    </article>
+                    <article class="dt-card dt-landing-tile">
+                        <span class="dt-landing-glyph dt-icon-only" aria-hidden="true"><Icon Name="IconName.Proof" /></span>
+                        <h3 class="dt-type-h2 dt-landing-tile-title">@Localizer["LandingFeatureProof"]</h3>
+                        <p class="dt-landing-tile-body dt-muted">@Localizer["LandingFeatureProofBody"]</p>
+                    </article>
+                    <article class="dt-card dt-landing-tile">
+                        <span class="dt-landing-glyph dt-icon-only" aria-hidden="true"><Icon Name="IconName.Chat" /></span>
+                        <h3 class="dt-type-h2 dt-landing-tile-title">@Localizer["LandingFeatureChat"]</h3>
+                        <p class="dt-landing-tile-body dt-muted">@Localizer["LandingFeatureChatBody"]</p>
+                    </article>
+                    <article class="dt-card dt-landing-tile">
+                        <span class="dt-landing-glyph dt-icon-only" aria-hidden="true"><Icon Name="IconName.Shifts" /></span>
+                        <h3 class="dt-type-h2 dt-landing-tile-title">@Localizer["LandingFeatureFleet"]</h3>
+                        <p class="dt-landing-tile-body dt-muted">@Localizer["LandingFeatureFleetBody"]</p>
+                    </article>
+                    <article class="dt-card dt-landing-tile">
+                        <span class="dt-landing-glyph dt-icon-only" aria-hidden="true"><Icon Name="IconName.Timeline" /></span>
+                        <h3 class="dt-type-h2 dt-landing-tile-title">@Localizer["LandingFeatureTimeline"]</h3>
+                        <p class="dt-landing-tile-body dt-muted">@Localizer["LandingFeatureTimelineBody"]</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        @* One card per role, in the order a visitor is most likely to be: the client who can sign up
+           here, then the people who are given an account. Named with the roles' own words, the
+           ones the navigation's foot shows under a signed-in caller's name. *@
+        <section class="dt-landing-section" id="roles">
+            <div class="dt-landing-wrap">
+                <div class="dt-landing-head">
+                    <span class="dt-landing-eyebrow">@Localizer["LandingNavRoles"]</span>
+                    <h2 class="dt-type-h1 dt-landing-h2">@Localizer["LandingRolesTitle"]</h2>
+                    <p class="dt-landing-sub dt-muted">@Localizer["LandingRolesLead"]</p>
+                </div>
+
+                <div class="dt-landing-grid dt-landing-grid--4">
+                    <article class="dt-card dt-landing-tile">
+                        <span class="dt-landing-glyph dt-icon-only" aria-hidden="true"><Icon Name="IconName.Clients" /></span>
+                        <h3 class="dt-type-h2 dt-landing-tile-title">@Localizer["RoleClient"]</h3>
+                        <p class="dt-landing-origin dt-type-small dt-muted">@Localizer["LandingClientOrigin"]</p>
+                        <ul class="dt-landing-list">
+                            @Tick(Localizer["LandingClientDoes1"])
+                            @Tick(Localizer["LandingClientDoes2"])
+                            @Tick(Localizer["LandingClientDoes3"])
+                            @Tick(Localizer["LandingClientDoes4"])
+                        </ul>
+                    </article>
+                    <article class="dt-card dt-landing-tile">
+                        <span class="dt-landing-glyph dt-icon-only" aria-hidden="true"><Icon Name="IconName.Drivers" /></span>
+                        <h3 class="dt-type-h2 dt-landing-tile-title">@Localizer["RoleDriver"]</h3>
+                        <p class="dt-landing-origin dt-type-small dt-muted">@Localizer["LandingDriverOrigin"]</p>
+                        <ul class="dt-landing-list">
+                            @Tick(Localizer["LandingDriverDoes1"])
+                            @Tick(Localizer["LandingDriverDoes2"])
+                            @Tick(Localizer["LandingDriverDoes3"])
+                            @Tick(Localizer["LandingDriverDoes4"])
+                        </ul>
+                    </article>
+                    <article class="dt-card dt-landing-tile">
+                        <span class="dt-landing-glyph dt-icon-only" aria-hidden="true"><Icon Name="IconName.Dispatchers" /></span>
+                        <h3 class="dt-type-h2 dt-landing-tile-title">@Localizer["RoleDispatcher"]</h3>
+                        <p class="dt-landing-origin dt-type-small dt-muted">@Localizer["LandingDispatcherOrigin"]</p>
+                        <ul class="dt-landing-list">
+                            @Tick(Localizer["LandingDispatcherDoes1"])
+                            @Tick(Localizer["LandingDispatcherDoes2"])
+                            @Tick(Localizer["LandingDispatcherDoes3"])
+                            @Tick(Localizer["LandingDispatcherDoes4"])
+                        </ul>
+                    </article>
+                    @* The design gives the administrator the client's glyph: the icon set has no
+                       mark of its own for the role that is every role. *@
+                    <article class="dt-card dt-landing-tile">
+                        <span class="dt-landing-glyph dt-icon-only" aria-hidden="true"><Icon Name="IconName.Clients" /></span>
+                        <h3 class="dt-type-h2 dt-landing-tile-title">@Localizer["RoleAdmin"]</h3>
+                        <p class="dt-landing-origin dt-type-small dt-muted">@Localizer["LandingAdminOrigin"]</p>
+                        <ul class="dt-landing-list">
+                            @Tick(Localizer["LandingAdminDoes1"])
+                            @Tick(Localizer["LandingAdminDoes2"])
+                            @Tick(Localizer["LandingAdminDoes3"])
+                            @Tick(Localizer["LandingAdminDoes4"])
+                        </ul>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section class="dt-landing-section dt-landing-section--tint" id="how">
+            <div class="dt-landing-wrap">
+                <div class="dt-landing-head">
+                    <span class="dt-landing-eyebrow">@Localizer["LandingNavHow"]</span>
+                    <h2 class="dt-type-h1 dt-landing-h2">@Localizer["LandingHowTitle"]</h2>
+                </div>
+
+                @* An ordered list, so the numbers are the list's own: the figure in each disc is
+                   drawn for the eye and hidden from a screen reader, which announces the position
+                   itself. *@
+                <ol class="dt-landing-grid dt-landing-grid--4 dt-landing-steps">
+                    <li class="dt-landing-step">
+                        <span class="dt-landing-step-no" aria-hidden="true">1</span>
+                        <h3 class="dt-type-h2 dt-landing-tile-title">@Localizer["LandingStep1"]</h3>
+                        <p class="dt-landing-tile-body dt-muted">@Localizer["LandingStep1Body"]</p>
+                    </li>
+                    <li class="dt-landing-step">
+                        <span class="dt-landing-step-no" aria-hidden="true">2</span>
+                        <h3 class="dt-type-h2 dt-landing-tile-title">@Localizer["LandingStep2"]</h3>
+                        <p class="dt-landing-tile-body dt-muted">@Localizer["LandingStep2Body"]</p>
+                    </li>
+                    <li class="dt-landing-step">
+                        <span class="dt-landing-step-no" aria-hidden="true">3</span>
+                        <h3 class="dt-type-h2 dt-landing-tile-title">@Localizer["LandingStep3"]</h3>
+                        <p class="dt-landing-tile-body dt-muted">@Localizer["LandingStep3Body"]</p>
+                    </li>
+                    <li class="dt-landing-step">
+                        <span class="dt-landing-step-no" aria-hidden="true">4</span>
+                        <h3 class="dt-type-h2 dt-landing-tile-title">@Localizer["LandingStep4"]</h3>
+                        <p class="dt-landing-tile-body dt-muted">@Localizer["LandingStep4Body"]</p>
+                    </li>
+                </ol>
+            </div>
+        </section>
+
+        <section class="dt-landing-section" id="faq">
+            <div class="dt-landing-wrap">
+                <div class="dt-landing-head">
+                    <span class="dt-landing-eyebrow">@Localizer["LandingNavFaq"]</span>
+                    <h2 class="dt-type-h1 dt-landing-h2">@Localizer["LandingFaqTitle"]</h2>
+                </div>
+
+                <div class="dt-landing-grid dt-landing-grid--2">
+                    <div class="dt-card dt-landing-tile dt-landing-faq">
+                        <h3 class="dt-type-h3 dt-landing-tile-title">@Localizer["LandingFaq1"]</h3>
+                        <p class="dt-landing-tile-body dt-muted">@Localizer["LandingFaq1Answer"]</p>
+                    </div>
+                    <div class="dt-card dt-landing-tile dt-landing-faq">
+                        <h3 class="dt-type-h3 dt-landing-tile-title">@Localizer["LandingFaq2"]</h3>
+                        <p class="dt-landing-tile-body dt-muted">@Localizer["LandingFaq2Answer"]</p>
+                    </div>
+                    <div class="dt-card dt-landing-tile dt-landing-faq">
+                        <h3 class="dt-type-h3 dt-landing-tile-title">@Localizer["LandingFaq3"]</h3>
+                        <p class="dt-landing-tile-body dt-muted">@Localizer["LandingFaq3Answer"]</p>
+                    </div>
+                    <div class="dt-card dt-landing-tile dt-landing-faq">
+                        <h3 class="dt-type-h3 dt-landing-tile-title">@Localizer["LandingFaq4"]</h3>
+                        <p class="dt-landing-tile-body dt-muted">@Localizer["LandingFaq4Answer"]</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        @* The closing call to action exists to sign somebody up, so a caller who is already signed
+           in is not shown it: the header and the hero have already offered them their way in. *@
+        @if (!Caller.IsAuthenticated)
+        {
+            <section class="dt-landing-section dt-landing-dark dt-landing-cta">
+                <div class="dt-landing-wrap dt-landing-cta-row">
+                    <div class="dt-landing-cta-text">
+                        <h2 class="dt-type-h1 dt-landing-h2">@Localizer["LandingCtaTitle"]</h2>
+                        <p class="dt-landing-sub">@Localizer["LandingCtaLead"]</p>
+                    </div>
+                    <div class="dt-landing-actions">
+                        <a class="btn btn-primary" href="register">
+                            <Icon Name="IconName.Register" />@Localizer["LandingCreateAccount"]
+                        </a>
+                        <a class="btn btn-outline-secondary" href="sign-in">
+                            <Icon Name="IconName.SignIn" />@Localizer["SignIn"]
+                        </a>
+                    </div>
+                </div>
+            </section>
+        }
+    </main>
+
+    @* Drawn exactly as the design draws it. The links with nowhere to go yet - the company and legal
+       pages, password recovery - are `#` links, and the contact details are the design's own. *@
+    <footer class="dt-landing-dark dt-landing-foot">
+        <div class="dt-landing-wrap">
+            <div class="dt-landing-foot-grid">
+                <div>
+                    <a class="dt-landing-brand dt-landing-brand--inverse" href="#top">
+                        <span class="dt-nav__mark dt-icon-only"><Icon Name="IconName.Location" /></span>DriveTrack
+                    </a>
+                    <p class="dt-landing-foot-text">@Localizer["LandingFootTagline"]</p>
+                    <p class="dt-landing-foot-text">
+                        <a href="#">@SupportEmail</a><br />
+                        <a href="#">@SupportPhone</a>
+                    </p>
+                </div>
+
+                <div>
+                    <h2 class="dt-landing-foot-head">@Localizer["LandingFootProduct"]</h2>
+                    <ul class="dt-landing-foot-list">
+                        <li><a href="#features">@Localizer["LandingNavFeatures"]</a></li>
+                        <li><a href="#roles">@Localizer["LandingNavRoles"]</a></li>
+                        <li><a href="#how">@Localizer["LandingNavHow"]</a></li>
+                        <li><a href="#faq">@Localizer["LandingNavFaq"]</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h2 class="dt-landing-foot-head">@Localizer["LandingFootAccount"]</h2>
+                    <ul class="dt-landing-foot-list">
+                        @if (Caller.IsAuthenticated)
+                        {
+                            <li><a href="@LandingRoute.For(Caller.Role)">@WayInName</a></li>
+                        }
+
+                        @if (!Caller.IsAuthenticated)
+                        {
+                            <li><a href="sign-in">@Localizer["SignIn"]</a></li>
+                            <li><a href="register">@Localizer["LandingCreateClientAccount"]</a></li>
+                        }
+
+                        <li><a href="#">@Localizer["LandingForgotPassword"]</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h2 class="dt-landing-foot-head">@Localizer["LandingFootCompany"]</h2>
+                    <ul class="dt-landing-foot-list">
+                        <li><a href="#">@Localizer["LandingAbout"]</a></li>
+                        <li><a href="#">@Localizer["LandingContact"]</a></li>
+                        <li><a href="#">@Localizer["LandingServiceStatus"]</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h2 class="dt-landing-foot-head">@Localizer["LandingFootLegal"]</h2>
+                    <ul class="dt-landing-foot-list">
+                        <li><a href="#">@Localizer["LandingTerms"]</a></li>
+                        <li><a href="#">@Localizer["LandingPrivacy"]</a></li>
+                        <li><a href="#">@Localizer["LandingCookies"]</a></li>
+                        <li><a href="#">@Localizer["LandingDataProcessing"]</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="dt-landing-foot-bar">
+                <span>© 2026 DriveTrack</span>
+                <a href="#">@Localizer["LandingTerms"]</a>
+                <a href="#">@Localizer["LandingPrivacy"]</a>
+                <a href="#">@Localizer["LandingCookies"]</a>
+                <span class="dt-landing-foot-spacer"></span>
+                <DtLanguageSwitch ReturnUrl="/" Tone="DtLanguageTone.Dark" />
+            </div>
         </div>
-    </section>
-
-    @* One card per role that uses the product, in the order the work runs: dispatch plans it, a
-       driver carries it, a client receives it. The glyph in each head is the one the navigation
-       uses for that role's own screens, so the card and the destination it describes are recognisably
-       the same thing. *@
-    <section class="dt-landing-roles">
-        <DtCard Title="@Localizer["HomeForDispatchers"]">
-            <Actions>
-                <Icon Name="IconName.Dispatchers" />
-            </Actions>
-            <ChildContent>
-                <p class="dt-landing-role-body dt-muted">@Localizer["HomeForDispatchersBody"]</p>
-            </ChildContent>
-        </DtCard>
-
-        <DtCard Title="@Localizer["HomeForDrivers"]">
-            <Actions>
-                <Icon Name="IconName.Drivers" />
-            </Actions>
-            <ChildContent>
-                <p class="dt-landing-role-body dt-muted">@Localizer["HomeForDriversBody"]</p>
-            </ChildContent>
-        </DtCard>
-
-        <DtCard Title="@Localizer["HomeForClients"]">
-            <Actions>
-                <Icon Name="IconName.Clients" />
-            </Actions>
-            <ChildContent>
-                <p class="dt-landing-role-body dt-muted">@Localizer["HomeForClientsBody"]</p>
-            </ChildContent>
-        </DtCard>
-    </section>
+    </footer>
 </div>
+
+@code {
+    // The design's contact details, drawn as they are. Constants rather than catalogue entries: an
+    // address and a telephone number are not translated, and the Ukrainian catalogue carries no
+    // Latin word.
+    private const string SupportEmail = "support@drivetrack.ua";
+    private const string SupportPhone = "+380 44 000 00 00";
+
+    // Where a role lands, for the label that names it. LandingRoute owns the address; this names
+    // each place it can answer, and a new one fails loudly here rather than borrowing a label.
+    private bool WayInIsDashboard => LandingRoute.For(Caller.Role) switch
+    {
+        "/dashboard" => true,
+        "/profile" => false,
+        var route => throw new InvalidOperationException(
+            $"The landing page has no label for the landing route '{route}'."),
+    };
+
+    private UserProfile? _me;
+
+    // The avatar's two letters: the first of each name, upper-cased in the culture being read.
+    private string Initials => _me is null
+        ? string.Empty
+        : string.Concat(
+            _me.FirstName.AsSpan(0, Math.Min(1, _me.FirstName.Length)),
+            _me.LastName.AsSpan(0, Math.Min(1, _me.LastName.Length)))
+            .ToUpper(System.Globalization.CultureInfo.CurrentCulture);
+
+    // The one way into the application, as a button's content: the navigation's own glyph and word
+    // for the place it goes to. The dashboard's glyph is the timeline, as it is in the menu.
+    private RenderFragment WayIn => @<text>
+        @if (WayInIsDashboard)
+        {
+            <Icon Name="IconName.Timeline" />@Localizer["NavDashboard"]
+        }
+        @if (!WayInIsDashboard)
+        {
+            <Icon Name="IconName.Profile" />@Localizer["Profile"]
+        }
+    </text>;
+
+    // The same, as a footer link: words only, as every other link in that column is.
+    private string WayInName => WayInIsDashboard ? Localizer["NavDashboard"] : Localizer["Profile"];
+
+    // One line of a role's list: the tick in the success colour, then what that role does.
+    private static RenderFragment Tick(string text) => @<li><Icon Name="IconName.Confirm" />@text</li>;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Caller.IsAuthenticated)
+        {
+            return;
+        }
+
+        try
+        {
+            _me = await Users.GetProfileAsync(Caller.UserId, CircuitToken);
+        }
+        catch (DriveTrackException)
+        {
+            // The header draws without the name rather than failing the page.
+            _me = null;
+        }
+    }
+}

@@ -1,40 +1,225 @@
 /*
-    The landing page's own layout, and nothing else. Everything it is built from - the card, the
-    illustration's overdue badge and status labels, the display type ramp and the muted utility - is
-    the shared vocabulary, so what is left here is how the two sections are arranged and how the
-    illustration's table is ruled.
+    The landing page's own layout, and nothing else. Everything it is built from - the card surface,
+    the buttons, the illustration's overdue badge and status labels, the type ramps and the muted
+    utility, the shell's brand mark - is the shared vocabulary, so what is left here is how the
+    sections are arranged, the two dark bands, and how the illustration's table is ruled.
 
     NFR-29: every palette value is a `--dt-*` reference. What is literal is geometry the palette
-    does not name - the column counts and the phone breakpoint, which a media query cannot read from
-    a custom property at all.
+    does not name - the content width, the glyph tiles, the column counts and the phone breakpoint,
+    which a media query cannot read from a custom property at all.
 
-    The design writes the hero as `padding: 64px 72px`, `gap: 56px` and a 44px headline. None of
-    those figures exists in the palette, and inventing tokens for one screen is how a scale stops
-    being a scale, so each is taken to the nearest published step: the page padding is the shell's
-    (`.dt-main`), the gaps are the six-step spacing scale, and the headline wears `dt-type-display`,
-    which is the ramp the palette publishes for exactly one thing - a landing page's headline.
+    The design writes its own figures for the hero (`gap: 56px`, a 42px headline), the section
+    headings (28px), the leads (15px and 17px) and the section padding. None of those exists in the
+    palette, and inventing tokens for one screen is how a scale stops being a scale, so each is taken
+    to the nearest published step: the gaps are the six-step spacing scale, the headline wears
+    `dt-type-display`, which the palette publishes for exactly one thing - a landing page's headline -
+    and the section headings wear the screen-title ramp one step under it.
+
+    `::deep` wherever the element is drawn by a child component - the icon's svg, the badge's span,
+    the language switch's select. A scoped rule is stamped with this page's attribute, and those
+    elements carry the child's.
 */
 
 .dt-landing {
+    background-color: var(--dt-surface-card);
+    color: var(--dt-ink);
+}
+
+/* The design's content column: 1160px, centred, with the page padding either side. */
+.dt-landing-wrap {
+    max-width: 72.5rem;
+    margin: 0 auto;
+    padding: 0 var(--dt-space-6);
+}
+
+/* ---------------------------------------------------------------- header */
+
+.dt-landing-header {
+    position: sticky;
+    top: 0;
+    z-index: var(--dt-z-nav);
+    background-color: var(--dt-surface-card);
+    border-bottom: var(--dt-border-width) solid var(--dt-border);
+}
+
+.dt-landing-headrow {
+    display: flex;
+    align-items: center;
+    gap: var(--dt-space-5);
+    min-height: 4.5rem;
+}
+
+/* The shell's lock-up on a white ground: the mark is `dt-nav__mark`, the wordmark the brand's. */
+.dt-landing-brand {
+    display: flex;
+    align-items: center;
+    color: var(--dt-ink);
+    font-size: var(--dt-h2-font-size);
+    line-height: var(--dt-h2-line-height);
+    font-weight: var(--dt-display-font-weight);
+    text-decoration: none;
+}
+
+.dt-landing-sections {
+    display: flex;
+    flex-grow: 1;
+    gap: var(--dt-space-5);
+}
+
+.dt-landing-section-link {
+    color: var(--dt-ink-muted);
+    font-size: var(--dt-body-font-size);
+    line-height: var(--dt-body-line-height);
+    font-weight: var(--dt-label-font-weight);
+    text-decoration: none;
+}
+
+@media (hover: hover) {
+    .dt-landing-section-link:hover {
+        color: var(--dt-brand);
+    }
+}
+
+.dt-landing-account {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--dt-space-2);
+}
+
+/* Who is signed in: the initials disc and the full name, before the one way in. */
+.dt-landing-me {
+    display: flex;
+    align-items: center;
+    gap: var(--dt-space-2);
+    color: var(--dt-ink);
+    font-size: var(--dt-label-font-size);
+    line-height: var(--dt-label-line-height);
+    font-weight: var(--dt-label-font-weight);
+}
+
+.dt-landing-avatar {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--dt-control-height-sm);
+    height: var(--dt-control-height-sm);
+    border-radius: var(--dt-radius-pill);
+    background-color: var(--dt-surface-hover);
+    color: var(--dt-brand);
+    font-size: var(--dt-small-font-size);
+    line-height: var(--dt-small-line-height);
+    font-weight: var(--dt-h1-font-weight);
+}
+
+/* ---------------------------------------------------------------- sections */
+
+/*
+    The design pads a section by `space-6 + space-4`; NFR-29 reads a sum as a literal, so it is the
+    largest step on its own.
+
+    Below the sticky header rather than under it: an anchor jump lands the section's heading where
+    it can be read, not behind the bar it was chosen from.
+*/
+.dt-landing-section {
+    padding: var(--dt-space-6) 0;
+    scroll-margin-top: 4.5rem;
+}
+
+.dt-landing-section--tint {
+    background-color: var(--dt-surface-page);
+    border-top: var(--dt-border-width) solid var(--dt-border);
+    border-bottom: var(--dt-border-width) solid var(--dt-border);
+}
+
+.dt-landing-head {
+    max-width: 42.5rem;
+    margin: 0 0 var(--dt-space-5);
+}
+
+.dt-landing-eyebrow {
+    display: inline-block;
+    margin-bottom: var(--dt-space-2);
+    color: var(--dt-brand);
+    font-size: var(--dt-small-font-size);
+    line-height: var(--dt-small-line-height);
+    font-weight: var(--dt-display-font-weight);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.dt-landing-h2 {
+    margin: 0 0 var(--dt-space-2);
+}
+
+.dt-landing-sub {
+    margin: 0;
+}
+
+/*
+    `minmax(0, 1fr)` rather than `1fr` on every track: a bare `1fr` will not shrink below its
+    content's min-content width, and the board's nowrap cells made that wider than a phone.
+*/
+.dt-landing-grid {
+    display: grid;
+    gap: var(--dt-space-4);
+}
+
+.dt-landing-grid--2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dt-landing-grid--3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.dt-landing-grid--4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+/* A card of the shared surface (`dt-card`) holding a glyph, a title and its words. */
+.dt-landing-tile {
     display: flex;
     flex-direction: column;
-    gap: var(--dt-space-6);
+    gap: var(--dt-space-2);
+    padding: var(--dt-space-5);
+}
+
+.dt-landing-faq {
+    gap: var(--dt-space-1);
+}
+
+.dt-landing-tile-title,
+.dt-landing-tile-body,
+.dt-landing-origin,
+.dt-landing-title,
+.dt-landing-lead {
+    margin: 0;
+}
+
+/* The glyph tile: the brand on its own tint, sized one step above the text it heads. */
+.dt-landing-glyph {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--dt-control-height);
+    height: var(--dt-control-height);
+    border-radius: var(--dt-radius-md);
+    background-color: var(--dt-surface-hover);
+    color: var(--dt-brand);
+    font-size: var(--dt-h2-font-size);
+}
+
+/* ---------------------------------------------------------------- hero */
+
+.dt-landing-hero-section {
+    padding-top: var(--dt-space-6);
 }
 
 /*
     Two columns, collapsing to one below the breakpoint: the pitch is what the page is for, so it
     comes first and the illustration follows it rather than pushing it below the fold.
-
-    Stated desktop-first, with the phone as the exception, because that is the direction `_theme.scss`
-    states the shell in - and the two have to switch on the same edge. The theme derives `640.98px`
-    from `$dt-breakpoint-phone`; this file is not Sass and has to write it out, so the figure is
-    repeated here rather than approximated as `min-width: 641px`, which would leave a sliver of
-    widths where the shell is a sidebar and the hero is still stacked.
-*/
-/*
-    `minmax(0, 1fr)` rather than `1fr` here and on the role cards: a bare `1fr` track will not shrink
-    below its content's min-content width, and the board's nowrap headings made that wider than a
-    phone.
 */
 .dt-landing-hero {
     display: grid;
@@ -49,14 +234,9 @@
     gap: var(--dt-space-4);
 }
 
-.dt-landing-title,
-.dt-landing-lead,
-.dt-landing-role-body {
-    margin: 0;
-}
-
 /* One step above body text: the lead is read before the reader has decided to read anything. */
 .dt-landing-lead {
+    max-width: 32.5rem;
     font-size: var(--dt-h2-font-size);
     line-height: var(--dt-h2-line-height);
 }
@@ -64,7 +244,7 @@
 .dt-landing-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--dt-space-2);
+    gap: var(--dt-space-3);
 }
 
 /* The board keeps its natural width and scrolls inside its card instead of widening the page. */
@@ -101,19 +281,235 @@
     border-bottom: 0;
 }
 
-.dt-landing-roles {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+/* The note a cut-off page carries, as DataTable draws it: warning ink on the warning tint. */
+.dt-landing-board-note {
+    display: flex;
+    align-items: flex-start;
+    margin: var(--dt-space-3) 0 0;
+    padding: var(--dt-space-2) var(--dt-space-3);
+    border-radius: var(--dt-radius-sm);
+    background-color: var(--dt-warning-subtle);
+    color: var(--dt-warning-text);
+    font-size: var(--dt-small-font-size);
+    line-height: var(--dt-small-line-height);
+}
+
+.dt-landing-board-note ::deep .dt-icon {
+    color: var(--dt-warning-mark);
+}
+
+/* ---------------------------------------------------------------- roles and steps */
+
+.dt-landing-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--dt-space-1);
+    margin: var(--dt-space-1) 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--dt-table-font-size);
+    line-height: var(--dt-table-line-height);
+}
+
+/* The icon's own end margin and this gap together are the design's space between tick and words. */
+.dt-landing-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--dt-space-1);
+}
+
+.dt-landing-list ::deep .dt-icon {
+    color: var(--dt-success);
+}
+
+.dt-landing-steps {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.dt-landing-step {
+    display: flex;
+    flex-direction: column;
+    gap: var(--dt-space-2);
+}
+
+.dt-landing-step-no {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: var(--dt-radius-pill);
+    background-color: var(--dt-brand);
+    color: var(--dt-ink-inverse);
+    font-weight: var(--dt-display-font-weight);
+}
+
+/* ---------------------------------------------------------------- the dark bands */
+
+/* The call to action and the footer stand on the navigation's own ground. */
+.dt-landing-dark {
+    background-color: var(--dt-nav-bg);
+    color: var(--dt-nav-ink);
+}
+
+/*
+    `focus-ring` is teal-700, which all but disappears on `nav-bg`; the palette declares
+    `focus-ring-on-dark` for exactly this ground, as the navigation uses it. `.btn:focus` named as
+    well, because the theme rings a clicked button on `:focus` and would otherwise win.
+*/
+.dt-landing-dark ::deep :focus-visible,
+.dt-landing-dark ::deep .btn:focus,
+.dt-landing-dark ::deep .dt-lang__select:focus {
+    outline: var(--dt-border-width-focus) solid var(--dt-focus-ring-on-dark);
+    outline-offset: var(--dt-border-width-focus);
+}
+
+.dt-landing-cta .dt-landing-h2 {
+    color: var(--dt-ink-inverse);
+}
+
+.dt-landing-cta-row {
+    display: flex;
+    align-items: center;
     gap: var(--dt-space-5);
 }
 
+.dt-landing-cta-text {
+    flex-grow: 1;
+}
+
+.dt-landing-cta .dt-landing-actions {
+    flex: none;
+}
+
+.dt-landing-foot {
+    border-top: var(--dt-border-width) solid var(--dt-nav-divider);
+    font-size: var(--dt-table-font-size);
+    line-height: var(--dt-table-line-height);
+}
+
+.dt-landing-foot a {
+    color: var(--dt-nav-ink);
+    text-decoration: none;
+}
+
+@media (hover: hover) {
+    .dt-landing-foot a:hover {
+        color: var(--dt-ink-inverse);
+        text-decoration: underline;
+    }
+}
+
+.dt-landing-foot .dt-landing-brand--inverse {
+    color: var(--dt-ink-inverse);
+}
+
+.dt-landing-foot-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) repeat(4, minmax(0, 1fr));
+    gap: var(--dt-space-5);
+    padding: var(--dt-space-6) 0 var(--dt-space-5);
+}
+
+.dt-landing-foot-text {
+    max-width: 16.25rem;
+    margin: var(--dt-space-3) 0 0;
+}
+
+.dt-landing-foot-head {
+    margin: 0 0 var(--dt-space-2);
+    color: var(--dt-ink-inverse);
+    font-size: var(--dt-small-font-size);
+    line-height: var(--dt-small-line-height);
+    font-weight: var(--dt-display-font-weight);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.dt-landing-foot-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--dt-space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.dt-landing-foot-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--dt-space-4);
+    padding: var(--dt-space-3) 0 var(--dt-space-5);
+    border-top: var(--dt-border-width) solid var(--dt-nav-divider);
+    font-size: var(--dt-small-font-size);
+    line-height: var(--dt-small-line-height);
+}
+
+.dt-landing-foot-spacer {
+    flex-grow: 1;
+}
+
+/* ---------------------------------------------------------------- phone */
+
+/*
+    Stated desktop-first, with the phone as the exception, because that is the direction
+    `_theme.scss` states the shell in - and the two have to switch on the same edge. The theme
+    derives `640.98px` from `$dt-breakpoint-phone`; this file is not Sass and has to write it out.
+*/
 @media (max-width: 640.98px) {
-    .dt-landing-hero {
+    .dt-landing-wrap {
+        padding: 0 var(--dt-space-4);
+    }
+
+    /*
+        The header wraps to several rows here, taller than any fixed scroll margin, so it stops
+        sticking: an anchor jump then lands its heading at the top of the screen, under nothing.
+    */
+    .dt-landing-header {
+        position: static;
+    }
+
+    .dt-landing-section {
+        scroll-margin-top: 0;
+    }
+
+    /* The section anchors go; the brand and the account controls wrap onto as many rows as they need. */
+    .dt-landing-headrow {
+        flex-wrap: wrap;
+        gap: var(--dt-space-3);
+        padding: var(--dt-space-3) var(--dt-space-4);
+    }
+
+    .dt-landing-sections {
+        display: none;
+    }
+
+    .dt-landing-brand {
+        flex-grow: 1;
+    }
+
+    .dt-landing-hero,
+    .dt-landing-grid--2,
+    .dt-landing-grid--3,
+    .dt-landing-grid--4,
+    .dt-landing-foot-grid {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    .dt-landing-hero {
         gap: var(--dt-space-5);
     }
 
-    .dt-landing-roles {
-        grid-template-columns: minmax(0, 1fr);
+    /* Stacked, the picture of a create button would sit under the real calls to action. */
+    .dt-landing-preview-create {
+        display: none;
+    }
+
+    .dt-landing-cta-row {
+        flex-direction: column;
+        align-items: flex-start;
     }
 }

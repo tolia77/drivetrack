@@ -64,9 +64,6 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="HomeStatus" xml:space="preserve">
-    <value>Delivery management for a small courier fleet: orders, drivers, vehicles and proof of delivery in one place.</value>
-  </data>
   <data name="NotFoundTitle" xml:space="preserve">
     <value>Page not found</value>
   </data>
@@ -126,30 +123,6 @@
   </data>
   <data name="Resume" xml:space="preserve">
     <value>Resume</value>
-  </data>
-  <data name="HomeHeroTitle" xml:space="preserve">
-    <value>Every delivery of your courier fleet in one place</value>
-  </data>
-  <data name="HomeForDispatchers" xml:space="preserve">
-    <value>For dispatchers</value>
-  </data>
-  <data name="HomeForDispatchersBody" xml:space="preserve">
-    <value>Plan every delivery on one board. Assign a driver, set the pickup and drop-off points on the map, and follow each status change.</value>
-  </data>
-  <data name="HomeForDrivers" xml:space="preserve">
-    <value>For drivers</value>
-  </data>
-  <data name="HomeForDriversBody" xml:space="preserve">
-    <value>Start a shift, see your deliveries by time window, update the status on the road and capture proof of delivery at the door.</value>
-  </data>
-  <data name="HomeForClients" xml:space="preserve">
-    <value>For clients</value>
-  </data>
-  <data name="HomeForClientsBody" xml:space="preserve">
-    <value>Request a delivery, track its status and leave a review when it is done.</value>
-  </data>
-  <data name="GoToApp" xml:space="preserve">
-    <value>Go to the application</value>
   </data>
   <data name="SignIn" xml:space="preserve">
     <value>Sign in</value>
@@ -981,5 +954,244 @@
   </data>
   <data name="DashboardReviewAbout" xml:space="preserve">
     <value>{0} about {1}</value>
+  </data>
+  <!-- The landing page (the DriveTrack screens design, "Landing page (public)"): its header,
+       sections, call to action and footer. -->
+  <data name="LandingSections" xml:space="preserve">
+    <value>Page sections</value>
+  </data>
+  <data name="LandingNavFeatures" xml:space="preserve">
+    <value>Features</value>
+  </data>
+  <data name="LandingNavRoles" xml:space="preserve">
+    <value>Who it is for</value>
+  </data>
+  <data name="LandingNavHow" xml:space="preserve">
+    <value>How it works</value>
+  </data>
+  <data name="LandingNavFaq" xml:space="preserve">
+    <value>FAQ</value>
+  </data>
+  <data name="LandingCreateAccount" xml:space="preserve">
+    <value>Create account</value>
+  </data>
+  <data name="LandingHeroTitle" xml:space="preserve">
+    <value>Every delivery, driver and shift on one board</value>
+  </data>
+  <data name="LandingHeroLead" xml:space="preserve">
+    <value>DriveTrack joins orders, drivers, vehicles, shifts, proof of delivery and conversations with dispatch. Ukrainian and English, on a desktop and at a doorstep.</value>
+  </data>
+  <data name="LandingCreateClientAccount" xml:space="preserve">
+    <value>Create a client account</value>
+  </data>
+  <data name="LandingSeeHow" xml:space="preserve">
+    <value>See how it works</value>
+  </data>
+  <data name="LandingFeaturesTitle" xml:space="preserve">
+    <value>The whole delivery, start to signature</value>
+  </data>
+  <data name="LandingFeaturesLead" xml:space="preserve">
+    <value>Nothing lives in a spreadsheet or a phone call. Each part writes to the same record.</value>
+  </data>
+  <data name="LandingFeatureBoard" xml:space="preserve">
+    <value>One board of deliveries</value>
+  </data>
+  <data name="LandingFeatureBoardBody" xml:space="preserve">
+    <value>Every delivery with driver, client, both addresses, package, window and status. Filter on six fields, a status, a date range and an overdue toggle.</value>
+  </data>
+  <data name="LandingFeatureMap" xml:space="preserve">
+    <value>Addresses on a map</value>
+  </data>
+  <data name="LandingFeatureMapBody" xml:space="preserve">
+    <value>Search an address or click the map to set pickup and drop-off. The driver opens the same point on the road.</value>
+  </data>
+  <data name="LandingFeatureProof" xml:space="preserve">
+    <value>Proof at the door</value>
+  </data>
+  <data name="LandingFeatureProofBody" xml:space="preserve">
+    <value>The driver captures the recipient name, a signature and up to five photos on a phone. The client sees the proof of their own delivery.</value>
+  </data>
+  <data name="LandingFeatureChat" xml:space="preserve">
+    <value>Conversations between dispatch and drivers</value>
+  </data>
+  <data name="LandingFeatureChatBody" xml:space="preserve">
+    <value>Messages arrive live. A driver writes to the dispatch desk without picking a recipient, and the history survives a reload.</value>
+  </data>
+  <data name="LandingFeatureFleet" xml:space="preserve">
+    <value>Shifts, drivers, vehicles</value>
+  </data>
+  <data name="LandingFeatureFleetBody" xml:space="preserve">
+    <value>Drivers start and end their own shifts. Dispatchers see who is on duty and keep vehicles, mileage and maintenance dates in one list.</value>
+  </data>
+  <data name="LandingFeatureTimeline" xml:space="preserve">
+    <value>An audit trail you can read</value>
+  </data>
+  <data name="LandingFeatureTimelineBody" xml:space="preserve">
+    <value>Every status change keeps who made it, when, and the comment left with it. Nothing in the timeline is edited or deleted.</value>
+  </data>
+  <data name="LandingRolesTitle" xml:space="preserve">
+    <value>Four roles, four different screens</value>
+  </data>
+  <data name="LandingRolesLead" xml:space="preserve">
+    <value>Each role sees its own destinations and its own data. The server settles every permission, not the menu.</value>
+  </data>
+  <data name="LandingClientOrigin" xml:space="preserve">
+    <value>Signs up alone</value>
+  </data>
+  <data name="LandingClientDoes1" xml:space="preserve">
+    <value>Request a delivery</value>
+  </data>
+  <data name="LandingClientDoes2" xml:space="preserve">
+    <value>Track pickup, drop-off and status</value>
+  </data>
+  <data name="LandingClientDoes3" xml:space="preserve">
+    <value>See the proof of their own delivery</value>
+  </data>
+  <data name="LandingClientDoes4" xml:space="preserve">
+    <value>Rate a finished delivery</value>
+  </data>
+  <data name="LandingDriverOrigin" xml:space="preserve">
+    <value>Created by a dispatcher</value>
+  </data>
+  <data name="LandingDriverDoes1" xml:space="preserve">
+    <value>Start and end a shift</value>
+  </data>
+  <data name="LandingDriverDoes2" xml:space="preserve">
+    <value>Own deliveries sorted by window</value>
+  </data>
+  <data name="LandingDriverDoes3" xml:space="preserve">
+    <value>Change status on the road</value>
+  </data>
+  <data name="LandingDriverDoes4" xml:space="preserve">
+    <value>Capture proof at the door</value>
+  </data>
+  <data name="LandingDispatcherOrigin" xml:space="preserve">
+    <value>Created by an admin</value>
+  </data>
+  <data name="LandingDispatcherDoes1" xml:space="preserve">
+    <value>Create and edit deliveries</value>
+  </data>
+  <data name="LandingDispatcherDoes2" xml:space="preserve">
+    <value>Assign drivers and vehicles</value>
+  </data>
+  <data name="LandingDispatcherDoes3" xml:space="preserve">
+    <value>Talk with drivers live</value>
+  </data>
+  <data name="LandingDispatcherDoes4" xml:space="preserve">
+    <value>Watch every delivery</value>
+  </data>
+  <data name="LandingAdminOrigin" xml:space="preserve">
+    <value>Seeded in the database</value>
+  </data>
+  <data name="LandingAdminDoes1" xml:space="preserve">
+    <value>Everything a dispatcher can do</value>
+  </data>
+  <data name="LandingAdminDoes2" xml:space="preserve">
+    <value>Manage dispatchers and clients</value>
+  </data>
+  <data name="LandingAdminDoes3" xml:space="preserve">
+    <value>Correct shift records</value>
+  </data>
+  <data name="LandingAdminDoes4" xml:space="preserve">
+    <value>Moderate reviews</value>
+  </data>
+  <data name="LandingHowTitle" xml:space="preserve">
+    <value>From an empty fleet to a signed delivery</value>
+  </data>
+  <data name="LandingStep1" xml:space="preserve">
+    <value>Add the fleet</value>
+  </data>
+  <data name="LandingStep1Body" xml:space="preserve">
+    <value>An admin creates vehicles and drivers, and gives each driver a vehicle from the unassigned list.</value>
+  </data>
+  <data name="LandingStep2" xml:space="preserve">
+    <value>Dispatch the work</value>
+  </data>
+  <data name="LandingStep2Body" xml:space="preserve">
+    <value>A dispatcher adds a delivery, picks a driver and a client, and sets both points on the map.</value>
+  </data>
+  <data name="LandingStep3" xml:space="preserve">
+    <value>Drive and close it out</value>
+  </data>
+  <data name="LandingStep3Body" xml:space="preserve">
+    <value>The driver goes on shift, moves the delivery to In transit, and captures proof at the door.</value>
+  </data>
+  <data name="LandingStep4" xml:space="preserve">
+    <value>Read the record</value>
+  </data>
+  <data name="LandingStep4Body" xml:space="preserve">
+    <value>The client follows the status and leaves a review. The admin reads the timeline and the proof.</value>
+  </data>
+  <data name="LandingFaqTitle" xml:space="preserve">
+    <value>Questions people ask first</value>
+  </data>
+  <data name="LandingFaq1" xml:space="preserve">
+    <value>Can a client see which driver carries their parcel?</value>
+  </data>
+  <data name="LandingFaq1Answer" xml:space="preserve">
+    <value>No. A client sees pickup, drop-off, package, status, the timeline and the proof of their own deliveries, never the assigned driver.</value>
+  </data>
+  <data name="LandingFaq2" xml:space="preserve">
+    <value>Who can create accounts?</value>
+  </data>
+  <data name="LandingFaq2Answer" xml:space="preserve">
+    <value>Clients sign up themselves. Dispatchers create drivers, admins create dispatchers, and admin accounts are seeded in the database.</value>
+  </data>
+  <data name="LandingFaq3" xml:space="preserve">
+    <value>Does it work on a phone?</value>
+  </data>
+  <data name="LandingFaq3Answer" xml:space="preserve">
+    <value>Yes. The sidebar collapses below 641px and proof capture is built for a phone first — a recipient signs with a finger at the door.</value>
+  </data>
+  <data name="LandingFaq4" xml:space="preserve">
+    <value>Which languages does it speak?</value>
+  </data>
+  <data name="LandingFaq4Answer" xml:space="preserve">
+    <value>Ukrainian and English, switched anywhere in the app. Every string comes from the resource catalogue, so a third language is a translation, not a rebuild.</value>
+  </data>
+  <data name="LandingCtaTitle" xml:space="preserve">
+    <value>Ready to put the board to work?</value>
+  </data>
+  <data name="LandingCtaLead" xml:space="preserve">
+    <value>Create a client account in a minute, or ask your administrator for a dispatcher login.</value>
+  </data>
+  <data name="LandingFootTagline" xml:space="preserve">
+    <value>Delivery management for a small courier fleet. Built in Kyiv.</value>
+  </data>
+  <data name="LandingFootProduct" xml:space="preserve">
+    <value>Product</value>
+  </data>
+  <data name="LandingFootAccount" xml:space="preserve">
+    <value>Account</value>
+  </data>
+  <data name="LandingFootCompany" xml:space="preserve">
+    <value>Company</value>
+  </data>
+  <data name="LandingFootLegal" xml:space="preserve">
+    <value>Legal</value>
+  </data>
+  <data name="LandingForgotPassword" xml:space="preserve">
+    <value>Forgot password</value>
+  </data>
+  <data name="LandingAbout" xml:space="preserve">
+    <value>About DriveTrack</value>
+  </data>
+  <data name="LandingContact" xml:space="preserve">
+    <value>Contact</value>
+  </data>
+  <data name="LandingServiceStatus" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="LandingTerms" xml:space="preserve">
+    <value>Terms of Service</value>
+  </data>
+  <data name="LandingPrivacy" xml:space="preserve">
+    <value>Privacy Policy</value>
+  </data>
+  <data name="LandingCookies" xml:space="preserve">
+    <value>Cookie Policy</value>
+  </data>
+  <data name="LandingDataProcessing" xml:space="preserve">
+    <value>Data processing</value>
   </data>
 </root>

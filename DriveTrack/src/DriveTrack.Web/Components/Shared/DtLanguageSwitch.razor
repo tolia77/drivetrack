@@ -1,0 +1,68 @@
+@using System.Globalization
+@inject IStringLocalizer<UiText> Localizer
+
+@* NFR-14: the language switch, offered to every caller including an anonymous one - the sign-in
+   page is a screen too, and somebody who cannot read it cannot sign in to change anything.
+
+   A real form posting to /set-culture rather than an @onclick handler, and that is not a style
+   choice: the language is carried by a cookie, and a Blazor Server component cannot write one. By
+   the time its circuit is live the response that would have carried Set-Cookie finished long ago.
+   So this copies the sign-out idiom exactly - method="post", an antiforgery token, and a full-page
+   navigation that comes back in the other language.
+
+   The design draws it as the Select component: a native <select> whose change submits its form. A
+   plain DOM attribute rather than an @onchange handler, for the reason the menu's disclosure is a
+   <details>: five screens render the navigation with no circuit behind them, and the sign-in page
+   is one of them.
+
+   Each language is named by its own short code, identical in both catalogues, so a reader who
+   cannot read the page can still find their own language on it.
+
+   One component for the three places the switch is drawn - the navigation's foot, and the landing
+   page's header and footer - so the form the endpoint expects is written once. Where it comes back
+   to is the caller's answer rather than this component's: the navigation follows the route it is
+   on, and the landing page is always the root. *@
+
+<form class="dt-lang" method="post" action="/set-culture">
+    <AntiforgeryToken />
+    <input type="hidden" name="returnUrl" value="@ReturnUrl" />
+    <select class="@SelectClass" name="culture" aria-label="@Localizer["Language"]"
+            onchange="this.form.submit()">
+        <option value="uk-UA" selected="@IsUkrainian">@Localizer["LanguageUkrainian"]</option>
+        <option value="en-US" selected="@IsEnglish">@Localizer["LanguageEnglish"]</option>
+    </select>
+</form>
+
+@code {
+    /// <summary>
+    /// The base-relative address the switch comes back to, starting with a slash. The endpoint
+    /// refuses anything that is not local and sends the caller to the root instead.
+    /// </summary>
+    [Parameter, EditorRequired]
+    public string ReturnUrl { get; set; } = "/";
+
+    /// <summary>The surface the switch sits on. Dark unless the caller says otherwise.</summary>
+    [Parameter]
+    public DtLanguageTone Tone { get; set; } = DtLanguageTone.Dark;
+
+    private string SelectClass => Tone switch
+    {
+        DtLanguageTone.Dark => "dt-lang__select",
+        DtLanguageTone.Light => "dt-lang__select dt-lang__select--light",
+        _ => throw new ArgumentOutOfRangeException(
+            nameof(Tone),
+            Tone,
+            "No select class is defined for this tone."),
+    };
+
+    // The current language, read from the culture the request resolved to rather than from the
+    // cookie: the cookie may hold a value the supported list refused, and what the user is actually
+    // reading is what the marker has to agree with.
+    private static bool IsUkrainian =>
+        string.Equals(
+            CultureInfo.CurrentUICulture.TwoLetterISOLanguageName,
+            "uk",
+            StringComparison.Ordinal);
+
+    private static bool IsEnglish => !IsUkrainian;
+}

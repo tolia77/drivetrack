@@ -1,5 +1,6 @@
 using System.Globalization;
 using DriveTrack.Application.Authorization;
+using DriveTrack.Application.Common;
 using DriveTrack.Application.Users;
 using DriveTrack.Domain.Identity;
 using DriveTrack.Integration.Tests.Support;
@@ -33,17 +34,22 @@ internal static class ShellCaller
     /// renders the root's answer for every test that passes nothing, which is indistinguishable
     /// from a component that reads nothing at all.
     /// </param>
+    /// <param name="profileFails">
+    /// True to have the caller's own profile refused, as a deleted account's would be, so a test can
+    /// read what a component draws without the caller's name.
+    /// </param>
     public static Task<string> RenderAsync<TComponent>(
         UserRole? role,
         CultureInfo? culture = null,
-        string? path = null)
+        string? path = null,
+        bool profileFails = false)
         where TComponent : IComponent =>
         ComponentRenderer.RenderAsync<TComponent>(
             parameters: null,
             configureServices: services =>
             {
                 services.AddSingleton<ICurrentUser>(new StubCurrentUser(role));
-                services.AddSingleton<IUserService>(new StubUsers(role));
+                services.AddSingleton<IUserService>(new StubUsers(role, profileFails));
                 services.AddSingleton<NavigationManager>(new StubNavigationManager(path));
                 services.AddSingleton<AntiforgeryStateProvider, StubAntiforgeryStateProvider>();
             },
@@ -74,7 +80,7 @@ internal static class ShellCaller
             services =>
             {
                 services.AddSingleton<ICurrentUser>(new StubCurrentUser(role));
-                services.AddSingleton<IUserService>(new StubUsers(role));
+                services.AddSingleton<IUserService>(new StubUsers(role, profileFails: false));
                 services.AddSingleton<NavigationManager>(navigation);
                 services.AddSingleton<AntiforgeryStateProvider, StubAntiforgeryStateProvider>();
             },
@@ -111,10 +117,12 @@ internal static class ShellCaller
     /// The caller's own profile, which the foot reads for its name and role. Answered without a
     /// database; every other member throws, because a rendered menu reaches none of them.
     /// </summary>
-    private sealed class StubUsers(UserRole? role) : IUserService
+    private sealed class StubUsers(UserRole? role, bool profileFails) : IUserService
     {
         public Task<UserProfile> GetProfileAsync(UserId userId, CancellationToken cancellationToken) =>
-            Task.FromResult(new UserProfile(
+            profileFails
+                ? Task.FromException<UserProfile>(new NotFoundException(ErrorCode.COMMON_NOT_FOUND, "missing"))
+                : Task.FromResult(new UserProfile(
                 userId,
                 "Ірина",
                 "Бондар",

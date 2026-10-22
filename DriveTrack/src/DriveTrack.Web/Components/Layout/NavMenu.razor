@@ -261,33 +261,10 @@
                 }
             </div>
 
-            @* NFR-14: the language switch, offered to every caller including an anonymous one - the
-               sign-in page is a screen too, and somebody who cannot read it cannot sign in to
-               change anything.
-
-               A real form posting to /set-culture rather than an @onclick handler, and that is not
-               a style choice: the language is carried by a cookie, and a Blazor Server component
-               cannot write one. By the time its circuit is live the response that would have
-               carried Set-Cookie finished long ago. So this copies the sign-out idiom exactly -
-               method="post", an antiforgery token, and a full-page navigation that comes back in
-               the other language.
-
-               The design draws it as the Select component: a native <select> whose change submits
-               its form. A plain DOM attribute rather than an @onchange handler, for the reason the
-               menu's disclosure is a <details>: five screens render this menu with no circuit
-               behind them, and the sign-in page is one of them.
-
-               Each language is named by its own short code, identical in both catalogues, so a
-               reader who cannot read the page can still find their own language on it. *@
-            <form class="dt-lang" method="post" action="/set-culture">
-                <AntiforgeryToken />
-                <input type="hidden" name="returnUrl" value="@ReturnUrl" />
-                <select class="dt-lang__select" name="culture" aria-label="@Localizer["Language"]"
-                        onchange="this.form.submit()">
-                    <option value="uk-UA" selected="@IsUkrainian">@Localizer["LanguageUkrainian"]</option>
-                    <option value="en-US" selected="@IsEnglish">@Localizer["LanguageEnglish"]</option>
-                </select>
-            </form>
+            @* NFR-14: the language switch, offered to every caller including an anonymous one. The
+               form, the endpoint it posts to and why it is a form at all live in the component;
+               what stays here is where it comes back to, which is the screen the caller is on. *@
+            <DtLanguageSwitch ReturnUrl="@ReturnUrl" />
         </div>
     </div>
 </nav>
@@ -306,17 +283,6 @@
     // component changes when the route does, so without it a caller who navigated three screens
     // deep would be sent back to the one the menu last rendered on.
     private string ReturnUrl => "/" + Navigation.ToBaseRelativePath(Navigation.Uri);
-
-    // The current language, read from the culture the request resolved to rather than from the
-    // cookie: the cookie may hold a value the supported list refused, and what the user is actually
-    // reading is what the marker has to agree with.
-    private static bool IsUkrainian =>
-        string.Equals(
-            CultureInfo.CurrentUICulture.TwoLetterISOLanguageName,
-            "uk",
-            StringComparison.Ordinal);
-
-    private static bool IsEnglish => !IsUkrainian;
 
     private UserProfile? _me;
 
