@@ -28,7 +28,10 @@
     top: 0;
     z-index: var(--dt-z-sticky);
     background-color: var(--dt-surface-card);
-    border-bottom: var(--dt-border-width) solid var(--dt-border);
+    /* `border-control` rather than the hairline the rows are ruled with: the line under the
+       column names is the one rule that divides the table into two kinds of thing, and the
+       design draws it a step heavier than the rules between records. */
+    border-bottom: var(--dt-border-width) solid var(--dt-border-control);
     font-size: var(--dt-label-font-size);
     line-height: var(--dt-label-line-height);
     font-weight: var(--dt-label-font-weight);
@@ -104,11 +107,28 @@
 .dt-table-note {
     display: flex;
     align-items: center;
+    /* `space-1` here and the icon's own `space-1` end margin make the design's `space-2` between
+       the glyph and the sentence. */
+    gap: var(--dt-space-1);
     margin: 0;
     padding: var(--dt-space-2) var(--dt-space-3);
-    border-radius: var(--dt-radius-sm);
+    border: var(--dt-border-width) solid var(--dt-border);
+    border-top: 0;
+    border-radius: 0 0 var(--dt-radius-md) var(--dt-radius-md);
     background-color: var(--dt-warning-subtle);
     color: var(--dt-warning-text);
+}
+
+/*
+    The note is the table's foot rather than a banner under it, so the two are drawn as one box:
+    the scroll box gives up its bottom corners, and the note above has no top edge or corners of
+    its own - the scroll box's bottom border is the line between them. A modifier on the scroll box
+    rather than `:has(+ .dt-table-note)`, because this component already knows whether it drew the
+    note and the markup can just say so.
+*/
+.dt-table-scroll--noted {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
 }
 
 /*

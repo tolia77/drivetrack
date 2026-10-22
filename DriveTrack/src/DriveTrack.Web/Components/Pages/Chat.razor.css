@@ -126,7 +126,11 @@
     line-height: var(--dt-h2-line-height);
 }
 
-/* The conversation itself, and the only part of the card that scrolls. */
+/*
+    The conversation itself, and the only part of the card that scrolls. On the page tint rather
+    than the card: the received bubbles are card-coloured with an edge, and on a card-coloured
+    ground they were an outline with nothing to stand out from.
+*/
 .dt-chat-messages {
     display: flex;
     flex: 1;
@@ -136,6 +140,24 @@
     margin: 0;
     padding: var(--dt-space-4);
     gap: var(--dt-space-2);
+    background-color: var(--dt-surface-page);
+}
+
+/*
+    A short conversation sits at the bottom of its box, next to the composer, the way every
+    messaging app draws one - the newest line is where the reader is about to write.
+
+    A first-child `margin-top: auto` rather than `justify-content: flex-end`. Flex-end on a column
+    that overflows pushes the overflow out of the top of the box, where `overflow-y: auto` cannot
+    scroll to it, and the oldest lines of a long thread became unreachable. An auto margin only
+    takes space that is free, so once the lines fill the box it is zero and the list scrolls as
+    before.
+
+    `::deep`, because the first child is a ChatLine or a ChatDaySeparator and carries that
+    component's scope rather than this one's. The list is written here, so it anchors the selector.
+*/
+.dt-chat-messages ::deep > :first-child {
+    margin-top: auto;
 }
 
 /*

@@ -350,7 +350,13 @@ public class LocalizationTests(PostgresFixture postgres)
             .ToArray();
     }
 
-    /// <summary>Every <c>@Localizer["Key"]</c> a component under <c>Components/</c> asks for.</summary>
+    /// <summary>Every <c>Localizer["Key"]</c> a component under <c>Components/</c> asks for.</summary>
+    /// <remarks>
+    /// In markup or in the component's own <c>@code</c>, so the leading <c>@</c> is optional. A key
+    /// chosen by a member - the empty sentence that differs by role, the map's fallback name - is
+    /// read in C# because a markup attribute can only take one expression, and it is asked for all
+    /// the same.
+    /// </remarks>
     private static HashSet<string> KeysUsedByComponents()
     {
         var components = Directory.GetFiles(
@@ -359,7 +365,7 @@ public class LocalizationTests(PostgresFixture postgres)
             SearchOption.AllDirectories);
 
         var pattern = new System.Text.RegularExpressions.Regex(
-            @"@Localizer\[""([^""]+)""\]",
+            @"(?<![\w.])@?Localizer\[""([^""]+)""\]",
             System.Text.RegularExpressions.RegexOptions.CultureInvariant,
             TimeSpan.FromSeconds(5));
 

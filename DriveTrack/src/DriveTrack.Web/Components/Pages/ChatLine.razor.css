@@ -52,9 +52,7 @@
 }
 
 /*
-    Who and when, under the text and on one line. `color: inherit` with a reduced opacity rather
-    than `ink-muted`: the meta sits on two different fills, and a muted grey chosen for the white
-    one is unreadable on the teal.
+    Who and when, under the text and on one line.
 
     A block so it takes the line under the message rather than running on from it, and no `gap`:
     what separates the name from the time is the dot the markup writes, so the spacing is the text's
@@ -63,8 +61,20 @@
 .dt-bubble__meta {
     display: block;
     margin-top: var(--dt-space-1);
-    color: inherit;
-    opacity: 0.8;
     font-size: var(--dt-small-font-size);
     line-height: var(--dt-small-line-height);
+}
+
+/*
+    Its colour per side, because the meta sits on two different fills and no one ink reads on both:
+    `ink-muted` is chosen for the white bubble and is unreadable on the teal. A token per side
+    rather than the inherited ink at reduced opacity, which is what this was - a faded white is a
+    colour the palette never checked for contrast, and the two tokens are ones it has.
+*/
+.dt-bubble--own .dt-bubble__meta {
+    color: var(--dt-ink-inverse);
+}
+
+.dt-bubble--other .dt-bubble__meta {
+    color: var(--dt-ink-muted);
 }

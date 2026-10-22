@@ -18,7 +18,7 @@
      class="dt-map"
      data-picker="@(Picker ? "true" : null)"
      role="region"
-     aria-label="@Localizer["MapLabel"]"></div>
+     aria-label="@AccessibleName"></div>
 
 @code {
     private const string ModulePath = "./Components/Shared/DtMap.razor.js";
@@ -55,6 +55,15 @@
     [Parameter]
     public bool Picker { get; set; }
 
+    /// <summary>
+    /// What this map is a map of, already localized - "pickup", "dropoff" - for the region's
+    /// accessible name. Null falls back to the generic "a map showing the location", which is right
+    /// for a screen with one map and wrong for a dialog with two: a screen reader's landmark list
+    /// then offered two regions with the same name and no way to tell which point either one sets.
+    /// </summary>
+    [Parameter]
+    public string? Label { get; set; }
+
     /// <summary>The initial zoom level.</summary>
     [Parameter]
     public int Zoom { get; set; } = 13;
@@ -64,6 +73,9 @@
     /// does not re-centre the map underneath a user who has just panned it away.
     /// </summary>
     private MapLocation? _centred;
+
+    /// <summary>The region's name: the caller's label when it gave one, the generic one otherwise.</summary>
+    private string AccessibleName => Label ?? Localizer["MapLabel"].Value;
 
     /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)

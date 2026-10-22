@@ -483,6 +483,10 @@ $dt-control-padding-y:        0.4375rem;  // 7px
 // rather than left to darken the scrim a second time.
 $dt-backdrop-opacity:         1;
 
+// Bootstrap fades a disabled button to `$btn-disabled-opacity`. The theme gives it a face of its
+// own - sunken surface, muted ink - and a fade on top would take that ink under its contrast floor.
+$dt-btn-disabled-opacity:     1;
+
 // The five theme colours, and only five. `$info`, `$light` and `$dark` are gone
 // from the map (NFR-23 has no informational action, and `bg-light` / `bg-dark`
 // have no consumer), which is what stops `.btn-info`, `.text-bg-info`, `--bs-info`

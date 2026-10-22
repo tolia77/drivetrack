@@ -98,6 +98,19 @@
     justify-self: end;
 }
 
+/*
+    The on-duty dot. No `::deep`: the <span> is this component's markup, handed to DtBadge as child
+    content, so it carries this scope and not the badge's. The badge's own `gap` spaces it from the
+    word.
+*/
+.dt-chat-thread__dot {
+    flex: none;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: var(--dt-radius-pill);
+    background-color: var(--dt-success);
+}
+
 /* A row is something a thumb has to land on, like every other control on a phone screen. */
 @media (max-width: 640.98px) {
     .dt-chat-thread {

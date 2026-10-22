@@ -415,6 +415,9 @@
   <data name="MyDeliveriesEmpty" xml:space="preserve">
     <value>You have not been assigned a single delivery yet.</value>
   </data>
+  <data name="MyDeliveriesEmptyClient" xml:space="preserve">
+    <value>You have no deliveries yet.</value>
+  </data>
   <data name="DeliveriesTruncated" xml:space="preserve">
     <value>Only the first page is shown: there may be more deliveries than this list fits.</value>
   </data>

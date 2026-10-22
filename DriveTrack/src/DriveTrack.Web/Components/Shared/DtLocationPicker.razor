@@ -23,9 +23,9 @@
    are laid out beside each other is the dialog's question, and a component that answered it would
    have to be told which half of the row it is. *@
 
-@* No `for` on the map's label below: a map is a region rather than a labelable control, and a `for`
-   pointing at one would be an association a browser ignores. DtMap carries its own aria-label. The
-   search box here is an input and has one. *@
+@* The search box is an input, so its caption is a <label> pointing at it. The map's caption further
+   down is not one: a map is a region rather than a labelable control, and the reason it is named
+   another way is given there. *@
 <label class="form-label dt-type-label" for="@BoxId">@Localizer["AddressSearch"]</label>
 <div class="input-group">
     <input id="@BoxId" class="form-control"
@@ -62,12 +62,16 @@
         }
     </ul>
 }
-<label class="form-label dt-type-label">@Label</label>
+@* The map's caption, as a plain element rather than a <label>: a label with no control is an
+   association a browser has nothing to make, and it was the map's only name - so both maps in a
+   dialog were announced by DtMap's one generic sentence. The caption's own words go to the map as
+   its accessible name instead, which is what tells the pickup region from the dropoff one. *@
+<div class="form-label dt-type-label">@Label</div>
 @* The search row above is a sibling of <DtMap>, never a child of it: Leaflet builds its own DOM
    inside that container, outside Blazor's diff, so anything rendered inside would be wiped on the
    first pan. It is the structural rule this file exists to keep - the box and the map are two
    elements beside each other, and nesting them reads as tidier right up to the first drag. *@
-<DtMap Value="Value" ValueChanged="Picked" Picker="true" />
+<DtMap Value="Value" ValueChanged="Picked" Picker="true" Label="@Label" />
 @* Under the map rather than in the dialog's banner: an unpicked point is refused with
    COMMON_FIELD_REQUIRED - "Обов’язкове поле" - which says nothing at all about which control, and
    the map is half a screen tall. Beneath it, the sentence needs nothing more. *@

@@ -1,8 +1,8 @@
 /*
     The landing page's own layout, and nothing else. Everything it is built from - the card, the
-    badge, the status labels, the display type ramp and the muted utility - is the shared
-    vocabulary, so what is left here is how the two sections are arranged and how the illustration's
-    table is ruled.
+    illustration's overdue badge and status labels, the display type ramp and the muted utility - is
+    the shared vocabulary, so what is left here is how the two sections are arranged and how the
+    illustration's table is ruled.
 
     NFR-29: every palette value is a `--dt-*` reference. What is literal is geometry the palette
     does not name - the column counts and the phone breakpoint, which a media query cannot read from
@@ -49,14 +49,8 @@
     gap: var(--dt-space-4);
 }
 
-/* A badge is an inline pill; without this it would stretch across the whole column. */
-.dt-landing-eyebrow {
-    align-self: start;
-}
-
 .dt-landing-title,
 .dt-landing-lead,
-.dt-landing-note,
 .dt-landing-role-body {
     margin: 0;
 }
@@ -91,7 +85,6 @@
 .dt-landing-board th {
     padding: var(--dt-space-2);
     border-bottom: var(--dt-border-width) solid var(--dt-border-control);
-    color: var(--dt-ink-muted);
     font-weight: var(--dt-label-font-weight);
     text-align: start;
     white-space: nowrap;

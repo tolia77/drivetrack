@@ -17,10 +17,14 @@
    This component does not collapse to cards on a phone, deliberately: what a row looks like once
    it stops being a row is the screen's question. A screen that wants it puts `dt-table-cards` on
    its own wrapper around this table - the block is in `_theme.scss` - and states whatever cell
-   placement it wants on top of it. *@
+   placement it wants on top of it.
 
-<div class="dt-table-scroll">
-    <table class="table table-sm table-striped table-hover dt-type-table">
+   No `table-sm`: its cells pad at `space-1`, and the design pads a cell at `space-2` - which is
+   the framework's own default once the bridge has set it, so the modifier was only taking the
+   design's figure away again. *@
+
+<div class="dt-table-scroll@(IsTruncated && Note is not null ? " dt-table-scroll--noted" : null)">
+    <table class="table table-striped table-hover dt-type-table">
         <thead class="dt-table-head">
             <tr>
                 @HeaderTemplate

@@ -112,6 +112,50 @@ h1:focus {
     transition: $btn-transition, transform 100ms ease-out;
 }
 
+// The plain button - `.btn-outline-secondary` in markup, the design's `dt-btn--plain`. Left to the
+// framework it is an outline in the edit hue that fills solid edit on hover, which put a second
+// edit-coloured button beside every real Edit and turned Cancel dark under the pointer. The design
+// has a neutral one: a card-coloured face, ink text and the control edge, sunk one step on hover
+// and press rather than filled. Restated on the framework's own variables, so its hover, active
+// and focus machinery - the ring above included - is untouched; only the paint changes. Before
+// the `hover: none` block below, which must still win on a touch screen.
+.btn-outline-secondary {
+    --bs-btn-color: var(--dt-ink);
+    --bs-btn-bg: var(--dt-surface-card);
+    --bs-btn-border-color: var(--dt-border-control);
+    --bs-btn-hover-color: var(--dt-ink);
+    --bs-btn-hover-bg: var(--dt-surface-sunken);
+    --bs-btn-hover-border-color: var(--dt-border-control);
+    --bs-btn-active-color: var(--dt-ink);
+    --bs-btn-active-bg: var(--dt-surface-sunken);
+    --bs-btn-active-border-color: var(--dt-border-control);
+}
+
+// Disabled, one face for every variant. The framework's disabled button is the enabled one at 65%
+// opacity, which on a filled create or destructive button is still unmistakably that colour - a
+// pale call to action that does nothing when pressed. The design greys it out instead: the sunken
+// surface, muted ink and the hairline edge, at full opacity (the bridge turns the framework's fade
+// off) so the muted ink keeps its contrast.
+// `fieldset:disabled` too, because the framework disables a whole form's buttons that way.
+.btn:disabled,
+.btn.disabled,
+fieldset:disabled .btn {
+    --bs-btn-disabled-color: var(--dt-ink-muted);
+    --bs-btn-disabled-bg: var(--dt-surface-sunken);
+    --bs-btn-disabled-border-color: var(--dt-border);
+    cursor: not-allowed;
+}
+
+// The framework also sets `pointer-events: none` on a disabled button, which is what would keep
+// the cursor above from ever being drawn - the pointer falls through to whatever is underneath.
+// A real `disabled` button cannot be pressed whatever its pointer events, so they come back for
+// those two forms; a link wearing `.disabled`, or sitting in a disabled fieldset, keeps the
+// framework's `none`, because for an anchor that is the only thing stopping the click.
+.btn:disabled,
+fieldset:disabled button.btn {
+    pointer-events: auto;
+}
+
 // The framework's `.btn:hover` fills from `--bs-btn-hover-*`, and on a touch screen a
 // tapped button stays in `:hover` until the next tap lands elsewhere - so the hover
 // fill is pointed back at the resting one where there is no hovering pointer. After
@@ -383,6 +427,9 @@ $dt-breakpoint-phone-max: $dt-breakpoint-phone - 0.02px;
 .dt-nav__link {
     display: flex;
     align-items: center;
+    // `space-1`, not the design's `space-2`: the icon already carries a `space-1` end margin of
+    // its own (Icon.razor.css), and the two together are the design's gap between glyph and word.
+    gap: var(--dt-space-1);
     width: 100%;
     // `touch-target` rather than a figure of its own: below the breakpoint these
     // links are the whole of the menu, and the floor the design puts under a target
@@ -914,7 +961,9 @@ $dt-breakpoint-phone-max: $dt-breakpoint-phone - 0.02px;
     color: var(--dt-ink);
     font-size: var(--dt-small-font-size);
     line-height: var(--dt-small-line-height);
-    font-weight: var(--dt-small-font-weight);
+    // The label weight on the small size: a badge is two or three words read at a glance beside
+    // a value, and at body weight the word sank into its own tint.
+    font-weight: var(--dt-label-font-weight);
     white-space: nowrap;
 }
 
@@ -968,8 +1017,10 @@ $dt-breakpoint-phone-max: $dt-breakpoint-phone - 0.02px;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--dt-space-2);
-    padding: var(--dt-space-4);
+    // Tighter than the body below it, as the design draws it: the head is one line of title and
+    // buttons, and `space-4` all round made it a band as tall as the content it introduces.
+    gap: var(--dt-space-3);
+    padding: var(--dt-space-3) var(--dt-space-4);
     border-bottom: var(--dt-border-width) solid var(--dt-border);
 }
 

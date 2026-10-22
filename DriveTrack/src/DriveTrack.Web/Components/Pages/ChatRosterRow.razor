@@ -39,7 +39,9 @@
         }
         @if (Summary.OnDuty)
         {
-            <DtBadge Class="dt-chat-thread__duty">@Localizer["ShiftOpen"]</DtBadge>
+            @* The dot is the on-duty face's second signal, so the two states differ by more than
+               the tint of a word. Decoration, hidden from assistive technology: the word says it. *@
+            <DtBadge Class="dt-chat-thread__duty"><span class="dt-chat-thread__dot" aria-hidden="true"></span>@Localizer["ShiftOpen"]</DtBadge>
         }
         @* The off state wears the muted class rather than a colour of its own, which is how the
            design draws the absence of something. *@

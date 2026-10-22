@@ -82,11 +82,12 @@
 /*
     The photo grid. Auto-fill rather than a fixed column count, so the same rule gives two tiles at
     360px and four on a desktop dialog without a breakpoint of its own; the minimum is what keeps a
-    tile big enough to be a thumb target.
+    tile big enough to be a thumb target. 5.5rem rather than 7rem: in the capture dialog on a 390px
+    phone 7rem fitted two tiles and left a third of the row empty, and the design's three fit.
 */
 .dt-proof-photos {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr));
     gap: var(--dt-space-2);
     margin: 0;
     padding: 0;
@@ -134,12 +135,18 @@
     white-space: nowrap;
 }
 
-/* The Add tile invites rather than records, so it wears the dashed edge the empty pad wears. */
+/*
+    The Add tile invites rather than records, so it wears the dashed edge the empty pad wears - at
+    the pad's weight too, `border-width-focus`, because at a hairline the dashes read as a faint grey
+    box rather than as a place to put something. Ink rather than the brand colour: the brand is the
+    link colour, and the tile is a control, not a link.
+*/
 .dt-proof-photo-add {
+    border-width: var(--dt-border-width-focus);
     border-style: dashed;
     border-color: var(--dt-border-control);
     background-color: var(--dt-surface-card);
-    color: var(--dt-brand);
+    color: var(--dt-ink);
 }
 
 /*

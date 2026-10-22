@@ -420,6 +420,9 @@
   <data name="MyDeliveriesEmpty" xml:space="preserve">
     <value>Вам ще не призначено жодної доставки.</value>
   </data>
+  <data name="MyDeliveriesEmptyClient" xml:space="preserve">
+    <value>У вас ще немає жодної доставки.</value>
+  </data>
   <data name="DeliveriesTruncated" xml:space="preserve">
     <value>Показано лише першу сторінку: доставок може бути більше, ніж вміщує цей список.</value>
   </data>
@@ -803,13 +806,13 @@
   <!-- The hub is down. A different failure from the circuit's, which MainLayout's dock speaks for:
        the page is alive, the conversation is not, and nothing typed into it would arrive. -->
   <data name="ChatDisconnected" xml:space="preserve">
-    <value>Зв'язок із розмовою втрачено. Відновлюємо…</value>
+    <value>Зв’язок із розмовою втрачено. Відновлюємо…</value>
   </data>
   <!-- The retries have stopped. A different sentence from the one above, because a screen that goes
        on promising a reconnection nobody is attempting is a screen lying to a reader with no way
        out; the dock carries the way out beside it. -->
   <data name="ChatConnectionLost" xml:space="preserve">
-    <value>Зв'язок із розмовою втрачено. Оновіть сторінку.</value>
+    <value>Зв’язок із розмовою втрачено. Оновіть сторінку.</value>
   </data>
   <!-- The roster's search matched nobody. A blank column reads as a list that failed to load. -->
   <data name="ChatNoDriverFound" xml:space="preserve">

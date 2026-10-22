@@ -69,7 +69,7 @@
                  Note="@Localizer["DeliveriesTruncated"]"
                  Items="_visible"
                  IsLoading="_loading"
-                 EmptyText="@Localizer["MyDeliveriesEmpty"]">
+                 EmptyText="@EmptyText">
         <HeaderTemplate>
             @* Two of the six columns are sort controls, in the dispatch board's own markup and for its
                own reasons: DtDataTable renders whatever rows it is given, so the control belongs to the
@@ -198,7 +198,9 @@
                    refuses a client's capture whether or not this screen ever drew a button (FR-12). *@
                 @if (OffersProofCapture(_role, _captured.Contains(delivery.Id)))
                 {
-                    <button type="button" class="btn btn-secondary btn-sm dt-proof-capture"
+                    @* The create colour, for the reason the request action above wears it: capturing
+                       a proof makes a record that did not exist, which is a create and not an edit. *@
+                    <button type="button" class="btn btn-primary btn-sm dt-proof-capture"
                             @onclick="CaptureHandler(delivery)">
                         <Icon Name="IconName.Camera" />@Localizer["ProofCapture"]
                     </button>
@@ -524,6 +526,15 @@
     /// so "there may be more" is the honest claim rather than a count.
     /// </summary>
     private bool IsTruncated => _deliveries.Count >= ListDeliveriesQueryValidator.MaximumLimit;
+
+    /// <summary>
+    /// The empty table's sentence, which is a different claim for each role. A driver's deliveries
+    /// are assigned to them, so "not assigned a single one" is true; a client's are ones they asked
+    /// for, and telling them nobody assigned them anything describes a job they do not have.
+    /// </summary>
+    private string EmptyText => _role == UserRole.Client
+        ? Localizer["MyDeliveriesEmptyClient"]
+        : Localizer["MyDeliveriesEmpty"];
 
     protected override async Task OnInitializedAsync()
     {

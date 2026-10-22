@@ -150,10 +150,12 @@
                 </nav>
             }
 
-            <section class="dt-chat-thread-panel">
+            @* Named by its own header, so a screen reader's landmark list says whose conversation
+               this is rather than offering an unnamed region beside the named roster. *@
+            <section class="dt-chat-thread-panel" aria-labelledby="@_headerId">
                 @* The header names who the caller is talking to, which is a different person on each
                    side of the same conversation. *@
-                <h2 class="dt-chat-header dt-type-h2">
+                <h2 id="@_headerId" class="dt-chat-header dt-type-h2">
                     @if (ChatViews.NamesTheDispatchDesk(_role))
                     {
                         <span>@Localizer["ChatDispatchDesk"]</span>
@@ -256,6 +258,12 @@
     /// must not answer to the same one.
     /// </summary>
     private readonly string _listId = $"dt-chat-messages-{Guid.NewGuid():N}";
+
+    /// <summary>
+    /// The conversation header's id, which names the panel around it. Generated for the reason the
+    /// list's is: two screens on one page must not label each other's panels.
+    /// </summary>
+    private readonly string _headerId = $"dt-chat-header-{Guid.NewGuid():N}";
 
     private IJSObjectReference? _module;
     private IJSObjectReference? _handle;

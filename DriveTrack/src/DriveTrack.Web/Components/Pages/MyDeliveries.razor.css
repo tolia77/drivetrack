@@ -198,6 +198,13 @@ td.dt-my-delivery-package > span:not(.dt-my-delivery-label) {
     width: 100%;
 }
 
-.dt-my-deliveries td.dt-table-actions .btn + .btn {
-    margin-block-start: var(--dt-space-2);
+/*
+    The space between stacked buttons, on a desktop only. Below the breakpoint the shared card
+    collapse makes this cell a wrapping flex row with a `gap` of its own, and a margin on top of
+    that gap pushed every button after the first down out of line with the one beside it.
+*/
+@media (min-width: 641px) {
+    .dt-my-deliveries td.dt-table-actions .btn + .btn {
+        margin-block-start: var(--dt-space-2);
+    }
 }
