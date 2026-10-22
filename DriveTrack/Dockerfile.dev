@@ -1,6 +1,6 @@
 # The one image this repository builds. Its only job is to run `dotnet watch` against source
-# bind-mounted from the host, so an edit to a .razor or .razor.css file reaches the browser in
-# seconds.
+# bind-mounted from the host, so an edit to a .cs, .razor or .razor.css file is rebuilt and live
+# in seconds.
 #
 # Nothing is published here and nothing runnable is copied in: the SDK stays, the source arrives
 # over a mount rather than a COPY, and the compiler that rebuilds it lives in the image. Every
@@ -32,27 +32,18 @@ ENV DOTNET_USE_POLLING_FILE_WATCHER=true \
 # There is no browser in here to launch, and watch reports the failure twice at every start.
 ENV DOTNET_WATCH_SUPPRESS_LAUNCH_BROWSER=1
 
-# The one line that makes scoped-CSS hot reload work on Linux. The SDK composes this property as
-# `obj\Debug/net10.0/` - a literal backslash MSBuild itself normalizes but `dotnet watch` does
-# not: it probes that raw string for staticwebassets.development.json, the probe fails on a
-# filesystem where `\` is an ordinary character, and every .razor.css edit is answered with
-# "Static web asset manifest not found" while .razor and .cs edits reload normally. MSBuild reads
-# environment variables as properties, so restating it with forward slashes fixes the path
-# without touching a csproj or Directory.Build.props - and therefore without following anyone
-# onto the host. It stops at the configuration because the SDK appends the target framework.
-ENV IntermediateOutputPath=obj/Debug/
-
-# Deliberately NOT set: DOTNET_EnableDiagnostics=0. Closing the diagnostics IPC channel is a
-# reasonable hardening step for an image that only runs code, and fatal here — that channel is the
-# one hot reload pushes its deltas over.
-
 # Root, deliberately. The mounted source is owned by the host account, and a non-root container
 # user cannot write the obj/ and bin/ trees the build needs.
 
 EXPOSE 8080
 
-# `--non-interactive` because there is no TTY on `docker compose up`: without it a rude edit
-# stops to ask a question nobody can answer and the watch hangs.
-ENTRYPOINT ["dotnet", "watch", "--non-interactive", \
+# `--no-hot-reload`: every edit rebuilds and restarts the app rather than patching the running
+# process. Patching it corrupted that process - a delta that deleted a member left the runtime
+# throwing BadImageFormatException from IsMetadataUpdateDeleted whenever System.Text.Json
+# reflected over a patched type, so the chat roster failed for hours on an app that looked
+# healthy, and the next such delta killed the app and `dotnet watch` with it. A restart costs a
+# few seconds and the page's in-memory state; a process that is always freshly built cannot drift
+# away from its source. (`--non-interactive` went with it: it is only supported with hot reload.)
+ENTRYPOINT ["dotnet", "watch", "--no-hot-reload", \
             "--project", "src/DriveTrack.Web/DriveTrack.Web.csproj", \
             "run", "--urls", "http://0.0.0.0:8080"]

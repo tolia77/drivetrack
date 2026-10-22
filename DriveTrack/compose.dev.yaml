@@ -229,7 +229,7 @@ services:
         condition: service_completed_successfully
     environment:
       # Pinned rather than forwarded from .env: this stack *is* the development environment, and
-      # hot reload is a Development-environment feature. A .env carrying Production — which is
+      # the dev-only asset headers in Program.cs key on it. A .env carrying Production — which is
       # exactly what an .env copied off a server carries — would otherwise silently disable the
       # one thing this file exists to provide.
       ASPNETCORE_ENVIRONMENT: Development

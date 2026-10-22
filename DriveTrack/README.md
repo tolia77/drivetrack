@@ -84,24 +84,23 @@ Configuration comes from the environment, never from a committed file. To run th
 outside the container, export at least `ConnectionStrings__Default` (see `.env.example`
 for the full contract).
 
-### Hot reload
+### Live rebuild
 
-The stack from **Run it** is a hot-reload stack. `app` builds from `Dockerfile.dev`, so the SDK
-stays in the image, `src/` is mounted from the host, and `dotnet watch` rebuilds on every edit —
-no image rebuild between writing one and seeing it.
+The stack from **Run it** rebuilds on every edit. `app` builds from `Dockerfile.dev`, so the SDK
+stays in the image, `src/` is mounted from the host, and `dotnet watch` rebuilds and restarts the
+app whenever a source file changes — no image rebuild and no container restart between writing an
+edit and seeing it.
 
-What reloads, and what does not:
+It runs with `--no-hot-reload`: each edit gets a freshly built process rather than a patch applied
+to the running one. Patching corrupted the process — a delta that deleted a member made the
+runtime throw `BadImageFormatException` whenever a patched type was reflected over, which broke the
+chat roster on an app that otherwise looked healthy. A restart costs a few seconds and whatever the
+open page held in memory; the sign-in survives it.
 
-| Edit | In the container |
-|---|---|
-| `.cs`, `.razor` | applies on its own, in about three seconds |
-| `.js`, `.css` | live on the server; **reload the browser** to pick it up |
-
-`dotnet watch` pushes static-asset updates over a WebSocket whose port it picks at random inside
-the container and announces to the browser as `ws://localhost:<random>`. That port cannot be
-published (it changes every start) and Docker Desktop for Mac does not bridge container `localhost`
-to the host, so the browser never connects and never auto-refreshes. C# and Razor edits are
-unaffected because they are applied server-side and simply render differently.
+`dotnet watch` would refresh the browser over a WebSocket whose port it picks at random inside the
+container and announces as `ws://localhost:<random>`. That port cannot be published (it changes
+every start) and Docker Desktop for Mac does not bridge container `localhost` to the host, so the
+browser never connects. After an edit, reload the page once the app is back.
 
 A plain reload is enough — `Program.cs` drops request validators and sends `no-store` for static
 assets in Development, without which `MapStaticAssets` answers `304 Not Modified` against the
