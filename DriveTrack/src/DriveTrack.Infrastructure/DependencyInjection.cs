@@ -2,6 +2,7 @@ using System.Globalization;
 using DriveTrack.Application.Abstractions;
 using DriveTrack.Application.Authorization;
 using DriveTrack.Application.Chat;
+using DriveTrack.Application.Dashboard;
 using DriveTrack.Application.Deliveries;
 using DriveTrack.Application.Drivers;
 using DriveTrack.Application.Notifications;
@@ -241,6 +242,13 @@ public static class DependencyInjection
         // FR-116's flag, and this one takes neither it nor the deliveries capability. The edge runs
         // one way only, which is what makes the pair resolvable at all.
         services.AddScoped<IShiftService, ShiftService>();
+
+        // The dispatcher's and the administrator's first screen. Scoped like every other
+        // capability - it reads the caller of the circuit it is serving - and it takes the clock
+        // registered above, so "today" is a function of an injected TimeProvider and its
+        // LocalTimeZone rather than of the machine (AD-13). It reads and writes nothing it owns,
+        // and it takes no other capability, so it closes no cycle in the container.
+        services.AddScoped<IDashboardService, DashboardService>();
     }
 
     /// <summary>

@@ -65,6 +65,15 @@ internal sealed class EfShiftRepository(AppDbContext context) : IShiftRepository
             .ToListAsync(cancellationToken);
 
     /// <inheritdoc />
+    public Task<DateTimeOffset?> FindEarliestOpenStartAsync(CancellationToken cancellationToken) =>
+        // Min over a nullable projection answers null for an empty set rather than throwing.
+        context.Shifts
+            .AsNoTracking()
+            .Where(shift => shift.EndedAt == null)
+            .Select(shift => (DateTimeOffset?)shift.StartedAt)
+            .MinAsync(cancellationToken);
+
+    /// <inheritdoc />
     public void Add(Shift shift) => context.Shifts.Add(shift);
 
     /// <inheritdoc />

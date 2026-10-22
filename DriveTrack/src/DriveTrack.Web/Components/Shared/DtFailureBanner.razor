@@ -51,6 +51,10 @@
         }
         <div class="dt-banner__body dt-type-body">
             <p class="dt-banner__title">@Message</p>
+            @if (Detail is not null)
+            {
+                <p class="dt-banner__detail">@Detail</p>
+            }
         </div>
     </div>
 }
@@ -170,6 +174,13 @@
     /// </summary>
     [Parameter]
     public DtBannerVariant Variant { get; set; }
+
+    /// <summary>
+    /// A second sentence under <see cref="Message"/>: what to do about it. Rendered only with a
+    /// message, and only when given - every existing banner says one thing and keeps saying it.
+    /// </summary>
+    [Parameter]
+    public string? Detail { get; set; }
 
     /// <summary>
     /// The classes a refusal list wears: always the danger face, read off <see cref="BannerClass"/>

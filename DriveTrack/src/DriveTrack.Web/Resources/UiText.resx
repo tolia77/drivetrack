@@ -1004,4 +1004,91 @@
   <data name="Add" xml:space="preserve">
     <value>Додати</value>
   </data>
+  <data name="NavDashboard" xml:space="preserve">
+    <value>Огляд</value>
+  </data>
+  <data name="DashboardGreetingMorning" xml:space="preserve">
+    <value>Доброго ранку, {0}</value>
+  </data>
+  <data name="DashboardGreetingAfternoon" xml:space="preserve">
+    <value>Доброго дня, {0}</value>
+  </data>
+  <data name="DashboardGreetingEvening" xml:space="preserve">
+    <value>Доброго вечора, {0}</value>
+  </data>
+  <data name="DashboardSummary" xml:space="preserve">
+    <value>{0} · відкритих доставок: {1} · водіїв на зміні: {2}</value>
+  </data>
+  <data name="DashboardOpenDeliveries" xml:space="preserve">
+    <value>Відкриті доставки</value>
+  </data>
+  <data name="DashboardOpenBreakdown" xml:space="preserve">
+    <value>Очікує: {0} · У дорозі: {1}</value>
+  </data>
+  <data name="DashboardOverdueHint" xml:space="preserve">
+    <value>Вікно минуло, не доставлено</value>
+  </data>
+  <data name="DashboardDeliveredToday" xml:space="preserve">
+    <value>Доставлено сьогодні</value>
+  </data>
+  <data name="DashboardDeliveredWithProof" xml:space="preserve">
+    <value>З підтвердженням доставки: {0}</value>
+  </data>
+  <data name="DashboardDriversOnDuty" xml:space="preserve">
+    <value>Водії на зміні</value>
+  </data>
+  <data name="DashboardFirstShift" xml:space="preserve">
+    <value>Перша зміна відкрита {0}</value>
+  </data>
+  <data name="DashboardWarningOverdue" xml:space="preserve">
+    <value>Прострочено доставок: {0}.</value>
+  </data>
+  <data name="DashboardWarningUnassigned" xml:space="preserve">
+    <value>Доставок без водія: {0}.</value>
+  </data>
+  <data name="DashboardWarningAdvice" xml:space="preserve">
+    <value>Призначте водія або перенесіть вікно, поки клієнт не зателефонував.</value>
+  </data>
+  <data name="DashboardToday" xml:space="preserve">
+    <value>Доставки на сьогодні</value>
+  </data>
+  <data name="DashboardTodayCount" xml:space="preserve">
+    <value>Найближчі {0} з {1}</value>
+  </data>
+  <data name="DashboardTodayEmpty" xml:space="preserve">
+    <value>Сьогодні не починається вікно жодної відкритої доставки.</value>
+  </data>
+  <data name="DashboardActivity" xml:space="preserve">
+    <value>Остання активність</value>
+  </data>
+  <data name="DashboardActivityScope" xml:space="preserve">
+    <value>Усі доставки</value>
+  </data>
+  <data name="DashboardActivityEmpty" xml:space="preserve">
+    <value>Жодна доставка ще не має історії.</value>
+  </data>
+  <data name="DashboardActivityCreated" xml:space="preserve">
+    <value>Доставку створено</value>
+  </data>
+  <data name="DashboardConversationsScope" xml:space="preserve">
+    <value>Останнє повідомлення кожного водія</value>
+  </data>
+  <data name="DashboardVehiclesScope" xml:space="preserve">
+    <value>За датою наступного ТО</value>
+  </data>
+  <data name="DashboardNextService" xml:space="preserve">
+    <value>Наступне ТО {0}</value>
+  </data>
+  <data name="DashboardNoService" xml:space="preserve">
+    <value>Дату ТО не вказано</value>
+  </data>
+  <data name="DashboardMileage" xml:space="preserve">
+    <value>{0} км</value>
+  </data>
+  <data name="DashboardReviews" xml:space="preserve">
+    <value>Останні відгуки</value>
+  </data>
+  <data name="DashboardReviewAbout" xml:space="preserve">
+    <value>{0} про {1}</value>
+  </data>
 </root>

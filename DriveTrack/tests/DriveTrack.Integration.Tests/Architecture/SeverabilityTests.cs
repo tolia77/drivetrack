@@ -90,6 +90,11 @@ public class SeverabilityTests
         Path.Combine("DriveTrack.Application", "Chat", "IChatService.cs"),
         Path.Combine("DriveTrack.Application", "Abstractions", "IMessageRepository.cs"),
         Path.Combine("DriveTrack.Application", "Abstractions", "IUnitOfWork.cs"),
+
+        // The dashboard's conversations card, which reads the newest message per driver through
+        // the message repository. A read-only card on a screen that is not chat's, so it is a seam
+        // rather than part of the module: deleting chat deletes that card's lines in this file.
+        Path.Combine("DriveTrack.Application", "Dashboard", "DashboardService.cs"),
         Path.Combine("DriveTrack.Infrastructure", "DependencyInjection.cs"),
         Path.Combine("DriveTrack.Infrastructure", "Persistence", "AppDbContext.cs"),
         Path.Combine("DriveTrack.Infrastructure", "Persistence", "UnitOfWork.cs"),

@@ -707,6 +707,18 @@ public class AuthenticationTests(PostgresFixture postgres)
         Assert.Throws<ArgumentOutOfRangeException>(() => LandingRoute.For((UserRole)99));
     }
 
+    [Theory]
+    [InlineData(UserRole.Admin, "/dashboard")]
+    [InlineData(UserRole.Dispatcher, "/dashboard")]
+    [InlineData(UserRole.Driver, "/profile")]
+    [InlineData(UserRole.Client, "/profile")]
+    public void Each_role_lands_on_its_own_first_screen(UserRole role, string expected)
+    {
+        // FR-7, row by row. The two roles that run dispatch land on the day at a glance; a driver
+        // and a client keep their profile until they have a dashboard of their own.
+        Assert.Equal(expected, LandingRoute.For(role));
+    }
+
     [Fact]
     public async Task The_shell_offers_sign_out_when_signed_in_and_the_anonymous_entry_points_otherwise()
     {

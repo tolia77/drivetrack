@@ -80,6 +80,21 @@ internal sealed class EfVehicleRepository(AppDbContext context) : IVehicleReposi
     }
 
     /// <inheritdoc />
+    public async Task<IReadOnlyList<Vehicle>> ListByNextMaintenanceAsync(
+        int limit,
+        CancellationToken cancellationToken) =>
+        // Undated vehicles last, stated rather than left to PostgreSQL's NULLS LAST default for an
+        // ascending sort - a default is a thing a provider may spell differently. The id breaks a
+        // tie so the order is the same on every read.
+        await context.Vehicles
+            .AsNoTracking()
+            .OrderBy(vehicle => vehicle.NextMaintenanceDate == null)
+            .ThenBy(vehicle => vehicle.NextMaintenanceDate)
+            .ThenBy(vehicle => vehicle.Id)
+            .Take(limit)
+            .ToListAsync(cancellationToken);
+
+    /// <inheritdoc />
     public void Add(Vehicle vehicle) => context.Vehicles.Add(vehicle);
 
     /// <inheritdoc />

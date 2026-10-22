@@ -114,9 +114,37 @@ public interface IDeliveryRepository
         DriverId driverId,
         CancellationToken cancellationToken);
 
+    /// <summary>
+    /// How many deliveries hold each status, for the dashboard's open-deliveries tile. A status no
+    /// delivery holds is absent rather than zero.
+    /// </summary>
+    Task<IReadOnlyList<DeliveryStatusCount>> CountByStatusAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// How many deliveries are overdue at <paramref name="now"/>, by
+    /// <see cref="DriveTrack.Application.Deliveries.OverdueRule"/> - the same rule the delivery screens judge a row by.
+    /// </summary>
+    Task<int> CountOverdueAsync(DateTimeOffset now, CancellationToken cancellationToken);
+
+    /// <summary>How many open deliveries - Pending or In transit - have no driver.</summary>
+    Task<int> CountUnassignedOpenAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The first <paramref name="limit"/> open deliveries whose window starts in
+    /// [<paramref name="from"/>, <paramref name="until"/>), earliest window first.
+    /// </summary>
+    Task<IReadOnlyList<Delivery>> ListOpenStartingBetweenAsync(
+        DateTimeOffset from,
+        DateTimeOffset until,
+        int limit,
+        CancellationToken cancellationToken);
+
     /// <summary>Stages a new delivery for the next commit.</summary>
     void Add(Delivery delivery);
 
     /// <summary>Stages a delivery for deletion (FR-24). Its timeline, proof, review and notification attempts go with it (DR-9).</summary>
     void Remove(Delivery delivery);
 }
+
+/// <summary>One status and how many deliveries currently hold it.</summary>
+public sealed record DeliveryStatusCount(DeliveryStatus Status, int Count);

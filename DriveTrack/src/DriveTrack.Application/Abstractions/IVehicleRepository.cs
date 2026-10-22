@@ -54,6 +54,12 @@ public interface IVehicleRepository
     /// </summary>
     Task<DriverId?> FindHolderAsync(int vehicleId, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// The first <paramref name="limit"/> vehicles by next maintenance date, soonest first, with
+    /// the vehicles that have no date after every one that has.
+    /// </summary>
+    Task<IReadOnlyList<Vehicle>> ListByNextMaintenanceAsync(int limit, CancellationToken cancellationToken);
+
     /// <summary>Stages a new vehicle for the next commit.</summary>
     void Add(Vehicle vehicle);
 

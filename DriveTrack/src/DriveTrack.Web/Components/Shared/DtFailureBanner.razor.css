@@ -65,6 +65,19 @@
 }
 
 /*
+    The optional second sentence. The title takes the label weight only when one follows it, so a
+    banner that says what happened and then what to do reads as a heading and its advice; a banner
+    with one sentence is unchanged.
+*/
+.dt-banner__title:has(+ .dt-banner__detail) {
+    font-weight: var(--dt-label-font-weight);
+}
+
+.dt-banner__detail {
+    margin: var(--dt-space-1) 0 0;
+}
+
+/*
     The list of what was refused. Bullets kept: they are what makes three refusals read as three
     rather than as one long sentence, and the indent is the marker's own rather than a second gap.
 */

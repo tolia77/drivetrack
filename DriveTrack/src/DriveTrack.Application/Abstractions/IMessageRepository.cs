@@ -30,6 +30,12 @@ public interface IMessageRepository
         DriverId driverId,
         CancellationToken cancellationToken);
 
+    /// <summary>
+    /// The newest message of each conversation, for the <paramref name="limit"/> conversations
+    /// spoken in most recently, newest first.
+    /// </summary>
+    Task<IReadOnlyList<Message>> ListLatestPerDriverAsync(int limit, CancellationToken cancellationToken);
+
     /// <summary>Stages a new message for the next commit.</summary>
     void Add(Message message);
 }

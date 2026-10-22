@@ -155,6 +155,21 @@ public class NavigationTests
         Assert.Equal(myShifts, destinations.Contains(NavDestination.MyShifts));
     }
 
+    [Theory]
+    [InlineData(UserRole.Admin, true)]
+    [InlineData(UserRole.Dispatcher, true)]
+    [InlineData(UserRole.Driver, false)]
+    [InlineData(UserRole.Client, false)]
+    public void The_dashboard_is_offered_to_the_two_roles_that_run_dispatch(UserRole role, bool dashboard)
+    {
+        // The day at a glance is dispatch's, and it is where both roles land. A driver and a client
+        // have no dashboard yet - theirs come from artboards still to be drawn - so they are offered
+        // none rather than a screen that can only refuse them.
+        //
+        // FR-12 unchanged: this is what is worth showing, and the guard is what decides.
+        Assert.Equal(dashboard, NavDestinations.For(role).Contains(NavDestination.Dashboard));
+    }
+
     [Fact]
     public void An_anonymous_caller_is_offered_the_page_that_allows_them()
     {
@@ -225,7 +240,7 @@ public class NavigationTests
         // profile, the two fleet screens (4.1), the dispatch board and the own-deliveries screen
         // (5.1), the two administration rosters (7.1), story 5.2's notification log, sign-out,
         // sign-in and register, story 8.1's chat destination, story 7.2's reviews, story 4.2's two
-        // shift screens - and the phone toggle, which is the eighteenth. The toggle is the one this
+        // shift screens, the phone toggle - and the dispatch dashboard, which is the nineteenth. The toggle is the one this
         // count moved for: it used to draw its bars as three CSS gradients in the component's own
         // stylesheet, duplicating a glyph `IconName.Menu` already held, and a hamburger nobody can
         // find in the icon set is a hamburger that drifts away from every other glyph in the shell.
@@ -234,7 +249,7 @@ public class NavigationTests
         // glyph is markup with nothing behind it, which is the defect this whole test guards, so
         // adding a link has to be a deliberate edit to this line rather than an empty box nobody
         // notices.
-        Assert.Equal(18, SharedMarkup.Occurrences(menu, "<Icon Name="));
+        Assert.Equal(19, SharedMarkup.Occurrences(menu, "<Icon Name="));
     }
 
     [Fact]
@@ -344,6 +359,20 @@ public class NavigationTests
 
         Assert.Equal(destinations.Contains(NavDestination.MyShifts), links.Contains("my-shifts"));
         Assert.Equal(role == UserRole.Driver, links.Contains("my-shifts"));
+
+        // The dashboard, rendered and stated flatly: dispatch's first screen, and the first link in
+        // its menu - above Home - because it is where both of those roles land.
+        Assert.Equal(destinations.Contains(NavDestination.Dashboard), links.Contains("dashboard"));
+        Assert.Equal(runsDispatch, links.Contains("dashboard"));
+
+        if (runsDispatch)
+        {
+            // The first destination in the list, ahead of Home - read from the list itself, since
+            // the brand above it links to the same place Home does.
+            var list = html[html.IndexOf("dt-nav__links", StringComparison.Ordinal)..];
+
+            Assert.Equal("dashboard", Hrefs(list)[0]);
+        }
     }
 
     [Fact]
@@ -441,6 +470,7 @@ public class NavigationTests
     // destination marked looks exactly like a menu on a screen that is not a destination.
     [InlineData(UserRole.Admin, "Deliveries", "deliveries")]
     [InlineData(UserRole.Admin, "deliveries/", "deliveries")]
+    [InlineData(UserRole.Dispatcher, "dashboard", "dashboard")]
     [InlineData(UserRole.Driver, "my-deliveries", "my-deliveries")]
     [InlineData(UserRole.Client, "reviews", "reviews")]
     public async Task One_destination_and_only_one_is_marked_as_the_one_the_caller_is_on(

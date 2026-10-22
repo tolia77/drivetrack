@@ -31,6 +31,13 @@ public interface IProofOfDeliveryRepository
     Task<bool> ExistsForDeliveryAsync(int deliveryId, CancellationToken cancellationToken);
 
     /// <summary>
+    /// How many of <paramref name="deliveryIds"/> have a proof captured, in one query.
+    /// </summary>
+    Task<int> CountForDeliveriesAsync(
+        IReadOnlyCollection<int> deliveryIds,
+        CancellationToken cancellationToken);
+
+    /// <summary>
     /// The proof of a delivery this caller may see, with its assets, or null when there is none they
     /// may see (FR-122).
     /// </summary>

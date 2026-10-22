@@ -62,6 +62,7 @@ public class CircuitCancellationTests
         "DriveTrack.Web.Components.Pages.Admin.Clients",
         "DriveTrack.Web.Components.Pages.Admin.Dispatchers",
         "DriveTrack.Web.Components.Pages.Admin.Notifications",
+        "DriveTrack.Web.Components.Pages.Dashboard",
         "DriveTrack.Web.Components.Pages.Deliveries",
         "DriveTrack.Web.Components.Pages.DeliveryTimeline",
         "DriveTrack.Web.Components.Pages.Drivers",

@@ -13,7 +13,15 @@
     @if (Title is not null)
     {
         <div class="dt-card__head">
-            <h2 class="dt-card__title dt-type-h2">@Title</h2>
+            @* The glyph inside the heading rather than beside it, so the heading's name is its
+               words and the mark travels with them wherever the head wraps. *@
+            <h2 class="dt-card__title dt-type-h2">
+                @if (Icon is { } glyph)
+                {
+                    <Icon Name="@glyph" />
+                }
+                @Title
+            </h2>
             @* The actions in a group of their own rather than loose beside the title. Loose,
                every button was a flex child of the head in its own right, so a card offering
                more than one could only lay them out by arguing with the head's own rule - and
@@ -49,6 +57,13 @@
     /// </remarks>
     [Parameter]
     public RenderFragment? Actions { get; set; }
+
+    /// <summary>
+    /// A glyph from the one icon set drawn before the title, or null for a title alone. Ignored
+    /// without a <see cref="Title"/>: a mark with no words beside it is a guess (NFR-24).
+    /// </summary>
+    [Parameter]
+    public IconName? Icon { get; set; }
 
     /// <summary>The card's contents.</summary>
     [Parameter]

@@ -30,5 +30,23 @@ internal sealed class EfMessageRepository(AppDbContext context) : IMessageReposi
             .ToListAsync(cancellationToken);
 
     /// <inheritdoc />
+    public async Task<IReadOnlyList<Message>> ListLatestPerDriverAsync(
+        int limit,
+        CancellationToken cancellationToken) =>
+        await context.Messages
+            .AsNoTracking()
+            // A message is its conversation's newest when no later one exists on the same thread.
+            // The id settles two messages written at one instant, the tie the thread read breaks
+            // the same way, so exactly one row per driver survives.
+            .Where(message => !context.Messages.Any(later =>
+                later.DriverId == message.DriverId
+                && (later.SentAt > message.SentAt
+                    || (later.SentAt == message.SentAt && later.Id > message.Id))))
+            .OrderByDescending(message => message.SentAt)
+            .ThenByDescending(message => message.Id)
+            .Take(limit)
+            .ToListAsync(cancellationToken);
+
+    /// <inheritdoc />
     public void Add(Message message) => context.Messages.Add(message);
 }

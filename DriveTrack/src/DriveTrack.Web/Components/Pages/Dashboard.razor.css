@@ -1,0 +1,290 @@
+/*
+    The dashboard's layout (NFR-29: every palette and type value is a `--dt-*` token; grid tracks,
+    widths and the phone breakpoint are geometry, which the scan does not read).
+
+    Almost everything below sits inside a DtCard, and the card's own boxes - `.dt-card`,
+    `.dt-card__body`, `.dt-card__head` - are rendered by DtCard and carry its scope, not this file's.
+    A plain rule here would match none of them, so every rule that reaches into a card goes through
+    `::deep` from `.dt-dashboard`, the one element this screen renders around all of it. The markup
+    this screen writes into a card's slots does carry this scope, but it is reached the same way so
+    the whole file has one rule about where its selectors start.
+*/
+
+.dt-dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: var(--dt-space-4);
+}
+
+.dt-dashboard__loading {
+    margin: 0;
+    color: var(--dt-ink-muted);
+}
+
+/* ---- The heading row: the greeting takes the room, the two actions sit at its end. ---------- */
+
+.dt-dashboard__head {
+    align-items: flex-end;
+}
+
+.dt-dashboard__greeting {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.dt-dashboard__greeting h1 {
+    margin: 0;
+}
+
+.dt-dashboard__summary {
+    margin: var(--dt-space-1) 0 0;
+    color: var(--dt-ink-muted);
+    font-size: var(--dt-table-font-size);
+    line-height: var(--dt-table-line-height);
+}
+
+/* ---- The four tiles. --------------------------------------------------------------------- */
+
+.dt-dashboard__tiles {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--dt-space-4);
+}
+
+/* More specific than the list cards' `padding: 0` below, so a tile keeps the card's own inset. */
+.dt-dashboard ::deep .dt-dashboard-tile .dt-card__body {
+    padding: var(--dt-space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--dt-space-1);
+}
+
+.dt-dashboard ::deep .dt-dashboard-tile__label {
+    display: flex;
+    align-items: center;
+    color: var(--dt-ink-muted);
+    font-size: var(--dt-label-font-size);
+    line-height: var(--dt-label-line-height);
+    font-weight: var(--dt-label-font-weight);
+}
+
+.dt-dashboard ::deep .dt-dashboard-tile__value {
+    font-size: var(--dt-display-font-size);
+    line-height: var(--dt-display-line-height);
+    font-weight: var(--dt-display-font-weight);
+    font-variant-numeric: tabular-nums;
+}
+
+.dt-dashboard ::deep .dt-dashboard-tile__hint {
+    color: var(--dt-ink-muted);
+    font-size: var(--dt-small-font-size);
+    line-height: var(--dt-small-line-height);
+}
+
+/* ---- The rows of cards. ------------------------------------------------------------------ */
+
+.dt-dashboard__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    gap: var(--dt-space-4);
+    align-items: start;
+}
+
+.dt-dashboard__row--even {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* An administrator's activity row: one card, the full width. */
+.dt-dashboard__row--single {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+/* The cards hold lists, and each row of a list carries its own padding, so the body adds none. */
+.dt-dashboard ::deep .dt-card__body {
+    padding: 0;
+}
+
+.dt-dashboard ::deep .dt-card__title {
+    display: flex;
+    align-items: center;
+}
+
+.dt-dashboard ::deep .dt-dashboard__meta {
+    color: var(--dt-ink-muted);
+    font-size: var(--dt-small-font-size);
+    line-height: var(--dt-small-line-height);
+}
+
+.dt-dashboard ::deep .dt-dashboard__empty {
+    margin: 0;
+    padding: var(--dt-space-4);
+    color: var(--dt-ink-muted);
+}
+
+.dt-dashboard ::deep .dt-dashboard__rows {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+/*
+    Wrapping, so that in the narrow column between the phone breakpoint and a wide desktop the
+    markers at a row's end drop under its text rather than squeezing the text to nothing - a word
+    such as a vehicle model cannot break, and squeezed below its width it ran under the rating.
+*/
+.dt-dashboard ::deep .dt-dashboard__item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--dt-space-3);
+    padding: var(--dt-space-3) var(--dt-space-4);
+    border-bottom: var(--dt-border-width) solid var(--dt-border);
+    font-size: var(--dt-table-font-size);
+    line-height: var(--dt-table-line-height);
+}
+
+.dt-dashboard ::deep .dt-dashboard__item:last-child {
+    border-bottom: 0;
+}
+
+.dt-dashboard ::deep .dt-dashboard__item--top {
+    align-items: flex-start;
+}
+
+/* The markers at a row's end keep their own width and never wrap their words. */
+.dt-dashboard ::deep .dt-dashboard__item > .dt-badge,
+.dt-dashboard ::deep .dt-dashboard__item > .dt-status,
+.dt-dashboard ::deep .dt-dashboard__item > .dt-rating,
+.dt-dashboard ::deep .dt-dashboard__item > .dt-rating--unrated {
+    flex: none;
+    white-space: nowrap;
+}
+
+.dt-dashboard ::deep .dt-dashboard__main {
+    display: flex;
+    flex-direction: column;
+    /* The width below which the row wraps its markers under the text instead of shrinking it. */
+    flex: 1 1 calc(var(--dt-space-6) * 3);
+    min-width: 0;
+}
+
+.dt-dashboard ::deep .dt-dashboard__who {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--dt-space-2);
+}
+
+.dt-dashboard ::deep .dt-dashboard__title {
+    font-weight: var(--dt-label-font-weight);
+}
+
+.dt-dashboard ::deep .dt-dashboard__text {
+    font-size: var(--dt-table-font-size);
+    line-height: var(--dt-table-line-height);
+}
+
+/* A message is one line here; the whole of it is a click away in the conversation. */
+.dt-dashboard ::deep .dt-dashboard__clip {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* A window is one figure with a dash in it, and its two bounds must not part across a line. */
+.dt-dashboard ::deep .dt-dashboard__window {
+    flex: none;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.dt-dashboard ::deep .dt-dashboard__when {
+    flex: none;
+    color: var(--dt-ink-muted);
+    font-size: var(--dt-small-font-size);
+    line-height: var(--dt-small-line-height);
+    white-space: nowrap;
+}
+
+/* The person a row is about: the same disc the navigation draws for the caller, on a card. */
+.dt-dashboard ::deep .dt-dashboard__avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: var(--dt-space-6);
+    height: var(--dt-space-6);
+    border-radius: var(--dt-radius-pill);
+    background-color: var(--dt-surface-sunken);
+    color: var(--dt-ink);
+    font-size: var(--dt-small-font-size);
+    line-height: var(--dt-small-line-height);
+    font-weight: var(--dt-label-font-weight);
+}
+
+/* The activity's mark: the timeline's dot, without the rail - these entries are not one history. */
+.dt-dashboard ::deep .dt-dashboard__dot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: var(--dt-control-height-sm);
+    height: var(--dt-control-height-sm);
+    border: var(--dt-border-width-focus) solid var(--dt-border-control);
+    border-radius: var(--dt-radius-pill);
+    background-color: var(--dt-surface-card);
+    color: var(--dt-ink-muted);
+}
+
+/* On duty carries the success dot as well as the word, so it is not told by tint alone. */
+.dt-dashboard ::deep .dt-dashboard__duty::before {
+    content: "";
+    width: var(--dt-space-2);
+    height: var(--dt-space-2);
+    border-radius: var(--dt-radius-pill);
+    background-color: var(--dt-success);
+}
+
+.dt-dashboard ::deep .dt-dashboard__foot {
+    padding: var(--dt-space-2) var(--dt-space-4) var(--dt-space-3);
+    border-top: var(--dt-border-width) solid var(--dt-border);
+}
+
+.dt-dashboard ::deep .dt-dashboard__link {
+    display: inline-flex;
+    align-items: center;
+    color: var(--dt-brand);
+    font-size: var(--dt-table-font-size);
+    line-height: var(--dt-table-line-height);
+    font-weight: var(--dt-label-font-weight);
+    text-decoration: none;
+}
+
+.dt-dashboard ::deep .dt-dashboard__link:hover {
+    text-decoration: underline;
+}
+
+/* ---- One column on a phone. -------------------------------------------------------------- */
+
+@media (max-width: 640.98px) {
+    .dt-dashboard__tiles,
+    .dt-dashboard__row,
+    .dt-dashboard__row--even {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .dt-dashboard__head {
+        align-items: stretch;
+    }
+
+    /* A thumb lands on these; the page head already floors them at the touch target. */
+    .dt-dashboard__head .btn {
+        flex: 1 1 auto;
+        justify-content: center;
+    }
+
+    /* The row's markers drop under its text rather than squeezing it to nothing. */
+    .dt-dashboard ::deep .dt-dashboard__item {
+        flex-wrap: wrap;
+    }
+}

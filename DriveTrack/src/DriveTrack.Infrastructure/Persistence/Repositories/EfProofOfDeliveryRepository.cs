@@ -21,6 +21,28 @@ internal sealed class EfProofOfDeliveryRepository(AppDbContext context) : IProof
             .AnyAsync(proof => proof.DeliveryId == deliveryId, cancellationToken);
 
     /// <inheritdoc />
+    public Task<int> CountForDeliveriesAsync(
+        IReadOnlyCollection<int> deliveryIds,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(deliveryIds);
+
+        if (deliveryIds.Count == 0)
+        {
+            // `IN ()` is not a query PostgreSQL can run, and the answer is already known.
+            return Task.FromResult(0);
+        }
+
+        var keys = deliveryIds.Distinct().ToArray();
+
+        // One query for the whole set; the unique index on delivery_id makes each probe an index
+        // lookup and guarantees a delivery is counted once.
+        return context.ProofOfDeliveries
+            .AsNoTracking()
+            .CountAsync(proof => keys.Contains(proof.DeliveryId), cancellationToken);
+    }
+
+    /// <inheritdoc />
     public Task<ProofOfDelivery?> FindVisibleByDeliveryAsync(
         int deliveryId,
         AccessScope scope,

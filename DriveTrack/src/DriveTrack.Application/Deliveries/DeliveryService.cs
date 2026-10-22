@@ -773,16 +773,6 @@ public sealed class DeliveryService(
     private static string? Blank(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
-    /// <summary>
-    /// FR-19, derived and stored nowhere: the latest bound has passed and the parcel has not been
-    /// delivered. A delivered parcel is never overdue however long the window has been shut - it
-    /// arrived, and the record of when is the timeline's, not a flag's.
-    /// </summary>
-    private static bool IsOverdue(Delivery delivery, DateTimeOffset now) =>
-        delivery.WindowLatestAt is { } latest
-        && latest < now
-        && delivery.Status != DeliveryStatus.Delivered;
-
     private static LocationView View(Location location) =>
         new(new MapLocation(location.Latitude, location.Longitude), location.Address);
 
@@ -800,7 +790,7 @@ public sealed class DeliveryService(
             delivery.WindowLatestAt,
             delivery.Status,
             delivery.CreatedAt,
-            IsOverdue(delivery, timeProvider.GetUtcNow()));
+            OverdueRule.IsOverdue(delivery, timeProvider.GetUtcNow()));
 
     private AssignedDeliverySummary Assigned(Delivery delivery) =>
         new(
@@ -814,7 +804,7 @@ public sealed class DeliveryService(
             delivery.WindowLatestAt,
             delivery.Status,
             delivery.CreatedAt,
-            IsOverdue(delivery, timeProvider.GetUtcNow()));
+            OverdueRule.IsOverdue(delivery, timeProvider.GetUtcNow()));
 
     /// <summary>
     /// The names of every party the page actually refers to, read once for the whole page rather

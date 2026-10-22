@@ -895,4 +895,91 @@
   <data name="Add" xml:space="preserve">
     <value>Add</value>
   </data>
+  <data name="NavDashboard" xml:space="preserve">
+    <value>Dashboard</value>
+  </data>
+  <data name="DashboardGreetingMorning" xml:space="preserve">
+    <value>Good morning, {0}</value>
+  </data>
+  <data name="DashboardGreetingAfternoon" xml:space="preserve">
+    <value>Good afternoon, {0}</value>
+  </data>
+  <data name="DashboardGreetingEvening" xml:space="preserve">
+    <value>Good evening, {0}</value>
+  </data>
+  <data name="DashboardSummary" xml:space="preserve">
+    <value>{0} · Open deliveries: {1} · Drivers on duty: {2}</value>
+  </data>
+  <data name="DashboardOpenDeliveries" xml:space="preserve">
+    <value>Open deliveries</value>
+  </data>
+  <data name="DashboardOpenBreakdown" xml:space="preserve">
+    <value>{0} Pending · {1} In transit</value>
+  </data>
+  <data name="DashboardOverdueHint" xml:space="preserve">
+    <value>Window passed, not delivered</value>
+  </data>
+  <data name="DashboardDeliveredToday" xml:space="preserve">
+    <value>Delivered today</value>
+  </data>
+  <data name="DashboardDeliveredWithProof" xml:space="preserve">
+    <value>{0} with proof of delivery</value>
+  </data>
+  <data name="DashboardDriversOnDuty" xml:space="preserve">
+    <value>Drivers on duty</value>
+  </data>
+  <data name="DashboardFirstShift" xml:space="preserve">
+    <value>First shift opened {0}</value>
+  </data>
+  <data name="DashboardWarningOverdue" xml:space="preserve">
+    <value>Overdue deliveries: {0}.</value>
+  </data>
+  <data name="DashboardWarningUnassigned" xml:space="preserve">
+    <value>Deliveries without a driver: {0}.</value>
+  </data>
+  <data name="DashboardWarningAdvice" xml:space="preserve">
+    <value>Assign a driver or move the window before the customer calls.</value>
+  </data>
+  <data name="DashboardToday" xml:space="preserve">
+    <value>Today's deliveries</value>
+  </data>
+  <data name="DashboardTodayCount" xml:space="preserve">
+    <value>Next {0} of {1}</value>
+  </data>
+  <data name="DashboardTodayEmpty" xml:space="preserve">
+    <value>No open delivery has a window starting today.</value>
+  </data>
+  <data name="DashboardActivity" xml:space="preserve">
+    <value>Latest activity</value>
+  </data>
+  <data name="DashboardActivityScope" xml:space="preserve">
+    <value>Across all deliveries</value>
+  </data>
+  <data name="DashboardActivityEmpty" xml:space="preserve">
+    <value>Nothing has happened on any delivery yet.</value>
+  </data>
+  <data name="DashboardActivityCreated" xml:space="preserve">
+    <value>Delivery created</value>
+  </data>
+  <data name="DashboardConversationsScope" xml:space="preserve">
+    <value>Latest message per driver</value>
+  </data>
+  <data name="DashboardVehiclesScope" xml:space="preserve">
+    <value>By date of the next service</value>
+  </data>
+  <data name="DashboardNextService" xml:space="preserve">
+    <value>Next service {0}</value>
+  </data>
+  <data name="DashboardNoService" xml:space="preserve">
+    <value>No service date</value>
+  </data>
+  <data name="DashboardMileage" xml:space="preserve">
+    <value>{0} km</value>
+  </data>
+  <data name="DashboardReviews" xml:space="preserve">
+    <value>Latest reviews</value>
+  </data>
+  <data name="DashboardReviewAbout" xml:space="preserve">
+    <value>{0} about {1}</value>
+  </data>
 </root>

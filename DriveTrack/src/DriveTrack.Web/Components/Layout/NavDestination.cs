@@ -7,6 +7,9 @@ namespace DriveTrack.Web.Components.Layout;
 /// </summary>
 public enum NavDestination
 {
+    /// <summary>The day at a glance: where dispatch lands.</summary>
+    Dashboard,
+
     /// <summary>The landing page, which every caller may see (FR-99).</summary>
     Home,
 
@@ -184,6 +187,11 @@ internal static class NavDestinations
             // one - IAccessGuard.RequireReviewAuthor refuses both - which is why the screen offers
             // them no compose action rather than a button that can only refuse.
             NavDestination.Reviews,
+
+            // The day at a glance, and the screen both roles land on. In this tier rather than the
+            // fleet one because it is the first screen of the work rather than one of its rosters;
+            // a driver and a client keep landing on their profile until they have one of their own.
+            NavDestination.Dashboard,
         };
 
     /// <summary>

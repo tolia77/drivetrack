@@ -57,6 +57,11 @@ public interface IShiftRepository
     /// </summary>
     Task<IReadOnlyList<DriverId>> ListOpenDriverIdsAsync(CancellationToken cancellationToken);
 
+    /// <summary>
+    /// When the earliest still-open shift started, or null when nobody is on duty.
+    /// </summary>
+    Task<DateTimeOffset?> FindEarliestOpenStartAsync(CancellationToken cancellationToken);
+
     /// <summary>Stages a new shift for the next commit.</summary>
     void Add(Shift shift);
 

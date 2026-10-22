@@ -1,5 +1,6 @@
 using DriveTrack.Application.Abstractions;
 using DriveTrack.Application.Authorization;
+using DriveTrack.Application.Deliveries;
 using DriveTrack.Domain.Deliveries;
 using DriveTrack.Domain.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -136,6 +137,57 @@ internal sealed class EfDeliveryRepository(AppDbContext context) : IDeliveryRepo
                 || delivery.Status == DeliveryStatus.InTransit)
             .Select(delivery => (decimal?)delivery.PackageWeightKg)
             .MaxAsync(cancellationToken);
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<DeliveryStatusCount>> CountByStatusAsync(
+        CancellationToken cancellationToken) =>
+        // Grouped in the database: the answer is four numbers, and the table is the whole history.
+        await context.Deliveries
+            .AsNoTracking()
+            .GroupBy(delivery => delivery.Status)
+            .Select(group => new DeliveryStatusCount(group.Key, group.Count()))
+            .ToListAsync(cancellationToken);
+
+    /// <inheritdoc />
+    public Task<int> CountOverdueAsync(DateTimeOffset now, CancellationToken cancellationToken) =>
+        // The shared rule as an expression, so the count and the board's per-row flag are one rule
+        // rather than two that agree today. Offset zero, because the column is timestamptz and
+        // Npgsql only writes a DateTimeOffset parameter at offset zero.
+        context.Deliveries
+            .AsNoTracking()
+            .CountAsync(OverdueRule.At(now.ToUniversalTime()), cancellationToken);
+
+    /// <inheritdoc />
+    public Task<int> CountUnassignedOpenAsync(CancellationToken cancellationToken) =>
+        context.Deliveries
+            .AsNoTracking()
+            .Where(delivery => delivery.DriverId == null)
+            .Where(delivery => delivery.Status == DeliveryStatus.Pending
+                || delivery.Status == DeliveryStatus.InTransit)
+            .CountAsync(cancellationToken);
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<Delivery>> ListOpenStartingBetweenAsync(
+        DateTimeOffset from,
+        DateTimeOffset until,
+        int limit,
+        CancellationToken cancellationToken)
+    {
+        var start = from.ToUniversalTime();
+        var end = until.ToUniversalTime();
+
+        // The id breaks a tie between two windows opening at the same minute, so the list does not
+        // reshuffle between two reads of an unchanged table.
+        return await context.Deliveries
+            .AsNoTracking()
+            .Where(delivery => delivery.Status == DeliveryStatus.Pending
+                || delivery.Status == DeliveryStatus.InTransit)
+            .Where(delivery => delivery.WindowEarliestAt >= start && delivery.WindowEarliestAt < end)
+            .OrderBy(delivery => delivery.WindowEarliestAt)
+            .ThenBy(delivery => delivery.Id)
+            .Take(limit)
+            .ToListAsync(cancellationToken);
+    }
 
     /// <inheritdoc />
     public void Add(Delivery delivery) => context.Deliveries.Add(delivery);

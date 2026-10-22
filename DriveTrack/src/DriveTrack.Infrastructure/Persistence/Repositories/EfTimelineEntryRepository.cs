@@ -18,6 +18,37 @@ internal sealed class EfTimelineEntryRepository(AppDbContext context) : ITimelin
     public void Add(TimelineEntry entry) => context.TimelineEntries.Add(entry);
 
     /// <inheritdoc />
+    public async Task<IReadOnlyList<TimelineEntry>> ListLatestAsync(
+        int limit,
+        CancellationToken cancellationToken) =>
+        await context.TimelineEntries
+            // Untracked for AD-27's reason, as below.
+            .AsNoTracking()
+            .OrderByDescending(entry => entry.OccurredAt)
+            .ThenByDescending(entry => entry.Id)
+            .Take(limit)
+            .ToListAsync(cancellationToken);
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<int>> ListDeliveryIdsMovedToAsync(
+        DeliveryStatus status,
+        DateTimeOffset from,
+        DateTimeOffset until,
+        CancellationToken cancellationToken)
+    {
+        var start = from.ToUniversalTime();
+        var end = until.ToUniversalTime();
+
+        return await context.TimelineEntries
+            .AsNoTracking()
+            .Where(entry => entry.NewStatus == status)
+            .Where(entry => entry.OccurredAt >= start && entry.OccurredAt < end)
+            .Select(entry => entry.DeliveryId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+    }
+
+    /// <inheritdoc />
     public async Task<IReadOnlyList<TimelineEntry>> ListForDeliveryAsync(
         int deliveryId,
         CancellationToken cancellationToken) =>

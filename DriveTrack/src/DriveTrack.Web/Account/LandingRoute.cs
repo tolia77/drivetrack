@@ -15,8 +15,10 @@ internal static class LandingRoute
     /// <summary>The route a signed-in user of that role is sent to.</summary>
     public static string For(UserRole role) => role switch
     {
-        UserRole.Admin => "/profile",
-        UserRole.Dispatcher => "/profile",
+        // The two roles that run dispatch land on the day at a glance; a driver and a client keep
+        // their profile until they have a dashboard of their own.
+        UserRole.Admin => "/dashboard",
+        UserRole.Dispatcher => "/dashboard",
         UserRole.Driver => "/profile",
         UserRole.Client => "/profile",
 

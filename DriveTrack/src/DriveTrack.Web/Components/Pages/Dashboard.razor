@@ -1,0 +1,548 @@
+@page "/dashboard"
+@* The day at a glance, for the two roles that run dispatch - and the screen both of them land on.
+   Built to the "Dashboard · dispatcher" artboard from real rows only: every figure is a count or a
+   short list IDashboardService derives from what is already stored.
+
+   The Roles argument routes a wrong role to /access-denied rather than into an error boundary. It is
+   a convenience, not the decision: IAccessGuard.RequireRole inside the service settles it, and runs
+   whether or not this screen was ever rendered.
+
+   Whether the caller takes part in chat is the service's answer, not this screen's: a view with no
+   conversations is an administrator's, and it draws neither the Conversations action nor the card.
+
+   The @@if blocks are independent rather than if/else chains: an `else` at markup level reads to
+   NFR-14's source scan as a rendered English word. *@
+@attribute [Authorize(Roles = "Dispatcher,Admin")]
+@using System.Globalization
+@inject IDashboardService Dashboards
+@inject ICurrentUser Caller
+@inject IStringLocalizer<UiText> Localizer
+@inherits CircuitScopedComponent
+
+<PageTitle>@Localizer["NavDashboard"]</PageTitle>
+
+<div class="dt-dashboard">
+    <DtFailureBanner Failures="_failures" />
+
+    @if (_loading)
+    {
+        <p class="dt-dashboard__loading" role="status">@Localizer["Loading"]</p>
+    }
+
+    @if (_view is { } view)
+    {
+        <div class="dt-page-head dt-dashboard__head">
+            <div class="dt-dashboard__greeting">
+                <h1 class="dt-type-h1">@Greeting(view)</h1>
+                <p class="dt-dashboard__summary">@Summary(view)</p>
+            </div>
+            @if (view.Conversations is not null)
+            {
+                <a class="btn btn-outline-secondary dt-dashboard-conversations" href="chat">
+                    <Icon Name="IconName.Chat" />@Localizer["NavChat"]
+                </a>
+            }
+            <a class="btn btn-primary dt-dashboard-create" href="deliveries">
+                <Icon Name="IconName.Create" />@Localizer["CreateDelivery"]
+            </a>
+        </div>
+
+        <div class="dt-dashboard__tiles">
+            <DtCard Class="dt-dashboard-tile dt-dashboard-tile--open">
+                <span class="dt-dashboard-tile__label"><Icon Name="IconName.Deliveries" />@Localizer["DashboardOpenDeliveries"]</span>
+                <span class="dt-dashboard-tile__value">@view.Open</span>
+                <span class="dt-dashboard-tile__hint">@OpenBreakdown(view)</span>
+            </DtCard>
+            <DtCard Class="dt-dashboard-tile dt-dashboard-tile--overdue">
+                <span class="dt-dashboard-tile__label"><Icon Name="IconName.Warning" />@Localizer["Overdue"]</span>
+                <span class="dt-dashboard-tile__value">@view.Overdue</span>
+                <span class="dt-dashboard-tile__hint">@Localizer["DashboardOverdueHint"]</span>
+            </DtCard>
+            <DtCard Class="dt-dashboard-tile dt-dashboard-tile--delivered">
+                <span class="dt-dashboard-tile__label"><Icon Name="IconName.Confirm" />@Localizer["DashboardDeliveredToday"]</span>
+                <span class="dt-dashboard-tile__value">@view.DeliveredToday</span>
+                <span class="dt-dashboard-tile__hint">@WithProof(view)</span>
+            </DtCard>
+            <DtCard Class="dt-dashboard-tile dt-dashboard-tile--duty">
+                <span class="dt-dashboard-tile__label"><Icon Name="IconName.Drivers" />@Localizer["DashboardDriversOnDuty"]</span>
+                <span class="dt-dashboard-tile__value">@OnDuty(view)</span>
+                @* Omitted rather than worded when nobody is on duty: "no shift" is already what the
+                   figure above it says. *@
+                @if (view.FirstOpenShiftStartedAt is { } firstShift)
+                {
+                    <span class="dt-dashboard-tile__hint">@FirstShift(firstShift)</span>
+                }
+            </DtCard>
+        </div>
+
+        @* Only when there is something to do about it. A warning on a day with nothing wrong is a
+           warning nobody reads on the day there is. *@
+        @if (view.Overdue > 0 || view.UnassignedOpen > 0)
+        {
+            <div class="dt-dashboard__warning">
+                <DtFailureBanner Message="@Warning(view)"
+                                 Detail="@Localizer["DashboardWarningAdvice"]"
+                                 Variant="DtBannerVariant.Warning" />
+            </div>
+        }
+
+        <div class="dt-dashboard__row">
+            <DtCard Title="@Localizer["DashboardToday"]" Icon="IconName.Deliveries" Class="dt-dashboard-today">
+                <Actions>
+                    <span class="dt-dashboard__meta">@TodayCount(view)</span>
+                </Actions>
+                <ChildContent>
+                    @if (view.Today.Count == 0)
+                    {
+                        <p class="dt-dashboard__empty">@Localizer["DashboardTodayEmpty"]</p>
+                    }
+                    @if (view.Today.Count > 0)
+                    {
+                        <ul class="dt-dashboard__rows">
+                            @foreach (var delivery in view.Today)
+                            {
+                                <li class="dt-dashboard__item">
+                                    <span class="dt-dashboard__window">@CellText.Window(delivery.WindowEarliestAt, delivery.WindowLatestAt)</span>
+                                    <span class="dt-dashboard__main">
+                                        <span class="dt-dashboard__title">@LocationText.Describe(delivery.Dropoff)</span>
+                                        <span class="dt-dashboard__meta">@DriverOf(delivery)</span>
+                                    </span>
+                                    @if (delivery.IsOverdue)
+                                    {
+                                        <DtBadge Variant="DtBadgeVariant.Overdue">@Localizer["Overdue"]</DtBadge>
+                                    }
+                                    <DeliveryStatusLabel Status="delivery.Status" />
+                                </li>
+                            }
+                        </ul>
+                    }
+                    <div class="dt-dashboard__foot">
+                        <a class="dt-dashboard__link" href="deliveries"><Icon Name="IconName.Deliveries" />@Localizer["NavDeliveries"]</a>
+                    </div>
+                </ChildContent>
+            </DtCard>
+
+            <DtCard Title="@Localizer["NavDrivers"]" Icon="IconName.Drivers" Class="dt-dashboard-drivers">
+                @if (view.Drivers.Count == 0)
+                {
+                    <p class="dt-dashboard__empty">@Localizer["DriversEmpty"]</p>
+                }
+                @if (view.Drivers.Count > 0)
+                {
+                    <ul class="dt-dashboard__rows">
+                        @foreach (var driver in view.Drivers)
+                        {
+                            <li class="dt-dashboard__item">
+                                <span class="dt-dashboard__avatar" aria-hidden="true">@Initials(driver.Name)</span>
+                                <span class="dt-dashboard__main">
+                                    <span class="dt-dashboard__title">@driver.Name</span>
+                                    <span class="dt-dashboard__meta">@VehicleOf(driver)</span>
+                                </span>
+                                <DtRatingDisplay Rating="driver.Rating" />
+                                @if (driver.OnDuty)
+                                {
+                                    <DtBadge Class="dt-dashboard__duty">@Localizer["ShiftOpen"]</DtBadge>
+                                }
+                                @if (!driver.OnDuty)
+                                {
+                                    <DtBadge Class="dt-muted">@Localizer["ShiftClosed"]</DtBadge>
+                                }
+                            </li>
+                        }
+                    </ul>
+                }
+                <div class="dt-dashboard__foot">
+                    <a class="dt-dashboard__link" href="drivers"><Icon Name="IconName.Drivers" />@Localizer["NavDrivers"]</a>
+                </div>
+            </DtCard>
+        </div>
+
+        @* An administrator takes no part in chat, so the activity runs the full width there rather
+           than leaving a column empty beside it. *@
+        <div class="@ActivityRowClass(view)">
+            <DtCard Title="@Localizer["DashboardActivity"]" Icon="IconName.Timeline" Class="dt-dashboard-activity">
+                <Actions>
+                    <span class="dt-dashboard__meta">@Localizer["DashboardActivityScope"]</span>
+                </Actions>
+                <ChildContent>
+                    @if (view.Activity.Count == 0)
+                    {
+                        <p class="dt-dashboard__empty">@Localizer["DashboardActivityEmpty"]</p>
+                    }
+                    @if (view.Activity.Count > 0)
+                    {
+                        <ul class="dt-dashboard__rows">
+                            @foreach (var entry in view.Activity)
+                            {
+                                <li class="dt-dashboard__item dt-dashboard__item--top">
+                                    <span class="dt-dashboard__dot dt-icon-only" aria-hidden="true">
+                                        <Icon Name="@Glyph(entry)" />
+                                    </span>
+                                    <span class="dt-dashboard__main">
+                                        <span class="dt-dashboard__who">
+                                            <span class="dt-dashboard__title">@entry.ActorName</span>
+                                            <DtBadge Variant="DtBadgeVariant.Role">@RoleOf(entry.ActorRole)</DtBadge>
+                                        </span>
+                                        <span class="dt-dashboard__text">@What(entry)</span>
+                                        @if (HasContext(entry))
+                                        {
+                                            <span class="dt-dashboard__meta">@ContextOf(entry)</span>
+                                        }
+                                    </span>
+                                    <span class="dt-dashboard__when">@When(entry.OccurredAt)</span>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    <div class="dt-dashboard__foot">
+                        <a class="dt-dashboard__link" href="deliveries"><Icon Name="IconName.Deliveries" />@Localizer["NavDeliveries"]</a>
+                    </div>
+                </ChildContent>
+            </DtCard>
+
+            @if (view.Conversations is { } conversations)
+            {
+                <DtCard Title="@Localizer["NavChat"]" Icon="IconName.Chat" Class="dt-dashboard-chat">
+                    <Actions>
+                        <span class="dt-dashboard__meta">@Localizer["DashboardConversationsScope"]</span>
+                    </Actions>
+                    <ChildContent>
+                        @if (conversations.Count == 0)
+                        {
+                            <p class="dt-dashboard__empty">@Localizer["ChatNoMessages"]</p>
+                        }
+                        @if (conversations.Count > 0)
+                        {
+                            <ul class="dt-dashboard__rows">
+                                @foreach (var conversation in conversations)
+                                {
+                                    <li class="dt-dashboard__item">
+                                        <span class="dt-dashboard__avatar" aria-hidden="true">@Initials(conversation.DriverName)</span>
+                                        <span class="dt-dashboard__main">
+                                            <span class="dt-dashboard__title">@conversation.DriverName</span>
+                                            <span class="dt-dashboard__meta dt-dashboard__clip">@conversation.Text</span>
+                                        </span>
+                                        <span class="dt-dashboard__when">@When(conversation.SentAt)</span>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                        <div class="dt-dashboard__foot">
+                            <a class="dt-dashboard__link" href="chat"><Icon Name="IconName.Chat" />@Localizer["NavChat"]</a>
+                        </div>
+                    </ChildContent>
+                </DtCard>
+            }
+        </div>
+
+        <div class="dt-dashboard__row dt-dashboard__row--even">
+            <DtCard Title="@Localizer["NavVehicles"]" Icon="IconName.Vehicles" Class="dt-dashboard-vehicles">
+                <Actions>
+                    <span class="dt-dashboard__meta">@Localizer["DashboardVehiclesScope"]</span>
+                </Actions>
+                <ChildContent>
+                    @if (view.Vehicles.Count == 0)
+                    {
+                        <p class="dt-dashboard__empty">@Localizer["VehiclesEmpty"]</p>
+                    }
+                    @if (view.Vehicles.Count > 0)
+                    {
+                        <ul class="dt-dashboard__rows">
+                            @foreach (var vehicle in view.Vehicles)
+                            {
+                                <li class="dt-dashboard__item">
+                                    <span class="dt-dashboard__main">
+                                        <span class="dt-dashboard__who">
+                                            <span class="dt-dashboard__title">@vehicle.Model</span>
+                                            <span class="dt-dashboard__meta dt-type-code">@vehicle.LicensePlate</span>
+                                        </span>
+                                        <span class="dt-dashboard__meta">@Service(vehicle)</span>
+                                    </span>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    <div class="dt-dashboard__foot">
+                        <a class="dt-dashboard__link" href="vehicles"><Icon Name="IconName.Vehicles" />@Localizer["NavVehicles"]</a>
+                    </div>
+                </ChildContent>
+            </DtCard>
+
+            <DtCard Title="@Localizer["DashboardReviews"]" Icon="IconName.Reviews" Class="dt-dashboard-reviews">
+                @if (view.Reviews.Count == 0)
+                {
+                    <p class="dt-dashboard__empty">@Localizer["ReviewsEmpty"]</p>
+                }
+                @if (view.Reviews.Count > 0)
+                {
+                    <ul class="dt-dashboard__rows">
+                        @foreach (var review in view.Reviews)
+                        {
+                            <li class="dt-dashboard__item dt-dashboard__item--top">
+                                <span class="dt-dashboard__main">
+                                    <span class="dt-dashboard__who">
+                                        <DtRatingDisplay Rating="review.Rating" />
+                                        <span class="dt-dashboard__meta">@Byline(review)</span>
+                                    </span>
+                                    <span class="dt-dashboard__text">@review.Text</span>
+                                </span>
+                            </li>
+                        }
+                    </ul>
+                }
+                <div class="dt-dashboard__foot">
+                    <a class="dt-dashboard__link" href="reviews"><Icon Name="IconName.Reviews" />@Localizer["NavReviews"]</a>
+                </div>
+            </DtCard>
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>Between the parts of one line - a vehicle's model and plate, a review's byline.</summary>
+    private const string Dot = " · ";
+
+    /// <summary>The hour the greeting turns from morning to afternoon, local time.</summary>
+    private const int Noon = 12;
+
+    /// <summary>The hour it turns from afternoon to evening.</summary>
+    private const int Evening = 18;
+
+    private DashboardView? _view;
+    private IReadOnlyList<ScreenFailure> _failures = [];
+    private bool _loading = true;
+
+    /// <inheritdoc />
+    protected override async Task OnInitializedAsync()
+    {
+        // The circuit outlives the request that opened it, so the cookie can be gone by the time a
+        // screen calls a service. Raising the contract's own code here puts that case through
+        // FR-13's single boundary instead of a per-screen redirect, as every other screen does.
+        if (!Caller.IsAuthenticated)
+        {
+            throw new ForbiddenException(
+                ErrorCode.AUTH_UNAUTHENTICATED,
+                "The circuit has no authenticated caller: the session cookie is gone.");
+        }
+
+        try
+        {
+            _view = await Dashboards.GetAsync(CircuitToken);
+        }
+        catch (DriveTrackException failure)
+        {
+            // A read that was refused or failed leaves the banner and nothing else: a page of
+            // zeros would read as a quiet day rather than as a dashboard that could not load.
+            _failures = FailureKeys.For(failure);
+            _view = null;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    /// <summary>"Good morning, Iryna", by the local hour the view was read at.</summary>
+    private string Greeting(DashboardView view)
+    {
+        var hour = view.LocalNow.Hour;
+
+        var format = hour < Noon
+            ? Localizer["DashboardGreetingMorning"].Value
+            : hour < Evening
+                ? Localizer["DashboardGreetingAfternoon"].Value
+                : Localizer["DashboardGreetingEvening"].Value;
+
+        return string.Format(CultureInfo.CurrentCulture, format, view.FirstName);
+    }
+
+    /// <summary>The date line under the greeting: the day, then the two figures dispatch runs on.</summary>
+    private string Summary(DashboardView view) =>
+        string.Format(
+            CultureInfo.CurrentCulture,
+            Localizer["DashboardSummary"].Value,
+            view.LocalNow.ToString("dddd, d MMMM yyyy", CultureInfo.CurrentCulture),
+            view.Open,
+            view.DriversOnDuty);
+
+    private string OpenBreakdown(DashboardView view) =>
+        string.Format(
+            CultureInfo.CurrentCulture,
+            Localizer["DashboardOpenBreakdown"].Value,
+            view.Pending,
+            view.InTransit);
+
+    private string WithProof(DashboardView view) =>
+        string.Format(
+            CultureInfo.CurrentCulture,
+            Localizer["DashboardDeliveredWithProof"].Value,
+            view.DeliveredTodayWithProof);
+
+    private static string OnDuty(DashboardView view) =>
+        view.DriversOnDuty.ToString(CultureInfo.CurrentCulture)
+        + " / "
+        + view.DriversTotal.ToString(CultureInfo.CurrentCulture);
+
+    private string FirstShift(DateTimeOffset startedAt) =>
+        string.Format(
+            CultureInfo.CurrentCulture,
+            Localizer["DashboardFirstShift"].Value,
+            When(startedAt));
+
+    /// <summary>The warning's sentence: only the clauses whose count is not zero.</summary>
+    private string Warning(DashboardView view)
+    {
+        var clauses = new List<string>(2);
+
+        if (view.Overdue > 0)
+        {
+            clauses.Add(string.Format(
+                CultureInfo.CurrentCulture,
+                Localizer["DashboardWarningOverdue"].Value,
+                view.Overdue));
+        }
+
+        if (view.UnassignedOpen > 0)
+        {
+            clauses.Add(string.Format(
+                CultureInfo.CurrentCulture,
+                Localizer["DashboardWarningUnassigned"].Value,
+                view.UnassignedOpen));
+        }
+
+        return string.Join(" ", clauses);
+    }
+
+    /// <summary>"Next 5 of 18": how many of the open deliveries this card is showing.</summary>
+    private string TodayCount(DashboardView view) =>
+        string.Format(
+            CultureInfo.CurrentCulture,
+            Localizer["DashboardTodayCount"].Value,
+            view.Today.Count,
+            view.Open);
+
+    private string DriverOf(DashboardDelivery delivery) =>
+        string.IsNullOrEmpty(delivery.DriverName) ? Localizer["NoDriver"].Value : delivery.DriverName;
+
+    private string VehicleOf(DashboardDriver driver) =>
+        driver.VehicleModel is { } model && driver.VehicleLicensePlate is { } plate
+            ? model + Dot + plate
+            : Localizer["NoVehicle"].Value;
+
+    /// <summary>
+    /// The row's two letters: the first of each name, upper-cased in the culture being read - the
+    /// same two the navigation's own avatar draws for the caller.
+    /// </summary>
+    private static string Initials(string name) =>
+        string.Concat(
+                name.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                    .Take(2)
+                    .Select(part => part[..1]))
+            .ToUpper(CultureInfo.CurrentCulture);
+
+    /// <summary>
+    /// The entry's glyph, keyed on the same kind the line's words are, so the mark and the words
+    /// never disagree. The glyphs are DtTimelineEntry's.
+    /// </summary>
+    private static IconName Glyph(DashboardActivity entry) => entry.Kind switch
+    {
+        DashboardActivityKind.Created => IconName.Create,
+        DashboardActivityKind.Comment => IconName.Chat,
+        DashboardActivityKind.StatusChange => entry.NewStatus switch
+        {
+            DeliveryStatus.Delivered => IconName.Confirm,
+            DeliveryStatus.Failed => IconName.Warning,
+            _ => IconName.Edit,
+        },
+        _ => throw new ArgumentOutOfRangeException(
+            nameof(entry),
+            entry.Kind,
+            "No glyph is defined for this kind of entry."),
+    };
+
+    /// <summary>What the entry recorded, as one short line.</summary>
+    private string What(DashboardActivity entry) => entry.Kind switch
+    {
+        DashboardActivityKind.Created => Localizer["DashboardActivityCreated"].Value,
+        DashboardActivityKind.Comment => Localizer["TimelineNote"].Value,
+        DashboardActivityKind.StatusChange => StatusOf(entry.PreviousStatus) + " → " + StatusOf(entry.NewStatus),
+        _ => throw new ArgumentOutOfRangeException(
+            nameof(entry),
+            entry.Kind,
+            "No activity line is defined for this kind of entry."),
+    };
+
+    /// <summary>
+    /// What was said about the entry, or - when nothing was - which delivery it was about.
+    /// </summary>
+    private static string? ContextOf(DashboardActivity entry) =>
+        entry.Note ?? (entry.Dropoff is { } dropoff ? LocationText.Describe(dropoff) : null);
+
+    private static bool HasContext(DashboardActivity entry) => ContextOf(entry) is not null;
+
+    /// <summary>A status's word, from the same four keys DeliveryStatusLabel renders.</summary>
+    private string StatusOf(DeliveryStatus? status) => status switch
+    {
+        DeliveryStatus.Pending => Localizer["StatusPending"].Value,
+        DeliveryStatus.InTransit => Localizer["StatusInTransit"].Value,
+        DeliveryStatus.Delivered => Localizer["StatusDelivered"].Value,
+        DeliveryStatus.Failed => Localizer["StatusFailed"].Value,
+        null => string.Empty,
+        _ => throw new ArgumentOutOfRangeException(
+            nameof(status),
+            status,
+            "No word is defined for this delivery status."),
+    };
+
+    private string RoleOf(UserRole role) => role switch
+    {
+        UserRole.Admin => Localizer["RoleAdmin"].Value,
+        UserRole.Dispatcher => Localizer["RoleDispatcher"].Value,
+        UserRole.Driver => Localizer["RoleDriver"].Value,
+        UserRole.Client => Localizer["RoleClient"].Value,
+        _ => throw new ArgumentOutOfRangeException(nameof(role), role, "No word is defined for this role."),
+    };
+
+    /// <summary>"Next service 20.10.2026 · 61 480 km".</summary>
+    private string Service(DashboardVehicle vehicle)
+    {
+        var due = vehicle.NextMaintenanceDate is { } date
+            ? string.Format(
+                CultureInfo.CurrentCulture,
+                Localizer["DashboardNextService"].Value,
+                date.ToString("d", CultureInfo.CurrentCulture))
+            : Localizer["DashboardNoService"].Value;
+
+        var mileage = string.Format(
+            CultureInfo.CurrentCulture,
+            Localizer["DashboardMileage"].Value,
+            vehicle.Mileage.ToString("N0", CultureInfo.CurrentCulture));
+
+        return due + Dot + mileage;
+    }
+
+    /// <summary>"Andrii Shevchuk about Taras Melnyk · 22.10.2026 10:20", or the client alone.</summary>
+    private string Byline(DashboardReview review)
+    {
+        var who = review.DriverName is { Length: > 0 } driver
+            ? string.Format(
+                CultureInfo.CurrentCulture,
+                Localizer["DashboardReviewAbout"].Value,
+                review.ClientName,
+                driver)
+            : review.ClientName;
+
+        return who + Dot + When(review.CreatedAt);
+    }
+
+    private static string ActivityRowClass(DashboardView view) =>
+        view.Conversations is null
+            ? "dt-dashboard__row dt-dashboard__row--single"
+            : "dt-dashboard__row";
+
+    /// <summary>
+    /// An instant in local time, in the "g" every other screen renders one with (AD-13: storage is
+    /// offset zero, and the conversion happens here, in the presentation layer).
+    /// </summary>
+    private static string When(DateTimeOffset instant) => CellText.Moment(instant.ToLocalTime());
+}

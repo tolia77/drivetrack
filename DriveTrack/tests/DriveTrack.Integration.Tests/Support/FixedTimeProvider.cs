@@ -14,6 +14,16 @@ internal sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider
     /// <summary>The instant every read returns. Settable, so one host can span two moments.</summary>
     public DateTimeOffset Now { get; set; } = now;
 
+    /// <summary>
+    /// The zone "local" means to this clock. The machine's by default, as the system clock's is;
+    /// settable so a rule about the local day - the dashboard's "today" - is tested in the zone the
+    /// fleet works in rather than in whichever one the build agent happens to run in.
+    /// </summary>
+    public TimeZoneInfo Zone { get; set; } = TimeZoneInfo.Local;
+
     /// <inheritdoc />
     public override DateTimeOffset GetUtcNow() => Now;
+
+    /// <inheritdoc />
+    public override TimeZoneInfo LocalTimeZone => Zone;
 }

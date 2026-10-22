@@ -89,6 +89,15 @@
     </details>
 
     <div class="dt-nav__links">
+        @* First, above Home: the dashboard is where dispatch lands, so it heads the list the way
+           the landing destination should. *@
+        @if (destinations.Contains(NavDestination.Dashboard))
+        {
+            <a class="dt-nav__link" href="dashboard" aria-current="@(here == "dashboard" ? "page" : null)">
+                <Icon Name="IconName.Timeline" />@Localizer["NavDashboard"]
+            </a>
+        }
+
         @if (destinations.Contains(NavDestination.Home))
         {
             <a class="dt-nav__link" href="@Landing" aria-current="@(here == Landing ? "page" : null)">

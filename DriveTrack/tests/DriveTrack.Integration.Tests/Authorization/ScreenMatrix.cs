@@ -65,6 +65,7 @@ internal static class ScreenMatrix
         Open("/Error"),
 
         // ---- Refused at the router, by the role list on the page itself. ---------------------
+        Router("/dashboard", UserRole.Dispatcher, UserRole.Admin),
         Router("/deliveries", UserRole.Dispatcher, UserRole.Admin),
         Router("/drivers", UserRole.Dispatcher, UserRole.Admin),
         Router("/vehicles", UserRole.Dispatcher, UserRole.Admin),
