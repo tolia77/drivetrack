@@ -184,3 +184,9 @@
         white-space: normal;
     }
 }
+
+/* A picture, not text: nothing in it can be selected, as nothing in an image can. */
+.dt-pic-scene {
+    -webkit-user-select: none;
+    user-select: none;
+}

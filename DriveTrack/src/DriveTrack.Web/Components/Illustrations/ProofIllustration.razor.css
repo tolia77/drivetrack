@@ -27,3 +27,9 @@
     font-size: 12px;
     line-height: 16px;
 }
+
+/* A picture, not text: nothing in it can be selected, as nothing in an image can. */
+.dt-pic-proofcard {
+    -webkit-user-select: none;
+    user-select: none;
+}

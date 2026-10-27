@@ -28,3 +28,9 @@
         display: none;
     }
 }
+
+/* A picture, not text: nothing in it can be selected, as nothing in an image can. */
+.dt-pic-route {
+    -webkit-user-select: none;
+    user-select: none;
+}

@@ -63,3 +63,9 @@
     background-color: #e3f3e7;
     color: #145c2c;
 }
+
+/* A picture, not text: nothing in it can be selected, as nothing in an image can. */
+.dt-pic-mails {
+    -webkit-user-select: none;
+    user-select: none;
+}

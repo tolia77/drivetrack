@@ -91,6 +91,25 @@ public class IllustrationTests
         Assert.DoesNotContain($">{Catalogue("UiText.resx", key)}", english, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("LandingHeroScene", "dt-pic-scene")]
+    [InlineData("RequestIllustration", "dt-pic-request")]
+    [InlineData("UpdatesIllustration", "dt-pic-mails")]
+    [InlineData("ProofIllustration", "dt-pic-proofcard")]
+    [InlineData("PhoneDeliveries", "dt-pic-phonewrap")]
+    [InlineData("RouteLine", "dt-pic-route")]
+    public void A_picture_the_page_places_cannot_have_its_text_selected(string component, string rootClass)
+    {
+        // A picture of an address is not an address anyone should copy, and a drag across the hero
+        // should not paint the map and its cards blue. Set on the root the page places; the helpers
+        // drawn inside it inherit it.
+        var css = SharedMarkup.ReadComponent("Illustrations", component + ".razor.css");
+
+        Assert.Matches(
+            $@"\.{Regex.Escape(rootClass)}\s*\{{[^}}]*(?<!-webkit-)user-select:\s*none;",
+            css);
+    }
+
     /// <summary>A value from one of the UiText catalogues.</summary>
     private static string Catalogue(string fileName, string key)
     {

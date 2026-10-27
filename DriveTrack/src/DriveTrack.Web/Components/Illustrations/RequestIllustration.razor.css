@@ -30,3 +30,9 @@
     color: #56626f;
     font-weight: 600;
 }
+
+/* A picture, not text: nothing in it can be selected, as nothing in an image can. */
+.dt-pic-request {
+    -webkit-user-select: none;
+    user-select: none;
+}

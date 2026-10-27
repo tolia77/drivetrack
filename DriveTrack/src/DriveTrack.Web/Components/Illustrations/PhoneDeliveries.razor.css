@@ -134,3 +134,9 @@
 .dt-pic-dcard__rating ::deep .dt-rating {
     font-size: 12px;
 }
+
+/* A picture, not text: nothing in it can be selected, as nothing in an image can. */
+.dt-pic-phonewrap {
+    -webkit-user-select: none;
+    user-select: none;
+}
