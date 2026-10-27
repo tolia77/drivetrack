@@ -34,6 +34,15 @@
     padding: 0 var(--dt-space-6);
 }
 
+/*
+    The header and footer span the whole window instead, 48px in from either edge: the margin is
+    the 16px the shared padding leaves short, because the token gate admits no arithmetic there.
+*/
+.dt-landing-wrap--wide {
+    max-width: none;
+    margin: 0 var(--dt-space-4);
+}
+
 /* ---------------------------------------------------------------- header */
 
 .dt-landing-header {
@@ -664,6 +673,10 @@
 @media (max-width: 640.98px) {
     .dt-landing-wrap {
         padding: 0 var(--dt-space-4);
+    }
+
+    .dt-landing-wrap--wide {
+        margin: 0;
     }
 
     /*
