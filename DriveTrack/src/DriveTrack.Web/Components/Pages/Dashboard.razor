@@ -86,214 +86,223 @@
             </div>
         }
 
-        <div class="dt-dashboard__row">
-            <DtCard Title="@Localizer["DashboardToday"]" Icon="IconName.Deliveries" Class="dt-dashboard-today">
-                <Actions>
-                    <span class="dt-dashboard__meta">@TodayCount(view)</span>
-                </Actions>
-                <ChildContent>
-                    @if (view.Today.Count == 0)
-                    {
-                        <p class="dt-dashboard__empty">@Localizer["DashboardTodayEmpty"]</p>
-                    }
-                    @if (view.Today.Count > 0)
-                    {
-                        <ul class="dt-dashboard__rows">
-                            @foreach (var delivery in view.Today)
-                            {
-                                <li class="dt-dashboard__item">
-                                    <span class="dt-dashboard__window">@CellText.Window(delivery.WindowEarliestAt, delivery.WindowLatestAt)</span>
-                                    <span class="dt-dashboard__main">
-                                        <span class="dt-dashboard__title">@LocationText.Describe(delivery.Dropoff)</span>
-                                        <span class="dt-dashboard__meta">@DriverOf(delivery)</span>
-                                    </span>
-                                    @if (delivery.IsOverdue)
-                                    {
-                                        <DtBadge Variant="DtBadgeVariant.Overdue">@Localizer["Overdue"]</DtBadge>
-                                    }
-                                    <DeliveryStatusLabel Status="delivery.Status" />
-                                </li>
-                            }
-                        </ul>
-                    }
-                    <div class="dt-dashboard__foot">
-                        <a class="dt-dashboard__link" href="deliveries"><Icon Name="IconName.Deliveries" />@Localizer["NavDeliveries"]</a>
-                    </div>
-                </ChildContent>
-            </DtCard>
-
-            <DtCard Title="@Localizer["NavDrivers"]" Icon="IconName.Drivers" Class="dt-dashboard-drivers">
-                @if (view.Drivers.Count == 0)
-                {
-                    <p class="dt-dashboard__empty">@Localizer["DriversEmpty"]</p>
-                }
-                @if (view.Drivers.Count > 0)
-                {
-                    <ul class="dt-dashboard__rows">
-                        @foreach (var driver in view.Drivers)
-                        {
-                            <li class="dt-dashboard__item">
-                                <span class="dt-dashboard__avatar" aria-hidden="true">@Initials(driver.Name)</span>
-                                <span class="dt-dashboard__main">
-                                    <span class="dt-dashboard__title">@driver.Name</span>
-                                    <span class="dt-dashboard__meta">@VehicleOf(driver)</span>
-                                </span>
-                                <DtRatingDisplay Rating="driver.Rating" />
-                                @if (driver.OnDuty)
-                                {
-                                    <DtBadge Class="dt-dashboard__duty">@Localizer["ShiftOpen"]</DtBadge>
-                                }
-                                @if (!driver.OnDuty)
-                                {
-                                    <DtBadge Class="dt-muted">@Localizer["ShiftClosed"]</DtBadge>
-                                }
-                            </li>
-                        }
-                    </ul>
-                }
-                <div class="dt-dashboard__foot">
-                    <a class="dt-dashboard__link" href="drivers"><Icon Name="IconName.Drivers" />@Localizer["NavDrivers"]</a>
-                </div>
-            </DtCard>
-        </div>
-
-        @* An administrator takes no part in chat, so the activity runs the full width there rather
-           than leaving a column empty beside it. *@
-        <div class="@ActivityRowClass(view)">
-            <DtCard Title="@Localizer["DashboardActivity"]" Icon="IconName.Timeline" Class="dt-dashboard-activity">
-                <Actions>
-                    <span class="dt-dashboard__meta">@Localizer["DashboardActivityScope"]</span>
-                </Actions>
-                <ChildContent>
-                    @if (view.Activity.Count == 0)
-                    {
-                        <p class="dt-dashboard__empty">@Localizer["DashboardActivityEmpty"]</p>
-                    }
-                    @if (view.Activity.Count > 0)
-                    {
-                        <ul class="dt-dashboard__rows">
-                            @foreach (var entry in view.Activity)
-                            {
-                                <li class="dt-dashboard__item dt-dashboard__item--top">
-                                    <span class="dt-dashboard__dot dt-icon-only" aria-hidden="true">
-                                        <Icon Name="@Glyph(entry)" />
-                                    </span>
-                                    <span class="dt-dashboard__main">
-                                        <span class="dt-dashboard__who">
-                                            <span class="dt-dashboard__title">@entry.ActorName</span>
-                                            <DtBadge Variant="DtBadgeVariant.Role">@RoleOf(entry.ActorRole)</DtBadge>
-                                        </span>
-                                        <span class="dt-dashboard__text">@What(entry)</span>
-                                        @if (HasContext(entry))
-                                        {
-                                            <span class="dt-dashboard__meta">@ContextOf(entry)</span>
-                                        }
-                                    </span>
-                                    <span class="dt-dashboard__when">@When(entry.OccurredAt)</span>
-                                </li>
-                            }
-                        </ul>
-                    }
-                    <div class="dt-dashboard__foot">
-                        <a class="dt-dashboard__link" href="deliveries"><Icon Name="IconName.Deliveries" />@Localizer["NavDeliveries"]</a>
-                    </div>
-                </ChildContent>
-            </DtCard>
-
-            @if (view.Conversations is { } conversations)
-            {
-                <DtCard Title="@Localizer["NavChat"]" Icon="IconName.Chat" Class="dt-dashboard-chat">
+        @* Two columns, each its own stack, rather than rows of pairs. A row is as tall as its taller
+           card, so pairing a short card with a long one left a hole under the short one - and on a
+           quiet day every card is short in a different way. Stacked, each column grows by itself and
+           the gap between any two cards is the same. The lists that run long - today's deliveries
+           and the activity - take the wide column; the short ones share the narrow one. An
+           administrator, who takes no part in chat, simply has one card fewer on that side. *@
+        <div class="dt-dashboard__columns">
+            <div class="dt-dashboard__column dt-dashboard__column--main">
+                <DtCard Title="@Localizer["DashboardToday"]" Icon="IconName.Deliveries" Class="dt-dashboard-today">
                     <Actions>
-                        <span class="dt-dashboard__meta">@Localizer["DashboardConversationsScope"]</span>
+                        @* Not "0 of 1" on a day nothing starts: the sentence below already says so,
+                           and a count of nothing beside it read like a fault. *@
+                        @if (view.Today.Count > 0)
+                        {
+                            <span class="dt-dashboard__meta">@TodayCount(view)</span>
+                        }
                     </Actions>
                     <ChildContent>
-                        @if (conversations.Count == 0)
+                        @if (view.Today.Count == 0)
                         {
-                            <p class="dt-dashboard__empty">@Localizer["ChatNoMessages"]</p>
+                            <p class="dt-dashboard__empty">@Localizer["DashboardTodayEmpty"]</p>
                         }
-                        @if (conversations.Count > 0)
+                        @if (view.Today.Count > 0)
                         {
                             <ul class="dt-dashboard__rows">
-                                @foreach (var conversation in conversations)
+                                @foreach (var delivery in view.Today)
                                 {
                                     <li class="dt-dashboard__item">
-                                        <span class="dt-dashboard__avatar" aria-hidden="true">@Initials(conversation.DriverName)</span>
+                                        <span class="dt-dashboard__window">@CellText.Window(delivery.WindowEarliestAt, delivery.WindowLatestAt)</span>
                                         <span class="dt-dashboard__main">
-                                            <span class="dt-dashboard__title">@conversation.DriverName</span>
-                                            <span class="dt-dashboard__meta dt-dashboard__clip">@conversation.Text</span>
+                                            <span class="dt-dashboard__title">@LocationText.Describe(delivery.Dropoff)</span>
+                                            <span class="dt-dashboard__meta">@DriverOf(delivery)</span>
                                         </span>
-                                        <span class="dt-dashboard__when">@When(conversation.SentAt)</span>
+                                        @if (delivery.IsOverdue)
+                                        {
+                                            <DtBadge Variant="DtBadgeVariant.Overdue">@Localizer["Overdue"]</DtBadge>
+                                        }
+                                        <DeliveryStatusLabel Status="delivery.Status" />
                                     </li>
                                 }
                             </ul>
                         }
                         <div class="dt-dashboard__foot">
-                            <a class="dt-dashboard__link" href="chat"><Icon Name="IconName.Chat" />@Localizer["NavChat"]</a>
+                            <a class="dt-dashboard__link" href="deliveries"><Icon Name="IconName.Deliveries" />@Localizer["NavDeliveries"]</a>
                         </div>
                     </ChildContent>
                 </DtCard>
-            }
-        </div>
 
-        <div class="dt-dashboard__row dt-dashboard__row--even">
-            <DtCard Title="@Localizer["NavVehicles"]" Icon="IconName.Vehicles" Class="dt-dashboard-vehicles">
-                <Actions>
-                    <span class="dt-dashboard__meta">@Localizer["DashboardVehiclesScope"]</span>
-                </Actions>
-                <ChildContent>
-                    @if (view.Vehicles.Count == 0)
+                <DtCard Title="@Localizer["DashboardActivity"]" Icon="IconName.Timeline" Class="dt-dashboard-activity">
+                    <Actions>
+                        <span class="dt-dashboard__meta">@Localizer["DashboardActivityScope"]</span>
+                    </Actions>
+                    <ChildContent>
+                        @if (view.Activity.Count == 0)
+                        {
+                            <p class="dt-dashboard__empty">@Localizer["DashboardActivityEmpty"]</p>
+                        }
+                        @if (view.Activity.Count > 0)
+                        {
+                            <ul class="dt-dashboard__rows">
+                                @foreach (var entry in view.Activity)
+                                {
+                                    <li class="dt-dashboard__item dt-dashboard__item--top">
+                                        <span class="dt-dashboard__dot dt-icon-only" aria-hidden="true">
+                                            <Icon Name="@Glyph(entry)" />
+                                        </span>
+                                        <span class="dt-dashboard__main">
+                                            <span class="dt-dashboard__who">
+                                                <span class="dt-dashboard__title">@entry.ActorName</span>
+                                                <DtBadge Variant="DtBadgeVariant.Role">@RoleOf(entry.ActorRole)</DtBadge>
+                                            </span>
+                                            <span class="dt-dashboard__text">@What(entry)</span>
+                                            @if (HasContext(entry))
+                                            {
+                                                <span class="dt-dashboard__meta">@ContextOf(entry)</span>
+                                            }
+                                        </span>
+                                        <span class="dt-dashboard__when">@When(entry.OccurredAt)</span>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                        <div class="dt-dashboard__foot">
+                            <a class="dt-dashboard__link" href="deliveries"><Icon Name="IconName.Deliveries" />@Localizer["NavDeliveries"]</a>
+                        </div>
+                    </ChildContent>
+                </DtCard>
+            </div>
+
+            <div class="dt-dashboard__column">
+                <DtCard Title="@Localizer["NavDrivers"]" Icon="IconName.Drivers" Class="dt-dashboard-drivers">
+                    @if (view.Drivers.Count == 0)
                     {
-                        <p class="dt-dashboard__empty">@Localizer["VehiclesEmpty"]</p>
+                        <p class="dt-dashboard__empty">@Localizer["DriversEmpty"]</p>
                     }
-                    @if (view.Vehicles.Count > 0)
+                    @if (view.Drivers.Count > 0)
                     {
                         <ul class="dt-dashboard__rows">
-                            @foreach (var vehicle in view.Vehicles)
+                            @foreach (var driver in view.Drivers)
                             {
                                 <li class="dt-dashboard__item">
+                                    <span class="dt-dashboard__avatar" aria-hidden="true">@Initials(driver.Name)</span>
+                                    <span class="dt-dashboard__main">
+                                        <span class="dt-dashboard__title">@driver.Name</span>
+                                        <span class="dt-dashboard__meta">@VehicleOf(driver)</span>
+                                    </span>
+                                    <DtRatingDisplay Rating="driver.Rating" />
+                                    @if (driver.OnDuty)
+                                    {
+                                        <DtBadge Class="dt-dashboard__duty">@Localizer["ShiftOpen"]</DtBadge>
+                                    }
+                                    @if (!driver.OnDuty)
+                                    {
+                                        <DtBadge Class="dt-muted">@Localizer["ShiftClosed"]</DtBadge>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                    }
+                    <div class="dt-dashboard__foot">
+                        <a class="dt-dashboard__link" href="drivers"><Icon Name="IconName.Drivers" />@Localizer["NavDrivers"]</a>
+                    </div>
+                </DtCard>
+
+                @if (view.Conversations is { } conversations)
+                {
+                    <DtCard Title="@Localizer["NavChat"]" Icon="IconName.Chat" Class="dt-dashboard-chat">
+                        <Actions>
+                            <span class="dt-dashboard__meta">@Localizer["DashboardConversationsScope"]</span>
+                        </Actions>
+                        <ChildContent>
+                            @if (conversations.Count == 0)
+                            {
+                                <p class="dt-dashboard__empty">@Localizer["ChatNoMessages"]</p>
+                            }
+                            @if (conversations.Count > 0)
+                            {
+                                <ul class="dt-dashboard__rows">
+                                    @foreach (var conversation in conversations)
+                                    {
+                                        <li class="dt-dashboard__item">
+                                            <span class="dt-dashboard__avatar" aria-hidden="true">@Initials(conversation.DriverName)</span>
+                                            <span class="dt-dashboard__main">
+                                                <span class="dt-dashboard__title">@conversation.DriverName</span>
+                                                <span class="dt-dashboard__meta dt-dashboard__clip">@conversation.Text</span>
+                                            </span>
+                                            <span class="dt-dashboard__when">@When(conversation.SentAt)</span>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                            <div class="dt-dashboard__foot">
+                                <a class="dt-dashboard__link" href="chat"><Icon Name="IconName.Chat" />@Localizer["NavChat"]</a>
+                            </div>
+                        </ChildContent>
+                    </DtCard>
+                }
+
+                <DtCard Title="@Localizer["NavVehicles"]" Icon="IconName.Vehicles" Class="dt-dashboard-vehicles">
+                    <Actions>
+                        <span class="dt-dashboard__meta">@Localizer["DashboardVehiclesScope"]</span>
+                    </Actions>
+                    <ChildContent>
+                        @if (view.Vehicles.Count == 0)
+                        {
+                            <p class="dt-dashboard__empty">@Localizer["VehiclesEmpty"]</p>
+                        }
+                        @if (view.Vehicles.Count > 0)
+                        {
+                            <ul class="dt-dashboard__rows">
+                                @foreach (var vehicle in view.Vehicles)
+                                {
+                                    <li class="dt-dashboard__item">
+                                        <span class="dt-dashboard__main">
+                                            <span class="dt-dashboard__who">
+                                                <span class="dt-dashboard__title">@vehicle.Model</span>
+                                                <span class="dt-dashboard__meta dt-type-code">@vehicle.LicensePlate</span>
+                                            </span>
+                                            <span class="dt-dashboard__meta">@Service(vehicle)</span>
+                                        </span>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                        <div class="dt-dashboard__foot">
+                            <a class="dt-dashboard__link" href="vehicles"><Icon Name="IconName.Vehicles" />@Localizer["NavVehicles"]</a>
+                        </div>
+                    </ChildContent>
+                </DtCard>
+
+                <DtCard Title="@Localizer["DashboardReviews"]" Icon="IconName.Reviews" Class="dt-dashboard-reviews">
+                    @if (view.Reviews.Count == 0)
+                    {
+                        <p class="dt-dashboard__empty">@Localizer["ReviewsEmpty"]</p>
+                    }
+                    @if (view.Reviews.Count > 0)
+                    {
+                        <ul class="dt-dashboard__rows">
+                            @foreach (var review in view.Reviews)
+                            {
+                                <li class="dt-dashboard__item dt-dashboard__item--top">
                                     <span class="dt-dashboard__main">
                                         <span class="dt-dashboard__who">
-                                            <span class="dt-dashboard__title">@vehicle.Model</span>
-                                            <span class="dt-dashboard__meta dt-type-code">@vehicle.LicensePlate</span>
+                                            <DtRatingDisplay Rating="review.Rating" />
+                                            <span class="dt-dashboard__meta">@Byline(review)</span>
                                         </span>
-                                        <span class="dt-dashboard__meta">@Service(vehicle)</span>
+                                        <span class="dt-dashboard__text">@review.Text</span>
                                     </span>
                                 </li>
                             }
                         </ul>
                     }
                     <div class="dt-dashboard__foot">
-                        <a class="dt-dashboard__link" href="vehicles"><Icon Name="IconName.Vehicles" />@Localizer["NavVehicles"]</a>
+                        <a class="dt-dashboard__link" href="reviews"><Icon Name="IconName.Reviews" />@Localizer["NavReviews"]</a>
                     </div>
-                </ChildContent>
-            </DtCard>
-
-            <DtCard Title="@Localizer["DashboardReviews"]" Icon="IconName.Reviews" Class="dt-dashboard-reviews">
-                @if (view.Reviews.Count == 0)
-                {
-                    <p class="dt-dashboard__empty">@Localizer["ReviewsEmpty"]</p>
-                }
-                @if (view.Reviews.Count > 0)
-                {
-                    <ul class="dt-dashboard__rows">
-                        @foreach (var review in view.Reviews)
-                        {
-                            <li class="dt-dashboard__item dt-dashboard__item--top">
-                                <span class="dt-dashboard__main">
-                                    <span class="dt-dashboard__who">
-                                        <DtRatingDisplay Rating="review.Rating" />
-                                        <span class="dt-dashboard__meta">@Byline(review)</span>
-                                    </span>
-                                    <span class="dt-dashboard__text">@review.Text</span>
-                                </span>
-                            </li>
-                        }
-                    </ul>
-                }
-                <div class="dt-dashboard__foot">
-                    <a class="dt-dashboard__link" href="reviews"><Icon Name="IconName.Reviews" />@Localizer["NavReviews"]</a>
-                </div>
-            </DtCard>
+                </DtCard>
+            </div>
         </div>
     }
 </div>
@@ -534,11 +543,6 @@
 
         return who + Dot + When(review.CreatedAt);
     }
-
-    private static string ActivityRowClass(DashboardView view) =>
-        view.Conversations is null
-            ? "dt-dashboard__row dt-dashboard__row--single"
-            : "dt-dashboard__row";
 
     /// <summary>
     /// An instant in local time, in the "g" every other screen renders one with (AD-13: storage is

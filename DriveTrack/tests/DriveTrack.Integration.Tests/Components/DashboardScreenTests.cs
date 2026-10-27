@@ -63,7 +63,6 @@ public class DashboardScreenTests
         Assert.Contains("У дорозі → Доставлено", text, StringComparison.Ordinal);
         Assert.Contains("Наступне ТО", text, StringComparison.Ordinal);
 
-        Assert.DoesNotContain("dt-dashboard__row--single", html, StringComparison.Ordinal);
         Assert.False(SharedMarkup.HasLatinWord(Visible(text)), text);
     }
 
@@ -112,14 +111,48 @@ public class DashboardScreenTests
     }
 
     [Fact]
-    public async Task An_administrator_has_no_conversations_and_the_activity_runs_full_width()
+    public async Task The_long_lists_stack_in_the_wide_column_and_the_short_cards_in_the_narrow_one()
+    {
+        // Two stacks rather than rows of pairs: a row is as tall as its taller card, which left a
+        // hole under whichever card of a pair was short. Stated as document order because each
+        // column is a plain stack - the wide one opens first and closes before the narrow one opens.
+        var html = await RenderAsync(UserRole.Dispatcher, Busy());
+
+        string[] order =
+        [
+            "dt-dashboard__column--main",
+            "dt-dashboard-today",
+            "dt-dashboard-activity",
+            @"class=""dt-dashboard__column""",
+            "dt-dashboard-drivers",
+            "dt-dashboard-chat",
+            "dt-dashboard-vehicles",
+            "dt-dashboard-reviews",
+        ];
+        var at = order.Select(marker => html.IndexOf(marker, StringComparison.Ordinal)).ToArray();
+
+        Assert.DoesNotContain(-1, at);
+        Assert.Equal(at.Order(), at);
+    }
+
+    [Fact]
+    public async Task A_day_with_nothing_starting_shows_no_count_beside_the_sentence_that_says_so()
+    {
+        var html = await RenderAsync(UserRole.Dispatcher, Busy() with { Today = [] });
+        var text = SharedMarkup.TextOf(html);
+
+        Assert.Contains("Сьогодні не починається вікно жодної відкритої доставки.", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("Найближчі", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task An_administrator_has_no_conversations_card()
     {
         var html = await RenderAsync(UserRole.Admin, Busy() with { Conversations = null });
 
         Assert.DoesNotContain(@"href=""chat""", html, StringComparison.Ordinal);
         Assert.DoesNotContain("dt-dashboard-conversations", html, StringComparison.Ordinal);
         Assert.DoesNotContain("dt-dashboard-chat", html, StringComparison.Ordinal);
-        Assert.Contains("dt-dashboard__row--single", html, StringComparison.Ordinal);
 
         // Everything else is still there.
         Assert.Contains("dt-dashboard-activity", html, StringComparison.Ordinal);
