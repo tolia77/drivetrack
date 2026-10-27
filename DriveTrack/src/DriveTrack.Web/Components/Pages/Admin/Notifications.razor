@@ -3,7 +3,7 @@
 @inject INotificationLogService Log
 @inject ICurrentUser Caller
 @inject IStringLocalizer<UiText> Localizer
-@inherits CircuitScopedComponent
+@inherits PagedScreen<ListNotificationAttemptsQuery, NotificationAttemptSummary, NotificationSort>
 
 @* FR-28: the row an administrator can read.
 
@@ -41,9 +41,8 @@
 
 <DtFailureBanner Failures="_failures" />
 
-@* NFR-27 keeps the original's paging, and this screen asks for the first page - so past a full page
-   the older attempts are neither shown nor findable. Saying so is the difference between a limit and
-   a screen that quietly lies about what the system has sent. *@
+@* NFR-27: the log a page at a time, newest first, sorted by the server over the whole history - so
+   the oldest attempt is a page away rather than out of reach, and the pager says how many there are. *@
 @* `dt-table-cards` is where this screen opts into the shared collapse: below the phone breakpoint
    the table's rows stop being rows and become cards. The collapse is stated once, in
    `_theme.scss`, so nothing about it is written here or in this screen's own stylesheet - and
@@ -55,17 +54,41 @@
    value furthest off the edge of a handset. *@
 <div class="dt-notifications dt-table-cards">
     <DtDataTable TItem="NotificationAttemptSummary"
-                 IsTruncated="IsTruncated"
-                 Note="@Localizer["NotificationsTruncated"]"
-                 Items="_attempts"
-                 IsLoading="_isLoading"
+                 Page="Listed"
+                 OnPage="GoToPageAsync"
+                 OnPageSize="ResizeAsync"
+                 CountOne="@Localizer["NotificationsCountOne"]"
+                 CountMany="@Localizer["NotificationsCountMany"]"
+                 IsLoading="Loading"
                  EmptyText="@Localizer["NotificationsEmpty"]">
         <HeaderTemplate>
-            <th scope="col">@Localizer["NotificationDelivery"]</th>
-            <th scope="col">@Localizer["NotificationKind"]</th>
-            <th scope="col">@Localizer["NotificationRecipient"]</th>
-            <th scope="col">@Localizer["NotificationOutcome"]</th>
-            <th scope="col">@Localizer["NotificationAttemptedAt"]</th>
+            @* Every column with an order of its own is a sort control; the error is free text read
+               rather than compared, so its heading stays a heading. *@
+            <th scope="col" aria-sort="@SortState(NotificationSort.Delivery)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(NotificationSort.Delivery)">
+                    @Localizer["NotificationDelivery"]<Icon Name="@SortGlyph(NotificationSort.Delivery)" />
+                </button>
+            </th>
+            <th scope="col" aria-sort="@SortState(NotificationSort.Kind)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(NotificationSort.Kind)">
+                    @Localizer["NotificationKind"]<Icon Name="@SortGlyph(NotificationSort.Kind)" />
+                </button>
+            </th>
+            <th scope="col" aria-sort="@SortState(NotificationSort.Recipient)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(NotificationSort.Recipient)">
+                    @Localizer["NotificationRecipient"]<Icon Name="@SortGlyph(NotificationSort.Recipient)" />
+                </button>
+            </th>
+            <th scope="col" aria-sort="@SortState(NotificationSort.Outcome)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(NotificationSort.Outcome)">
+                    @Localizer["NotificationOutcome"]<Icon Name="@SortGlyph(NotificationSort.Outcome)" />
+                </button>
+            </th>
+            <th scope="col" aria-sort="@SortState(NotificationSort.AttemptedAt)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(NotificationSort.AttemptedAt)">
+                    @Localizer["NotificationAttemptedAt"]<Icon Name="@SortGlyph(NotificationSort.AttemptedAt)" />
+                </button>
+            </th>
             <th scope="col">@Localizer["NotificationError"]</th>
         </HeaderTemplate>
         <RowTemplate Context="attempt">
@@ -139,24 +162,7 @@
 </div>
 
 @code {
-    private IReadOnlyList<NotificationAttemptSummary>? _attempts;
     private IReadOnlyList<ScreenFailure> _failures = [];
-    private bool _isLoading = true;
-
-    /// <summary>
-    /// The page this screen asks for. One page of a hundred, like every other list in the product:
-    /// PRD section 8 excludes server-side filtering and result counts, so the screen reads a page
-    /// and shows it.
-    /// </summary>
-    private static ListNotificationAttemptsQuery Page =>
-        new(0, ListNotificationAttemptsQueryValidator.MaximumLimit);
-
-    /// <summary>
-    /// True when the page came back full, which is as much as this screen can know: the query
-    /// returns no total (PRD section 8 excludes one), so "there may be more" is the honest claim
-    /// rather than a count.
-    /// </summary>
-    private bool IsTruncated => _attempts?.Count >= ListNotificationAttemptsQueryValidator.MaximumLimit;
 
     protected override async Task OnInitializedAsync()
     {
@@ -170,8 +176,46 @@
                 "The circuit has no authenticated caller: the session cookie is gone.");
         }
 
-        await ReloadAsync();
+        await base.OnInitializedAsync();
     }
+
+    /// <inheritdoc />
+    protected override NotificationSort DefaultSort => NotificationSort.AttemptedAt;
+
+    /// <summary>Newest first: the attempt an administrator opens the log to find is the latest one.</summary>
+    protected override bool DefaultDescending => true;
+
+    /// <inheritdoc />
+    protected override IReadOnlyCollection<NotificationSort> Sortable { get; } =
+    [
+        NotificationSort.Delivery,
+        NotificationSort.Kind,
+        NotificationSort.Recipient,
+        NotificationSort.Outcome,
+        NotificationSort.AttemptedAt,
+    ];
+
+    /// <inheritdoc />
+    protected override ListNotificationAttemptsQuery Compose(
+        int offset,
+        int limit,
+        NotificationSort sort,
+        bool descending) =>
+        new(offset, limit, sort.ToString(), descending);
+
+    /// <inheritdoc />
+    protected override (int Offset, int Limit, NotificationSort Sort, bool Descending) Paging(
+        ListNotificationAttemptsQuery view) =>
+        (view.Offset, view.Limit, ListSort.Parse<NotificationSort>(view.Sort) ?? DefaultSort, view.Descending);
+
+    /// <inheritdoc />
+    protected override ListNotificationAttemptsQuery Repaged(
+        ListNotificationAttemptsQuery view,
+        int offset,
+        int limit,
+        NotificationSort sort,
+        bool descending) =>
+        view with { Offset = offset, Limit = limit, Sort = sort.ToString(), Descending = descending };
 
     /// <summary>
     /// The attempt's instant in local time (AD-13: storage is offset zero, and the conversion
@@ -180,18 +224,17 @@
     private static string Attempted(NotificationAttemptSummary attempt) =>
         attempt.AttemptedAt.ToLocalTime().ToString("g", System.Globalization.CultureInfo.CurrentCulture);
 
-    private async Task ReloadAsync()
+    /// <inheritdoc />
+    protected override async Task<Paged<NotificationAttemptSummary>?> FetchAsync(
+        ListNotificationAttemptsQuery view)
     {
-        _isLoading = true;
-
-        // Rendered before the await, or the flag is set and cleared inside one synchronous stretch
-        // and DtDataTable's loading row never reaches the browser.
-        StateHasChanged();
-
         try
         {
-            _attempts = await Log.ListAsync(Page, CircuitToken);
+            var page = await Log.ListAsync(view, CircuitToken);
+
             _failures = [];
+
+            return page;
         }
         catch (DriveTrackException failure)
         {
@@ -199,12 +242,8 @@
             // blank page, and it resolves through the same catalogue the REST envelope uses, so the
             // two cannot disagree (NFR-3).
             _failures = FailureKeys.For(failure);
-        }
-        finally
-        {
-            // In a finally so a refused or failed read leaves the table in its empty state rather
-            // than spinning forever, which reads to a user as a hung screen.
-            _isLoading = false;
+
+            return null;
         }
     }
 }

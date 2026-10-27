@@ -26,11 +26,23 @@ namespace DriveTrack.Application.Drivers;
 public interface IDriverService
 {
     /// <summary>
-    /// Every driver, each with the vehicle they hold (FR-35). Unpaged, as the original was; FR-36's
-    /// search runs in the browser over this list, because PRD section 8 excludes server-side
-    /// filtering.
+    /// One page of the roster, searched (FR-36) and sorted over every driver, with the number the
+    /// search matched (FR-35, NFR-27). Dispatcher or admin.
     /// </summary>
-    Task<IReadOnlyList<DriverSummary>> ListAsync(CancellationToken cancellationToken);
+    /// <exception cref="Common.ForbiddenException">The caller runs neither dispatch nor the system.</exception>
+    /// <exception cref="Common.ValidationException">
+    /// The paging parameters are out of range, or the sort names no column.
+    /// </exception>
+    Task<Common.Paged<DriverSummary>> ListAsync(
+        ListDriversQuery query,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Every driver, each with the vehicle they hold (FR-35), unpaged. For the pickers that have to
+    /// offer every driver - the delivery form's assignment, the shift form's driver - and for the
+    /// chat roster; a table's page must not cap any of them.
+    /// </summary>
+    Task<IReadOnlyList<DriverSummary>> ListAllAsync(CancellationToken cancellationToken);
 
     /// <summary>One driver.</summary>
     /// <exception cref="Common.NotFoundException">No driver has that id.</exception>

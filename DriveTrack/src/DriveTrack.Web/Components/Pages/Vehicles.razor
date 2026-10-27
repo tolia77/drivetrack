@@ -17,7 +17,7 @@
 @inject IVehicleService Fleet
 @inject ICurrentUser Caller
 @inject IStringLocalizer<UiText> Localizer
-@inherits CircuitScopedComponent
+@inherits PagedScreen<ListVehiclesQuery, VehicleSummary, VehicleSort>
 
 <PageTitle>@Localizer["VehiclesTitle"]</PageTitle>
 
@@ -49,16 +49,15 @@
 <div class="row g-4 mb-4">
     <div class="col-sm">
         <label class="form-label" for="vehicles-search">@Localizer["Search"]</label>
-        @* Over the list already fetched: PRD section 8 excludes server-side filtering, so typing
-           here never becomes a query. *@
+        @* Answered by the server over the whole fleet, and written into the address as it is
+           typed - replacing the history entry rather than adding one per keystroke. *@
         <input id="vehicles-search" type="search" class="form-control"
-               @bind="_search" @bind:event="oninput" />
+               @bind="_search" @bind:event="oninput" @bind:after="SearchChangedAsync" />
     </div>
 </div>
 
-@* NFR-27 keeps the original's paging, and this screen asks for the first page and searches it
-   in the browser - so past a full page the rest of the fleet is neither shown nor findable.
-   Saying so is the difference between a limit and a screen that quietly lies about the fleet. *@
+@* NFR-27: one page of the fleet at a time, searched and sorted by the server over every vehicle,
+   with the pager under the table saying how far through the fleet the page is. *@
 @* `dt-table-cards` is where this screen opts into the shared collapse: below the phone breakpoint
    the table's rows stop being rows and become cards. The collapse is stated once, in
    `_theme.scss`, so nothing about it is written here or in this screen's own stylesheet - and
@@ -68,15 +67,32 @@
    rules off it, and the phone-layout suite reads it as the element the table has to be inside. *@
 <div class="dt-vehicles dt-table-cards">
     <DtDataTable TItem="VehicleSummary"
-                 IsTruncated="IsTruncated"
-                 Note="@Localizer["ListTruncated"]"
-                 Items="Visible"
-                 IsLoading="_loading"
+                 Page="Listed"
+                 OnPage="GoToPageAsync"
+                 OnPageSize="ResizeAsync"
+                 CountOne="@Localizer["VehiclesCountOne"]"
+                 CountMany="@Localizer["VehiclesCountMany"]"
+                 IsLoading="Loading"
                  EmptyText="@Localizer["VehiclesEmpty"]">
         <HeaderTemplate>
-            <th scope="col">@Localizer["Model"]</th>
-            <th scope="col">@Localizer["LicensePlate"]</th>
-            <th scope="col">@Localizer["CapacityKg"]</th>
+            @* A heading is the sort control, as on the dispatch board: the handler, the ARIA state
+               and the glyph all come from methods, because a `=>` inside an attribute closes the tag
+               as far as NFR-14's source scan is concerned. *@
+            <th scope="col" aria-sort="@SortState(VehicleSort.Model)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(VehicleSort.Model)">
+                    @Localizer["Model"]<Icon Name="@SortGlyph(VehicleSort.Model)" />
+                </button>
+            </th>
+            <th scope="col" aria-sort="@SortState(VehicleSort.LicensePlate)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(VehicleSort.LicensePlate)">
+                    @Localizer["LicensePlate"]<Icon Name="@SortGlyph(VehicleSort.LicensePlate)" />
+                </button>
+            </th>
+            <th scope="col" aria-sort="@SortState(VehicleSort.CapacityKg)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(VehicleSort.CapacityKg)">
+                    @Localizer["CapacityKg"]<Icon Name="@SortGlyph(VehicleSort.CapacityKg)" />
+                </button>
+            </th>
             @* The actions column keeps its name for a screen reader and drops it on screen, as the
                two delivery screens' does: the buttons under it say what they do, and a column named
                above them competes with them for the same width. *@
@@ -221,7 +237,6 @@
     /// </summary>
     private const string InlineFields = "Model,LicensePlate,CapacityKg,Mileage";
 
-    private IReadOnlyList<VehicleSummary> _vehicles = [];
     private IReadOnlyList<ScreenFailure> _failures = [];
     /// <summary>
     /// The save action's variant, which follows the mode the dialog is in: creating a record is a
@@ -254,7 +269,6 @@
     private DtDialog? _formDialog;
     private DtConfirmDialog? _deleteDialog;
     private string _search = string.Empty;
-    private bool _loading = true;
 
     /// <summary>
     /// True while a save is in flight, which is what disables the submit button for as long as it
@@ -262,17 +276,6 @@
     /// write against a form the first one has not finished with.
     /// </summary>
     private bool _saving;
-
-    /// <summary>The rows the search leaves, filtered over the list already fetched.</summary>
-    private IReadOnlyCollection<VehicleSummary> Visible =>
-        [.. _vehicles.Where(vehicle => Matches(vehicle, _search))];
-
-    /// <summary>
-    /// True when the page came back full, which is as much as this screen can know: the query
-    /// returns no total (PRD section 8 excludes one), so "there may be more" is the honest
-    /// claim rather than a count.
-    /// </summary>
-    private bool IsTruncated => _vehicles.Count >= ListVehiclesQueryValidator.MaximumLimit;
 
     protected override async Task OnInitializedAsync()
     {
@@ -286,58 +289,55 @@
                 "The circuit has no authenticated caller: the session cookie is gone.");
         }
 
-        await LoadAsync();
+        // The first page is the address's to choose: PagedScreen reads it once the query string
+        // has been supplied, and loads it.
+        await base.OnInitializedAsync();
     }
+
+    /// <inheritdoc />
+    protected override VehicleSort DefaultSort => VehicleSort.Model;
+
+    /// <inheritdoc />
+    protected override IReadOnlyCollection<VehicleSort> Sortable { get; } =
+        [VehicleSort.Model, VehicleSort.LicensePlate, VehicleSort.CapacityKg];
+
+    /// <inheritdoc />
+    protected override ListVehiclesQuery Compose(int offset, int limit, VehicleSort sort, bool descending) =>
+        new(offset, limit, sort.ToString(), descending, TableQuery.Text(SearchParameter));
+
+    /// <inheritdoc />
+    protected override (int Offset, int Limit, VehicleSort Sort, bool Descending) Paging(ListVehiclesQuery view) =>
+        (view.Offset, view.Limit, ListSort.Parse<VehicleSort>(view.Sort) ?? DefaultSort, view.Descending);
+
+    /// <inheritdoc />
+    protected override ListVehiclesQuery Repaged(
+        ListVehiclesQuery view,
+        int offset,
+        int limit,
+        VehicleSort sort,
+        bool descending) =>
+        view with { Offset = offset, Limit = limit, Sort = sort.ToString(), Descending = descending };
+
+    /// <inheritdoc />
+    protected override void AddFilters(ListVehiclesQuery view, IDictionary<string, object?> address) =>
+        address[TableQuery.SearchName] = view.Search;
+
+    /// <inheritdoc />
+    protected override void Adopt(ListVehiclesQuery view) => _search = view.Search ?? string.Empty;
+
+    /// <inheritdoc />
+    protected override async Task<Paged<VehicleSummary>?> FetchAsync(ListVehiclesQuery view) =>
+        await Fleet.ListAsync(view, CircuitToken);
+
+    /// <summary>The search box changed: page one of what it now matches, replacing the history entry.</summary>
+    private Task SearchChangedAsync() =>
+        MoveAsync(FirstPage(View) with { Search = TableQuery.Text(_search) }, replace: true);
 
     /// <summary>The row's edit action, bound as a delegate so no lambda has to live in markup.</summary>
     private Func<Task> EditHandler(VehicleSummary vehicle) => () => OpenEditAsync(vehicle);
 
     /// <summary>The row's delete action, for the same reason.</summary>
     private Func<Task> DeleteHandler(VehicleSummary vehicle) => () => OpenDeleteAsync(vehicle);
-
-    /// <summary>
-    /// Whether a vehicle matches what a dispatcher typed, across the model and the plate.
-    /// </summary>
-    /// <remarks>
-    /// Internal and static so it can be tested directly: the search is the one thing on this
-    /// screen a render test cannot reach, since static rendering dispatches no events.
-    /// Culture-aware and case-insensitive - a dispatcher typing a plate in lower case is
-    /// looking for the same vehicle, and the plate is stored upper-cased.
-    /// </remarks>
-    /// <param name="vehicle">The row being considered.</param>
-    /// <param name="search">What the dispatcher typed. Blank keeps everything.</param>
-    internal static bool Matches(VehicleSummary vehicle, string? search)
-    {
-        ArgumentNullException.ThrowIfNull(vehicle);
-
-        if (string.IsNullOrWhiteSpace(search))
-        {
-            return true;
-        }
-
-        var needle = search.Trim();
-
-        return vehicle.Model.Contains(needle, StringComparison.CurrentCultureIgnoreCase)
-            || vehicle.LicensePlate.Contains(needle, StringComparison.CurrentCultureIgnoreCase);
-    }
-
-    private async Task LoadAsync()
-    {
-        _loading = true;
-
-        try
-        {
-            // NFR-27's default page, stated rather than assumed: the service refuses anything the
-            // original would have passed to the database unchecked.
-            _vehicles = await Fleet.ListAsync(
-                new ListVehiclesQuery(0, ListVehiclesQueryValidator.MaximumLimit),
-                CircuitToken);
-        }
-        finally
-        {
-            _loading = false;
-        }
-    }
 
     private async Task OpenCreateAsync()
     {

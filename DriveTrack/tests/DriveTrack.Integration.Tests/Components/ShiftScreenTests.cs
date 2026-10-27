@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Components;
+using DriveTrack.Application.Common;
 using System.Text.RegularExpressions;
 using DriveTrack.Application.Authorization;
 using DriveTrack.Application.Drivers;
@@ -198,6 +200,31 @@ public class ShiftScreenTests
     }
 
     [Fact]
+    public async Task A_driver_on_duty_is_offered_the_way_off_it_from_a_page_that_does_not_hold_the_open_shift()
+    {
+        // The open shift is the newest and sits on page one; page two is twelve closed ones. The
+        // way off duty is the driver's whole state rather than a fact about the page on screen, so
+        // it is drawn whichever page of the history they are reading.
+        IReadOnlyList<ShiftSummary> history =
+        [
+            Roster[0],
+            .. Enumerable.Range(1, 12).Select(day => new ShiftSummary(
+                10 + day,
+                new DriverId(1),
+                "Тарас Шевченко",
+                Morning.AddDays(-day),
+                Morning.AddDays(-day).AddHours(8),
+                false)),
+        ];
+
+        var html = await RenderOwnAsync(history, "my-shifts?page=2");
+
+        Assert.Contains("11–13 з 13 змін", html, StringComparison.Ordinal);
+        Assert.Contains("dt-shift-end", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("dt-shift-start", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task A_driver_who_is_off_duty_is_offered_the_way_on()
     {
         // The other side of the predicate. Without it the assertion above would be satisfied by a
@@ -393,21 +420,6 @@ public class ShiftScreenTests
     }
 
     [Fact]
-    public void The_roster_search_reads_the_driver_and_keeps_everything_when_it_is_blank()
-    {
-        // The one thing on the screen a render cannot reach: static rendering dispatches no events,
-        // so the filter is exercised directly. Culture-aware and case-insensitive - a dispatcher
-        // typing a name in lower case is looking for the same driver.
-        Assert.True(ShiftsScreen.Matches(Roster[0], null));
-        Assert.True(ShiftsScreen.Matches(Roster[0], "   "));
-
-        Assert.True(ShiftsScreen.Matches(Roster[0], "шевченко"));
-        Assert.True(ShiftsScreen.Matches(Roster[0], " Тарас "));
-
-        Assert.False(ShiftsScreen.Matches(Roster[0], "Коваль"));
-    }
-
-    [Fact]
     public async Task Every_action_on_both_screens_carries_an_icon_beside_its_text()
     {
         // NFR-24. Asserted by counting rather than by naming, because the failure this catches is a
@@ -470,7 +482,7 @@ public class ShiftScreenTests
                 services.AddSingleton(TimeProvider.System);
             });
 
-    internal static Task<string> RenderOwnAsync(IReadOnlyList<ShiftSummary> shifts) =>
+    internal static Task<string> RenderOwnAsync(IReadOnlyList<ShiftSummary> shifts, string? address = null) =>
         ComponentRenderer.RenderAsync<MyShiftsScreen>(
             parameters: null,
             configureServices: services =>
@@ -478,6 +490,12 @@ public class ShiftScreenTests
                 services.AddSingleton<ICurrentUser>(
                     new StubCaller(UserRole.Driver, new DriverId(1)));
                 services.AddSingleton<IShiftService>(new StubShifts(shifts));
+
+                if (address is not null)
+                {
+                    services.AddSupplyValueFromQueryProvider();
+                    services.AddSingleton<NavigationManager>(new ComponentRenderer.RecordingNavigationManager(address));
+                }
             });
 
     /// <summary>A signed-in caller of a chosen role, and nothing else the screens read.</summary>
@@ -501,10 +519,13 @@ public class ShiftScreenTests
     /// </summary>
     private sealed class StubShifts(IReadOnlyList<ShiftSummary> shifts) : IShiftService
     {
-        public Task<IReadOnlyList<ShiftSummary>> ListAsync(
+        public Task<Paged<ShiftSummary>> ListAsync(
             ListShiftsQuery query,
             CancellationToken cancellationToken) =>
-            Task.FromResult(shifts);
+            Task.FromResult(TestPage.Of(
+                query.OpenOnly ? [.. shifts.Where(shift => shift.IsOpen)] : shifts,
+                query.Offset,
+                query.Limit));
 
         public Task<ShiftSummary> GetAsync(int id, CancellationToken cancellationToken) =>
             throw new NotSupportedException("The shift screens read the list, not one row.");
@@ -574,7 +595,12 @@ public class ShiftScreenTests
                 OnDuty: false),
         ];
 
-        public Task<IReadOnlyList<DriverSummary>> ListAsync(CancellationToken cancellationToken) =>
+        public Task<Paged<DriverSummary>> ListAsync(
+            ListDriversQuery query,
+            CancellationToken cancellationToken) =>
+            Task.FromResult(TestPage.Of<DriverSummary>(Drivers, query.Offset, query.Limit));
+
+        public Task<IReadOnlyList<DriverSummary>> ListAllAsync(CancellationToken cancellationToken) =>
             Task.FromResult<IReadOnlyList<DriverSummary>>(Drivers);
 
         public Task<DriverSummary> GetAsync(DriverId id, CancellationToken cancellationToken) =>

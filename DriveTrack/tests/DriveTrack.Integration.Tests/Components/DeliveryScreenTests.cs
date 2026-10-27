@@ -11,11 +11,10 @@ using DriveTrack.Domain.Identity;
 using DriveTrack.Integration.Tests.Support;
 using DriveTrack.Web.Account;
 using DriveTrack.Web.Components.Shared;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
-using DeliveryColumn = DriveTrack.Web.Components.Pages.Deliveries.DeliveryColumn;
 using DeliveryFilter = DriveTrack.Web.Components.Pages.Deliveries.DeliveryFilter;
 using DeliveryForm = DriveTrack.Web.Components.Pages.Deliveries.DeliveryForm;
-using MineColumn = DriveTrack.Web.Components.Pages.MyDeliveries.DeliveryColumn;
 using RequestForm = DriveTrack.Web.Components.Pages.MyDeliveries.RequestForm;
 
 namespace DriveTrack.Integration.Tests.Components;
@@ -29,9 +28,9 @@ namespace DriveTrack.Integration.Tests.Components;
 /// </para>
 /// <para>
 /// Rendering is static — <see cref="ComponentRenderer"/> never reaches <c>OnAfterRenderAsync</c> and
-/// dispatches no events — so the sort and filter rules cannot be driven through the markup. Both
-/// are therefore lifted out of the component as <c>internal static</c> members and asserted
-/// directly, which is what makes them regressions rather than comments.
+/// dispatches no events. The sort and filter rules are the server's now, and are asserted against
+/// a real database in <c>DeliveryListTests</c>; what is asserted here is what the screens ask for
+/// and what they draw of the answer.
 /// </para>
 /// </summary>
 public class DeliveryScreenTests
@@ -783,39 +782,6 @@ public class DeliveryScreenTests
     }
 
     [Fact]
-    public void The_window_column_orders_by_when_a_delivery_is_first_due()
-    {
-        // The column the board opens on, and the one ordering in Sort that has to read the
-        // direction. A delivery keeps its place by its near bound; one given only a far bound is
-        // due at that bound rather than being windowless, which is the shape the dispatch board's
-        // own overdue row carries; and a delivery promised no window at all is neither the earliest
-        // thing on the board nor the latest, so it sits at the far end whichever way the column
-        // points. A single sentinel key satisfies the ascending half and is carried to the front by
-        // the reversal.
-        var rows = new[]
-        {
-            Row(id: 1, windowEarliest: Local(2026, 9, 18), windowLatest: Local(2026, 9, 19)),
-            Row(id: 2),
-            Row(id: 3, windowLatest: Local(2026, 9, 16)),
-            Row(id: 4, windowEarliest: Local(2026, 9, 17)),
-        };
-
-        Assert.Equal(
-            new[] { 3, 4, 1, 2 },
-            Web.Components.Pages.Deliveries
-                .Sort(rows, DeliveryColumn.Window, descending: false)
-                .Select(row => row.Id)
-                .ToArray());
-
-        Assert.Equal(
-            new[] { 1, 4, 3, 2 },
-            Web.Components.Pages.Deliveries
-                .Sort(rows, DeliveryColumn.Window, descending: true)
-                .Select(row => row.Id)
-                .ToArray());
-    }
-
-    [Fact]
     public async Task The_overdue_mark_rides_in_the_window_cell_rather_than_a_column_of_its_own()
     {
         // The move this story is built around. Overdue used to be a column, and it is now a badge
@@ -849,11 +815,9 @@ public class DeliveryScreenTests
         // above can only ever see two of the three glyphs, and a version that answered the same
         // chevron for both directions would render perfectly and satisfy every assertion the markup
         // can make about itself. That is the whole claim of drawing the direction at all, so it is
-        // asserted where it is reachable: on the choice itself.
-        const DeliveryColumn sorted = DeliveryColumn.Window;
-
-        var ascending = Web.Components.Pages.Deliveries.GlyphFor(sorted, sorted, descending: false);
-        var descending = Web.Components.Pages.Deliveries.GlyphFor(sorted, sorted, descending: true);
+        // asserted where it is reachable: on the choice every sortable heading in the product makes.
+        var ascending = SortHeading.Glyph(sorted: true, descending: false);
+        var descending = SortHeading.Glyph(sorted: true, descending: true);
 
         Assert.NotEqual(ascending, descending);
         Assert.Equal(IconName.SortAscending, ascending);
@@ -862,18 +826,19 @@ public class DeliveryScreenTests
         // And every other column keeps the stacked pair, in both directions: the glyph says which
         // column is sorted as well as which way, and a column that wore a chevron while another
         // held the order would be two headings claiming it.
-        foreach (var other in Enum.GetValues<DeliveryColumn>().Where(column => column != sorted))
-        {
-            Assert.Equal(IconName.Sort, Web.Components.Pages.Deliveries.GlyphFor(other, sorted, descending: false));
-            Assert.Equal(IconName.Sort, Web.Components.Pages.Deliveries.GlyphFor(other, sorted, descending: true));
-        }
+        Assert.Equal(IconName.Sort, SortHeading.Glyph(sorted: false, descending: false));
+        Assert.Equal(IconName.Sort, SortHeading.Glyph(sorted: false, descending: true));
+
+        Assert.Equal("ascending", SortHeading.State(sorted: true, descending: false));
+        Assert.Equal("descending", SortHeading.State(sorted: true, descending: true));
+        Assert.Equal("none", SortHeading.State(sorted: false, descending: true));
     }
 
     [Fact]
     public void Each_heading_sorts_the_column_it_is_labelled_with()
     {
-        // The join the two halves above leave open. Counting the buttons proves every column has a
-        // control and driving Sort directly proves every column has an ordering, but neither can
+        // The join the halves above leave open. Counting the buttons proves every column has a
+        // control and the repository's tests prove every column has an ordering, but neither can
         // tell whether the control on the "Driver" heading is wired to the driver column - swap two
         // SortHandler arguments and the screen sorts by the wrong thing while both stay green.
         //
@@ -881,28 +846,28 @@ public class DeliveryScreenTests
         // the rendered markup carries no trace of which column a click would sort by.
         var page = SharedMarkup.ReadComponent("Pages", "Deliveries.razor");
 
-        var expected = new Dictionary<DeliveryColumn, string>
+        var expected = new Dictionary<DeliverySort, string>
         {
             // The window is the board's first column and the only one whose key is not its own
             // member name: the catalogue already carried `DeliveryWindow` for the landing page's
             // summary, and a second entry saying the same word in the same two languages would be
             // the drift NFR-6 is about.
-            [DeliveryColumn.Window] = "DeliveryWindow",
-            [DeliveryColumn.Driver] = "Driver",
-            [DeliveryColumn.Client] = "Client",
-            [DeliveryColumn.Pickup] = "Pickup",
-            [DeliveryColumn.Dropoff] = "Dropoff",
-            [DeliveryColumn.PackageDetails] = "PackageDetails",
-            [DeliveryColumn.DeliveryNotes] = "DeliveryNotes",
-            [DeliveryColumn.Status] = "Status",
-            [DeliveryColumn.CreatedAt] = "CreatedAt",
+            [DeliverySort.Window] = "DeliveryWindow",
+            [DeliverySort.Driver] = "Driver",
+            [DeliverySort.Client] = "Client",
+            [DeliverySort.Pickup] = "Pickup",
+            [DeliverySort.Dropoff] = "Dropoff",
+            [DeliverySort.PackageDetails] = "PackageDetails",
+            [DeliverySort.DeliveryNotes] = "DeliveryNotes",
+            [DeliverySort.Status] = "Status",
+            [DeliverySort.CreatedAt] = "CreatedAt",
         };
 
         // Every member, so a column added to the enum without a heading is caught here rather than
         // shipping as a sort nobody can reach.
-        Assert.Equal(Enum.GetValues<DeliveryColumn>().Length, expected.Count);
+        Assert.Equal(Enum.GetValues<DeliverySort>().Length, expected.Count);
 
-        var wired = new Dictionary<DeliveryColumn, string>();
+        var wired = new Dictionary<DeliverySort, string>();
 
         foreach (Match cell in HeaderCell.Matches(page))
         {
@@ -910,7 +875,7 @@ public class DeliveryScreenTests
 
             var column = Regex.Match(
                 body,
-                @"SortHandler\(DeliveryColumn\.(?<name>[A-Za-z]+)\)",
+                @"SortHandler\(DeliverySort\.(?<name>[A-Za-z]+)\)",
                 RegexOptions.None,
                 TimeSpan.FromSeconds(5));
 
@@ -927,7 +892,7 @@ public class DeliveryScreenTests
 
             Assert.True(key.Success, $"The '{column.Groups["name"].Value}' heading renders no label.");
 
-            wired[Enum.Parse<DeliveryColumn>(column.Groups["name"].Value)] = key.Groups["key"].Value;
+            wired[Enum.Parse<DeliverySort>(column.Groups["name"].Value)] = key.Groups["key"].Value;
         }
 
         Assert.Equal(expected, wired);
@@ -1223,85 +1188,121 @@ public class DeliveryScreenTests
     }
 
     [Fact]
-    public void The_own_deliveries_window_column_orders_by_when_a_delivery_is_first_due()
+    public async Task The_screen_asks_for_its_opening_view_and_draws_the_rows_in_the_order_they_came()
     {
-        // The column the screen opens on, and the one ordering that has to read the direction. A
-        // delivery keeps its place by its near bound; one given only a far bound is due at that
-        // bound rather than being windowless; and one promised no window at all is neither the
-        // earliest thing on the list nor the latest, so it sits at the far end whichever way the
-        // column points.
-        //
-        // Asserted on the ordering rather than through the markup for the reason the dispatch
-        // board's is: this harness renders HTML and presses nothing, so a screen rendered fresh is
-        // always ascending and the reversal is unreachable from the page.
-        var rows = new[]
-        {
-            OwnRow(id: 1, windowEarliest: Local(2026, 9, 18), windowLatest: Local(2026, 9, 19)),
-            OwnRow(id: 2),
-            OwnRow(id: 3, windowLatest: Local(2026, 9, 16)),
-            OwnRow(id: 4, windowEarliest: Local(2026, 9, 17)),
-        };
-
-        Assert.Equal(
-            [3, 4, 1, 2],
-            Web.Components.Pages.MyDeliveries
-                .Sort(rows, MineColumn.Window, descending: false)
-                .Select(row => row.Id)
-                .ToArray());
-
-        Assert.Equal(
-            [1, 4, 3, 2],
-            Web.Components.Pages.MyDeliveries
-                .Sort(rows, MineColumn.Window, descending: true)
-                .Select(row => row.Id)
-                .ToArray());
-    }
-
-    [Fact]
-    public void The_own_deliveries_status_column_orders_by_the_lifecycle_rather_than_the_label()
-    {
-        // Sorting a status column by its words would put "Доставлено" before "Очікує" for no reason
-        // a driver or a client could name. The lifecycle has an order and the enum is written in it.
-        var rows = new[]
-        {
-            OwnRow(id: 1, status: DeliveryStatus.Delivered),
-            OwnRow(id: 2, status: DeliveryStatus.Pending),
-            OwnRow(id: 3, status: DeliveryStatus.InTransit),
-        };
-
-        Assert.Equal(
-            [DeliveryStatus.Pending, DeliveryStatus.InTransit, DeliveryStatus.Delivered],
-            Web.Components.Pages.MyDeliveries
-                .Sort(rows, MineColumn.Status, descending: false)
-                .Select(row => row.Status)
-                .ToArray());
-    }
-
-    [Fact]
-    public async Task The_screen_hands_the_table_its_rows_already_in_order()
-    {
-        // The wiring, which the two orderings above cannot see. They call `Sort` directly, so binding
-        // the table back to the unfetched list would leave both of them green while the screen drew
-        // the rows in whatever order the service happened to return them - and the comparer would be
-        // perfect and reach nothing.
-        //
-        // The rows go in deliberately out of window order, and each is told apart by its own package
-        // description, because ids are not rendered.
-        var html = await RenderMyDeliveriesAsync(
+        // The ordering is the server's now, so the screen's two duties are to ask for the view the
+        // design opens on - page one of ten, earliest due first - and to draw the answer exactly as
+        // it arrived. A screen that re-sorted the page would put these three rows back in window
+        // order; this one must not touch them.
+        var service = new StubDeliveryService(
         [
             OwnRow(id: 1, details: "Третя", windowLatest: Local(2026, 9, 19)),
             OwnRow(id: 2, details: "Перша", windowLatest: Local(2026, 9, 16)),
             OwnRow(id: 3, details: "Друга", windowLatest: Local(2026, 9, 17)),
         ]);
 
+        var html = await RenderMyDeliveriesAsync(service: service);
+
+        var asked = Assert.Single(service.AskedMine);
+
+        Assert.Equal(0, asked.Offset);
+        Assert.Equal(TableQuery.DefaultPageSize, asked.Limit);
+        Assert.Equal(nameof(DeliverySort.Window), asked.Sort);
+        Assert.False(asked.Descending);
+
         var rows = PackageCell.Matches(html)
             .Select(cell => cell.Groups["body"].Value)
             .ToArray();
 
         Assert.Equal(3, rows.Length);
-        Assert.Contains("Перша", rows[0], StringComparison.Ordinal);
-        Assert.Contains("Друга", rows[1], StringComparison.Ordinal);
-        Assert.Contains("Третя", rows[2], StringComparison.Ordinal);
+        Assert.Contains("Третя", rows[0], StringComparison.Ordinal);
+        Assert.Contains("Перша", rows[1], StringComparison.Ordinal);
+        Assert.Contains("Друга", rows[2], StringComparison.Ordinal);
+
+        // And the pager under them says how many there are.
+        Assert.Contains("1–3 з 3 доставок", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task The_dispatch_board_asks_for_its_opening_view_with_no_filter_set()
+    {
+        var service = new StubDeliveryService();
+
+        await RenderDeliveriesAsync(UserRole.Dispatcher, service: service);
+
+        var asked = Assert.Single(service.AskedBoard);
+
+        Assert.Equal(new ListDeliveriesQuery(0, TableQuery.DefaultPageSize, nameof(DeliverySort.Window), false), asked);
+    }
+
+    [Fact]
+    public async Task An_address_carrying_every_filter_asks_for_all_of_them_and_a_sort_keeps_them()
+    {
+        // The board's half of "a shared link reproduces the view": every filter the panel has is
+        // read out of the address into the request - and written back into the address when the
+        // reader moves the view on, so a sort does not quietly drop a filter from the link.
+        const string address =
+            "deliveries?page=2&size=25&sort=Status&desc=true"
+            + "&driver=%D0%BA%D0%BE%D0%B2&client=%D0%BF%D0%B5%D1%82&pickup=%D1%85%D1%80%D0%B5%D1%89"
+            + "&dropoff=%D1%80%D0%B8%D0%BD%D0%BE%D0%BA&details=%D0%BF%D0%B0%D0%BB%D0%B5%D1%82"
+            + "&notes=%D0%B4%D0%B7%D0%B2%D0%BE%D0%BD%D0%B8%D1%82%D0%B8&status=InTransit"
+            + "&from=2026-09-01&to=2026-09-30&overdue=true";
+
+        var service = new StubDeliveryService();
+        var navigation = new ComponentRenderer.RecordingNavigationManager(address);
+
+        await ComponentRenderer.RenderThenAsync<ProbeBoard>(
+            services =>
+            {
+                services.AddSupplyValueFromQueryProvider();
+                services.AddSingleton<NavigationManager>(navigation);
+                services.AddSingleton<ICurrentUser>(new StubCaller(UserRole.Dispatcher));
+                services.AddSingleton<IDeliveryService>(service);
+                services.AddSingleton<IDriverService>(new StubDriverService());
+                services.AddSingleton<IVehicleService>(new StubVehicleService());
+                services.AddSingleton<IClientAdministrationService>(new StubClientRoster());
+            },
+            _ => ProbeBoard.Last!.SortAsync(DeliverySort.CreatedAt));
+
+        Assert.Equal(
+            new ListDeliveriesQuery(
+                25,
+                25,
+                nameof(DeliverySort.Status),
+                true,
+                "ков",
+                "пет",
+                "хрещ",
+                "ринок",
+                "палет",
+                "дзвонити",
+                DeliveryStatus.InTransit,
+                new DateOnly(2026, 9, 1),
+                new DateOnly(2026, 9, 30),
+                true),
+            service.AskedBoard[0]);
+
+        // The sort went back to page one and kept every filter.
+        Assert.Equal(
+            service.AskedBoard[0] with { Offset = 0, Sort = nameof(DeliverySort.CreatedAt), Descending = false },
+            service.AskedBoard[^1]);
+
+        // The stub board holds two rows, so page two of twenty-five falls back to page one first;
+        // the sort's address is the last one written.
+        var written = Uri.UnescapeDataString(navigation.Visited[^1]);
+
+        foreach (var part in new[]
+                 {
+                     "size=25", "sort=CreatedAt", "driver=ков", "client=пет", "pickup=хрещ", "dropoff=ринок",
+                     "details=палет", "notes=дзвонити", "status=InTransit", "from=2026-09-01", "to=2026-09-30",
+                     "overdue=true",
+                 })
+        {
+            Assert.Contains(part, written, StringComparison.Ordinal);
+        }
+
+        Assert.DoesNotContain("page=", written, StringComparison.Ordinal);
+        Assert.DoesNotContain("desc=", written, StringComparison.Ordinal);
     }
 
     [Theory]
@@ -1362,51 +1363,6 @@ public class DeliveryScreenTests
         Assert.Equal(1, SharedMarkup.Occurrences(html, AscendingGlyph));
         Assert.Equal(1, SharedMarkup.Occurrences(html, SortGlyph));
         Assert.Equal(0, SharedMarkup.Occurrences(html, DescendingGlyph));
-    }
-
-    [Fact]
-    public void The_own_deliveries_sorted_heading_draws_a_different_glyph_for_each_direction()
-    {
-        // The arm the page cannot show, for the reason the dispatch board's cannot: a screen renders
-        // fresh and therefore ascending, so the case above can only ever see two of the three glyphs
-        // - and a version that answered the same chevron for both directions would render perfectly
-        // and satisfy every assertion the markup can make about itself.
-        const MineColumn sorted = MineColumn.Window;
-
-        Assert.Equal(
-            IconName.SortAscending,
-            Web.Components.Pages.MyDeliveries.GlyphFor(sorted, sorted, descending: false));
-
-        Assert.Equal(
-            IconName.SortDescending,
-            Web.Components.Pages.MyDeliveries.GlyphFor(sorted, sorted, descending: true));
-
-        Assert.Equal(
-            IconName.Sort,
-            Web.Components.Pages.MyDeliveries.GlyphFor(MineColumn.Status, sorted, descending: false));
-
-        Assert.Equal(
-            IconName.Sort,
-            Web.Components.Pages.MyDeliveries.GlyphFor(MineColumn.Status, sorted, descending: true));
-    }
-
-    [Fact]
-    public void Every_column_the_own_deliveries_headings_offer_has_an_ordering()
-    {
-        // The switch is total over the enum, so a column added without an ordering throws here
-        // rather than quietly rendering the rows in whatever order the service returned them.
-        // Walked rather than listed as theory data, so a column added later is covered without
-        // anyone remembering to add a row - and because the enum is internal, which a public theory
-        // parameter cannot be.
-        var rows = new[] { OwnRow(id: 1), OwnRow(id: 2, windowLatest: Local(2026, 9, 16)) };
-        var columns = Enum.GetValues<MineColumn>();
-
-        Assert.NotEmpty(columns);
-
-        foreach (var column in columns)
-        {
-            Assert.Equal(2, Web.Components.Pages.MyDeliveries.Sort(rows, column, descending: false).Count);
-        }
     }
 
     [Theory]
@@ -1676,227 +1632,20 @@ public class DeliveryScreenTests
         IReadOnlyList<PlaceMatch> matches) =>
         (_, _) => Task.FromResult(matches);
 
-    // =====================================================================================
-    // The two pure functions behind the dispatch board
-    // =====================================================================================
-
-    [Fact]
-    public void A_blank_filter_narrows_nothing()
-    {
-        // An empty filter panel is not a filter. Without this, a `Contains(value, "")` that
-        // answered false would hide every row on first paint.
-        Assert.True(Web.Components.Pages.Deliveries.Matches(Row(), new DeliveryFilter()));
-    }
-
-    [Theory]
-    [InlineData("шевченко", true)]
-    [InlineData("ШЕВЧЕНКО", true)]
-    [InlineData("  Шевченко  ", true)]
-    [InlineData("Франко", false)]
-    public void The_driver_filter_matches_the_name_whatever_case_it_is_typed_in(string needle, bool expected)
-    {
-        Assert.Equal(
-            expected,
-            Web.Components.Pages.Deliveries.Matches(Row(), new DeliveryFilter { Driver = needle }));
-    }
-
-    [Fact]
-    public void A_row_with_no_driver_is_narrowed_away_by_a_driver_filter()
-    {
-        // The case a `?? string.Empty` in the wrong place would get backwards: an unassigned
-        // delivery matches nothing a dispatcher could type into the driver box.
-        var unassigned = Row(assigned: false);
-
-        Assert.False(Web.Components.Pages.Deliveries.Matches(
-            unassigned,
-            new DeliveryFilter { Driver = "Шевченко" }));
-
-        Assert.True(Web.Components.Pages.Deliveries.Matches(unassigned, new DeliveryFilter()));
-    }
-
-    [Fact]
-    public void The_location_filters_run_over_what_the_cell_shows()
-    {
-        // Which is the address when one is resolved and the coordinates when none is - so a
-        // dispatcher can find a delivery by whatever the table is actually showing them.
-        Assert.True(Web.Components.Pages.Deliveries.Matches(
-            Row(),
-            new DeliveryFilter { Pickup = "50.4501" }));
-
-        Assert.True(Web.Components.Pages.Deliveries.Matches(
-            Row(),
-            new DeliveryFilter { Dropoff = "площа Ринок" }));
-    }
-
-    [Fact]
-    public void Every_filter_narrows_at_once_rather_than_in_turn()
-    {
-        // The conjunction, which a per-column implementation would get wrong by taking the last box
-        // typed into rather than all of them.
-        Assert.False(Web.Components.Pages.Deliveries.Matches(
-            Row(),
-            new DeliveryFilter { Driver = "Шевченко", PackageDetails = "Холодильник" }));
-    }
-
-    [Theory]
-    [InlineData(DeliveryStatus.Pending, true)]
-    [InlineData(DeliveryStatus.Delivered, false)]
-    public void The_status_filter_shows_one_status_and_a_null_shows_them_all(
-        DeliveryStatus status,
-        bool expected)
-    {
-        Assert.Equal(
-            expected,
-            Web.Components.Pages.Deliveries.Matches(Row(), new DeliveryFilter { Status = status }));
-
-        Assert.True(Web.Components.Pages.Deliveries.Matches(
-            Row(),
-            new DeliveryFilter { Status = null }));
-    }
-
-    [Theory]
-    // The row was created on the seventh, and the range is inclusive at both ends.
-    [InlineData(7, 7, true)]
-    [InlineData(1, 30, true)]
-    [InlineData(8, 30, false)]
-    [InlineData(1, 6, false)]
-    public void The_creation_range_is_inclusive_at_both_ends(int fromDay, int toDay, bool expected)
-    {
-        var filter = new DeliveryFilter
-        {
-            CreatedFrom = new DateOnly(2026, 9, fromDay),
-            CreatedTo = new DateOnly(2026, 9, toDay),
-        };
-
-        Assert.Equal(expected, Web.Components.Pages.Deliveries.Matches(Row(created: Local(2026, 9, 7)), filter));
-    }
-
-    [Fact]
-    public void The_overdue_filter_keeps_only_the_rows_whose_window_has_passed()
-    {
-        Assert.False(Web.Components.Pages.Deliveries.Matches(
-            Row(overdue: false),
-            new DeliveryFilter { OverdueOnly = true }));
-
-        Assert.True(Web.Components.Pages.Deliveries.Matches(
-            Row(overdue: true),
-            new DeliveryFilter { OverdueOnly = true }));
-    }
-
-    [Fact]
-    public void Resetting_is_a_new_filter_so_every_box_clears_at_once()
-    {
-        // FR-101, asserted on the shape rather than on the action: a fresh filter narrows nothing,
-        // which is what the reset button produces.
-        var narrowed = new DeliveryFilter { Driver = "Шевченко", OverdueOnly = true };
-
-        Assert.False(Web.Components.Pages.Deliveries.Matches(Row(overdue: false), narrowed));
-        Assert.True(Web.Components.Pages.Deliveries.Matches(Row(overdue: false), new DeliveryFilter()));
-    }
-
-    [Fact]
-    public void A_second_click_on_a_heading_reverses_the_order_it_produced()
-    {
-        // The acceptance criterion, asserted where it actually lives: sorting is a function of the
-        // rows already fetched, so "no second request is issued" is a property of a pure method
-        // rather than a claim about the network.
-        var rows = new[]
-        {
-            Row(id: 1, details: "Б"),
-            Row(id: 2, details: "А"),
-            Row(id: 3, details: "В"),
-        };
-
-        var ascending = Web.Components.Pages.Deliveries.Sort(
-            rows, DeliveryColumn.PackageDetails, descending: false);
-
-        var descending = Web.Components.Pages.Deliveries.Sort(
-            rows, DeliveryColumn.PackageDetails, descending: true);
-
-        Assert.Equal(new[] { 2, 1, 3 }, ascending.Select(row => row.Id).ToArray());
-        Assert.Equal(new[] { 3, 1, 2 }, descending.Select(row => row.Id).ToArray());
-    }
-
-    [Fact]
-    public void Sorting_leaves_the_rows_it_was_given_untouched()
-    {
-        // Pure, so the screen can re-sort on every render without the fetched page drifting.
-        var rows = new[] { Row(id: 2, details: "Б"), Row(id: 1, details: "А") };
-
-        Web.Components.Pages.Deliveries.Sort(rows, DeliveryColumn.PackageDetails, descending: false);
-
-        Assert.Equal(new[] { 2, 1 }, rows.Select(row => row.Id).ToArray());
-    }
-
-    [Fact]
-    public void Rows_that_compare_equal_keep_a_stable_order()
-    {
-        // Without the tie-break every render could hand the dispatcher a different order for the
-        // same data, which reads as the table refreshing under them.
-        var rows = new[] { Row(id: 3, details: "А"), Row(id: 1, details: "А"), Row(id: 2, details: "А") };
-
-        Assert.Equal(
-            new[] { 1, 2, 3 },
-            Web.Components.Pages.Deliveries
-                .Sort(rows, DeliveryColumn.PackageDetails, descending: false)
-                .Select(row => row.Id)
-                .ToArray());
-    }
-
-    [Fact]
-    public void The_status_column_sorts_by_the_lifecycle_rather_than_by_its_label()
-    {
-        // Alphabetically "Доставлено" precedes "Очікує", which would put a finished delivery above
-        // a waiting one for no reason a dispatcher could name.
-        var rows = new[]
-        {
-            Row(id: 1, status: DeliveryStatus.Delivered),
-            Row(id: 2, status: DeliveryStatus.Pending),
-            Row(id: 3, status: DeliveryStatus.InTransit),
-        };
-
-        Assert.Equal(
-            new[] { DeliveryStatus.Pending, DeliveryStatus.InTransit, DeliveryStatus.Delivered },
-            Web.Components.Pages.Deliveries
-                .Sort(rows, DeliveryColumn.Status, descending: false)
-                .Select(row => row.Status)
-                .ToArray());
-    }
-
-    [Fact]
-    public void Every_column_the_headings_offer_has_an_ordering()
-    {
-        // The switch is total over the enum, and a column added without an ordering throws rather
-        // than quietly rendering the rows in whatever order they arrived. Walked rather than listed
-        // as theory data, so a column added later is covered without anyone remembering to add a
-        // row here - and because the enum is internal, which a public theory parameter cannot be.
-        //
-        // Rows with a null driver and null notes are included on purpose: those are the arms a bare
-        // key selector throws on.
-        var rows = new[] { Row(id: 1), Row(id: 2, assigned: false, notes: null) };
-        var columns = Enum.GetValues<DeliveryColumn>();
-
-        Assert.NotEmpty(columns);
-
-        foreach (var column in columns)
-        {
-            Assert.Equal(2, Web.Components.Pages.Deliveries.Sort(rows, column, descending: false).Count);
-        }
-    }
-
     // -------------------------------------------------------------------------------------
     // Rendering
     // -------------------------------------------------------------------------------------
 
     private static Task<string> RenderDeliveriesAsync(
         UserRole role,
-        IReadOnlyList<DeliverySummary>? board = null) =>
+        IReadOnlyList<DeliverySummary>? board = null,
+        StubDeliveryService? service = null) =>
         ComponentRenderer.RenderAsync<Web.Components.Pages.Deliveries>(
             parameters: null,
             services =>
             {
                 services.AddSingleton<ICurrentUser>(new StubCaller(role));
-                services.AddSingleton<IDeliveryService>(new StubDeliveryService(board: board));
+                services.AddSingleton<IDeliveryService>(service ?? new StubDeliveryService(board: board));
                 services.AddSingleton<IDriverService>(new StubDriverService());
                 services.AddSingleton<IVehicleService>(new StubVehicleService());
                 services.AddSingleton<IClientAdministrationService>(new StubClientRoster());
@@ -1919,13 +1668,14 @@ public class DeliveryScreenTests
 
     private static Task<string> RenderMyDeliveriesAsync(
         IReadOnlyList<AssignedDeliverySummary>? rows = null,
-        UserRole role = UserRole.Driver) =>
+        UserRole role = UserRole.Driver,
+        StubDeliveryService? service = null) =>
         ComponentRenderer.RenderAsync<Web.Components.Pages.MyDeliveries>(
             parameters: null,
             services =>
             {
                 services.AddSingleton<ICurrentUser>(new StubCaller(role));
-                services.AddSingleton<IDeliveryService>(new StubDeliveryService(rows ?? []));
+                services.AddSingleton<IDeliveryService>(service ?? new StubDeliveryService(rows ?? []));
             });
 
     private static DateTimeOffset Local(int year, int month, int day) =>
@@ -2031,7 +1781,7 @@ public class DeliveryScreenTests
     /// hands in its own to render a board that is empty, or one whose windows take a shape the pair
     /// does not carry.
     /// </param>
-    private sealed class StubDeliveryService(
+    internal sealed class StubDeliveryService(
         IReadOnlyList<AssignedDeliverySummary>? assigned = null,
         IReadOnlyList<DeliverySummary>? board = null)
         : IDeliveryService
@@ -2085,14 +1835,31 @@ public class DeliveryScreenTests
                 false),
         ];
 
-        public Task<IReadOnlyList<DeliverySummary>> ListAsync(
-            ListDeliveriesQuery query,
-            CancellationToken cancellationToken) =>
-            Task.FromResult(board ?? Board);
+        /// <summary>Every view the dispatch board asked for, in order.</summary>
+        public List<ListDeliveriesQuery> AskedBoard { get; } = [];
 
-        public Task<IReadOnlyList<AssignedDeliverySummary>> ListMineAsync(
+        /// <summary>Every view the own-deliveries screen asked for, in order.</summary>
+        public List<ListDeliveriesQuery> AskedMine { get; } = [];
+
+        public Task<Paged<DeliverySummary>> ListAsync(
             ListDeliveriesQuery query,
-            CancellationToken cancellationToken) =>
+            CancellationToken cancellationToken)
+        {
+            AskedBoard.Add(query);
+
+            return Task.FromResult(TestPage.Of(board ?? Board, query.Offset, query.Limit));
+        }
+
+        public Task<Paged<AssignedDeliverySummary>> ListMineAsync(
+            ListDeliveriesQuery query,
+            CancellationToken cancellationToken)
+        {
+            AskedMine.Add(query);
+
+            return Task.FromResult(TestPage.Of(assigned ?? [], query.Offset, query.Limit));
+        }
+
+        public Task<IReadOnlyList<AssignedDeliverySummary>> ListAllMineAsync(CancellationToken cancellationToken) =>
             Task.FromResult(assigned ?? []);
 
         public Task<DeliverySummary> GetAsync(int id, CancellationToken cancellationToken) =>
@@ -2212,7 +1979,12 @@ public class DeliveryScreenTests
 
         private static readonly DriverSummary Driver = Rated;
 
-        public Task<IReadOnlyList<DriverSummary>> ListAsync(CancellationToken cancellationToken) =>
+        public Task<Paged<DriverSummary>> ListAsync(
+            ListDriversQuery query,
+            CancellationToken cancellationToken) =>
+            Task.FromResult(TestPage.Of<DriverSummary>([Rated, Unrated], query.Offset, query.Limit));
+
+        public Task<IReadOnlyList<DriverSummary>> ListAllAsync(CancellationToken cancellationToken) =>
             Task.FromResult<IReadOnlyList<DriverSummary>>([Rated, Unrated]);
 
         public Task<DriverSummary> GetAsync(DriverId id, CancellationToken cancellationToken) =>
@@ -2237,9 +2009,12 @@ public class DeliveryScreenTests
         private static readonly VehicleSummary Held =
             new(5, "Рено Мастер", "АА1234ВВ", 1200m, 42_000, new DateOnly(2026, 12, 1));
 
-        public Task<IReadOnlyList<VehicleSummary>> ListAsync(
+        public Task<Paged<VehicleSummary>> ListAsync(
             ListVehiclesQuery query,
             CancellationToken cancellationToken) =>
+            Task.FromResult(TestPage.Of<VehicleSummary>([Held], query.Offset, query.Limit));
+
+        public Task<IReadOnlyList<VehicleSummary>> ListAllAsync(CancellationToken cancellationToken) =>
             Task.FromResult<IReadOnlyList<VehicleSummary>>([Held]);
 
         public Task<IReadOnlyList<VehicleSummary>> ListUnassignedAsync(CancellationToken cancellationToken) =>
@@ -2272,7 +2047,12 @@ public class DeliveryScreenTests
             "olena@drivetrack.test",
             "+380441234567");
 
-        public Task<IReadOnlyList<ClientAccount>> ListAsync(CancellationToken cancellationToken) =>
+        public Task<Paged<ClientAccount>> ListAsync(
+            ListClientsQuery query,
+            CancellationToken cancellationToken) =>
+            Task.FromResult(TestPage.Of<ClientAccount>([Client], query.Offset, query.Limit));
+
+        public Task<IReadOnlyList<ClientAccount>> ListAllAsync(CancellationToken cancellationToken) =>
             Task.FromResult<IReadOnlyList<ClientAccount>>([Client]);
 
         public Task<ClientAccount> GetAsync(UserId userId, CancellationToken cancellationToken) =>
@@ -2285,5 +2065,20 @@ public class DeliveryScreenTests
             Task.FromResult(Client);
 
         public Task DeleteAsync(UserId userId, CancellationToken cancellationToken) => Task.CompletedTask;
+    }
+
+    /// <summary>The dispatch board with one of its headings within a test's reach.</summary>
+    internal sealed class ProbeBoard : Web.Components.Pages.Deliveries
+    {
+        public static ProbeBoard? Last { get; private set; }
+
+        public Task SortAsync(DeliverySort column) => SortByAsync(column);
+
+        protected override void OnInitialized()
+        {
+            base.OnInitialized();
+
+            Last = this;
+        }
     }
 }

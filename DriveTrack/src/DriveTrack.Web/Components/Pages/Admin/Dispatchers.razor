@@ -3,7 +3,7 @@
 @inject IDispatcherAdministrationService Roster
 @inject ICurrentUser Caller
 @inject IStringLocalizer<UiText> Localizer
-@inherits CircuitScopedComponent
+@inherits PagedScreen<ListDispatchersQuery, DispatcherAccount, DispatcherSort>
 
 @* FR-49 / FR-50: dispatcher accounts, and the first surface in the system that can make one - until
    now the startup seeder was the only thing that could.
@@ -46,11 +46,29 @@
    The wrapper's own name stays beside it. `Dispatchers.razor.css` hangs this screen's per-cell label
    rules off it, and the phone-layout suite reads it as the element the table has to be inside. *@
 <div class="dt-dispatchers dt-table-cards">
-    <DtDataTable TItem="DispatcherAccount" Items="_dispatchers" IsLoading="_isLoading">
+    <DtDataTable TItem="DispatcherAccount"
+                 Page="Listed"
+                 OnPage="GoToPageAsync"
+                 OnPageSize="ResizeAsync"
+                 CountOne="@Localizer["DispatchersCountOne"]"
+                 CountMany="@Localizer["DispatchersCountMany"]"
+                 IsLoading="Loading">
         <HeaderTemplate>
-            <th scope="col">@Localizer["FirstName"]</th>
-            <th scope="col">@Localizer["LastName"]</th>
-            <th scope="col">@Localizer["Email"]</th>
+            <th scope="col" aria-sort="@SortState(DispatcherSort.FirstName)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(DispatcherSort.FirstName)">
+                    @Localizer["FirstName"]<Icon Name="@SortGlyph(DispatcherSort.FirstName)" />
+                </button>
+            </th>
+            <th scope="col" aria-sort="@SortState(DispatcherSort.LastName)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(DispatcherSort.LastName)">
+                    @Localizer["LastName"]<Icon Name="@SortGlyph(DispatcherSort.LastName)" />
+                </button>
+            </th>
+            <th scope="col" aria-sort="@SortState(DispatcherSort.Email)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(DispatcherSort.Email)">
+                    @Localizer["Email"]<Icon Name="@SortGlyph(DispatcherSort.Email)" />
+                </button>
+            </th>
             @* The actions column keeps its name for a screen reader and drops it on screen, as
                every other table in the product does: the buttons under it say what they do, and a
                column named above them competes with them for the same width. *@
@@ -215,10 +233,8 @@
     private DtDialog? _editDialog;
     private DtConfirmDialog? _deleteDialog;
 
-    private IReadOnlyList<DispatcherAccount>? _dispatchers;
     private DispatcherAccount? _selected;
     private IReadOnlyList<ScreenFailure> _failures = [];
-    private bool _isLoading = true;
 
     /// <summary>
     /// True while a creation is in flight. Two flags rather than one, because the create and edit
@@ -239,26 +255,43 @@
                 "The circuit has no authenticated caller: the session cookie is gone.");
         }
 
-        await ReloadAsync();
+        await base.OnInitializedAsync();
     }
 
-    private async Task ReloadAsync()
-    {
-        _isLoading = true;
+    /// <inheritdoc />
+    protected override DispatcherSort DefaultSort => DispatcherSort.LastName;
 
-        // Rendered before the await, or the flag is set and cleared inside one synchronous stretch
-        // and DtDataTable's loading row never reaches the browser on a post-write refetch.
-        StateHasChanged();
+    /// <inheritdoc />
+    protected override IReadOnlyCollection<DispatcherSort> Sortable { get; } =
+    [
+        DispatcherSort.FirstName,
+        DispatcherSort.LastName,
+        DispatcherSort.Email,
+    ];
 
-        try
-        {
-            _dispatchers = await Roster.ListAsync(CircuitToken);
-        }
-        finally
-        {
-            _isLoading = false;
-        }
-    }
+    /// <inheritdoc />
+    protected override ListDispatchersQuery Compose(int offset, int limit, DispatcherSort sort, bool descending) =>
+        new(offset, limit, sort.ToString(), descending);
+
+    /// <inheritdoc />
+    protected override (int Offset, int Limit, DispatcherSort Sort, bool Descending) Paging(ListDispatchersQuery view) =>
+        (view.Offset, view.Limit, ListSort.Parse<DispatcherSort>(view.Sort) ?? DefaultSort, view.Descending);
+
+    /// <inheritdoc />
+    protected override ListDispatchersQuery Repaged(
+        ListDispatchersQuery view,
+        int offset,
+        int limit,
+        DispatcherSort sort,
+        bool descending) =>
+        view with { Offset = offset, Limit = limit, Sort = sort.ToString(), Descending = descending };
+
+    /// <inheritdoc />
+    protected override async Task<Paged<DispatcherAccount>?> FetchAsync(ListDispatchersQuery view) =>
+        await Roster.ListAsync(view, CircuitToken);
+
+    /// <summary>Reads the page on screen again after a write.</summary>
+    private Task ReloadAsync() => LoadAsync();
 
     private Func<Task> Edit(DispatcherAccount dispatcher) => () => ShowEditAsync(dispatcher);
 

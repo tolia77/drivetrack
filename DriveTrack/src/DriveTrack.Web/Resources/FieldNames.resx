@@ -153,6 +153,9 @@
   <data name="Signature" xml:space="preserve">
     <value>Підпис отримувача</value>
   </data>
+  <data name="Sort" xml:space="preserve">
+    <value>Порядок сортування</value>
+  </data>
   <data name="StartedAt" xml:space="preserve">
     <value>Початок зміни</value>
   </data>

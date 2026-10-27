@@ -1,3 +1,5 @@
+using DriveTrack.Application.Common;
+using DriveTrack.Application.Users;
 using DriveTrack.Domain.Clients;
 using DriveTrack.Domain.Identity;
 
@@ -19,10 +21,23 @@ public interface IClientRepository
     Task<Client?> GetByIdAsync(ClientId id, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Every client row (FR-46, FR-48). Materialized and ordered, and unpaginated because the
-    /// original's client list is (NFR-27).
+    /// Every client row (FR-46, FR-48). Materialized and ordered, and unpaged: it feeds the delivery
+    /// form's client picker, which has to offer every client rather than a table's page.
     /// </summary>
     Task<IReadOnlyList<Client>> ListAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// One page of the client roster with each client's account fields, sorted in SQL over every
+    /// client, and the size of the roster (FR-46, NFR-27). Surname order when no column is named;
+    /// every order ends on the id.
+    /// </summary>
+    /// <param name="query">The page and the direction. Already validated.</param>
+    /// <param name="sort">The column, already parsed; null for surname order.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task<Paged<ClientRow>> ListPageAsync(
+        ListClientsQuery query,
+        ClientSort? sort,
+        CancellationToken cancellationToken);
 
     /// <summary>Stages a new client for the next commit.</summary>
     void Add(Client client);
@@ -30,3 +45,10 @@ public interface IClientRepository
     /// <summary>Stages a client for deletion (FR-47).</summary>
     void Remove(Client client);
 }
+
+/// <summary>A client row and the account fields the roster shows beside it.</summary>
+/// <param name="Client">The client row, which carries the phone number.</param>
+/// <param name="FirstName">The account's given name.</param>
+/// <param name="LastName">The account's family name.</param>
+/// <param name="Email">The account's sign-in address.</param>
+public sealed record ClientRow(Client Client, string FirstName, string LastName, string Email);

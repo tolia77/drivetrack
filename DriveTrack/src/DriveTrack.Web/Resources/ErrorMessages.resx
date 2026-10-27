@@ -88,6 +88,9 @@
   <data name="COMMON_PAGING_LIMIT_INVALID" xml:space="preserve">
     <value>Кількість записів має бути від 1 до 100.</value>
   </data>
+  <data name="COMMON_SORT_INVALID" xml:space="preserve">
+    <value>Цей список не можна впорядкувати за цим стовпцем.</value>
+  </data>
   <data name="COMMON_COORDINATE_OUT_OF_RANGE" xml:space="preserve">
     <value>Ця точка поза межами карти. Оберіть іншу.</value>
   </data>

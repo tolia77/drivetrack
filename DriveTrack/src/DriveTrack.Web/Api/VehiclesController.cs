@@ -1,3 +1,4 @@
+using DriveTrack.Application.Common;
 using DriveTrack.Application.Vehicles;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -24,18 +25,31 @@ namespace DriveTrack.Web.Api;
 [Authorize]
 public sealed class VehiclesController(IVehicleService vehicles) : ControllerBase
 {
-    /// <summary>One page of the fleet (NFR-27). Defaults to the first hundred, as the original did.</summary>
+    /// <summary>
+    /// One page of the fleet with the number of vehicles that matched (NFR-27), searched and sorted
+    /// over every vehicle. Defaults to the first hundred, as the original did.
+    /// </summary>
     /// <remarks>
-    /// The two parameters are nullable so an omitted one takes the default here rather than binding
-    /// to zero — a limit of zero is a refusal, and "I did not say" must not mean "give me nothing".
+    /// The paging parameters are nullable so an omitted one takes the default here rather than
+    /// binding to zero — a limit of zero is a refusal, and "I did not say" must not mean "give me
+    /// nothing". <c>sort</c> is a column name and is refused with <c>COMMON_SORT_INVALID</c> when the
+    /// list has no such column; <c>desc=true</c> reverses it.
     /// </remarks>
     [HttpGet]
-    public Task<IReadOnlyList<VehicleSummary>> ListAsync(
+    public Task<Paged<VehicleSummary>> ListAsync(
         [FromQuery] int? offset,
         [FromQuery] int? limit,
+        [FromQuery] string? sort,
+        [FromQuery] bool? desc,
+        [FromQuery] string? search,
         CancellationToken cancellationToken) =>
         vehicles.ListAsync(
-            new ListVehiclesQuery(offset ?? 0, limit ?? ListVehiclesQueryValidator.MaximumLimit),
+            new ListVehiclesQuery(
+                offset ?? 0,
+                limit ?? ListVehiclesQueryValidator.MaximumLimit,
+                sort,
+                desc ?? false,
+                search),
             cancellationToken);
 
     /// <summary>Every vehicle no driver holds (FR-45). Unpaged, as the original was.</summary>

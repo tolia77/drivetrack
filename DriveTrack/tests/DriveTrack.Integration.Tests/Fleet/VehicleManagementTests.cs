@@ -556,7 +556,7 @@ public class VehicleManagementTests(PostgresFixture postgres)
         using (var listed = await FleetApi.SendAsync(
                    client, HttpMethod.Get, "/api/vehicles", token, body: null, cancellationToken))
         {
-            all = [.. (await FleetApi.DataAsync(listed, cancellationToken))
+            all = [.. (await FleetApi.ItemsAsync(listed, cancellationToken))
                 .EnumerateArray()
                 .Select(row => row.GetProperty("id").GetInt32())];
         }
@@ -575,7 +575,7 @@ public class VehicleManagementTests(PostgresFixture postgres)
                 body: null,
                 cancellationToken);
 
-            var rows = (await FleetApi.DataAsync(page, cancellationToken))
+            var rows = (await FleetApi.ItemsAsync(page, cancellationToken))
                 .EnumerateArray()
                 .Select(row => row.GetProperty("id").GetInt32())
                 .ToArray();

@@ -14,12 +14,16 @@ namespace DriveTrack.Application.Deliveries;
 public interface IDeliveryService
 {
     /// <summary>
-    /// One page of every delivery, newest first, with both parties named (FR-18). Dispatcher or
-    /// admin; a driver or a client is refused rather than quietly narrowed.
+    /// One page of every delivery with both parties named, filtered and sorted over every row, and
+    /// the number that matched (FR-18, FR-20, FR-101). Newest first when no column is named.
+    /// Dispatcher or admin; a driver or a client is refused rather than quietly narrowed.
     /// </summary>
     /// <exception cref="Common.ForbiddenException">The caller runs neither dispatch nor the system.</exception>
-    /// <exception cref="Common.ValidationException">The paging parameters are out of range (NFR-27).</exception>
-    Task<IReadOnlyList<DeliverySummary>> ListAsync(
+    /// <exception cref="Common.ValidationException">
+    /// The paging parameters are out of range, the sort names no column, or the status is not one
+    /// the system has (NFR-27).
+    /// </exception>
+    Task<Common.Paged<DeliverySummary>> ListAsync(
         ListDeliveriesQuery query,
         CancellationToken cancellationToken);
 
@@ -28,11 +32,26 @@ public interface IDeliveryService
     /// all. The narrowing comes from <c>IAccessGuard.RequireScope</c> and reaches the query, so
     /// paging stays correct for a caller whose rows are not the first hundred.
     /// </summary>
+    /// <remarks>
+    /// The page is sorted and filtered over all of the caller's rows, and carries their total. The
+    /// driver and client sorts are refused and the driver and client filters ignored: this list
+    /// carries no counterparty identity, and ordering by a name is a way of reading it (AD-17).
+    /// </remarks>
     /// <exception cref="Common.ForbiddenException">The caller has no session, or no row scope.</exception>
-    /// <exception cref="Common.ValidationException">The paging parameters are out of range.</exception>
-    Task<IReadOnlyList<AssignedDeliverySummary>> ListMineAsync(
+    /// <exception cref="Common.ValidationException">
+    /// The paging parameters are out of range, or the sort names no column this list has.
+    /// </exception>
+    Task<Common.Paged<AssignedDeliverySummary>> ListMineAsync(
         ListDeliveriesQuery query,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Every one of the caller's own deliveries, unpaged and newest first, carrying no counterparty
+    /// identity. For the review form's delivery picker, which has to offer every delivery a client
+    /// may still review rather than the ones on a table's page.
+    /// </summary>
+    /// <exception cref="Common.ForbiddenException">The caller has no session, or no row scope.</exception>
+    Task<IReadOnlyList<AssignedDeliverySummary>> ListAllMineAsync(CancellationToken cancellationToken);
 
     /// <summary>
     /// One delivery, as dispatch reads it. Dispatcher or admin: a driver or a client reads their

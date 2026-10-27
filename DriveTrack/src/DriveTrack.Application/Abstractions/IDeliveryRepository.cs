@@ -1,4 +1,6 @@
 using DriveTrack.Application.Authorization;
+using DriveTrack.Application.Common;
+using DriveTrack.Application.Deliveries;
 using DriveTrack.Domain.Deliveries;
 using DriveTrack.Domain.Identity;
 
@@ -38,37 +40,44 @@ public interface IDeliveryRepository
     Task<Delivery?> FindVisibleAsync(int id, AccessScope scope, CancellationToken cancellationToken);
 
     /// <summary>
-    /// One page of deliveries, newest first, narrowed to the rows the caller may see (FR-18, FR-25,
-    /// NFR-27).
+    /// One page of deliveries narrowed to the rows the caller may see, filtered and sorted in SQL,
+    /// with each row's two parties named and the size of the whole filtered set (FR-18, FR-20,
+    /// FR-25, FR-101, NFR-27).
     /// </summary>
     /// <remarks>
-    /// "Newest first" is the row id descending, not <see cref="Delivery.CreatedAt"/>: the id comes
-    /// from a sequence, so it is insertion order, and insertion order is creation order for every
-    /// row this system writes. Ordering by the timestamp instead would need a tie-break and an
-    /// index for no change in the answer.
     /// <para>
-    /// Newest rather than oldest because nobody pages past the first page. Ascending put the rows
-    /// just written on the last page, so a client holding a full page never saw the delivery they
-    /// had just asked for and a request landing past the board's page was invisible to dispatch.
-    /// Which rows are fetched and the order a screen draws them in are different questions: the
-    /// dispatch board re-sorts the page it was given.
+    /// With no column named the list is newest first - the row id descending, not
+    /// <see cref="Delivery.CreatedAt"/>: the id comes from a sequence, so it is insertion order, and
+    /// insertion order is creation order for every row this system writes. Every other order ends on
+    /// the id as well, so OFFSET can never repeat or skip a row between two requests.
     /// </para>
     /// <para>
     /// There is no overload without <paramref name="scope"/>, and AD-3 is why: a page fetched
     /// unscoped and filtered afterwards answers an empty page for a driver whose rows fall outside
-    /// the first hundred, and no amount of paging further finds them. The narrowing has to be part
-    /// of the query, so it is part of the signature.
+    /// the first page, and no amount of paging further finds them. The narrowing comes first, the
+    /// filters are applied to what it leaves, and the total counts exactly that.
+    /// </para>
+    /// <para>
+    /// The party names are read here, as part of the same query, because the driver and client
+    /// filters and sorts are about them: a name that only arrives after the page has been cut cannot
+    /// decide which rows are on it.
     /// </para>
     /// </remarks>
     /// <param name="scope">The guard's answer to "whose rows may this caller see".</param>
-    /// <param name="offset">Rows to skip. The caller has already validated it.</param>
-    /// <param name="limit">Rows to take. The caller has already validated it.</param>
+    /// <param name="criteria">The page, the order and the filters. The caller has already validated them.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    Task<IReadOnlyList<Delivery>> ListAsync(
+    Task<Paged<DeliveryRow>> ListAsync(
         AccessScope scope,
-        int offset,
-        int limit,
+        DeliveryListCriteria criteria,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Every delivery the caller may see, newest first, unpaged. For the one picker that has to
+    /// offer every row rather than a table's page: the review form's delivery choice.
+    /// </summary>
+    /// <param name="scope">The guard's answer to "whose rows may this caller see".</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task<IReadOnlyList<Delivery>> ListVisibleAsync(AccessScope scope, CancellationToken cancellationToken);
 
     /// <summary>
     /// The deliveries named by <paramref name="ids"/> that <paramref name="scope"/> admits, in one
@@ -148,3 +157,46 @@ public interface IDeliveryRepository
 
 /// <summary>One status and how many deliveries currently hold it.</summary>
 public sealed record DeliveryStatusCount(DeliveryStatus Status, int Count);
+
+/// <summary>
+/// What a delivery list is narrowed and ordered by, as the repository receives it: the query's
+/// values parsed and its local days turned into instants.
+/// </summary>
+/// <param name="Offset">Rows to skip.</param>
+/// <param name="Limit">Rows to take.</param>
+/// <param name="Sort">The column, or null for newest first.</param>
+/// <param name="Descending">True to reverse the order.</param>
+/// <param name="Driver">Text the driver's name must contain, or null.</param>
+/// <param name="Client">Text the client's name must contain, or null.</param>
+/// <param name="Pickup">Text the pickup address must contain, or null.</param>
+/// <param name="Dropoff">Text the dropoff address must contain, or null.</param>
+/// <param name="PackageDetails">Text the package description must contain, or null.</param>
+/// <param name="DeliveryNotes">Text the notes must contain, or null.</param>
+/// <param name="Status">The only status to list, or null.</param>
+/// <param name="CreatedFrom">The earliest creation instant to list, inclusive, or null.</param>
+/// <param name="CreatedBefore">The creation instant every listed row is before, exclusive, or null.</param>
+/// <param name="OverdueAt">
+/// The instant to judge overdue at when only overdue deliveries are listed, or null to list every
+/// delivery. The rule is <see cref="OverdueRule"/>'s, so the filter and the badge agree.
+/// </param>
+public sealed record DeliveryListCriteria(
+    int Offset,
+    int Limit,
+    DeliverySort? Sort,
+    bool Descending,
+    string? Driver,
+    string? Client,
+    string? Pickup,
+    string? Dropoff,
+    string? PackageDetails,
+    string? DeliveryNotes,
+    DeliveryStatus? Status,
+    DateTimeOffset? CreatedFrom,
+    DateTimeOffset? CreatedBefore,
+    DateTimeOffset? OverdueAt);
+
+/// <summary>A delivery and the names of its two parties, as one list row.</summary>
+/// <param name="Delivery">The delivery.</param>
+/// <param name="DriverName">The assigned driver's name, or null when there is none.</param>
+/// <param name="ClientName">The requesting client's name, or null when there is none.</param>
+public sealed record DeliveryRow(Delivery Delivery, string? DriverName, string? ClientName);

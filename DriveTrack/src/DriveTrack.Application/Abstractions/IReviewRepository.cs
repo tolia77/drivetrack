@@ -1,4 +1,5 @@
 using DriveTrack.Application.Authorization;
+using DriveTrack.Application.Common;
 using DriveTrack.Application.Reviews;
 using DriveTrack.Domain.Identity;
 using DriveTrack.Domain.Reviews;
@@ -37,6 +38,35 @@ public interface IReviewRepository
         int offset,
         int limit,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// One page of reviews narrowed to the rows the caller may see, sorted in SQL over all of them,
+    /// with the size of the narrowed set (FR-63, FR-64, NFR-27). Newest first when no column is
+    /// named, and every order ends on the id so OFFSET never repeats or skips a row.
+    /// <para>
+    /// The two party sorts read the names off the Identity accounts here - the author through the
+    /// client row, the driver through the reviewed delivery - because a sort has to run over every
+    /// review rather than over a page already cut. Which names a screen then shows is still the
+    /// Deliveries capability's answer (AD-24).
+    /// </para>
+    /// </summary>
+    /// <param name="scope">The guard's answer to "whose rows may this caller see".</param>
+    /// <param name="query">The page and the direction. Already validated.</param>
+    /// <param name="sort">The column, already parsed; null for newest first.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task<Paged<Review>> ListPageAsync(
+        AccessScope scope,
+        ListReviewsQuery query,
+        ReviewSort? sort,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Every review the caller may see, newest first, unpaged: the review form has to know every
+    /// delivery an author has already reviewed, not the ones on the table's page.
+    /// </summary>
+    /// <param name="scope">The guard's answer to "whose rows may this caller see".</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task<IReadOnlyList<Review>> ListAllAsync(AccessScope scope, CancellationToken cancellationToken);
 
     /// <summary>
     /// The standing of each of the named drivers, derived from the reviews of the deliveries they

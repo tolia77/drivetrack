@@ -1,3 +1,4 @@
+using DriveTrack.Application.Common;
 using System.Net;
 using System.Text.RegularExpressions;
 using DriveTrack.Application.Authorization;
@@ -689,7 +690,12 @@ public class AdministrationScreenTests
     /// </summary>
     private sealed class StubClients : IClientAdministrationService
     {
-        public Task<IReadOnlyList<ClientAccount>> ListAsync(CancellationToken cancellationToken) =>
+        public Task<Paged<ClientAccount>> ListAsync(
+            ListClientsQuery query,
+            CancellationToken cancellationToken) =>
+            Task.FromResult(TestPage.Of<ClientAccount>(Clients, query.Offset, query.Limit));
+
+        public Task<IReadOnlyList<ClientAccount>> ListAllAsync(CancellationToken cancellationToken) =>
             Task.FromResult<IReadOnlyList<ClientAccount>>(Clients);
 
         public Task<ClientAccount> GetAsync(UserId userId, CancellationToken cancellationToken) =>
@@ -713,8 +719,10 @@ public class AdministrationScreenTests
             CancellationToken cancellationToken) =>
             throw new NotSupportedException("A static render must not write.");
 
-        public Task<IReadOnlyList<DispatcherAccount>> ListAsync(CancellationToken cancellationToken) =>
-            Task.FromResult<IReadOnlyList<DispatcherAccount>>(Dispatchers);
+        public Task<Paged<DispatcherAccount>> ListAsync(
+            ListDispatchersQuery query,
+            CancellationToken cancellationToken) =>
+            Task.FromResult(TestPage.Of<DispatcherAccount>(Dispatchers, query.Offset, query.Limit));
 
         public Task<DispatcherAccount> GetAsync(UserId userId, CancellationToken cancellationToken) =>
             throw new NotSupportedException("A rendered screen does not read one dispatcher.");

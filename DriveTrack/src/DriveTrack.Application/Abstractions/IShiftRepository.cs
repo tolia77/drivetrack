@@ -1,3 +1,5 @@
+using DriveTrack.Application.Common;
+using DriveTrack.Application.Shifts;
 using DriveTrack.Domain.Identity;
 using DriveTrack.Domain.Shifts;
 
@@ -32,20 +34,26 @@ public interface IShiftRepository
     Task<Shift?> FindOpenAsync(DriverId driverId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// One page of shifts, newest first (FR-112, FR-113).
+    /// One page of shifts with each one's driver named, searched and sorted in SQL, and the size of
+    /// the whole narrowed set (FR-112, FR-113). Newest first when no column is named.
+    /// <para>
+    /// The name comes from the Identity account the driver row points at, joined here rather than
+    /// read as a roster afterwards: the search and the sort are both about that name, and both have
+    /// to run over every shift rather than over the page.
+    /// </para>
     /// </summary>
     /// <param name="driverId">
     /// The driver to narrow to, or null for every driver. The narrowing is the guard's answer and
     /// reaches the <c>WHERE</c> clause rather than filtering a materialized page, so paging stays
     /// correct for a driver whose rows are not the first hundred (AD-3).
     /// </param>
-    /// <param name="offset">Rows to skip.</param>
-    /// <param name="limit">Rows to take.</param>
+    /// <param name="query">The page, the search and the direction. Already validated.</param>
+    /// <param name="sort">The column, already parsed; null for newest first.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    Task<IReadOnlyList<Shift>> ListAsync(
+    Task<Paged<ShiftRow>> ListAsync(
         DriverId? driverId,
-        int offset,
-        int limit,
+        ListShiftsQuery query,
+        ShiftSort? sort,
         CancellationToken cancellationToken);
 
     /// <summary>
@@ -68,3 +76,8 @@ public interface IShiftRepository
     /// <summary>Stages a shift for removal (FR-114).</summary>
     void Remove(Shift shift);
 }
+
+/// <summary>A shift and the name of the driver it belongs to, as one list row.</summary>
+/// <param name="Shift">The shift.</param>
+/// <param name="DriverName">The driver's first and last name, or empty when the account is missing.</param>
+public sealed record ShiftRow(Shift Shift, string DriverName);

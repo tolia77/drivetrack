@@ -1,3 +1,4 @@
+using DriveTrack.Application.Common;
 using DriveTrack.Application.Users;
 using DriveTrack.Domain.Identity;
 using Microsoft.AspNetCore.Authorization;
@@ -32,10 +33,27 @@ public sealed class DispatchersController(IDispatcherAdministrationService dispa
             account);
     }
 
-    /// <summary>Every dispatcher (FR-49).</summary>
+    /// <summary>One page of the dispatcher roster (FR-49), sorted over every dispatcher. Defaults to the first hundred.</summary>
+    /// <remarks>
+    /// The paging parameters are nullable so an omitted one takes the default here rather than
+    /// binding to zero — a limit of zero is a refusal, and "I did not say" must not mean "give me
+    /// nothing". <c>sort</c> is a column name and is refused with <c>COMMON_SORT_INVALID</c> when the
+    /// list has no such column; <c>desc=true</c> reverses it.
+    /// </remarks>
     [HttpGet]
-    public Task<IReadOnlyList<DispatcherAccount>> ListAsync(CancellationToken cancellationToken) =>
-        dispatchers.ListAsync(cancellationToken);
+    public Task<Paged<DispatcherAccount>> ListAsync(
+        [FromQuery] int? offset,
+        [FromQuery] int? limit,
+        [FromQuery] string? sort,
+        [FromQuery] bool? desc,
+        CancellationToken cancellationToken) =>
+        dispatchers.ListAsync(
+            new ListDispatchersQuery(
+                offset ?? 0,
+                limit ?? ListDispatchersQueryValidator.MaximumLimit,
+                sort,
+                desc ?? false),
+            cancellationToken);
 
     /// <summary>One dispatcher. A user id that is not a dispatcher's answers 404.</summary>
     [HttpGet("{id:int}")]

@@ -1,3 +1,5 @@
+using DriveTrack.Application.Common;
+using DriveTrack.Application.Vehicles;
 using DriveTrack.Domain.Identity;
 using DriveTrack.Domain.Vehicles;
 
@@ -17,12 +19,24 @@ public interface IVehicleRepository
     Task<Vehicle?> GetByIdAsync(int id, CancellationToken cancellationToken);
 
     /// <summary>
-    /// One page of the fleet, oldest first (FR-40, NFR-27).
+    /// One page of the fleet, searched and sorted in SQL over every vehicle, with the number of
+    /// vehicles the search matched (FR-40, NFR-27). Oldest first when no sort is named; every order
+    /// ends on the id, so OFFSET never repeats or skips a row.
     /// </summary>
-    /// <param name="offset">Rows to skip. The caller has already validated it.</param>
-    /// <param name="limit">Rows to take. The caller has already validated it.</param>
+    /// <param name="query">The page, the search and the direction. The caller has already validated it.</param>
+    /// <param name="sort">The column, already parsed; null for the fleet's own order.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    Task<IReadOnlyList<Vehicle>> ListAsync(int offset, int limit, CancellationToken cancellationToken);
+    Task<Paged<Vehicle>> ListAsync(
+        ListVehiclesQuery query,
+        VehicleSort? sort,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Every vehicle, oldest first. Unpaged on purpose: it feeds the delivery form's capacity hint,
+    /// which has to know every vehicle a driver might hold rather than the ones on a table's page.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task<IReadOnlyList<Vehicle>> ListAllAsync(CancellationToken cancellationToken);
 
     /// <summary>
     /// Every vehicle no driver holds (FR-45). Unpaged, exactly as the original's

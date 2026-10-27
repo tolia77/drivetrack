@@ -101,32 +101,13 @@
 }
 
 /*
-    The truncation note. `warning-subtle` rather than a failure tint: a page that was cut off is a
-    limit the reader can work around by narrowing the filters, not something that went wrong.
+    The pager is the table's foot rather than a bar under it, so the two are drawn as one box: the
+    scroll box gives up its bottom corners, and the pager below has no top edge or corners of its
+    own - the scroll box's bottom border is the line between them. A modifier on the scroll box
+    rather than `:has(+ .dt-pager)`, because this component already knows whether it drew the pager
+    and the markup can just say so.
 */
-.dt-table-note {
-    display: flex;
-    align-items: center;
-    /* `space-1` here and the icon's own `space-1` end margin make the design's `space-2` between
-       the glyph and the sentence. */
-    gap: var(--dt-space-1);
-    margin: 0;
-    padding: var(--dt-space-2) var(--dt-space-3);
-    border: var(--dt-border-width) solid var(--dt-border);
-    border-top: 0;
-    border-radius: 0 0 var(--dt-radius-md) var(--dt-radius-md);
-    background-color: var(--dt-warning-subtle);
-    color: var(--dt-warning-text);
-}
-
-/*
-    The note is the table's foot rather than a banner under it, so the two are drawn as one box:
-    the scroll box gives up its bottom corners, and the note above has no top edge or corners of
-    its own - the scroll box's bottom border is the line between them. A modifier on the scroll box
-    rather than `:has(+ .dt-table-note)`, because this component already knows whether it drew the
-    note and the markup can just say so.
-*/
-.dt-table-scroll--noted {
+.dt-table-scroll--paged {
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
 }

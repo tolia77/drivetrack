@@ -1,3 +1,5 @@
+using System.Globalization;
+using DriveTrack.Application.Common;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
@@ -374,66 +376,140 @@ public class ComponentLibraryTests
     }
 
     // =====================================================================================
-    // DataTable: the truncation note
+    // DataTable: the pager under it
     // =====================================================================================
 
     [Fact]
-    public async Task A_cut_off_page_says_so_under_the_table_and_a_full_one_says_nothing()
+    public async Task A_paged_table_draws_the_pager_under_its_rows_and_an_empty_one_draws_none()
     {
-        // The matrix's eighth row. The note is a fact about what is on screen, so it sits under the
-        // rows rather than above them - a reader who has not looked at the rows yet has nothing to
-        // apply it to.
-        var truncated = await RenderTableAsync(isTruncated: true);
-        var whole = await RenderTableAsync(isTruncated: false);
+        // Design system, DataTable: "Every list is paged. Never cut a list off with a warning." And
+        // Pagination: "Empty list: no bar." The bar is the table's foot, so it comes after the rows.
+        var paged = await RenderTableAsync(Page(offset: 0, count: 10, total: 86));
+        var empty = await RenderTableAsync(new Paged<string>([], 0, 0, 10));
 
-        Assert.Contains("dt-table-note", truncated, StringComparison.Ordinal);
-        Assert.DoesNotContain("dt-table-note", whole, StringComparison.Ordinal);
+        Assert.Contains("dt-pager", paged, StringComparison.Ordinal);
+        Assert.True(
+            paged.IndexOf("dt-pager", StringComparison.Ordinal) > paged.IndexOf("</table>", StringComparison.Ordinal),
+            "The pager must close the table's box, under the rows.");
+        Assert.Contains("dt-table-scroll--paged", paged, StringComparison.Ordinal);
 
-        // In its own words: the note is the screen's, because a fleet, a list of deliveries and a
-        // log of attempts are three different things to be missing some of.
-        Assert.Contains("Показано лише першу сторінку", truncated, StringComparison.Ordinal);
+        Assert.DoesNotContain("dt-pager", empty, StringComparison.Ordinal);
+        Assert.Contains("dt-table-empty", empty, StringComparison.Ordinal);
+
+        // And the warning the pager replaced is gone for good.
+        Assert.DoesNotContain("dt-table-note", paged, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void No_truncation_note_claims_a_total()
+    public async Task The_range_names_the_rows_on_screen_and_the_total_they_were_cut_from()
     {
-        // The rule the design states outright: a list is a page of rows, never a total. The query
-        // answers no total at all - the PRD excludes one - so "100 of 842" would be a number the
-        // product does not have, and a page count would be a page nobody can navigate to.
-        var catalogue = File.ReadAllText(Path.Combine(
-            RepositoryLayout.ProjectDirectory("DriveTrack.Web"),
-            "Resources",
-            "UiText.resx"));
+        // The I/O matrix's first row: 86 deliveries, page 1 of size 10.
+        var first = await RenderTableAsync(Page(offset: 0, count: 10, total: 86));
 
-        var notes = Regex.Matches(
-                catalogue,
-                @"<data name=""[A-Za-z]*Truncated""[^>]*>\s*<value>(?<value>[^<]*)</value>",
-                RegexOptions.None,
-                TimeSpan.FromSeconds(5))
-            .Select(match => match.Groups["value"].Value)
-            .ToArray();
+        Assert.Contains("1–10 з 86 доставок", first, StringComparison.Ordinal);
 
-        Assert.NotEmpty(notes);
+        // Ukrainian puts a count ending in one (but not eleven) with the singular - and English uses
+        // the singular after exactly one.
+        var single = await RenderTableAsync(Page(offset: 20, count: 1, total: 21));
 
-        foreach (var note in notes)
-        {
-            Assert.DoesNotContain(note, character => char.IsAsciiDigit(character));
-        }
+        Assert.Contains("21–21 з 21 доставки", single, StringComparison.Ordinal);
+
+        // But not one ending in eleven: "з 11 доставок", the plural.
+        var eleven = await RenderTableAsync(Page(offset: 10, count: 1, total: 11));
+
+        Assert.Contains("11–11 з 11 доставок", eleven, StringComparison.Ordinal);
+
+        // English takes the singular after exactly one, and only then.
+        var one = await RenderTableAsync(Page(offset: 0, count: 1, total: 1), CultureInfo.GetCultureInfo("en-US"));
+
+        Assert.Contains("1–1 of 1 delivery", one, StringComparison.Ordinal);
+        Assert.DoesNotContain("of 1 deliveries", one, StringComparison.Ordinal);
+
+        var english = await RenderTableAsync(Page(offset: 40, count: 10, total: 86), CultureInfo.GetCultureInfo("en-US"));
+
+        Assert.Contains("41–50 of 86 deliveries", english, StringComparison.Ordinal);
+        Assert.Contains("Rows per page", english, StringComparison.Ordinal);
+        Assert.Contains("aria-label=\"Pages of deliveries\"", english, StringComparison.Ordinal);
     }
 
-    // =====================================================================================
-    // DataTable: the truncation note's two halves
-    // =====================================================================================
+    [Fact]
+    public async Task The_first_page_draws_the_design_s_window_and_disables_previous_without_hiding_it()
+    {
+        var html = await RenderTableAsync(Page(offset: 0, count: 10, total: 86));
+
+        // 1 2 3 … 9, page 1 current.
+        Assert.Equal([1, 2, 3, 9], PageNumbers(html));
+        Assert.Single(Regex.Matches(html, "dt-pager__gap", RegexOptions.None, TimeSpan.FromSeconds(5)));
+        Assert.Matches(@"aria-current=""page""[^>]*aria-label=""Сторінка 1""|aria-label=""Сторінка 1""[^>]*aria-current=""page""", html);
+
+        // Previous is there and disabled; Next is there and enabled.
+        Assert.Matches(@"<button[^>]*dt-pager-previous[^>]*disabled", html);
+        Assert.DoesNotMatch(@"<button[^>]*dt-pager-next[^>]*disabled", html);
+    }
 
     [Fact]
-    public void A_screen_that_admits_a_cut_off_page_also_says_what_was_cut_off()
+    public async Task A_middle_page_shows_its_neighbours_and_both_ends_with_a_gap_on_each_side()
     {
-        // The note needs two coordinated parameters where it needed one, and the coordination is
-        // what nothing held: `IsTruncated` alone renders nothing at all, so dropping the sentence
-        // from a screen silently stops it admitting it shows a partial list, and dropping the flag
-        // leaves a sentence that can never appear. Asserted across every table in the tree rather
-        // than one screen at a time, because the failure is per screen and six of them pass the
-        // pair.
+        // The I/O matrix's second row: page 5 of 9 is 1 … 4 5 6 … 9.
+        var html = await RenderTableAsync(Page(offset: 40, count: 10, total: 86));
+
+        Assert.Equal([1, 4, 5, 6, 9], PageNumbers(html));
+        Assert.Equal(2, Regex.Matches(html, "dt-pager__gap", RegexOptions.None, TimeSpan.FromSeconds(5)).Count);
+        Assert.Contains("Сторінка 5 з 9", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task One_page_shows_the_range_and_the_size_and_no_page_buttons()
+    {
+        // Pagination: "One page: the info part only."
+        var html = await RenderTableAsync(Page(offset: 0, count: 5, total: 5));
+
+        Assert.Contains("dt-pager__info", html, StringComparison.Ordinal);
+        Assert.Contains("1–5 з 5 доставок", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("dt-pager__pages", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("dt-pager-next", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task While_a_page_loads_the_bar_keeps_its_numbers_and_disables_every_button()
+    {
+        // Pagination: "While a page loads, disable all buttons in the bar and keep the old numbers
+        // until the new page arrives." The rows give way to the loading state; the bar stays.
+        var html = await RenderTableAsync(Page(offset: 40, count: 10, total: 86), isLoading: true);
+
+        Assert.Contains("dt-table-skeleton", html, StringComparison.Ordinal);
+        Assert.Contains("41–50 з 86 доставок", html, StringComparison.Ordinal);
+
+        var buttons = Regex.Matches(
+            html,
+            @"<button[^>]*dt-pager[^>]*>",
+            RegexOptions.None,
+            TimeSpan.FromSeconds(5));
+
+        Assert.NotEmpty(buttons);
+        Assert.All(buttons, button => Assert.Contains("disabled", button.Value, StringComparison.Ordinal));
+        Assert.Matches(@"<select[^>]*dt-pager-size[^>]*disabled|<select[^>]*disabled[^>]*dt-pager-size", html);
+    }
+
+    [Fact]
+    public async Task The_phone_bar_is_drawn_beside_the_desktop_one_with_its_own_status_line()
+    {
+        // The stylesheet shows one or the other at the phone breakpoint; the markup carries both.
+        var html = await RenderTableAsync(Page(offset: 10, count: 10, total: 20));
+
+        Assert.Contains("dt-pager--desktop", html, StringComparison.Ordinal);
+        Assert.Contains("dt-pager--phone", html, StringComparison.Ordinal);
+        Assert.Contains("Сторінка 2 з 2", html, StringComparison.Ordinal);
+        Assert.Contains("Попередня", html, StringComparison.Ordinal);
+        Assert.Contains("Наступна", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Every_table_in_the_tree_is_paged_and_none_admits_a_cut_off_page()
+    {
+        // The truncation note's two parameters are gone with it, and every DtDataTable a screen
+        // draws passes a page and the two nouns the range is written with. Asserted across every
+        // table in the tree, because the failure is per screen.
         var tables = Directory
             .GetFiles(SharedMarkup.ComponentsDirectory, "*", SearchOption.AllDirectories)
             .Where(path => path.EndsWith(".razor", StringComparison.OrdinalIgnoreCase))
@@ -449,21 +525,20 @@ public class ComponentLibraryTests
                     Attributes: match.Groups["attributes"].Value)))
             .ToArray();
 
-        Assert.NotEmpty(tables);
+        // Ten screens, eleven tables: the reviews screen draws one of two by role.
+        Assert.Equal(11, tables.Length);
 
-        var halves = tables
-            .Where(table => table.Attributes.Contains("IsTruncated", StringComparison.Ordinal)
-                != table.Attributes.Contains("Note=", StringComparison.Ordinal))
+        var unpaged = tables
+            .Where(table => !table.Attributes.Contains("Page=", StringComparison.Ordinal)
+                || !table.Attributes.Contains("OnPage=", StringComparison.Ordinal)
+                || !table.Attributes.Contains("CountOne=", StringComparison.Ordinal)
+                || !table.Attributes.Contains("CountMany=", StringComparison.Ordinal)
+                || table.Attributes.Contains("IsTruncated", StringComparison.Ordinal)
+                || table.Attributes.Contains("Items=", StringComparison.Ordinal))
             .Select(table => table.Screen)
             .ToArray();
 
-        Assert.Empty(halves);
-
-        // Vacuity guard: every list in this product is one page of a bounded query, so a tree in
-        // which no table passes the pair is a tree where the rule above holds by saying nothing.
-        Assert.Equal(
-            6,
-            tables.Count(table => table.Attributes.Contains("IsTruncated", StringComparison.Ordinal)));
+        Assert.Empty(unpaged);
     }
 
     // =====================================================================================
@@ -576,26 +651,51 @@ public class ComponentLibraryTests
         _ => throw new ArgumentOutOfRangeException(nameof(band), band, null),
     };
 
-    private static Task<string> RenderTableAsync(bool isTruncated) =>
-        ComponentRenderer.RenderAsync<DtDataTable<string>>(new Dictionary<string, object?>
-        {
-            ["Items"] = (IReadOnlyCollection<string>)["перший"],
-            ["IsLoading"] = false,
-            ["IsTruncated"] = isTruncated,
-            ["Note"] = "Показано лише першу сторінку: доставок може бути більше, ніж вміщує цей список.",
-            ["HeaderTemplate"] = (RenderFragment)(builder =>
+    /// <summary>A page of <paramref name="count"/> rows at <paramref name="offset"/> out of <paramref name="total"/>.</summary>
+    private static Paged<string> Page(int offset, int count, int total) =>
+        new([.. Enumerable.Range(offset + 1, count).Select(row => "рядок " + row)], total, offset, 10);
+
+    /// <summary>The page numbers the desktop bar draws, in order.</summary>
+    private static int[] PageNumbers(string html)
+    {
+        var desktop = html[..html.IndexOf("dt-pager--phone", StringComparison.Ordinal)];
+
+        return
+        [
+            .. Regex.Matches(
+                    desktop,
+                    @"dt-pager__page""[^>]*>\s*(?<number>\d+)\s*</button>",
+                    RegexOptions.None,
+                    TimeSpan.FromSeconds(5))
+                .Select(match => int.Parse(match.Groups["number"].Value, CultureInfo.InvariantCulture)),
+        ];
+    }
+
+    private static Task<string> RenderTableAsync(
+        Paged<string> page,
+        CultureInfo? culture = null,
+        bool isLoading = false) =>
+        ComponentRenderer.RenderAsync<DtDataTable<string>>(
+            new Dictionary<string, object?>
             {
-                builder.OpenElement(0, "th");
-                builder.AddContent(1, "Назва");
-                builder.CloseElement();
-            }),
-            ["RowTemplate"] = (RenderFragment<string>)(item => builder =>
-            {
-                builder.OpenElement(0, "td");
-                builder.AddContent(1, item);
-                builder.CloseElement();
-            }),
-        });
+                ["Page"] = page,
+                ["IsLoading"] = isLoading,
+                ["CountOne"] = culture is null ? "доставки" : "delivery",
+                ["CountMany"] = culture is null ? "доставок" : "deliveries",
+                ["HeaderTemplate"] = (RenderFragment)(builder =>
+                {
+                    builder.OpenElement(0, "th");
+                    builder.AddContent(1, "Назва");
+                    builder.CloseElement();
+                }),
+                ["RowTemplate"] = (RenderFragment<string>)(item => builder =>
+                {
+                    builder.OpenElement(0, "td");
+                    builder.AddContent(1, item);
+                    builder.CloseElement();
+                }),
+            },
+            culture: culture);
 
     /// <summary>A signed-in dispatcher, which is the caller the fleet screen opens for.</summary>
     private sealed class StubDispatcher : ICurrentUser
@@ -621,9 +721,12 @@ public class ComponentLibraryTests
         private static readonly VehicleSummary One =
             new(5, "Рено Мастер", "АА1234ВВ", 1200m, 42_000, new DateOnly(2026, 12, 1));
 
-        public Task<IReadOnlyList<VehicleSummary>> ListAsync(
+        public Task<Paged<VehicleSummary>> ListAsync(
             ListVehiclesQuery query,
             CancellationToken cancellationToken) =>
+            Task.FromResult(TestPage.Of<VehicleSummary>([One], query.Offset, query.Limit));
+
+        public Task<IReadOnlyList<VehicleSummary>> ListAllAsync(CancellationToken cancellationToken) =>
             Task.FromResult<IReadOnlyList<VehicleSummary>>([One]);
 
         public Task<IReadOnlyList<VehicleSummary>> ListUnassignedAsync(CancellationToken cancellationToken) =>

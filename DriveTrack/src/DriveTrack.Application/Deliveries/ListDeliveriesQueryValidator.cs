@@ -29,5 +29,13 @@ public sealed class ListDeliveriesQueryValidator : AbstractValidator<ListDeliver
             .GreaterThan(0).WithMessage(nameof(ErrorCode.COMMON_PAGING_LIMIT_INVALID))
             .LessThanOrEqualTo(MaximumLimit)
                 .WithMessage(nameof(ErrorCode.COMMON_PAGING_LIMIT_INVALID));
+
+        RuleFor(query => query.Sort)
+            .Must(ListSort.IsKnown<DeliverySort>).WithMessage(nameof(ErrorCode.COMMON_SORT_INVALID));
+
+        // The converter accepts a number for an enum, so `?status=42` arrives as a member the system
+        // does not have; it is refused with the same code a write naming one gets.
+        RuleFor(query => query.Status)
+            .IsInEnum().WithMessage(nameof(ErrorCode.DELIVERY_STATUS_UNKNOWN));
     }
 }

@@ -15,10 +15,40 @@ namespace DriveTrack.Application.Users;
 public sealed class ClientAdministrationService(
     IUnitOfWorkFactory unitOfWorkFactory,
     IAccessGuard accessGuard,
-    IValidator<ClientAccountState> stateValidator) : IClientAdministrationService
+    IValidator<ClientAccountState> stateValidator,
+    IValidator<ListClientsQuery> listValidator) : IClientAdministrationService
 {
     /// <inheritdoc />
-    public async Task<IReadOnlyList<ClientAccount>> ListAsync(CancellationToken cancellationToken)
+    public async Task<Paged<ClientAccount>> ListAsync(
+        ListClientsQuery query,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+
+        accessGuard.RequireRole(UserRole.Dispatcher);
+
+        await ValidatorExtensions.ValidateAndThrowAsync(listValidator, query, cancellationToken);
+
+        await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
+
+        // One read for the page: the name and address are on the user row and the phone number on
+        // the client row, and the sort may be about either, so the two are joined in SQL.
+        var page = await unitOfWork.Clients.ListPageAsync(
+            query,
+            ListSort.Parse<ClientSort>(query.Sort),
+            cancellationToken);
+
+        return page.Map(row => new ClientAccount(
+            row.Client.UserId,
+            row.Client.Id,
+            row.FirstName,
+            row.LastName,
+            row.Email,
+            row.Client.PhoneNumber));
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<ClientAccount>> ListAllAsync(CancellationToken cancellationToken)
     {
         await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
 

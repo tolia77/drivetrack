@@ -1003,7 +1003,7 @@ public class ShiftManagementTests(PostgresFixture postgres)
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        return (await FleetApi.DataAsync(response, cancellationToken))
+        return (await FleetApi.ItemsAsync(response, cancellationToken))
             .EnumerateArray()
             .ToDictionary(
                 driver => driver.GetProperty("id").GetInt32(),

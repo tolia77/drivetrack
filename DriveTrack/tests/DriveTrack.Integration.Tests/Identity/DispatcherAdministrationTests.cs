@@ -384,6 +384,7 @@ public class DispatcherAdministrationTests(PostgresFixture postgres)
 
         var ids = (await AdministrationApi.ReadAsync(response, cancellationToken))
             .GetProperty("data")
+            .GetProperty("items")
             .EnumerateArray()
             .Select(row => row.GetProperty("userId").GetInt32())
             .ToArray();

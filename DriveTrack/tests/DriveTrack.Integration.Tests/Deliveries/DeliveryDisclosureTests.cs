@@ -113,7 +113,7 @@ public class DeliveryDisclosureTests(PostgresFixture postgres)
 
             // And no field for one, which is what makes the claim structural: the type this route
             // answers has no driver and no client property at all (AD-17).
-            foreach (var row in JsonDocument.Parse(body).RootElement.GetProperty("data").EnumerateArray())
+            foreach (var row in JsonDocument.Parse(body).RootElement.GetProperty("data").GetProperty("items").EnumerateArray())
             {
                 Assert.False(row.TryGetProperty("driver", out _));
                 Assert.False(row.TryGetProperty("client", out _));
@@ -275,6 +275,6 @@ public class DeliveryDisclosureTests(PostgresFixture postgres)
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        return [.. (await FleetApi.DataAsync(response, cancellationToken)).EnumerateArray()];
+        return [.. (await FleetApi.ItemsAsync(response, cancellationToken)).EnumerateArray()];
     }
 }

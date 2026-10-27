@@ -166,7 +166,11 @@ public class CircuitCancellationTests
                 continue;
             }
 
-            if (source.Contains("@inherits CircuitScopedComponent", StringComparison.Ordinal))
+            // PagedScreen derives from the base, so a paged screen joins the hierarchy through it -
+            // and a type check rather than a string match is what proves that it does.
+            if (source.Contains("@inherits CircuitScopedComponent", StringComparison.Ordinal)
+                || (source.Contains("@inherits PagedScreen<", StringComparison.Ordinal)
+                    && typeof(CircuitScopedComponent).IsAssignableFrom(typeof(PagedScreen<,,>))))
             {
                 continue;
             }

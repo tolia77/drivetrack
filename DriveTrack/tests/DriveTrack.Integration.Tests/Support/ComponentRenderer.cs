@@ -186,6 +186,11 @@ internal static class ComponentRenderer
         // Latin leak visible, which is the whole point of reading the text back.
         services.AddSingleton(HtmlEncoder.Create(UnicodeRanges.All));
 
+        // Every paged screen writes its view into the address bar, so every paged screen injects a
+        // navigation manager. A render has no browser to navigate, so this one records where it was
+        // sent and goes nowhere; a test that needs a particular address registers its own below.
+        services.AddSingleton<NavigationManager>(new RecordingNavigationManager());
+
         // Last, so a test can replace anything above it rather than only add to it.
         configureServices?.Invoke(services);
 
@@ -209,5 +214,21 @@ internal static class ComponentRenderer
             CancellationToken cancellationToken,
             object?[]? args) =>
             InvokeAsync<TValue>(identifier, args);
+    }
+
+    /// <summary>
+    /// A navigation manager at the site root that records every navigation instead of performing
+    /// it. Static rendering presses nothing, so in practice it is only ever asked for its address;
+    /// the record is there for a test that drives a screen's handlers directly.
+    /// </summary>
+    internal sealed class RecordingNavigationManager : NavigationManager
+    {
+        public RecordingNavigationManager(string? path = null) =>
+            Initialize("http://localhost/", "http://localhost/" + (path ?? string.Empty).TrimStart('/'));
+
+        /// <summary>Every address a navigation was asked for, in order.</summary>
+        public List<string> Visited { get; } = [];
+
+        protected override void NavigateToCore(string uri, NavigationOptions options) => Visited.Add(uri);
     }
 }

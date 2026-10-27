@@ -18,7 +18,7 @@ public interface INotificationLogService
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <exception cref="Common.ForbiddenException">The caller does not run the system; the log is an administrator's alone, and a dispatcher is refused it.</exception>
     /// <exception cref="Common.ValidationException">The paging parameters are out of range (NFR-27).</exception>
-    Task<IReadOnlyList<NotificationAttemptSummary>> ListAsync(
+    Task<Common.Paged<NotificationAttemptSummary>> ListAsync(
         ListNotificationAttemptsQuery query,
         CancellationToken cancellationToken);
 }

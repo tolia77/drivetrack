@@ -68,8 +68,10 @@ public interface IReviewService
     /// driver is refused outright.
     /// </summary>
     /// <exception cref="Common.ForbiddenException">The caller runs neither dispatch nor the system.</exception>
-    /// <exception cref="Common.ValidationException">The paging parameters are out of range (NFR-27).</exception>
-    Task<IReadOnlyList<ReviewSummary>> ListAsync(
+    /// <exception cref="Common.ValidationException">
+    /// The paging parameters are out of range, or the sort names no column (NFR-27).
+    /// </exception>
+    Task<Common.Paged<ReviewSummary>> ListAsync(
         ListReviewsQuery query,
         CancellationToken cancellationToken);
 
@@ -79,10 +81,19 @@ public interface IReviewService
     /// are not the first hundred (AD-3).
     /// </summary>
     /// <exception cref="Common.ForbiddenException">The caller is not a client with a client row id.</exception>
-    /// <exception cref="Common.ValidationException">The paging parameters are out of range.</exception>
-    Task<IReadOnlyList<AuthoredReviewSummary>> ListMineAsync(
+    /// <exception cref="Common.ValidationException">
+    /// The paging parameters are out of range, or the sort names a column this list does not carry.
+    /// </exception>
+    Task<Common.Paged<AuthoredReviewSummary>> ListMineAsync(
         ListReviewsQuery query,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Every review the caller wrote, unpaged. The review form reads it to leave out the deliveries
+    /// already reviewed - which it has to know about whichever page of the table they sit on.
+    /// </summary>
+    /// <exception cref="Common.ForbiddenException">The caller is not a client with a client row id.</exception>
+    Task<IReadOnlyList<AuthoredReviewSummary>> ListAllMineAsync(CancellationToken cancellationToken);
 
     /// <summary>
     /// Changes a review (FR-65). Absent fields are left alone (AD-23); the rules are judged against

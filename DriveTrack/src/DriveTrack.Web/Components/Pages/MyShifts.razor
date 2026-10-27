@@ -21,7 +21,7 @@
 @inject IShiftService Duty
 @inject ICurrentUser Caller
 @inject IStringLocalizer<UiText> Localizer
-@inherits CircuitScopedComponent
+@inherits PagedScreen<ListShiftsQuery, ShiftSummary, ShiftSort>
 
 <PageTitle>@Localizer["MyShiftsTitle"]</PageTitle>
 
@@ -70,9 +70,8 @@
    both stay here; FR-111's backwards window names both ends and is said under each box instead. *@
 <DtFailureBanner Failures="_failures" InlineFields="@InlineFields" />
 
-@* NFR-27 keeps paging, and this screen asks for the first page - so past a full page the rest of
-   the driver's history is not shown. Saying so is the difference between a limit and a screen that
-   quietly lies about how long somebody has worked. *@
+@* NFR-27: the driver's history a page at a time, newest first, sorted by the server over every one
+   of their shifts - so the first shift they ever worked is a page away rather than out of reach. *@
 @* `dt-table-cards` is where this screen opts into the shared collapse: below the phone breakpoint
    the table's rows stop being rows and become cards. The collapse is stated once, in
    `_theme.scss`, so nothing about it is written here or in this screen's own stylesheet - and
@@ -82,14 +81,24 @@
    rules off it, and the phone-layout suite reads it as the element the table has to be inside. *@
 <div class="dt-my-shifts dt-table-cards">
     <DtDataTable TItem="ShiftSummary"
-                 IsTruncated="IsTruncated"
-                 Note="@Localizer["ListTruncated"]"
-                 Items="_shifts"
-                 IsLoading="_loading"
+                 Page="Listed"
+                 OnPage="GoToPageAsync"
+                 OnPageSize="ResizeAsync"
+                 CountOne="@Localizer["ShiftsCountOne"]"
+                 CountMany="@Localizer["ShiftsCountMany"]"
+                 IsLoading="Loading"
                  EmptyText="@Localizer["ShiftsEmpty"]">
         <HeaderTemplate>
-            <th scope="col">@Localizer["ShiftStartedAt"]</th>
-            <th scope="col">@Localizer["ShiftEndedAt"]</th>
+            <th scope="col" aria-sort="@SortState(ShiftSort.StartedAt)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(ShiftSort.StartedAt)">
+                    @Localizer["ShiftStartedAt"]<Icon Name="@SortGlyph(ShiftSort.StartedAt)" />
+                </button>
+            </th>
+            <th scope="col" aria-sort="@SortState(ShiftSort.EndedAt)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(ShiftSort.EndedAt)">
+                    @Localizer["ShiftEndedAt"]<Icon Name="@SortGlyph(ShiftSort.EndedAt)" />
+                </button>
+            </th>
             <th scope="col">@Localizer["ShiftState"]</th>
             @* The actions column keeps its name for a screen reader and drops it on screen, as the
                two delivery screens' does: the buttons under it say what they do, and a column named
@@ -219,14 +228,14 @@
     /// </summary>
     private const string InlineFields = "StartedAt,EndedAt";
 
-    private IReadOnlyList<ShiftSummary> _shifts = [];
+    /// <summary>The caller's open shift, or null when they are off duty.</summary>
+    private ShiftSummary? _open;
     private IReadOnlyList<ScreenFailure> _failures = [];
     private ShiftForm _form = new();
     private DriverId? _driverId;
     private ShiftSummary? _pendingDeletion;
     private DtDialog? _formDialog;
     private DtConfirmDialog? _deleteDialog;
-    private bool _loading = true;
 
     /// <summary>
     /// True while a save is in flight, which is what disables the submit button for as long as it
@@ -238,18 +247,13 @@
     /// <summary>
     /// The caller's open shift, or null when they are off duty.
     /// <para>
-    /// Read off the page the table already holds rather than asked for separately: open is
+    /// Asked for on its own rather than read off the table: the table is a page of the history in
+    /// whatever order the reader chose, and the shift still running need not be on it. Open is
     /// <c>EndedAt IS NULL</c> and the index allows at most one such row per driver, so the answer is
-    /// already on screen and a second query would only be a second thing that can disagree.
+    /// a page of one.
     /// </para>
     /// </summary>
-    private ShiftSummary? Open => _shifts.FirstOrDefault(shift => shift.IsOpen);
-
-    /// <summary>
-    /// True when the page came back full, which is as much as this screen can know: the query
-    /// returns no total (PRD section 8 excludes one).
-    /// </summary>
-    private bool IsTruncated => _shifts.Count >= ListShiftsQueryValidator.MaximumLimit;
+    private ShiftSummary? Open => _open;
 
     protected override async Task OnInitializedAsync()
     {
@@ -267,8 +271,39 @@
         // asking outside that branch would take the screen down instead of refusing it.
         _driverId = Caller.DriverId;
 
-        await LoadAsync();
+        await base.OnInitializedAsync();
     }
+
+    /// <inheritdoc />
+    protected override ShiftSort DefaultSort => ShiftSort.StartedAt;
+
+    /// <inheritdoc />
+    protected override bool DefaultDescending => true;
+
+    /// <inheritdoc />
+    protected override IReadOnlyCollection<ShiftSort> Sortable { get; } =
+    [
+        ShiftSort.StartedAt,
+        ShiftSort.EndedAt,
+    ];
+
+    /// <inheritdoc />
+    protected override ListShiftsQuery Compose(int offset, int limit, ShiftSort sort, bool descending) =>
+        new(offset, limit, null, sort.ToString(), descending);
+
+    /// <inheritdoc />
+    protected override (int Offset, int Limit, ShiftSort Sort, bool Descending) Paging(ListShiftsQuery view) =>
+        (view.Offset, view.Limit, ListSort.Parse<ShiftSort>(view.Sort) ?? DefaultSort, view.Descending);
+
+    /// <inheritdoc />
+    protected override ListShiftsQuery Repaged(
+        ListShiftsQuery view,
+        int offset,
+        int limit,
+        ShiftSort sort,
+        bool descending) =>
+        view with { Offset = offset, Limit = limit, Sort = sort.ToString(), Descending = descending };
+
 
     /// <summary>The row's edit action, bound as a delegate so no lambda has to live in markup.</summary>
     private Func<Task> EditHandler(ShiftSummary shift) => () => OpenEditAsync(shift);
@@ -276,31 +311,28 @@
     /// <summary>The row's delete action, for the same reason.</summary>
     private Func<Task> DeleteHandler(ShiftSummary shift) => () => OpenDeleteAsync(shift);
 
-    private async Task LoadAsync()
+    /// <inheritdoc />
+    protected override async Task<Paged<ShiftSummary>?> FetchAsync(ListShiftsQuery view)
     {
-        _loading = true;
-
-        // Rendered before the await, or the flag is set and cleared inside one synchronous stretch
-        // and DtDataTable's loading row never reaches the browser on a post-write refetch.
-        StateHasChanged();
-
         try
         {
-            // No driver in the query: the narrowing is the guard's, and naming one here would be a
-            // second place deciding whose rows a driver may see (AD-3).
-            _shifts = await Duty.ListAsync(
-                new ListShiftsQuery(0, ListShiftsQueryValidator.MaximumLimit, null),
+            // No driver in either query: the narrowing is the guard's, and naming one here would be
+            // a second place deciding whose rows a driver may see (AD-3).
+            var page = await Duty.ListAsync(view, CircuitToken);
+
+            var open = await Duty.ListAsync(
+                new ListShiftsQuery(0, 1, null, OpenOnly: true),
                 CircuitToken);
+
+            _open = open.Items.Count > 0 ? open.Items[0] : null;
+
+            return page;
         }
         catch (DriveTrackException failure)
         {
             _failures = FailureKeys.For(failure);
-        }
-        finally
-        {
-            // In a finally so a refused or failed read leaves the table in its empty state rather
-            // than spinning forever, which reads to a user as a hung screen.
-            _loading = false;
+
+            return null;
         }
     }
 

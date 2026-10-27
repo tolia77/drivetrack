@@ -55,7 +55,7 @@ public sealed class ChatService(
         // AD-24: another capability's rows are read through its service, never through its
         // repository. The driver capability decides what a driver summary is and what a dispatcher
         // may see of one; chat only keys a conversation on it.
-        var roster = await drivers.ListAsync(cancellationToken);
+        var roster = await drivers.ListAllAsync(cancellationToken);
 
         return
         [

@@ -55,10 +55,54 @@ public sealed class DriverService(
     IReviewService reviews,
     IShiftService shifts,
     IValidator<CreateDriverCommand> createValidator,
-    IValidator<UpdateDriverCommand> updateValidator) : IDriverService
+    IValidator<UpdateDriverCommand> updateValidator,
+    IValidator<ListDriversQuery> listValidator) : IDriverService
 {
     /// <inheritdoc />
-    public async Task<IReadOnlyList<DriverSummary>> ListAsync(CancellationToken cancellationToken)
+    public async Task<Paged<DriverSummary>> ListAsync(
+        ListDriversQuery query,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+
+        accessGuard.RequireRole(UserRole.Dispatcher);
+
+        // NFR-27: refused before any query is built.
+        await ValidatorExtensions.ValidateAndThrowAsync(listValidator, query, cancellationToken);
+
+        Paged<DriverRow> page;
+
+        // Closed before the two cross-capability reads below, which open scopes of their own.
+        await using (var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken))
+        {
+            // One read for the page with each driver's name and address: the search and the sort
+            // are about the account fields, so they are joined in SQL rather than read per row.
+            page = await unitOfWork.Drivers.ListPageAsync(
+                query,
+                ListSort.Parse<DriverSort>(query.Sort),
+                cancellationToken);
+        }
+
+        // FR-98 and FR-116, asked once for the page rather than once per row.
+        var ratings = await RatingsAsync([.. page.Items.Select(row => row.Driver.Id)], cancellationToken);
+        var onDuty = await OnDutyAsync(cancellationToken);
+
+        return page.Map(row => Summary(
+            row.Driver,
+            new UserAccount(
+                row.Driver.UserId,
+                row.FirstName,
+                row.LastName,
+                row.Email,
+                UserRole.Driver,
+                row.Driver.Id,
+                ClientId: null),
+            Rating(ratings, row.Driver.Id),
+            onDuty.Contains(row.Driver.Id)));
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<DriverSummary>> ListAllAsync(CancellationToken cancellationToken)
     {
         accessGuard.RequireRole(UserRole.Dispatcher);
 

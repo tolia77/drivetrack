@@ -20,8 +20,23 @@ namespace DriveTrack.Application.Users;
 /// </summary>
 public interface IClientAdministrationService
 {
-    /// <summary>Every client, name, email and phone (FR-46, FR-48). Dispatcher or admin.</summary>
-    Task<IReadOnlyList<ClientAccount>> ListAsync(CancellationToken cancellationToken);
+    /// <summary>
+    /// One page of the client roster, sorted over every client, with the size of the roster (FR-46,
+    /// NFR-27). Dispatcher or admin.
+    /// </summary>
+    /// <exception cref="Common.ForbiddenException">The caller runs neither dispatch nor the system.</exception>
+    /// <exception cref="Common.ValidationException">
+    /// The paging parameters are out of range, or the sort names no column.
+    /// </exception>
+    Task<Common.Paged<ClientAccount>> ListAsync(
+        ListClientsQuery query,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Every client, name, email and phone (FR-46, FR-48), unpaged. Dispatcher or admin. For the
+    /// delivery form's client picker, which has to offer every client rather than a table's page.
+    /// </summary>
+    Task<IReadOnlyList<ClientAccount>> ListAllAsync(CancellationToken cancellationToken);
 
     /// <summary>One client (FR-46, FR-48). Dispatcher or admin.</summary>
     /// <exception cref="Common.NotFoundException">

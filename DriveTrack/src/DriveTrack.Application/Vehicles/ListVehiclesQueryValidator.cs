@@ -28,5 +28,10 @@ public sealed class ListVehiclesQueryValidator : AbstractValidator<ListVehiclesQ
             .GreaterThan(0).WithMessage(nameof(ErrorCode.COMMON_PAGING_LIMIT_INVALID))
             .LessThanOrEqualTo(MaximumLimit)
                 .WithMessage(nameof(ErrorCode.COMMON_PAGING_LIMIT_INVALID));
+
+        // A column the list does not have is refused before the query is built, rather than
+        // falling back to a default the caller did not ask for and cannot see they got.
+        RuleFor(query => query.Sort)
+            .Must(ListSort.IsKnown<VehicleSort>).WithMessage(nameof(ErrorCode.COMMON_SORT_INVALID));
     }
 }

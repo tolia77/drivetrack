@@ -1,3 +1,4 @@
+using DriveTrack.Application.Common;
 using System.Text.RegularExpressions;
 using DriveTrack.Application.Authorization;
 using DriveTrack.Application.Drivers;
@@ -393,53 +394,13 @@ public class FleetScreenTests
     }
 
     // =====================================================================================
-    // The two pure functions behind the screens
+    // The pure function behind the roster's dialog
     //
-    // Static rendering dispatches no events, so neither the search box nor the edit dialog can
-    // be driven here. Both rules are therefore lifted out of the components and asserted
-    // directly - which is the only thing that makes them regressions rather than comments.
+    // Static rendering dispatches no events, so the edit dialog cannot be driven here. Its rule is
+    // therefore lifted out of the component and asserted directly - which is the only thing that
+    // makes it a regression rather than a comment. The two search boxes are the server's now, and
+    // are asserted against a real database in VehicleManagementTests and DriverManagementTests.
     // =====================================================================================
-
-    [Theory]
-    // A blank needle keeps everything: an empty search box is not a filter.
-    [InlineData("", true, true)]
-    [InlineData("   ", true, true)]
-    // FR-36 across the name, in the case a dispatcher would actually type.
-    [InlineData("шевченко", true, false)]
-    [InlineData("ФРАНКО", false, true)]
-    // Across the email and the licence number.
-    [InlineData("taras@", true, false)]
-    [InlineData("ВІ654321", false, true)]
-    // And across the vehicle, which is the field most easily dropped from the disjunction:
-    // only the driver holding it matches.
-    [InlineData("Мастер", true, false)]
-    [InlineData("АА1234ВВ", true, false)]
-    // A needle matching nothing keeps nothing.
-    [InlineData("Коваленко", false, false)]
-    public void The_driver_search_matches_across_name_email_licence_and_vehicle(
-        string search,
-        bool withVehicle,
-        bool withoutVehicle)
-    {
-        Assert.Equal(
-            withVehicle,
-            Web.Components.Pages.Drivers.Matches(StubDriverService.WithVehicle, search));
-        Assert.Equal(
-            withoutVehicle,
-            Web.Components.Pages.Drivers.Matches(StubDriverService.WithoutVehicle, search));
-    }
-
-    [Theory]
-    [InlineData("", true)]
-    [InlineData("транзіт", true)]
-    [InlineData("вс5678ее", true)]
-    [InlineData("Спрінтер", false)]
-    public void The_vehicle_search_matches_across_the_model_and_the_plate(string search, bool expected)
-    {
-        var vehicle = StubVehicleService.Free[0];
-
-        Assert.Equal(expected, Web.Components.Pages.Vehicles.Matches(vehicle, search));
-    }
 
     [Fact]
     public void The_choices_are_the_free_vehicles_when_no_driver_is_being_edited()
@@ -582,7 +543,12 @@ public class FleetScreenTests
             0,
             OnDuty: false);
 
-        public Task<IReadOnlyList<DriverSummary>> ListAsync(CancellationToken cancellationToken) =>
+        public Task<Paged<DriverSummary>> ListAsync(
+            ListDriversQuery query,
+            CancellationToken cancellationToken) =>
+            Task.FromResult(TestPage.Of<DriverSummary>([WithVehicle, WithoutVehicle], query.Offset, query.Limit));
+
+        public Task<IReadOnlyList<DriverSummary>> ListAllAsync(CancellationToken cancellationToken) =>
             Task.FromResult<IReadOnlyList<DriverSummary>>([WithVehicle, WithoutVehicle]);
 
         public Task<DriverSummary> GetAsync(DriverId id, CancellationToken cancellationToken) =>
@@ -618,9 +584,12 @@ public class FleetScreenTests
             new(9, "Мерседес Спрінтер", "КА9012МН", 1500m, 88_000, new DateOnly(2027, 3, 15)),
         ];
 
-        public Task<IReadOnlyList<VehicleSummary>> ListAsync(
+        public Task<Paged<VehicleSummary>> ListAsync(
             ListVehiclesQuery query,
             CancellationToken cancellationToken) =>
+            Task.FromResult(TestPage.Of<VehicleSummary>([Held, .. Free], query.Offset, query.Limit));
+
+        public Task<IReadOnlyList<VehicleSummary>> ListAllAsync(CancellationToken cancellationToken) =>
             Task.FromResult<IReadOnlyList<VehicleSummary>>([Held, .. Free]);
 
         public Task<IReadOnlyList<VehicleSummary>> ListUnassignedAsync(CancellationToken cancellationToken) =>

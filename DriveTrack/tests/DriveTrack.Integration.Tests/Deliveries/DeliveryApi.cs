@@ -133,7 +133,7 @@ internal static class DeliveryApi
         using var roster = await FleetApi.SendAsync(
             client, HttpMethod.Get, "/api/clients", dispatcherToken, body: null, cancellationToken);
 
-        var row = (await FleetApi.DataAsync(roster, cancellationToken))
+        var row = (await FleetApi.ItemsAsync(roster, cancellationToken))
             .EnumerateArray()
             .Single(candidate => candidate.GetProperty("email").GetString() == email);
 

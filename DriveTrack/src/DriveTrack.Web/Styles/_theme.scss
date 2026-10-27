@@ -1327,6 +1327,141 @@ $dt-breakpoint-phone-max: $dt-breakpoint-phone - 0.02px;
 
 
 // -----------------------------------------------------------------------------
+// The pager under every table
+//
+// DtPager's bar: the range and total, rows per page, and Previous / pages /
+// Next (design system, components/Pagination). App-level rather than scoped,
+// for the reason the card collapse above is: which of its two bars is on screen
+// switches at the same breakpoint, on the same `dt-table-cards` wrapper, as the
+// rows above it - and only this file can write that breakpoint as the token.
+//
+// It closes the table's box. DtDataTable squares the scroll box's bottom
+// corners when it draws a pager, and the bar draws no top edge of its own, so
+// the scroll box's bottom border is the one line between rows and bar.
+// -----------------------------------------------------------------------------
+.dt-pager {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--dt-space-2) var(--dt-space-4);
+    padding: var(--dt-space-2) var(--dt-space-3);
+    font-size: var(--dt-small-font-size);
+    line-height: var(--dt-small-line-height);
+    color: var(--dt-ink);
+    background-color: var(--dt-surface-card);
+    border: var(--dt-border-width) solid var(--dt-border);
+    border-top: 0;
+    border-radius: 0 0 var(--dt-radius-md) var(--dt-radius-md);
+}
+
+.dt-pager__info {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--dt-space-2) var(--dt-space-4);
+    color: var(--dt-ink-muted);
+}
+
+.dt-pager__size {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--dt-space-2);
+}
+
+.dt-pager__size label {
+    margin: 0;
+}
+
+// The select keeps its own width rather than the field frame's full one: it
+// holds a three-digit number, and a full-width box would push the pages onto a
+// line of their own on every desktop.
+.dt-pager__size .form-select {
+    width: auto;
+}
+
+.dt-pager__pages {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--dt-space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.dt-pager .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--dt-space-1);
+}
+
+// A page number is a square button at least as wide as it is tall, so 1 and 99
+// are the same target.
+.dt-pager__page {
+    justify-content: center;
+    min-width: var(--dt-control-height-sm);
+}
+
+// The page on screen fills with the brand colour. `aria-current` is the hook as
+// well as the fact, so the colour cannot mark a page the screen reader does not.
+.dt-pager__page[aria-current="page"],
+.dt-pager__page[aria-current="page"]:disabled {
+    background-color: var(--dt-brand);
+    border-color: var(--dt-brand);
+    color: var(--dt-ink-inverse);
+}
+
+.dt-pager__gap {
+    display: inline-block;
+    min-width: var(--dt-control-height-sm);
+    text-align: center;
+    color: var(--dt-ink-muted);
+}
+
+// The phone bar exists in the markup on every screen and is shown only below
+// the breakpoint, inside a table that has become cards.
+.dt-pager--phone {
+    display: none;
+}
+
+@media (max-width: $dt-breakpoint-phone-max) {
+    .dt-table-cards .dt-pager--desktop {
+        display: none;
+    }
+
+    // Its own box under the cards rather than the foot of the table: the cards
+    // are a stack, not a box with a bottom edge to close. So it takes back the
+    // top edge and the four corners, and the scroll box above takes back the
+    // corners DtDataTable gave up for it. The element in the second selector is
+    // what outweighs the scoped `.dt-table-scroll--paged[b-…]`, for the reason
+    // the height cap's release above spells out.
+    .dt-table-cards .dt-pager--phone {
+        display: flex;
+        flex-wrap: nowrap;
+        margin-top: var(--dt-space-3);
+        padding: var(--dt-space-2);
+        border-top: var(--dt-border-width) solid var(--dt-border);
+        border-radius: var(--dt-radius-md);
+    }
+
+    .dt-table-cards div.dt-table-scroll--paged {
+        border-bottom-left-radius: var(--dt-radius-md);
+        border-bottom-right-radius: var(--dt-radius-md);
+    }
+
+    .dt-table-cards .dt-pager--phone .btn {
+        min-height: var(--dt-touch-target);
+    }
+
+    .dt-table-cards .dt-pager__status {
+        flex: 1 1 auto;
+        text-align: center;
+    }
+}
+
+
+// -----------------------------------------------------------------------------
 // The four utilities
 // -----------------------------------------------------------------------------
 

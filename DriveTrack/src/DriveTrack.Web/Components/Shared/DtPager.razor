@@ -1,0 +1,207 @@
+@inject IStringLocalizer<UiText> Localizer
+
+@* Pagination: the bar under every DataTable - the range shown, the total, rows per page, and the
+   pages (design system, components/Pagination).
+
+   Two bars, and the stylesheet shows one. The desktop bar carries the range, the size select and the
+   numbered pages; the phone bar carries Previous, "Сторінка X з Y" and Next at touch-target height.
+   Which one is on screen is `_theme.scss`'s decision, made at the same breakpoint and on the same
+   `dt-table-cards` wrapper that turns the table above into cards, so the bar and the rows always
+   change shape together. The hidden one is `display: none`, which takes it out of the
+   accessibility tree as well as off the screen.
+
+   Nothing here fetches or counts. The screen owns the request and hands this bar the page it last
+   received; while the next one loads the bar keeps those numbers and disables every button in it,
+   so a second click cannot ask for a page relative to one that has not arrived yet.
+
+   The @if blocks are independent rather than if/else chains: an `else` at markup level reads to
+   NFR-14's source scan as a rendered English word. *@
+
+@if (Total > 0)
+{
+    <nav class="dt-pager dt-pager--desktop" aria-label="@Label">
+        <div class="dt-pager__info">
+            <span class="dt-pager__range" role="status">@Range</span>
+            <span class="dt-pager__size">
+                <label for="@_sizeId">@Localizer["RowsPerPage"]</label>
+                <DtSelect TValue="int" Id="@_sizeId" Class="form-select-sm dt-pager-size"
+                          Disabled="Disabled" Value="Limit" ValueChanged="SizeChangedAsync">
+                    @foreach (var size in TableQuery.PageSizes)
+                    {
+                        <option value="@size">@size</option>
+                    }
+                </DtSelect>
+            </span>
+        </div>
+        @if (PageCount > 1)
+        {
+            <ul class="dt-pager__pages">
+                <li>
+                    <button type="button" class="btn btn-outline-secondary btn-sm dt-pager-previous"
+                            disabled="@AtFirst" @onclick="PreviousAsync">
+                        <Icon Name="IconName.Back" />@Localizer["PagerPrevious"]
+                    </button>
+                </li>
+                @foreach (var number in Window)
+                {
+                    @if (number is null)
+                    {
+                        <li><span class="dt-pager__gap" aria-hidden="true">…</span></li>
+                    }
+                    @if (number is { } pageNumber)
+                    {
+                        <li>
+                            <button type="button" class="btn btn-outline-secondary btn-sm dt-pager__page"
+                                    aria-label="@PageLabel(pageNumber)" aria-current="@CurrentMarker(pageNumber)"
+                                    disabled="@Disabled" @onclick="GoHandler(pageNumber)">
+                                @pageNumber
+                            </button>
+                        </li>
+                    }
+                }
+                <li>
+                    <button type="button" class="btn btn-outline-secondary btn-sm dt-pager-next"
+                            disabled="@AtLast" @onclick="NextAsync">
+                        @Localizer["PagerNext"]<Icon Name="IconName.Forward" />
+                    </button>
+                </li>
+            </ul>
+        }
+    </nav>
+
+    @* The phone bar. One page is the status line alone - "info part only" - because two disabled
+       buttons a thumb can reach and do nothing with are worse than no buttons at all. *@
+    <nav class="dt-pager dt-pager--phone" aria-label="@Label">
+        @if (PageCount > 1)
+        {
+            <button type="button" class="btn btn-outline-secondary dt-pager-previous"
+                    disabled="@AtFirst" @onclick="PreviousAsync">
+                <Icon Name="IconName.Back" />@Localizer["PagerPrevious"]
+            </button>
+        }
+        <span class="dt-pager__status" role="status">@PhoneStatus</span>
+        @if (PageCount > 1)
+        {
+            <button type="button" class="btn btn-outline-secondary dt-pager-next"
+                    disabled="@AtLast" @onclick="NextAsync">
+                @Localizer["PagerNext"]<Icon Name="IconName.Forward" />
+            </button>
+        }
+    </nav>
+}
+
+@code {
+    /// <summary>Stamps each bar's size select with an id of its own, so its label can point at it.</summary>
+    private static int _instances;
+
+    private readonly string _sizeId = "dt-pager-size-"
+        + Interlocked.Increment(ref _instances).ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+    /// <summary>How many rows the whole filtered list holds. Zero draws no bar at all.</summary>
+    [Parameter]
+    public int Total { get; set; }
+
+    /// <summary>The offset the page on screen was read at.</summary>
+    [Parameter]
+    public int Offset { get; set; }
+
+    /// <summary>The page size the page on screen was read with.</summary>
+    [Parameter]
+    public int Limit { get; set; } = TableQuery.DefaultPageSize;
+
+    /// <summary>How many rows the page on screen actually holds.</summary>
+    [Parameter]
+    public int Count { get; set; }
+
+    /// <summary>True while the next page loads: every button in the bar is disabled.</summary>
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    /// <summary>The list's noun after a count of one, in the case the range sentence needs.</summary>
+    [Parameter]
+    [EditorRequired]
+    public string? CountOne { get; set; }
+
+    /// <summary>The list's noun after any other count. Also names the bar for a screen reader.</summary>
+    [Parameter]
+    [EditorRequired]
+    public string? CountMany { get; set; }
+
+    /// <summary>A page number was chosen, one-based.</summary>
+    [Parameter]
+    public EventCallback<int> OnPage { get; set; }
+
+    /// <summary>A page size was chosen. The screen returns to page one with it.</summary>
+    [Parameter]
+    public EventCallback<int> OnPageSize { get; set; }
+
+    private int Size => Limit > 0 ? Limit : TableQuery.DefaultPageSize;
+
+    private int PageCount => PageWindow.Count(Total, Size);
+
+    private int Current => Math.Clamp((Offset / Size) + 1, 1, Math.Max(PageCount, 1));
+
+    private IReadOnlyList<int?> Window => PageWindow.For(Current, PageCount);
+
+    /// <summary>
+    /// Previous is disabled on the first page and while a page loads - never hidden, so the bar does
+    /// not change shape under the reader's thumb at the ends. A property rather than an expression
+    /// in the attribute: a comparison operator inside an attribute closes the tag as far as NFR-14's
+    /// source scan is concerned.
+    /// </summary>
+    private bool AtFirst => Disabled || Current <= 1;
+
+    /// <summary>Next's half of <see cref="AtFirst"/>.</summary>
+    private bool AtLast => Disabled || Current >= PageCount;
+
+    private string Label => Format(Localizer["PagerLabel"], CountMany);
+
+    /// <summary>"41–50 з 86 доставок": the rows on screen, and the whole set they were cut from.</summary>
+    private string Range => Format(
+        Localizer["PagerRange"],
+        Count == 0 ? 0 : Offset + 1,
+        Offset + Count,
+        Total,
+        PagerText.TakesSingular(Total, System.Globalization.CultureInfo.CurrentUICulture) ? CountOne : CountMany);
+
+    private string PhoneStatus => Format(Localizer["PagerPhoneStatus"], Current, Math.Max(PageCount, 1));
+
+    private string PageLabel(int page) => Format(Localizer["PagerPage"], page);
+
+    /// <summary>ARIA's token for the page on screen, and no attribute at all on the others.</summary>
+    private string? CurrentMarker(int page) => page == Current ? "page" : null;
+
+    private Func<Task> GoHandler(int page) => () => GoAsync(page);
+
+    private Task PreviousAsync() => GoAsync(Current - 1);
+
+    private Task NextAsync() => GoAsync(Current + 1);
+
+    private async Task GoAsync(int page)
+    {
+        if (Disabled || page < 1 || page > PageCount || page == Current)
+        {
+            return;
+        }
+
+        await OnPage.InvokeAsync(page);
+    }
+
+    private async Task SizeChangedAsync(int size)
+    {
+        if (Disabled || size == Size)
+        {
+            return;
+        }
+
+        await OnPageSize.InvokeAsync(size);
+    }
+
+    /// <summary>
+    /// A catalogue sentence with its figures written in. The format is resolved as a plain lookup
+    /// so the key stays a literal the closed-catalogue test can see; the figures are formatted in
+    /// the reader's own culture (NFR-15).
+    /// </summary>
+    private static string Format(LocalizedString format, params object?[] values) =>
+        string.Format(System.Globalization.CultureInfo.CurrentCulture, format.Value, values);
+}

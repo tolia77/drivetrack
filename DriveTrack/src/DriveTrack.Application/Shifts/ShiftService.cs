@@ -50,7 +50,7 @@ public sealed class ShiftService(
     IValidator<ListShiftsQuery> listValidator) : IShiftService
 {
     /// <inheritdoc />
-    public async Task<IReadOnlyList<ShiftSummary>> ListAsync(
+    public async Task<Paged<ShiftSummary>> ListAsync(
         ListShiftsQuery query,
         CancellationToken cancellationToken)
     {
@@ -67,23 +67,16 @@ public sealed class ShiftService(
 
         await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
 
+        // One read for the page and its names. The name is a join on the driver's account rather
+        // than a roster read afterwards, because the search and the sort are about it and have to
+        // run over every shift in the narrowed set, not over the page already cut.
         var shifts = await unitOfWork.Shifts.ListAsync(
             driverId,
-            query.Offset,
-            query.Limit,
+            query,
+            ListSort.Parse<ShiftSort>(query.Sort),
             cancellationToken);
 
-        if (shifts.Count == 0)
-        {
-            // No roster read for a page with nothing on it. The names below are only ever asked for
-            // once per page, never once per row, and an empty page needs the question asked zero
-            // times rather than once.
-            return [];
-        }
-
-        var names = await DriverNamesAsync(unitOfWork, cancellationToken);
-
-        return [.. shifts.Select(shift => Summary(shift, Name(names, shift.DriverId)))];
+        return shifts.Map(row => Summary(row.Shift, row.DriverName));
     }
 
     /// <inheritdoc />

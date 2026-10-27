@@ -178,7 +178,7 @@ internal static class ShiftApi
     {
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        return [.. (await FleetApi.DataAsync(response, cancellationToken)).EnumerateArray()];
+        return [.. (await FleetApi.ItemsAsync(response, cancellationToken)).EnumerateArray()];
     }
 
     private static string Path(int shiftId) =>

@@ -21,7 +21,7 @@
 @inject ICurrentUser Caller
 @inject TimeProvider Clock
 @inject IStringLocalizer<UiText> Localizer
-@inherits CircuitScopedComponent
+@inherits PagedScreen<ListShiftsQuery, ShiftSummary, ShiftSort>
 
 <PageTitle>@Localizer["ShiftsTitle"]</PageTitle>
 
@@ -54,16 +54,15 @@
 <div class="row g-4 mb-4">
     <div class="col-sm">
         <label class="form-label" for="shifts-search">@Localizer["Search"]</label>
-        @* Over the list already fetched: PRD section 8 excludes server-side filtering, so typing
-           here never becomes a query. *@
+        @* Answered by the server over every shift, by the driver's name, and written into the
+           address as it is typed - replacing the history entry rather than adding one per key. *@
         <input id="shifts-search" type="search" class="form-control"
-               @bind="_search" @bind:event="oninput" />
+               @bind="_search" @bind:event="oninput" @bind:after="SearchChangedAsync" />
     </div>
 </div>
 
-@* NFR-27 keeps the original's paging, and this screen asks for the first page and searches it in
-   the browser - so past a full page the rest is neither shown nor findable. Saying so is the
-   difference between a limit and a screen that quietly lies about the roster. *@
+@* NFR-27: one page of shifts at a time, newest first, searched and sorted by the server over every
+   shift, with the pager under the table saying how many there are. *@
 @* `dt-table-cards` is where this screen opts into the shared collapse: below the phone breakpoint
    the table's rows stop being rows and become cards. The collapse is stated once, in
    `_theme.scss`, so nothing about it is written here or in this screen's own stylesheet - and
@@ -73,15 +72,29 @@
    rules off it, and the phone-layout suite reads it as the element the table has to be inside. *@
 <div class="dt-shifts dt-table-cards">
     <DtDataTable TItem="ShiftSummary"
-                 IsTruncated="IsTruncated"
-                 Note="@Localizer["ListTruncated"]"
-                 Items="Visible"
-                 IsLoading="_loading"
+                 Page="Listed"
+                 OnPage="GoToPageAsync"
+                 OnPageSize="ResizeAsync"
+                 CountOne="@Localizer["ShiftsCountOne"]"
+                 CountMany="@Localizer["ShiftsCountMany"]"
+                 IsLoading="Loading"
                  EmptyText="@Localizer["ShiftsEmpty"]">
         <HeaderTemplate>
-            <th scope="col">@Localizer["Driver"]</th>
-            <th scope="col">@Localizer["ShiftStartedAt"]</th>
-            <th scope="col">@Localizer["ShiftEndedAt"]</th>
+            <th scope="col" aria-sort="@SortState(ShiftSort.Driver)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(ShiftSort.Driver)">
+                    @Localizer["Driver"]<Icon Name="@SortGlyph(ShiftSort.Driver)" />
+                </button>
+            </th>
+            <th scope="col" aria-sort="@SortState(ShiftSort.StartedAt)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(ShiftSort.StartedAt)">
+                    @Localizer["ShiftStartedAt"]<Icon Name="@SortGlyph(ShiftSort.StartedAt)" />
+                </button>
+            </th>
+            <th scope="col" aria-sort="@SortState(ShiftSort.EndedAt)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(ShiftSort.EndedAt)">
+                    @Localizer["ShiftEndedAt"]<Icon Name="@SortGlyph(ShiftSort.EndedAt)" />
+                </button>
+            </th>
             <th scope="col">@Localizer["ShiftState"]</th>
             @* The actions column keeps its name for a screen reader and drops it on screen, as the
                two delivery screens' does: the buttons under it say what they do, and a column named
@@ -237,7 +250,6 @@
     /// </summary>
     private const string InlineFields = "StartedAt,EndedAt";
 
-    private IReadOnlyList<ShiftSummary> _shifts = [];
     private IReadOnlyList<DriverSummary> _drivers = [];
     private IReadOnlyList<ScreenFailure> _failures = [];
     /// <summary>
@@ -271,7 +283,6 @@
     private DtDialog? _formDialog;
     private DtConfirmDialog? _deleteDialog;
     private string _search = string.Empty;
-    private bool _loading = true;
 
     /// <summary>
     /// True while a save is in flight, which is what disables the submit button for as long as it
@@ -279,17 +290,6 @@
     /// shift from the same form.
     /// </summary>
     private bool _saving;
-
-    /// <summary>The rows the search leaves, filtered over the list already fetched.</summary>
-    private IReadOnlyCollection<ShiftSummary> Visible =>
-        [.. _shifts.Where(shift => Matches(shift, _search))];
-
-    /// <summary>
-    /// True when the page came back full, which is as much as this screen can know: the query
-    /// returns no total (PRD section 8 excludes one), so "there may be more" is the honest claim
-    /// rather than a count.
-    /// </summary>
-    private bool IsTruncated => _shifts.Count >= ListShiftsQueryValidator.MaximumLimit;
 
     protected override async Task OnInitializedAsync()
     {
@@ -303,75 +303,100 @@
                 "The circuit has no authenticated caller: the session cookie is gone.");
         }
 
+        await LoadDriversAsync();
+
+        await base.OnInitializedAsync();
+    }
+
+    /// <summary>
+    /// The form's driver choices, read here rather than when the dialog opens, so choosing a driver
+    /// does not wait on a round trip - and unpaged, because the picker has to offer every driver,
+    /// not the ones a table's page would hold. Read again after every write, because a write is what
+    /// moves a driver on or off duty, and the picker marks which.
+    /// </summary>
+    private async Task LoadDriversAsync()
+    {
+        try
+        {
+            _drivers = await DriverRoster.ListAllAsync(CircuitToken);
+        }
+        catch (DriveTrackException failure)
+        {
+            _failures = FailureKeys.For(failure);
+        }
+    }
+
+    /// <summary>After a write: the page on screen and the picker's on-duty marks, both read again.</summary>
+    private async Task ReloadAfterWriteAsync()
+    {
+        await LoadDriversAsync();
         await LoadAsync();
     }
+
+    /// <inheritdoc />
+    protected override ShiftSort DefaultSort => ShiftSort.StartedAt;
+
+    /// <inheritdoc />
+    protected override bool DefaultDescending => true;
+
+    /// <inheritdoc />
+    protected override IReadOnlyCollection<ShiftSort> Sortable { get; } =
+    [
+        ShiftSort.Driver,
+        ShiftSort.StartedAt,
+        ShiftSort.EndedAt,
+    ];
+
+    /// <inheritdoc />
+    protected override ListShiftsQuery Compose(int offset, int limit, ShiftSort sort, bool descending) =>
+        new(offset, limit, null, sort.ToString(), descending, TableQuery.Text(SearchParameter));
+
+    /// <inheritdoc />
+    protected override (int Offset, int Limit, ShiftSort Sort, bool Descending) Paging(ListShiftsQuery view) =>
+        (view.Offset, view.Limit, ListSort.Parse<ShiftSort>(view.Sort) ?? DefaultSort, view.Descending);
+
+    /// <inheritdoc />
+    protected override ListShiftsQuery Repaged(
+        ListShiftsQuery view,
+        int offset,
+        int limit,
+        ShiftSort sort,
+        bool descending) =>
+        view with { Offset = offset, Limit = limit, Sort = sort.ToString(), Descending = descending };
+
+    /// <inheritdoc />
+    protected override void AddFilters(ListShiftsQuery view, IDictionary<string, object?> address) =>
+        address[TableQuery.SearchName] = view.Search;
+
+    /// <inheritdoc />
+    protected override void Adopt(ListShiftsQuery view) => _search = view.Search ?? string.Empty;
+
+    /// <inheritdoc />
+    protected override async Task<Paged<ShiftSummary>?> FetchAsync(ListShiftsQuery view)
+    {
+        try
+        {
+            // No driver filter: this screen is the whole roster's, and a dispatcher narrows it by
+            // typing a name rather than by picking one.
+            return await Duty.ListAsync(view, CircuitToken);
+        }
+        catch (DriveTrackException failure)
+        {
+            _failures = FailureKeys.For(failure);
+
+            return null;
+        }
+    }
+
+    /// <summary>The search box changed: page one of what it now matches, replacing the history entry.</summary>
+    private Task SearchChangedAsync() =>
+        MoveAsync(FirstPage(View) with { Search = TableQuery.Text(_search) }, replace: true);
 
     /// <summary>The row's edit action, bound as a delegate so no lambda has to live in markup.</summary>
     private Func<Task> EditHandler(ShiftSummary shift) => () => OpenEditAsync(shift);
 
     /// <summary>The row's delete action, for the same reason.</summary>
     private Func<Task> DeleteHandler(ShiftSummary shift) => () => OpenDeleteAsync(shift);
-
-    /// <summary>
-    /// Whether a shift matches what a dispatcher typed, over the driver it belongs to.
-    /// </summary>
-    /// <remarks>
-    /// Internal and static so it can be tested directly: the search is the one thing on this screen
-    /// a render test cannot reach, since static rendering dispatches no events. Culture-aware and
-    /// case-insensitive - a dispatcher typing a name in lower case is looking for the same driver.
-    /// <para>
-    /// The driver is the only thing worth searching. The two instants are already the columns the
-    /// table is ordered by, and nobody types a timestamp.
-    /// </para>
-    /// </remarks>
-    /// <param name="shift">The row being considered.</param>
-    /// <param name="search">What the dispatcher typed. Blank keeps everything.</param>
-    internal static bool Matches(ShiftSummary shift, string? search)
-    {
-        ArgumentNullException.ThrowIfNull(shift);
-
-        if (string.IsNullOrWhiteSpace(search))
-        {
-            return true;
-        }
-
-        return shift.DriverName.Contains(
-            search.Trim(),
-            StringComparison.CurrentCultureIgnoreCase);
-    }
-
-    private async Task LoadAsync()
-    {
-        _loading = true;
-
-        // Rendered before the await, or the flag is set and cleared inside one synchronous stretch
-        // and DtDataTable's loading row never reaches the browser on a post-write refetch.
-        StateHasChanged();
-
-        try
-        {
-            // NFR-27's default page, stated rather than assumed, and no driver filter: this screen
-            // is the whole roster's, and a dispatcher narrows it by typing rather than by asking
-            // the database again.
-            _shifts = await Duty.ListAsync(
-                new ListShiftsQuery(0, ListShiftsQueryValidator.MaximumLimit, null),
-                CircuitToken);
-
-            // Read here rather than when the dialog opens, so choosing a driver does not wait on a
-            // round trip.
-            _drivers = await DriverRoster.ListAsync(CircuitToken);
-        }
-        catch (DriveTrackException failure)
-        {
-            _failures = FailureKeys.For(failure);
-        }
-        finally
-        {
-            // In a finally so a refused or failed read leaves the table in its empty state rather
-            // than spinning forever, which reads to a user as a hung screen.
-            _loading = false;
-        }
-    }
 
     private async Task OpenCreateAsync()
     {
@@ -480,7 +505,7 @@
         // Outside the try, deliberately. The write has committed, so a failure refreshing the list
         // afterwards is a failed read, and reporting it as a refused save would tell the dispatcher
         // their correction was not saved when it was.
-        await LoadAsync();
+        await ReloadAfterWriteAsync();
     }
 
     private async Task OpenDeleteAsync(ShiftSummary shift)
@@ -518,7 +543,7 @@
 
         // Outside the try: the shift is gone, and a failed refresh afterwards must not be reported
         // as a delete that did not happen.
-        await LoadAsync();
+        await ReloadAfterWriteAsync();
     }
 
     /// <summary>

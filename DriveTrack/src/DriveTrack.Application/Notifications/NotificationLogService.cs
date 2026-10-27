@@ -35,7 +35,7 @@ public sealed class NotificationLogService(
     IValidator<ListNotificationAttemptsQuery> listValidator) : INotificationLogService
 {
     /// <inheritdoc />
-    public async Task<IReadOnlyList<NotificationAttemptSummary>> ListAsync(
+    public async Task<Paged<NotificationAttemptSummary>> ListAsync(
         ListNotificationAttemptsQuery query,
         CancellationToken cancellationToken)
     {
@@ -50,13 +50,13 @@ public sealed class NotificationLogService(
         await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
 
         var attempts = await unitOfWork.NotificationAttempts.ListAsync(
-            query.Offset,
-            query.Limit,
+            query,
+            ListSort.Parse<NotificationSort>(query.Sort),
             cancellationToken);
 
         // Nothing was written, so the scope is disposed without a commit and the empty transaction
         // rolls back. That is the ordinary read path, not an omission.
-        return [.. attempts.Select(Summary)];
+        return attempts.Map(Summary);
     }
 
     private static NotificationAttemptSummary Summary(NotificationAttempt attempt) =>

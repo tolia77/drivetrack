@@ -99,5 +99,8 @@ public sealed class ListShiftsQueryValidator : AbstractValidator<ListShiftsQuery
             .GreaterThan(0).WithMessage(nameof(ErrorCode.COMMON_PAGING_LIMIT_INVALID))
             .LessThanOrEqualTo(MaximumLimit)
                 .WithMessage(nameof(ErrorCode.COMMON_PAGING_LIMIT_INVALID));
+
+        RuleFor(query => query.Sort)
+            .Must(ListSort.IsKnown<ShiftSort>).WithMessage(nameof(ErrorCode.COMMON_SORT_INVALID));
     }
 }

@@ -1,3 +1,4 @@
+using DriveTrack.Application.Common;
 using DriveTrack.Application.Drivers;
 using DriveTrack.Domain.Identity;
 using Microsoft.AspNetCore.Authorization;
@@ -18,10 +19,32 @@ namespace DriveTrack.Web.Api;
 [Authorize]
 public sealed class DriversController(IDriverService drivers) : ControllerBase
 {
-    /// <summary>Every driver, each with the vehicle they hold (FR-35). Unpaged, as the original was.</summary>
+    /// <summary>
+    /// One page of the roster, each driver with the vehicle they hold (FR-35), searched (FR-36) and
+    /// sorted over every driver. Defaults to the first hundred.
+    /// </summary>
+    /// <remarks>
+    /// The paging parameters are nullable so an omitted one takes the default here rather than
+    /// binding to zero — a limit of zero is a refusal, and "I did not say" must not mean "give me
+    /// nothing". <c>sort</c> is a column name and is refused with <c>COMMON_SORT_INVALID</c> when the
+    /// list has no such column; <c>desc=true</c> reverses it.
+    /// </remarks>
     [HttpGet]
-    public Task<IReadOnlyList<DriverSummary>> ListAsync(CancellationToken cancellationToken) =>
-        drivers.ListAsync(cancellationToken);
+    public Task<Paged<DriverSummary>> ListAsync(
+        [FromQuery] int? offset,
+        [FromQuery] int? limit,
+        [FromQuery] string? sort,
+        [FromQuery] bool? desc,
+        [FromQuery] string? search,
+        CancellationToken cancellationToken) =>
+        drivers.ListAsync(
+            new ListDriversQuery(
+                offset ?? 0,
+                limit ?? ListDriversQueryValidator.MaximumLimit,
+                sort,
+                desc ?? false,
+                search),
+            cancellationToken);
 
     /// <summary>One driver.</summary>
     [HttpGet("{id:int}")]

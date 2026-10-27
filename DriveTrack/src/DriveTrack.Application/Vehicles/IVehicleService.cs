@@ -11,11 +11,22 @@ namespace DriveTrack.Application.Vehicles;
 /// </summary>
 public interface IVehicleService
 {
-    /// <summary>One page of the fleet (FR-40, NFR-27).</summary>
-    /// <exception cref="Common.ValidationException">The paging arguments are out of range.</exception>
-    Task<IReadOnlyList<VehicleSummary>> ListAsync(
+    /// <summary>
+    /// One page of the fleet, searched and sorted over every vehicle, with the number the search
+    /// matched (FR-40, NFR-27).
+    /// </summary>
+    /// <exception cref="Common.ValidationException">
+    /// The paging arguments are out of range, or the sort names no column the list has.
+    /// </exception>
+    Task<Common.Paged<VehicleSummary>> ListAsync(
         ListVehiclesQuery query,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Every vehicle, unpaged. The delivery form's capacity hint reads it: a driver's vehicle has to
+    /// be found whichever page of the fleet table it would sit on.
+    /// </summary>
+    Task<IReadOnlyList<VehicleSummary>> ListAllAsync(CancellationToken cancellationToken);
 
     /// <summary>
     /// Every vehicle no driver holds (FR-45). Unpaged: it feeds an assignment control, and a

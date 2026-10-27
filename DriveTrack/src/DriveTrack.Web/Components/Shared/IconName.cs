@@ -49,6 +49,9 @@ public enum IconName
     /// <summary>The way back from a dead end.</summary>
     Back,
 
+    /// <summary>The way on: the next page of a list (the mirror of <see cref="Back"/>).</summary>
+    Forward,
+
     /// <summary>A caution notice.</summary>
     Warning,
 

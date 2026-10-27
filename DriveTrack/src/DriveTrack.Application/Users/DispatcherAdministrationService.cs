@@ -15,7 +15,8 @@ public sealed class DispatcherAdministrationService(
     IUnitOfWorkFactory unitOfWorkFactory,
     IAccessGuard accessGuard,
     IValidator<CreateDispatcherCommand> createValidator,
-    IValidator<DispatcherAccountState> stateValidator) : IDispatcherAdministrationService
+    IValidator<DispatcherAccountState> stateValidator,
+    IValidator<ListDispatchersQuery> listValidator) : IDispatcherAdministrationService
 {
     /// <inheritdoc />
     public async Task<DispatcherAccount> CreateAsync(
@@ -67,15 +68,24 @@ public sealed class DispatcherAdministrationService(
     }
 
     /// <inheritdoc />
-    public async Task<IReadOnlyList<DispatcherAccount>> ListAsync(CancellationToken cancellationToken)
+    public async Task<Paged<DispatcherAccount>> ListAsync(
+        ListDispatchersQuery query,
+        CancellationToken cancellationToken)
     {
-        await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
+        ArgumentNullException.ThrowIfNull(query);
 
         accessGuard.RequireRole(UserRole.Admin);
 
-        var accounts = await unitOfWork.Users.ListByRoleAsync(UserRole.Dispatcher, cancellationToken);
+        await ValidatorExtensions.ValidateAndThrowAsync(listValidator, query, cancellationToken);
 
-        return [.. accounts.Select(Map)];
+        await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
+
+        var accounts = await unitOfWork.Users.ListDispatchersAsync(
+            query,
+            ListSort.Parse<DispatcherSort>(query.Sort),
+            cancellationToken);
+
+        return accounts.Map(Map);
     }
 
     /// <inheritdoc />

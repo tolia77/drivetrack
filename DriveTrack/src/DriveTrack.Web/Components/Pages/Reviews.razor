@@ -4,7 +4,7 @@
 @inject IDeliveryService Parcels
 @inject ICurrentUser Caller
 @inject IStringLocalizer<UiText> Localizer
-@inherits CircuitScopedComponent
+@inherits PagedScreen<ListReviewsQuery, object, ReviewSort>
 
 @* FR-62 to FR-67: reviews, and the three different screens the one route is for.
 
@@ -63,11 +63,11 @@
 
 @* The sibling of the action above rather than a second copy of it: never both, and neither while
    the lists are still loading - the action waits for a delivery to put in its picker and this waits
-   for `!_loading`, so the first pass shows a bare head and the sentence appears once the answer is
+   for `!Loading`, so the first pass shows a bare head and the sentence appears once the answer is
    in. Saying "there is nothing to review" before looking would be a claim the screen cannot yet
    make. It stays below the head because it is a sentence rather than a control - a paragraph inside
    the heading row would sit on the line beside the title. *@
-@if (_authors && !_loading && _reviewable.Count == 0)
+@if (_authors && !Loading && _reviewable.Count == 0)
 {
     <p class="dt-review-nothing-to-review">@Localizer["ReviewDeliveryHint"]</p>
 }
@@ -92,14 +92,30 @@
     @if (_authors)
     {
         <DtDataTable TItem="AuthoredReviewSummary"
-                     Items="_mine"
-                     IsLoading="_loading"
+                     Page="_minePage"
+                     OnPage="GoToPageAsync"
+                     OnPageSize="ResizeAsync"
+                     CountOne="@Localizer["ReviewsCountOne"]"
+                     CountMany="@Localizer["ReviewsCountMany"]"
+                     IsLoading="Loading"
                      EmptyText="@Localizer["ReviewsEmpty"]">
             <HeaderTemplate>
-                <th scope="col">@Localizer["ReviewDelivery"]</th>
-                <th scope="col">@Localizer["ReviewRating"]</th>
+                <th scope="col" aria-sort="@SortState(ReviewSort.Delivery)">
+                    <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(ReviewSort.Delivery)">
+                        @Localizer["ReviewDelivery"]<Icon Name="@SortGlyph(ReviewSort.Delivery)" />
+                    </button>
+                </th>
+                <th scope="col" aria-sort="@SortState(ReviewSort.Rating)">
+                    <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(ReviewSort.Rating)">
+                        @Localizer["ReviewRating"]<Icon Name="@SortGlyph(ReviewSort.Rating)" />
+                    </button>
+                </th>
                 <th scope="col">@Localizer["ReviewText"]</th>
-                <th scope="col">@Localizer["CreatedAt"]</th>
+                <th scope="col" aria-sort="@SortState(ReviewSort.CreatedAt)">
+                    <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(ReviewSort.CreatedAt)">
+                        @Localizer["CreatedAt"]<Icon Name="@SortGlyph(ReviewSort.CreatedAt)" />
+                    </button>
+                </th>
                 @* The actions column keeps its name for a screen reader and drops it on screen, as
                    every other table in the product does: the buttons under it say what they do, and
                    a column named above them competes with them for the same width. *@
@@ -158,16 +174,40 @@
     @if (_readsEvery)
     {
         <DtDataTable TItem="ReviewSummary"
-                     Items="_all"
-                     IsLoading="_loading"
+                     Page="_allPage"
+                     OnPage="GoToPageAsync"
+                     OnPageSize="ResizeAsync"
+                     CountOne="@Localizer["ReviewsCountOne"]"
+                     CountMany="@Localizer["ReviewsCountMany"]"
+                     IsLoading="Loading"
                      EmptyText="@Localizer["ReviewsEmpty"]">
             <HeaderTemplate>
-                <th scope="col">@Localizer["ReviewDelivery"]</th>
-                <th scope="col">@Localizer["Client"]</th>
-                <th scope="col">@Localizer["Driver"]</th>
-                <th scope="col">@Localizer["ReviewRating"]</th>
+                <th scope="col" aria-sort="@SortState(ReviewSort.Delivery)">
+                    <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(ReviewSort.Delivery)">
+                        @Localizer["ReviewDelivery"]<Icon Name="@SortGlyph(ReviewSort.Delivery)" />
+                    </button>
+                </th>
+                <th scope="col" aria-sort="@SortState(ReviewSort.Client)">
+                    <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(ReviewSort.Client)">
+                        @Localizer["Client"]<Icon Name="@SortGlyph(ReviewSort.Client)" />
+                    </button>
+                </th>
+                <th scope="col" aria-sort="@SortState(ReviewSort.Driver)">
+                    <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(ReviewSort.Driver)">
+                        @Localizer["Driver"]<Icon Name="@SortGlyph(ReviewSort.Driver)" />
+                    </button>
+                </th>
+                <th scope="col" aria-sort="@SortState(ReviewSort.Rating)">
+                    <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(ReviewSort.Rating)">
+                        @Localizer["ReviewRating"]<Icon Name="@SortGlyph(ReviewSort.Rating)" />
+                    </button>
+                </th>
                 <th scope="col">@Localizer["ReviewText"]</th>
-                <th scope="col">@Localizer["CreatedAt"]</th>
+                <th scope="col" aria-sort="@SortState(ReviewSort.CreatedAt)">
+                    <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(ReviewSort.CreatedAt)">
+                        @Localizer["CreatedAt"]<Icon Name="@SortGlyph(ReviewSort.CreatedAt)" />
+                    </button>
+                </th>
                 @* Only for the role that has any. A dispatcher reads the collection and writes to
                    none of it, so an unconditional heading here would label a column of permanently
                    empty cells; the cell below carries the same predicate, so header and row stay the
@@ -350,8 +390,11 @@
     private DtDialog? _formDialog;
     private DtConfirmDialog? _deleteDialog;
 
-    private IReadOnlyList<AuthoredReviewSummary>? _mine;
-    private IReadOnlyList<ReviewSummary>? _all;
+    /// <summary>The author's page, when the caller is a client: the one table they are shown.</summary>
+    private Paged<AuthoredReviewSummary>? _minePage;
+
+    /// <summary>The moderation page, when the caller runs dispatch or the system.</summary>
+    private Paged<ReviewSummary>? _allPage;
     private IReadOnlyList<AssignedDeliverySummary> _reviewable = [];
     private IReadOnlyList<ScreenFailure> _failures = [];
 
@@ -384,7 +427,6 @@
     private int? _editingId;
     private int? _pendingDelete;
 
-    private bool _loading = true;
     private bool _authors;
     private bool _readsEvery;
     private bool _moderates;
@@ -427,39 +469,112 @@
         _readsEvery = ReviewViews.ReadsEveryReview(role);
         _moderates = ReviewViews.Moderates(role);
 
-        await ReloadAsync();
+        await LoadReviewableAsync();
+
+        await base.OnInitializedAsync();
     }
 
-    private async Task ReloadAsync()
+    /// <summary>
+    /// A driver reads no review and is shown a sentence instead of a table, so there is nothing to
+    /// list; every other role reads exactly one of the two tables.
+    /// </summary>
+    protected override bool ReadyToList => _authors || _readsEvery;
+
+    /// <summary>Newest first: the review a moderator or an author opens the screen for is the latest.</summary>
+    protected override ReviewSort DefaultSort => ReviewSort.CreatedAt;
+
+    /// <inheritdoc />
+    protected override bool DefaultDescending => true;
+
+    /// <summary>
+    /// The author's table sorts by its three ordered columns; the moderation table adds the two
+    /// party names, which the author's list does not carry (AD-17).
+    /// </summary>
+    protected override IReadOnlyCollection<ReviewSort> Sortable => _readsEvery
+        ? [ReviewSort.Delivery, ReviewSort.Client, ReviewSort.Driver, ReviewSort.Rating, ReviewSort.CreatedAt]
+        : [ReviewSort.Delivery, ReviewSort.Rating, ReviewSort.CreatedAt];
+
+    /// <inheritdoc />
+    protected override ListReviewsQuery Compose(int offset, int limit, ReviewSort sort, bool descending) =>
+        new(offset, limit, sort.ToString(), descending);
+
+    /// <inheritdoc />
+    protected override (int Offset, int Limit, ReviewSort Sort, bool Descending) Paging(ListReviewsQuery view) =>
+        (view.Offset, view.Limit, ListSort.Parse<ReviewSort>(view.Sort) ?? DefaultSort, view.Descending);
+
+    /// <inheritdoc />
+    protected override ListReviewsQuery Repaged(
+        ListReviewsQuery view,
+        int offset,
+        int limit,
+        ReviewSort sort,
+        bool descending) =>
+        view with { Offset = offset, Limit = limit, Sort = sort.ToString(), Descending = descending };
+
+    /// <summary>
+    /// The role's one table. The two are different row types - the author's carries no party at all
+    /// (AD-17) - so the page travels untyped through the shared paging and is split again in
+    /// <see cref="OnListed" />.
+    /// </summary>
+    protected override async Task<Paged<object>?> FetchAsync(ListReviewsQuery view)
     {
-        _loading = true;
-
-        // Rendered before the await, or the flag is set and cleared inside one synchronous stretch
-        // and DtDataTable's loading row never reaches the browser on a post-write refetch.
-        StateHasChanged();
-
         try
         {
             if (_authors)
             {
-                _mine = await Verdicts.ListMineAsync(Page, CircuitToken);
-                _reviewable = await ReviewableAsync(_mine);
+                return (await Verdicts.ListMineAsync(view, CircuitToken)).Map(review => (object)review);
             }
 
-            if (_readsEvery)
-            {
-                _all = await Verdicts.ListAsync(Page, CircuitToken);
-            }
+            return (await Verdicts.ListAsync(view, CircuitToken)).Map(review => (object)review);
         }
         catch (DriveTrackException failure)
         {
             _failures = FailureKeys.For(failure);
+
+            return null;
         }
-        finally
+    }
+
+    /// <inheritdoc />
+    protected override void OnListed(Paged<object> page)
+    {
+        if (_authors)
         {
-            // In a finally so a refused or failed read leaves the table in its empty state rather
-            // than spinning forever, which reads to a user as a hung screen.
-            _loading = false;
+            _minePage = page.Map(row => (AuthoredReviewSummary)row);
+        }
+
+        if (_readsEvery)
+        {
+            _allPage = page.Map(row => (ReviewSummary)row);
+        }
+    }
+
+    /// <summary>After a write: the picker's reviewable deliveries and the page on screen, both read again.</summary>
+    private async Task ReloadAsync()
+    {
+        await LoadReviewableAsync();
+        await LoadAsync();
+    }
+
+    /// <summary>
+    /// The deliveries the write form may offer, read unpaged: a delivery already reviewed has to be
+    /// left out whichever page of the table its review sits on, and a finished delivery has to be
+    /// offered whichever page of the caller's deliveries it would sit on.
+    /// </summary>
+    private async Task LoadReviewableAsync()
+    {
+        if (!_authors)
+        {
+            return;
+        }
+
+        try
+        {
+            _reviewable = await ReviewableAsync(await Verdicts.ListAllMineAsync(CircuitToken));
+        }
+        catch (DriveTrackException failure)
+        {
+            _failures = FailureKeys.For(failure);
         }
     }
 
@@ -477,9 +592,7 @@
     {
         var reviewed = written.Select(review => review.DeliveryId).ToHashSet();
 
-        var own = await Parcels.ListMineAsync(
-            new ListDeliveriesQuery(0, ListDeliveriesQueryValidator.MaximumLimit),
-            CircuitToken);
+        var own = await Parcels.ListAllMineAsync(CircuitToken);
 
         return
         [
@@ -650,14 +763,6 @@
         _formOpen = false;
         _failures = [];
     }
-
-    /// <summary>
-    /// The page both lists ask for. One page of a hundred, like every other list in the product:
-    /// PRD section 8 excludes server-side filtering and result counts, so the screen reads a page
-    /// and shows it.
-    /// </summary>
-    private static ListReviewsQuery Page =>
-        new(0, ListReviewsQueryValidator.MaximumLimit);
 
     /// <summary>
     /// An instant as this screen shows it. Local time against the current culture (NFR-15); the

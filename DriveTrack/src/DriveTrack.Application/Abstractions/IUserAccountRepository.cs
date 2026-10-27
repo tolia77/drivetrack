@@ -1,3 +1,5 @@
+using DriveTrack.Application.Common;
+using DriveTrack.Application.Users;
 using DriveTrack.Domain.Identity;
 
 namespace DriveTrack.Application.Abstractions;
@@ -132,6 +134,18 @@ public interface IUserAccountRepository
     /// </para>
     /// </summary>
     Task<IReadOnlyList<UserAccount>> ListByRoleAsync(UserRole role, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// One page of the dispatcher accounts, sorted in SQL over every one of them, and how many there
+    /// are (FR-49, NFR-27). Surname order when no column is named; every order ends on the id.
+    /// </summary>
+    /// <param name="query">The page and the direction. Already validated.</param>
+    /// <param name="sort">The column, already parsed; null for surname order.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task<Paged<UserAccount>> ListDispatchersAsync(
+        ListDispatchersQuery query,
+        DispatcherSort? sort,
+        CancellationToken cancellationToken);
 
     /// <summary>
     /// Renames an account, staged for the caller's commit (FR-46, FR-50). Neither the email nor

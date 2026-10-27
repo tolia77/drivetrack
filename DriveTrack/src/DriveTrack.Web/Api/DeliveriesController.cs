@@ -1,4 +1,6 @@
+using DriveTrack.Application.Common;
 using DriveTrack.Application.Deliveries;
+using DriveTrack.Domain.Deliveries;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -33,31 +35,90 @@ public sealed class DeliveriesController(
     IDeliveryService deliveries,
     IProofOfDeliveryService proofs) : ControllerBase
 {
-    /// <summary>One page of every delivery (FR-18). Defaults to the first hundred.</summary>
+    /// <summary>
+    /// One page of every delivery with the number that matched (FR-18), filtered and sorted over
+    /// every row (FR-20, FR-101). Defaults to the first hundred, newest first.
+    /// </summary>
     /// <remarks>
-    /// The two parameters are nullable so an omitted one takes the default here rather than binding
-    /// to zero — a limit of zero is a refusal, and "I did not say" must not mean "give me nothing".
+    /// The paging parameters are nullable so an omitted one takes the default here rather than
+    /// binding to zero — a limit of zero is a refusal, and "I did not say" must not mean "give me
+    /// nothing". <c>sort</c> is a column name and is refused with <c>COMMON_SORT_INVALID</c> when the
+    /// list has no such column; <c>desc=true</c> reverses it. The text filters are case-insensitive
+    /// substrings; <c>createdFrom</c> and <c>createdTo</c> are local days, both inclusive.
     /// </remarks>
     [HttpGet]
-    public Task<IReadOnlyList<DeliverySummary>> ListAsync(
+    public Task<Paged<DeliverySummary>> ListAsync(
         [FromQuery] int? offset,
         [FromQuery] int? limit,
+        [FromQuery] string? sort,
+        [FromQuery] bool? desc,
+        [FromQuery] string? driver,
+        [FromQuery] string? client,
+        [FromQuery] string? pickup,
+        [FromQuery] string? dropoff,
+        [FromQuery] string? packageDetails,
+        [FromQuery] string? deliveryNotes,
+        [FromQuery] DeliveryStatus? status,
+        [FromQuery] DateOnly? createdFrom,
+        [FromQuery] DateOnly? createdTo,
+        [FromQuery] bool? overdue,
         CancellationToken cancellationToken) =>
         deliveries.ListAsync(
-            new ListDeliveriesQuery(offset ?? 0, limit ?? ListDeliveriesQueryValidator.MaximumLimit),
+            new ListDeliveriesQuery(
+                offset ?? 0,
+                limit ?? ListDeliveriesQueryValidator.MaximumLimit,
+                sort,
+                desc ?? false,
+                driver,
+                client,
+                pickup,
+                dropoff,
+                packageDetails,
+                deliveryNotes,
+                status,
+                createdFrom,
+                createdTo,
+                overdue ?? false),
             cancellationToken);
 
     /// <summary>
     /// One page of the caller's own deliveries (FR-25, FR-27). The payload carries no counterparty
     /// identity, because the type it is built from has no field for one.
     /// </summary>
+    /// <remarks>
+    /// Sorted and filtered like the dispatch list, without the two counterparty columns: there is
+    /// no <c>driver</c> or <c>client</c> filter here, and <c>sort=driver</c> or <c>sort=client</c>
+    /// is refused with <c>COMMON_SORT_INVALID</c> (AD-17).
+    /// </remarks>
     [HttpGet("mine")]
-    public Task<IReadOnlyList<AssignedDeliverySummary>> ListMineAsync(
+    public Task<Paged<AssignedDeliverySummary>> ListMineAsync(
         [FromQuery] int? offset,
         [FromQuery] int? limit,
+        [FromQuery] string? sort,
+        [FromQuery] bool? desc,
+        [FromQuery] string? pickup,
+        [FromQuery] string? dropoff,
+        [FromQuery] string? packageDetails,
+        [FromQuery] string? deliveryNotes,
+        [FromQuery] DeliveryStatus? status,
+        [FromQuery] DateOnly? createdFrom,
+        [FromQuery] DateOnly? createdTo,
+        [FromQuery] bool? overdue,
         CancellationToken cancellationToken) =>
         deliveries.ListMineAsync(
-            new ListDeliveriesQuery(offset ?? 0, limit ?? ListDeliveriesQueryValidator.MaximumLimit),
+            new ListDeliveriesQuery(
+                offset ?? 0,
+                limit ?? ListDeliveriesQueryValidator.MaximumLimit,
+                sort,
+                desc ?? false,
+                Pickup: pickup,
+                Dropoff: dropoff,
+                PackageDetails: packageDetails,
+                DeliveryNotes: deliveryNotes,
+                Status: status,
+                CreatedFrom: createdFrom,
+                CreatedTo: createdTo,
+                OverdueOnly: overdue ?? false),
             cancellationToken);
 
     /// <summary>

@@ -85,10 +85,13 @@
   <data name="COMMON_PAGING_OFFSET_INVALID" xml:space="preserve">
     <value>The offset cannot be negative.</value>
   </data>
-  <!-- The figure is every list validator's MaximumLimit, which is 100 on all five of them -
+  <!-- The figure is every list validator's MaximumLimit, which is 100 on all eight of them -
        BoundedMessageTests asserts they agree before pinning this one sentence to it. -->
   <data name="COMMON_PAGING_LIMIT_INVALID" xml:space="preserve">
     <value>The number of records must be from 1 to 100.</value>
+  </data>
+  <data name="COMMON_SORT_INVALID" xml:space="preserve">
+    <value>This list cannot be sorted by that column.</value>
   </data>
   <data name="COMMON_COORDINATE_OUT_OF_RANGE" xml:space="preserve">
     <value>This point is outside the map. Pick another one.</value>

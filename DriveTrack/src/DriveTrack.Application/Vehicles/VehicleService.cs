@@ -30,7 +30,7 @@ public sealed class VehicleService(
     IValidator<UpdateVehicleCommand> updateValidator) : IVehicleService
 {
     /// <inheritdoc />
-    public async Task<IReadOnlyList<VehicleSummary>> ListAsync(
+    public async Task<Paged<VehicleSummary>> ListAsync(
         ListVehiclesQuery query,
         CancellationToken cancellationToken)
     {
@@ -44,12 +44,24 @@ public sealed class VehicleService(
         await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
 
         var vehicles = await unitOfWork.Vehicles.ListAsync(
-            query.Offset,
-            query.Limit,
+            query,
+            ListSort.Parse<VehicleSort>(query.Sort),
             cancellationToken);
 
         // Nothing was written, so the scope is disposed without a commit and the empty transaction
         // rolls back. That is the ordinary read path, not an omission.
+        return vehicles.Map(Summary);
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<VehicleSummary>> ListAllAsync(CancellationToken cancellationToken)
+    {
+        accessGuard.RequireRole(UserRole.Dispatcher);
+
+        await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
+
+        var vehicles = await unitOfWork.Vehicles.ListAllAsync(cancellationToken);
+
         return [.. vehicles.Select(Summary)];
     }
 

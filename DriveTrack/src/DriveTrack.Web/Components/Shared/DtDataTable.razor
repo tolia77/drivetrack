@@ -23,7 +23,7 @@
    the framework's own default once the bridge has set it, so the modifier was only taking the
    design's figure away again. *@
 
-<div class="dt-table-scroll@(IsTruncated && Note is not null ? " dt-table-scroll--noted" : null)">
+<div class="dt-table-scroll@(ShowsPager ? " dt-table-scroll--paged" : null)">
     <table class="table table-striped table-hover dt-type-table">
         <thead class="dt-table-head">
             <tr>
@@ -84,7 +84,7 @@
             }
             @if (!IsLoading && HasItems)
             {
-                @foreach (var item in Items!)
+                @foreach (var item in Rows!)
                 {
                     <tr class="dt-table-row">
                         @Row(item)
@@ -95,21 +95,28 @@
     </table>
 </div>
 
-@* The note the fetched page was cut off, under the table it is about rather than above it: it is a
-   fact about what is on screen, and a reader who has not looked at the rows yet has nothing to
-   apply it to. Never a count and never "N of M" - the query returns no total, so the honest claim
-   is which page this is. *@
-@if (IsTruncated && Note is not null)
+@* The pager closes the box the rows are in: the scroll box gives up its bottom corners and the bar
+   has no top edge of its own. Kept while a page loads - with its buttons disabled and the old
+   numbers on it - and gone when the list is empty, because a bar paging through nothing is a
+   control with nothing to do (design system, DataTable and Pagination). *@
+@if (ShowsPager)
 {
-    <p class="dt-table-note dt-type-small" role="status">
-        <Icon Name="IconName.Warning" />@Note
-    </p>
+    <DtPager Total="Page!.Total"
+             Offset="Page.Offset"
+             Limit="Page.Limit"
+             Count="Page.Items.Count"
+             Disabled="IsLoading"
+             CountOne="@CountOne"
+             CountMany="@CountMany"
+             OnPage="OnPage"
+             OnPageSize="OnPageSize" />
 }
 
 @code {
     /// <summary>
-    /// The rows. Null is treated as empty rather than as an error: a screen whose query has not
-    /// answered yet holds null, and throwing there would turn a normal moment into a failure.
+    /// The rows, for a table that is not paged. Null is treated as empty rather than as an error: a
+    /// screen whose query has not answered yet holds null, and throwing there would turn a normal
+    /// moment into a failure. A paged table passes <see cref="Page"/> instead.
     /// </summary>
     [Parameter]
     public IReadOnlyCollection<TItem>? Items { get; set; }
@@ -149,22 +156,31 @@
     public RenderFragment? EmptyAction { get; set; }
 
     /// <summary>
-    /// True when the fetched page came back full, so there may be rows the screen is not showing.
-    /// The screen decides, because only it knows which query it asked and what limit that query
-    /// has; the table decides what saying so looks like.
+    /// The page the rows came from, with the total the pager reads. When set, its rows are the
+    /// table's rows and <see cref="Items"/> is not needed; when null the table draws no pager.
+    /// <para>
+    /// The screen passes the page it last <em>received</em>, not the one it is asking for: while
+    /// the next page loads, the bar keeps these numbers and disables its buttons.
+    /// </para>
     /// </summary>
     [Parameter]
-    public bool IsTruncated { get; set; }
+    public Paged<TItem>? Page { get; set; }
 
-    /// <summary>
-    /// What to say when it was cut off, in the screen's own words - a fleet, a list of deliveries
-    /// and a log of notification attempts are three different things to be missing some of. Bound
-    /// unconditionally rather than only when <see cref="IsTruncated"/> is true, so the sentence is
-    /// a literal localizer lookup in the screen's markup and stays visible to the closed-catalogue
-    /// test.
-    /// </summary>
+    /// <summary>A page number was chosen in the pager, one-based.</summary>
     [Parameter]
-    public string? Note { get; set; }
+    public EventCallback<int> OnPage { get; set; }
+
+    /// <summary>A page size was chosen in the pager.</summary>
+    [Parameter]
+    public EventCallback<int> OnPageSize { get; set; }
+
+    /// <summary>The list's noun after a count of one, for the pager's range sentence.</summary>
+    [Parameter]
+    public string? CountOne { get; set; }
+
+    /// <summary>The list's noun after any other count; also names the pager for a screen reader.</summary>
+    [Parameter]
+    public string? CountMany { get; set; }
 
     /// <summary>
     /// How many bars the loading state draws. Two: enough for the shape of a table to be legible
@@ -173,7 +189,15 @@
     /// </summary>
     private static readonly int[] SkeletonRows = [1, 2];
 
-    private bool HasItems => Items is { Count: > 0 };
+    private IReadOnlyCollection<TItem>? Rows => Page?.Items ?? Items;
+
+    private bool HasItems => Rows is { Count: > 0 };
+
+    /// <summary>
+    /// Whether the bar is drawn: a page with rows in it, or the page a load is about to replace.
+    /// An empty list draws the empty state and no bar.
+    /// </summary>
+    private bool ShowsPager => Page is { Total: > 0 } && (IsLoading || HasItems);
 
     /// <summary>
     /// One item's cells, or nothing when no template was supplied. Routed through a method rather

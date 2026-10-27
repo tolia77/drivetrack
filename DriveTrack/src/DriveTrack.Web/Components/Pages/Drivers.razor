@@ -19,7 +19,7 @@
 @inject IVehicleService Fleet
 @inject ICurrentUser Caller
 @inject IStringLocalizer<UiText> Localizer
-@inherits CircuitScopedComponent
+@inherits PagedScreen<ListDriversQuery, DriverSummary, DriverSort>
 
 <PageTitle>@Localizer["DriversTitle"]</PageTitle>
 
@@ -47,10 +47,11 @@
 <div class="row g-4 mb-4">
     <div class="col-sm">
         <label class="form-label" for="drivers-search">@Localizer["Search"]</label>
-        @* FR-36 runs over the list already fetched - PRD section 8 excludes server-side filtering,
-           so typing here never becomes a query. *@
+        @* FR-36, answered by the server over the whole roster - name, email, licence number and
+           vehicle - and written into the address as it is typed, replacing the history entry
+           rather than adding one per keystroke. *@
         <input id="drivers-search" type="search" class="form-control"
-               @bind="_search" @bind:event="oninput" />
+               @bind="_search" @bind:event="oninput" @bind:after="SearchChangedAsync" />
     </div>
 </div>
 
@@ -63,16 +64,44 @@
    rules off it, and the phone-layout suite reads it as the element the table has to be inside. *@
 <div class="dt-drivers dt-table-cards">
     <DtDataTable TItem="DriverSummary"
-                 Items="Visible"
-                 IsLoading="_loading"
+                 Page="Listed"
+                 OnPage="GoToPageAsync"
+                 OnPageSize="ResizeAsync"
+                 CountOne="@Localizer["DriversCountOne"]"
+                 CountMany="@Localizer["DriversCountMany"]"
+                 IsLoading="Loading"
                  EmptyText="@Localizer["DriversEmpty"]">
         <HeaderTemplate>
-            <th scope="col">@Localizer["FirstName"]</th>
-            <th scope="col">@Localizer["LastName"]</th>
-            <th scope="col">@Localizer["Email"]</th>
-            <th scope="col">@Localizer["LicenseNumber"]</th>
-            <th scope="col">@Localizer["Vehicle"]</th>
-            <th scope="col">@Localizer["Rating"]</th>
+            <th scope="col" aria-sort="@SortState(DriverSort.FirstName)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(DriverSort.FirstName)">
+                    @Localizer["FirstName"]<Icon Name="@SortGlyph(DriverSort.FirstName)" />
+                </button>
+            </th>
+            <th scope="col" aria-sort="@SortState(DriverSort.LastName)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(DriverSort.LastName)">
+                    @Localizer["LastName"]<Icon Name="@SortGlyph(DriverSort.LastName)" />
+                </button>
+            </th>
+            <th scope="col" aria-sort="@SortState(DriverSort.Email)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(DriverSort.Email)">
+                    @Localizer["Email"]<Icon Name="@SortGlyph(DriverSort.Email)" />
+                </button>
+            </th>
+            <th scope="col" aria-sort="@SortState(DriverSort.LicenseNumber)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(DriverSort.LicenseNumber)">
+                    @Localizer["LicenseNumber"]<Icon Name="@SortGlyph(DriverSort.LicenseNumber)" />
+                </button>
+            </th>
+            <th scope="col" aria-sort="@SortState(DriverSort.Vehicle)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(DriverSort.Vehicle)">
+                    @Localizer["Vehicle"]<Icon Name="@SortGlyph(DriverSort.Vehicle)" />
+                </button>
+            </th>
+            <th scope="col" aria-sort="@SortState(DriverSort.Rating)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(DriverSort.Rating)">
+                    @Localizer["Rating"]<Icon Name="@SortGlyph(DriverSort.Rating)" />
+                </button>
+            </th>
             @* The actions column keeps its name for a screen reader and drops it on screen, as the
                two delivery screens' does: the buttons under it say what they do, and a column named
                above them competes with them for the same width. *@
@@ -262,7 +291,6 @@
         ? "FirstName,LastName,Email,Password,LicenseNumber"
         : "FirstName,LastName,LicenseNumber";
 
-    private IReadOnlyList<DriverSummary> _drivers = [];
     private IReadOnlyList<VehicleChoice> _vehicleChoices = [];
     private IReadOnlyList<ScreenFailure> _failures = [];
     /// <summary>
@@ -296,7 +324,6 @@
     private DtDialog? _formDialog;
     private DtConfirmDialog? _deleteDialog;
     private string _search = string.Empty;
-    private bool _loading = true;
 
     /// <summary>
     /// True while a save is in flight, which is what disables the submit button for as long as it
@@ -304,10 +331,6 @@
     /// driver account from the same form.
     /// </summary>
     private bool _saving;
-
-    /// <summary>FR-36, over the list already fetched: name, email, licence number and vehicle.</summary>
-    private IReadOnlyCollection<DriverSummary> Visible =>
-        [.. _drivers.Where(driver => Matches(driver, _search))];
 
     /// <summary>The row's edit action, bound as a delegate so no lambda has to live in markup.</summary>
     private Func<Task> EditHandler(DriverSummary driver) => () => OpenEditAsync(driver);
@@ -327,39 +350,59 @@
                 "The circuit has no authenticated caller: the session cookie is gone.");
         }
 
-        await LoadAsync();
+        _vehicleChoices = ChoicesFor(await Fleet.ListUnassignedAsync(CircuitToken), driver: null);
+
+        await base.OnInitializedAsync();
     }
+
+    /// <inheritdoc />
+    protected override DriverSort DefaultSort => DriverSort.LastName;
+
+    /// <inheritdoc />
+    protected override IReadOnlyCollection<DriverSort> Sortable { get; } =
+    [
+        DriverSort.FirstName,
+        DriverSort.LastName,
+        DriverSort.Email,
+        DriverSort.LicenseNumber,
+        DriverSort.Vehicle,
+        DriverSort.Rating,
+    ];
+
+    /// <inheritdoc />
+    protected override ListDriversQuery Compose(int offset, int limit, DriverSort sort, bool descending) =>
+        new(offset, limit, sort.ToString(), descending, TableQuery.Text(SearchParameter));
+
+    /// <inheritdoc />
+    protected override (int Offset, int Limit, DriverSort Sort, bool Descending) Paging(ListDriversQuery view) =>
+        (view.Offset, view.Limit, ListSort.Parse<DriverSort>(view.Sort) ?? DefaultSort, view.Descending);
+
+    /// <inheritdoc />
+    protected override ListDriversQuery Repaged(
+        ListDriversQuery view,
+        int offset,
+        int limit,
+        DriverSort sort,
+        bool descending) =>
+        view with { Offset = offset, Limit = limit, Sort = sort.ToString(), Descending = descending };
+
+    /// <inheritdoc />
+    protected override void AddFilters(ListDriversQuery view, IDictionary<string, object?> address) =>
+        address[TableQuery.SearchName] = view.Search;
+
+    /// <inheritdoc />
+    protected override void Adopt(ListDriversQuery view) => _search = view.Search ?? string.Empty;
+
+    /// <inheritdoc />
+    protected override async Task<Paged<DriverSummary>?> FetchAsync(ListDriversQuery view) =>
+        await Roster.ListAsync(view, CircuitToken);
 
     /// <summary>
-    /// FR-36's whole implementation: whether a driver matches what a dispatcher typed, across
-    /// name, email, licence number and vehicle.
+    /// FR-36's search box changed: page one of what it now matches, replacing the history entry. The
+    /// match itself - name, email, licence number and vehicle - is the server's, over every driver.
     /// </summary>
-    /// <remarks>
-    /// Internal and static so it can be tested directly. The search is the one thing on this
-    /// screen a render test cannot reach - static rendering dispatches no events - so
-    /// narrowing the comparison or dropping a field from the disjunction would break FR-36
-    /// with every markup assertion still passing.
-    /// </remarks>
-    /// <param name="driver">The row being considered.</param>
-    /// <param name="search">What the dispatcher typed. Blank keeps everything.</param>
-    internal static bool Matches(DriverSummary driver, string? search)
-    {
-        ArgumentNullException.ThrowIfNull(driver);
-
-        if (string.IsNullOrWhiteSpace(search))
-        {
-            return true;
-        }
-
-        var needle = search.Trim();
-
-        return Contains(driver.FirstName, needle)
-            || Contains(driver.LastName, needle)
-            || Contains(driver.Email, needle)
-            || Contains(driver.LicenseNumber, needle)
-            || Contains(driver.VehicleModel, needle)
-            || Contains(driver.VehicleLicensePlate, needle);
-    }
+    private Task SearchChangedAsync() =>
+        MoveAsync(FirstPage(View) with { Search = TableQuery.Text(_search) }, replace: true);
 
     /// <summary>
     /// The vehicles the assignment control offers: every vehicle nobody holds, plus the one
@@ -396,30 +439,6 @@
         }
 
         return choices;
-    }
-
-    // Culture-aware and case-insensitive: the roster is Ukrainian, and a dispatcher typing a name
-    // in lower case is searching for the same person.
-    private static bool Contains(string? haystack, string needle) =>
-        haystack is not null
-        && haystack.Contains(needle, StringComparison.CurrentCultureIgnoreCase);
-
-    /// <summary>The roster and the assignment choices: what the screen shows when it opens.</summary>
-    private async Task LoadAsync()
-    {
-        _loading = true;
-
-        try
-        {
-            _drivers = await Roster.ListAsync(CircuitToken);
-            _vehicleChoices = ChoicesFor(
-                await Fleet.ListUnassignedAsync(CircuitToken),
-                driver: null);
-        }
-        finally
-        {
-            _loading = false;
-        }
     }
 
     /// <summary>

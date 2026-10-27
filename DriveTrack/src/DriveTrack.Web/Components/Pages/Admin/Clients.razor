@@ -3,7 +3,7 @@
 @inject IClientAdministrationService Roster
 @inject ICurrentUser Caller
 @inject IStringLocalizer<UiText> Localizer
-@inherits CircuitScopedComponent
+@inherits PagedScreen<ListClientsQuery, ClientAccount, ClientSort>
 
 @* FR-46 / FR-47 / FR-48: the client roster, and the two operations an administrator performs on it.
 
@@ -45,12 +45,34 @@
    The wrapper's own name stays beside it. `Clients.razor.css` hangs this screen's per-cell label
    rules off it, and the phone-layout suite reads it as the element the table has to be inside. *@
 <div class="dt-clients dt-table-cards">
-    <DtDataTable TItem="ClientAccount" Items="_clients" IsLoading="_isLoading">
+    <DtDataTable TItem="ClientAccount"
+                 Page="Listed"
+                 OnPage="GoToPageAsync"
+                 OnPageSize="ResizeAsync"
+                 CountOne="@Localizer["ClientsCountOne"]"
+                 CountMany="@Localizer["ClientsCountMany"]"
+                 IsLoading="Loading">
         <HeaderTemplate>
-            <th scope="col">@Localizer["FirstName"]</th>
-            <th scope="col">@Localizer["LastName"]</th>
-            <th scope="col">@Localizer["Email"]</th>
-            <th scope="col">@Localizer["PhoneNumber"]</th>
+            <th scope="col" aria-sort="@SortState(ClientSort.FirstName)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(ClientSort.FirstName)">
+                    @Localizer["FirstName"]<Icon Name="@SortGlyph(ClientSort.FirstName)" />
+                </button>
+            </th>
+            <th scope="col" aria-sort="@SortState(ClientSort.LastName)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(ClientSort.LastName)">
+                    @Localizer["LastName"]<Icon Name="@SortGlyph(ClientSort.LastName)" />
+                </button>
+            </th>
+            <th scope="col" aria-sort="@SortState(ClientSort.Email)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(ClientSort.Email)">
+                    @Localizer["Email"]<Icon Name="@SortGlyph(ClientSort.Email)" />
+                </button>
+            </th>
+            <th scope="col" aria-sort="@SortState(ClientSort.PhoneNumber)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(ClientSort.PhoneNumber)">
+                    @Localizer["PhoneNumber"]<Icon Name="@SortGlyph(ClientSort.PhoneNumber)" />
+                </button>
+            </th>
             @* The actions column keeps its name for a screen reader and drops it on screen, as
                every other table in the product does: the buttons under it say what they do, and a
                column named above them competes with them for the same width. *@
@@ -199,10 +221,8 @@
     private DtDialog? _editDialog;
     private DtConfirmDialog? _deleteDialog;
 
-    private IReadOnlyList<ClientAccount>? _clients;
     private ClientAccount? _selected;
     private IReadOnlyList<ScreenFailure> _failures = [];
-    private bool _isLoading = true;
     private bool _isAdmin;
 
     /// <summary>
@@ -228,28 +248,44 @@
         // caller, so asking outside that branch would take the screen down instead of refusing it.
         _isAdmin = Caller.Role == UserRole.Admin;
 
-        await ReloadAsync();
+        await base.OnInitializedAsync();
     }
 
-    private async Task ReloadAsync()
-    {
-        _isLoading = true;
+    /// <inheritdoc />
+    protected override ClientSort DefaultSort => ClientSort.LastName;
 
-        // Rendered before the await, or the flag is set and cleared inside one synchronous stretch
-        // and DtDataTable's loading row never reaches the browser on a post-write refetch.
-        StateHasChanged();
+    /// <inheritdoc />
+    protected override IReadOnlyCollection<ClientSort> Sortable { get; } =
+    [
+        ClientSort.FirstName,
+        ClientSort.LastName,
+        ClientSort.Email,
+        ClientSort.PhoneNumber,
+    ];
 
-        try
-        {
-            _clients = await Roster.ListAsync(CircuitToken);
-        }
-        finally
-        {
-            // In a finally so a refused or failed read leaves the table in its empty state rather
-            // than spinning forever, which reads to a user as a hung screen.
-            _isLoading = false;
-        }
-    }
+    /// <inheritdoc />
+    protected override ListClientsQuery Compose(int offset, int limit, ClientSort sort, bool descending) =>
+        new(offset, limit, sort.ToString(), descending);
+
+    /// <inheritdoc />
+    protected override (int Offset, int Limit, ClientSort Sort, bool Descending) Paging(ListClientsQuery view) =>
+        (view.Offset, view.Limit, ListSort.Parse<ClientSort>(view.Sort) ?? DefaultSort, view.Descending);
+
+    /// <inheritdoc />
+    protected override ListClientsQuery Repaged(
+        ListClientsQuery view,
+        int offset,
+        int limit,
+        ClientSort sort,
+        bool descending) =>
+        view with { Offset = offset, Limit = limit, Sort = sort.ToString(), Descending = descending };
+
+    /// <inheritdoc />
+    protected override async Task<Paged<ClientAccount>?> FetchAsync(ListClientsQuery view) =>
+        await Roster.ListAsync(view, CircuitToken);
+
+    /// <summary>Reads the page on screen again after a write.</summary>
+    private Task ReloadAsync() => LoadAsync();
 
     private Func<Task> Edit(ClientAccount client) => () => ShowEditAsync(client);
 

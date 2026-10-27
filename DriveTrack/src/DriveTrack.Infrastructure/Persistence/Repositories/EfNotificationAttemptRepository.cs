@@ -1,4 +1,6 @@
 using DriveTrack.Application.Abstractions;
+using DriveTrack.Application.Common;
+using DriveTrack.Application.Notifications;
 using DriveTrack.Domain.Deliveries;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,23 +14,42 @@ internal sealed class EfNotificationAttemptRepository(AppDbContext context) : IN
         context.NotificationAttempts.FirstOrDefaultAsync(attempt => attempt.Id == id, cancellationToken);
 
     /// <inheritdoc />
-    public async Task<IReadOnlyList<NotificationAttempt>> ListAsync(
-        int offset,
-        int limit,
-        CancellationToken cancellationToken) =>
-        // Newest first, and the id breaks the tie: two attempts written by one commit share an
-        // instant to the microsecond, and without the tie-break the screen would reorder them
-        // between reads for no reason an administrator could name.
-        //
+    public Task<Paged<NotificationAttempt>> ListAsync(
+        ListNotificationAttemptsQuery query,
+        NotificationSort? sort,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+
+        var descending = query.Descending;
+
         // AD-3: ordered before OFFSET and LIMIT, because an unordered OFFSET is a page that can
-        // repeat and skip rows between requests.
-        await context.NotificationAttempts
-            .AsNoTracking()
-            .OrderByDescending(attempt => attempt.AttemptedAt)
-            .ThenByDescending(attempt => attempt.Id)
-            .Skip(offset)
-            .Take(limit)
-            .ToListAsync(cancellationToken);
+        // repeat and skip rows between requests - and every order ends on the id, because two
+        // attempts written by one commit share an instant to the microsecond.
+        //
+        // With no column named the log reads newest first; the direction flag turns that round.
+        return context.NotificationAttempts.AsNoTracking().ToPageAsync(
+            rows => sort switch
+            {
+                NotificationSort.Delivery => rows.SortBy(attempt => attempt.DeliveryId, descending)
+                    .ThenSortBy(attempt => attempt.Id, descending),
+                NotificationSort.Kind => rows
+                    .SortBy(ListQueries.Rank<NotificationAttempt, NotificationKind>(attempt => attempt.Kind), descending)
+                    .ThenSortBy(attempt => attempt.Id, descending),
+                NotificationSort.Recipient => rows.SortBy(attempt => attempt.Recipient, descending)
+                    .ThenSortBy(attempt => attempt.Id, descending),
+                NotificationSort.Outcome => rows
+                    .SortBy(ListQueries.Rank<NotificationAttempt, NotificationOutcome>(attempt => attempt.Outcome), descending)
+                    .ThenSortBy(attempt => attempt.Id, descending),
+                NotificationSort.AttemptedAt => rows.SortBy(attempt => attempt.AttemptedAt, descending)
+                    .ThenSortBy(attempt => attempt.Id, descending),
+                _ => rows.SortBy(attempt => attempt.AttemptedAt, !descending)
+                    .ThenSortBy(attempt => attempt.Id, !descending),
+            },
+            query.Offset,
+            query.Limit,
+            cancellationToken);
+    }
 
     /// <inheritdoc />
     public void Add(NotificationAttempt attempt) => context.NotificationAttempts.Add(attempt);

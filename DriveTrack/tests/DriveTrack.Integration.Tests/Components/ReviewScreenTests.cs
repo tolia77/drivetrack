@@ -381,6 +381,22 @@ public class ReviewScreenTests
     }
 
     [Fact]
+    public async Task The_picker_reads_every_review_and_every_delivery_rather_than_a_page_of_either()
+    {
+        // The table's page holds only the first review, so the review of delivery 8 is not on it;
+        // and a paged delivery read would answer nothing at all. The picker still leaves 8 out and
+        // still offers 9, because both of its reads are the unpaged ones.
+        var html = await RenderAsync(
+            UserRole.Client,
+            reviews: new StubReviews(paged: [Mine[0]]),
+            pagedDeliveries: []);
+
+        Assert.Equal(
+            [ReviewableDeliveryId.ToString(System.Globalization.CultureInfo.InvariantCulture)],
+            OptionValues(html, "review-delivery"));
+    }
+
+    [Fact]
     public async Task A_client_with_nothing_left_to_review_is_told_so_instead_of_being_offered_the_action()
     {
         // The action's form opens on the picker above. With nothing in it the form posts no
@@ -636,14 +652,17 @@ public class ReviewScreenTests
 
     private static Task<string> RenderAsync(
         UserRole role,
-        IReadOnlyList<AssignedDeliverySummary>? deliveries = null) =>
+        IReadOnlyList<AssignedDeliverySummary>? deliveries = null,
+        StubReviews? reviews = null,
+        IReadOnlyList<AssignedDeliverySummary>? pagedDeliveries = null) =>
         ComponentRenderer.RenderAsync<ReviewsScreen>(
             parameters: null,
             configureServices: services =>
             {
                 services.AddSingleton<ICurrentUser>(new StubCaller(role));
-                services.AddSingleton<IReviewService>(new StubReviews());
-                services.AddSingleton<IDeliveryService>(new StubDeliveries(deliveries ?? Own));
+                services.AddSingleton<IReviewService>(reviews ?? new StubReviews());
+                services.AddSingleton<IDeliveryService>(
+                    new StubDeliveries(deliveries ?? Own, pagedDeliveries));
             });
 
     /// <summary>One of the caller's own deliveries, in a chosen state.</summary>
@@ -735,16 +754,23 @@ public class ReviewScreenTests
     /// reaches one, so a screen that called it during rendering would fail loudly rather than pass
     /// quietly.
     /// </summary>
-    private sealed class StubReviews : IReviewService
+    /// <param name="paged">
+    /// What the paged author list answers, when it is not every review - a page that does not hold
+    /// the review the picker has to know about.
+    /// </param>
+    private sealed class StubReviews(IReadOnlyList<AuthoredReviewSummary>? paged = null) : IReviewService
     {
-        public Task<IReadOnlyList<ReviewSummary>> ListAsync(
+        public Task<Paged<ReviewSummary>> ListAsync(
             ListReviewsQuery query,
             CancellationToken cancellationToken) =>
-            Task.FromResult<IReadOnlyList<ReviewSummary>>(All);
+            Task.FromResult(TestPage.Of<ReviewSummary>(All, query.Offset, query.Limit));
 
-        public Task<IReadOnlyList<AuthoredReviewSummary>> ListMineAsync(
+        public Task<Paged<AuthoredReviewSummary>> ListMineAsync(
             ListReviewsQuery query,
             CancellationToken cancellationToken) =>
+            Task.FromResult(TestPage.Of(paged ?? Mine, query.Offset, query.Limit));
+
+        public Task<IReadOnlyList<AuthoredReviewSummary>> ListAllMineAsync(CancellationToken cancellationToken) =>
             Task.FromResult<IReadOnlyList<AuthoredReviewSummary>>(Mine);
 
         public Task<AuthoredReviewSummary> CreateAsync(
@@ -771,15 +797,22 @@ public class ReviewScreenTests
     /// The caller's own deliveries, which is the only thing this screen asks the delivery
     /// capability for — the picker in the write dialog.
     /// </summary>
-    private sealed class StubDeliveries(IReadOnlyList<AssignedDeliverySummary> deliveries)
+    /// <param name="deliveries">Every one of the caller's deliveries: the unpaged answer.</param>
+    /// <param name="paged">What a paged read answers, when it is not every delivery.</param>
+    private sealed class StubDeliveries(
+        IReadOnlyList<AssignedDeliverySummary> deliveries,
+        IReadOnlyList<AssignedDeliverySummary>? paged = null)
         : IDeliveryService
     {
-        public Task<IReadOnlyList<AssignedDeliverySummary>> ListMineAsync(
+        public Task<Paged<AssignedDeliverySummary>> ListMineAsync(
             ListDeliveriesQuery query,
             CancellationToken cancellationToken) =>
+            Task.FromResult(TestPage.Of(paged ?? deliveries, query.Offset, query.Limit));
+
+        public Task<IReadOnlyList<AssignedDeliverySummary>> ListAllMineAsync(CancellationToken cancellationToken) =>
             Task.FromResult(deliveries);
 
-        public Task<IReadOnlyList<DeliverySummary>> ListAsync(
+        public Task<Paged<DeliverySummary>> ListAsync(
             ListDeliveriesQuery query,
             CancellationToken cancellationToken) =>
             throw new NotSupportedException("The reviews screen never reads the dispatch board.");

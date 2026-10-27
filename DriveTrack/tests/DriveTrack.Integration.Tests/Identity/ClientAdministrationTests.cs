@@ -40,7 +40,7 @@ public class ClientAdministrationTests(PostgresFixture postgres)
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var rows = (await AdministrationApi.ReadAsync(response, cancellationToken)).GetProperty("data");
+        var rows = (await AdministrationApi.ReadAsync(response, cancellationToken)).GetProperty("data").GetProperty("items");
 
         var one = Row(rows, first.UserId);
         var two = Row(rows, second.UserId);
@@ -78,7 +78,7 @@ public class ClientAdministrationTests(PostgresFixture postgres)
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var rows = (await AdministrationApi.ReadAsync(response, cancellationToken)).GetProperty("data");
+        var rows = (await AdministrationApi.ReadAsync(response, cancellationToken)).GetProperty("data").GetProperty("items");
 
         Assert.Equal(subject.Email, Row(rows, subject.UserId).GetProperty("email").GetString());
 
@@ -120,6 +120,7 @@ public class ClientAdministrationTests(PostgresFixture postgres)
 
         var ids = (await AdministrationApi.ReadAsync(response, cancellationToken))
             .GetProperty("data")
+            .GetProperty("items")
             .EnumerateArray()
             .Select(row => row.GetProperty("userId").GetInt32())
             .ToArray();

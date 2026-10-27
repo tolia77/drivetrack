@@ -1,3 +1,4 @@
+using DriveTrack.Application.Common;
 using DriveTrack.Application.Reviews;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -34,16 +35,24 @@ public sealed class ReviewsController(IReviewService reviews) : ControllerBase
 {
     /// <summary>One page of every review, with both parties named (FR-64). Defaults to the first hundred.</summary>
     /// <remarks>
-    /// The two parameters are nullable so an omitted one takes the default here rather than binding
-    /// to zero — a limit of zero is a refusal, and "I did not say" must not mean "give me nothing".
+    /// The paging parameters are nullable so an omitted one takes the default here rather than
+    /// binding to zero — a limit of zero is a refusal, and "I did not say" must not mean "give me
+    /// nothing". <c>sort</c> is a column name and is refused with <c>COMMON_SORT_INVALID</c> when the
+    /// list has no such column; <c>desc=true</c> reverses it.
     /// </remarks>
     [HttpGet]
-    public Task<IReadOnlyList<ReviewSummary>> ListAsync(
+    public Task<Paged<ReviewSummary>> ListAsync(
         [FromQuery] int? offset,
         [FromQuery] int? limit,
+        [FromQuery] string? sort,
+        [FromQuery] bool? desc,
         CancellationToken cancellationToken) =>
         reviews.ListAsync(
-            new ListReviewsQuery(offset ?? 0, limit ?? ListReviewsQueryValidator.MaximumLimit),
+            new ListReviewsQuery(
+                offset ?? 0,
+                limit ?? ListReviewsQueryValidator.MaximumLimit,
+                sort,
+                desc ?? false),
             cancellationToken);
 
     /// <summary>
@@ -51,12 +60,18 @@ public sealed class ReviewsController(IReviewService reviews) : ControllerBase
     /// because the type it is built from has no field for one.
     /// </summary>
     [HttpGet("mine")]
-    public Task<IReadOnlyList<AuthoredReviewSummary>> ListMineAsync(
+    public Task<Paged<AuthoredReviewSummary>> ListMineAsync(
         [FromQuery] int? offset,
         [FromQuery] int? limit,
+        [FromQuery] string? sort,
+        [FromQuery] bool? desc,
         CancellationToken cancellationToken) =>
         reviews.ListMineAsync(
-            new ListReviewsQuery(offset ?? 0, limit ?? ListReviewsQueryValidator.MaximumLimit),
+            new ListReviewsQuery(
+                offset ?? 0,
+                limit ?? ListReviewsQueryValidator.MaximumLimit,
+                sort,
+                desc ?? false),
             cancellationToken);
 
     /// <summary>Writes a review of one of the caller's own finished deliveries (FR-62, FR-67).</summary>

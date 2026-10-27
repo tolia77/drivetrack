@@ -1,6 +1,7 @@
 using System.Globalization;
 using DriveTrack.Application.Abstractions;
 using DriveTrack.Application.Common;
+using DriveTrack.Application.Users;
 using DriveTrack.Domain.Identity;
 using DriveTrack.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
@@ -241,6 +242,55 @@ internal sealed class EfUserAccountRepository(AppDbContext context, ScopedIdenti
         }
 
         return accounts;
+    }
+
+    /// <inheritdoc />
+    public async Task<Paged<UserAccount>> ListDispatchersAsync(
+        ListDispatchersQuery query,
+        DispatcherSort? sort,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+
+        var roleName = nameof(UserRole.Dispatcher);
+
+        // Joined through the role rows, as ListByRoleAsync is, so the page and its total are both
+        // answers about the join rather than about users filtered in memory.
+        var users =
+            from user in context.Users.AsNoTracking()
+            join userRole in context.UserRoles on user.Id equals userRole.UserId
+            join declared in context.Roles on userRole.RoleId equals declared.Id
+            where declared.Name == roleName
+            select user;
+
+        var descending = query.Descending;
+
+        var page = await users.ToPageAsync(
+            rows => sort switch
+            {
+                DispatcherSort.FirstName => rows.SortBy(user => user.FirstName, descending)
+                    .ThenSortBy(user => user.Id, descending),
+                DispatcherSort.Email => rows.SortBy(user => user.Email, descending)
+                    .ThenSortBy(user => user.Id, descending),
+                _ => rows.SortBy(user => user.LastName, descending)
+                    .ThenSortBy(user => user.FirstName, descending)
+                    .ThenSortBy(user => user.Id, descending),
+            },
+            query.Offset,
+            query.Limit,
+            cancellationToken);
+
+        // Mapped here rather than through MapAsync: the role is the WHERE clause's own answer and a
+        // dispatcher has no subtype row (DR-3), so a per-row role read would only ask the database
+        // to confirm what this query already established.
+        return page.Map(user => new UserAccount(
+            new UserId(user.Id),
+            user.FirstName,
+            user.LastName,
+            user.Email!,
+            UserRole.Dispatcher,
+            DriverId: null,
+            ClientId: null));
     }
 
     /// <inheritdoc />

@@ -628,10 +628,10 @@ public class DeliverySideEffectTests(PostgresFixture postgres)
         // The screen's own page, asked for the way the screen asks for it: the read is bounded
         // (NFR-27), and a helper that could not say so would be reading a method the product does
         // not have.
-        return await unitOfWork.NotificationAttempts.ListAsync(
-            0,
-            ListNotificationAttemptsQueryValidator.MaximumLimit,
-            cancellationToken);
+        return (await unitOfWork.NotificationAttempts.ListAsync(
+            new ListNotificationAttemptsQuery(0, ListNotificationAttemptsQueryValidator.MaximumLimit),
+            sort: null,
+            cancellationToken)).Items;
     }
 
     /// <summary>One delivery, as dispatch reads it.</summary>

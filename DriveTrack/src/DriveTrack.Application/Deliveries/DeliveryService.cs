@@ -47,7 +47,7 @@ public sealed class DeliveryService(
     IValidator<SearchPlacesQuery> searchValidator) : IDeliveryService
 {
     /// <inheritdoc />
-    public async Task<IReadOnlyList<DeliverySummary>> ListAsync(
+    public async Task<Paged<DeliverySummary>> ListAsync(
         ListDeliveriesQuery query,
         CancellationToken cancellationToken)
     {
@@ -67,21 +67,20 @@ public sealed class DeliveryService(
 
         await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
 
-        var deliveries = await unitOfWork.Deliveries.ListAsync(
-            scope,
-            query.Offset,
-            query.Limit,
-            cancellationToken);
-
-        var parties = await PartiesAsync(unitOfWork, deliveries, cancellationToken);
+        // One read for the page, its total and both parties' names: the name filters and sorts are
+        // about the names, so they cannot be resolved afterwards from a roster.
+        var page = await unitOfWork.Deliveries.ListAsync(scope, Criteria(query), cancellationToken);
 
         // Nothing was written, so the scope is disposed without a commit and the empty transaction
         // rolls back. That is the ordinary read path, not an omission.
-        return [.. deliveries.Select(delivery => Summary(delivery, parties))];
+        return page.Map(row => Summary(
+            row.Delivery,
+            Party(row.Delivery.DriverId?.Value, row.DriverName),
+            Party(row.Delivery.ClientId?.Value, row.ClientName)));
     }
 
     /// <inheritdoc />
-    public async Task<IReadOnlyList<AssignedDeliverySummary>> ListMineAsync(
+    public async Task<Paged<AssignedDeliverySummary>> ListMineAsync(
         ListDeliveriesQuery query,
         CancellationToken cancellationToken)
     {
@@ -95,16 +94,41 @@ public sealed class DeliveryService(
 
         await ValidatorExtensions.ValidateAndThrowAsync(listValidator, query, cancellationToken);
 
+        // AD-17: this list carries no counterparty identity, and ordering a caller's rows by the
+        // other party's name is a way of reading it. The two name sorts are refused as columns this
+        // list does not have, and the two name filters are dropped for the same reason.
+        if (ListSort.Parse<DeliverySort>(query.Sort) is DeliverySort.Driver or DeliverySort.Client)
+        {
+            throw new Common.ValidationException(
+                ErrorCode.COMMON_VALIDATION_FAILED,
+                "The own-deliveries list cannot be sorted by a counterparty's name.",
+                [new FieldError(nameof(ListDeliveriesQuery.Sort), nameof(ErrorCode.COMMON_SORT_INVALID))]);
+        }
+
         await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
 
-        var deliveries = await unitOfWork.Deliveries.ListAsync(
+        var page = await unitOfWork.Deliveries.ListAsync(
             scope,
-            query.Offset,
-            query.Limit,
+            Criteria(query with { Driver = null, Client = null }),
             cancellationToken);
 
         // No party lookup at all, and nothing to strip: the type has no field a counterparty's
         // name could be written into (AD-17).
+        return page.Map(row => Assigned(row.Delivery));
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<AssignedDeliverySummary>> ListAllMineAsync(
+        CancellationToken cancellationToken)
+    {
+        // The same door as ListMineAsync, unpaged: the scope is the guard's answer and reaches the
+        // WHERE clause, so this is every row the caller may see and nothing else.
+        var scope = accessGuard.RequireScope();
+
+        await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
+
+        var deliveries = await unitOfWork.Deliveries.ListVisibleAsync(scope, cancellationToken);
+
         return [.. deliveries.Select(Assigned)];
     }
 
@@ -625,6 +649,72 @@ public sealed class DeliveryService(
     }
 
     /// <summary>
+    /// A list query as the repository receives it: the sort parsed, the two creation days turned
+    /// into the instants that bound them, and the overdue switch turned into the instant it is
+    /// judged at.
+    /// <para>
+    /// The days are the reader's local days, in <see cref="TimeProvider.LocalTimeZone"/> - the same
+    /// zone every screen renders a creation instant in (AD-13) - so a delivery opened at 23:30 on the
+    /// last day of the range is inside it, and one opened at 00:10 the next morning is not. The upper
+    /// bound is exclusive: midnight at the start of the day after.
+    /// </para>
+    /// </summary>
+    private DeliveryListCriteria Criteria(ListDeliveriesQuery query) =>
+        new(
+            query.Offset,
+            query.Limit,
+            ListSort.Parse<DeliverySort>(query.Sort),
+            query.Descending,
+            Blank(query.Driver),
+            Blank(query.Client),
+            Blank(query.Pickup),
+            Blank(query.Dropoff),
+            Blank(query.PackageDetails),
+            Blank(query.DeliveryNotes),
+            query.Status,
+            query.CreatedFrom is { } from ? StartOfLocalDay(from) : null,
+
+            // The last day there is has no day after it, and its end bounds nothing.
+            query.CreatedTo is { } to && to != DateOnly.MaxValue ? StartOfLocalDay(to.AddDays(1)) : null,
+            query.OverdueOnly ? timeProvider.GetUtcNow() : null);
+
+    /// <summary>
+    /// The instant a local day starts, at offset zero - or null when that instant is outside the
+    /// range a <see cref="DateTimeOffset"/> can hold, which only the first and last days of the
+    /// calendar reach. A bound past the end of time bounds nothing, so it is read as no bound
+    /// rather than thrown as a 500 at a caller who typed 0001-01-01.
+    /// </summary>
+    private DateTimeOffset? StartOfLocalDay(DateOnly day)
+    {
+        var zone = timeProvider.LocalTimeZone;
+        var midnight = day.ToDateTime(TimeOnly.MinValue, DateTimeKind.Unspecified);
+
+        // A zone that springs forward at midnight has no 00:00 on that day; the day then starts at
+        // the first instant it does have.
+        while (zone.IsInvalidTime(midnight))
+        {
+            midnight = midnight.AddMinutes(15);
+        }
+
+        var offset = zone.GetUtcOffset(midnight);
+        var utcTicks = midnight.Ticks - offset.Ticks;
+
+        if (utcTicks < DateTimeOffset.MinValue.UtcTicks || utcTicks > DateTimeOffset.MaxValue.UtcTicks)
+        {
+            return null;
+        }
+
+        return new DateTimeOffset(midnight, offset).ToUniversalTime();
+    }
+
+    /// <summary>
+    /// A party as a list row names it, or null when the delivery has none. A missing name is an
+    /// empty one rather than a null party, for the reason <c>DeliveryParties.Driver</c> gives.
+    /// </summary>
+    private static DeliveryParty? Party(int? id, string? name) =>
+        id is { } value ? new DeliveryParty(value, name ?? string.Empty) : null;
+
+    /// <summary>
     /// The acting user's display name for the snapshot AD-20 asks for.
     /// <para>
     /// Read from the account because <see cref="ICurrentUser"/> carries identities and a role and
@@ -777,10 +867,13 @@ public sealed class DeliveryService(
         new(new MapLocation(location.Latitude, location.Longitude), location.Address);
 
     private DeliverySummary Summary(Delivery delivery, DeliveryParties parties) =>
+        Summary(delivery, parties.Driver(delivery.DriverId), parties.Client(delivery.ClientId));
+
+    private DeliverySummary Summary(Delivery delivery, DeliveryParty? driver, DeliveryParty? client) =>
         new(
             delivery.Id,
-            parties.Driver(delivery.DriverId),
-            parties.Client(delivery.ClientId),
+            driver,
+            client,
             View(delivery.PickupLocation),
             View(delivery.DropoffLocation),
             delivery.PackageDetails,

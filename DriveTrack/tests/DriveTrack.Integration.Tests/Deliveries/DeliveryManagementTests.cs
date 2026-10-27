@@ -412,7 +412,7 @@ public class DeliveryManagementTests(PostgresFixture postgres)
         using var listed = await FleetApi.SendAsync(
             client, HttpMethod.Get, "/api/deliveries", dispatcher, body: null, cancellationToken);
 
-        var ids = (await FleetApi.DataAsync(listed, cancellationToken))
+        var ids = (await FleetApi.ItemsAsync(listed, cancellationToken))
             .EnumerateArray()
             .Select(row => row.GetProperty("id").GetInt32())
             .ToArray();

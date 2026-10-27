@@ -1,3 +1,5 @@
+using DriveTrack.Web.Components.Shared;
+using DriveTrack.Application.Common;
 using System.Net;
 using System.Text.RegularExpressions;
 using DriveTrack.Application.Authorization;
@@ -183,47 +185,28 @@ public class NotificationScreenTests
         }
     }
 
-    [Theory]
-    [InlineData(ListNotificationAttemptsQueryValidator.MaximumLimit, 1)]
-    [InlineData(ListNotificationAttemptsQueryValidator.MaximumLimit - 1, 0)]
-    public async Task A_full_page_says_there_may_be_more_and_a_short_one_does_not(
-        int rows,
-        int banners)
+    [Fact]
+    public async Task A_long_log_is_paged_and_the_pager_names_the_whole_of_it()
     {
-        // NFR-27 bounds the read, and this is the other half of bounding it: the log grows by a row
-        // per status change per delivery, so past a full page the older attempts are off the screen
-        // with nothing saying so. A full page is all this screen can know - the query answers no
-        // total (PRD section 8 excludes one) - so "there may be more" is the honest claim.
-        var html = await RenderAsync(Page(rows));
+        // NFR-27 bounds the read, and the pager is the other half of bounding it: the log grows by
+        // a row per status change per delivery, and the older attempts are pages away rather than
+        // off the screen with nothing saying so. The total is the server's, so "з 120" is a count
+        // of the whole log, not of the page.
+        var html = await RenderAsync(Page(120));
 
-        Assert.Equal(rows, SharedMarkup.Occurrences(html, "dt-table-row"));
+        Assert.Equal(TableQuery.DefaultPageSize, SharedMarkup.Occurrences(html, "dt-table-row"));
+        Assert.Contains("1–10 з 120 спроб надсилання", html, StringComparison.Ordinal);
 
-        // The note now belongs to the table rather than sitting above it: it is a fact about what
-        // is on screen, and a reader who has not looked at the rows yet has nothing to apply it to.
-        // `dt-table-note` is the shared table's own hook, so this reads the one element that can
-        // carry the claim rather than any warning-coloured box on the page.
-        Assert.Equal(banners, SharedMarkup.Occurrences(html, "dt-table-note"));
-
-        if (banners == 0)
-        {
-            return;
-        }
-
-        // NFR-14: the sentence is the catalogue's, not a key that resolved to its own name.
-        var text = SharedMarkup.TextOf(SharedMarkup.ElementWithClass(html, "p", "dt-table-note"));
-
-        Assert.True(SharedMarkup.IsUkrainian(text), $"The truncation banner reads '{text}'.");
-        Assert.False(SharedMarkup.HasLatinWord(text), $"The truncation banner reads '{text}'.");
+        // And the warning that used to stand in for a pager is gone.
+        Assert.Equal(0, SharedMarkup.Occurrences(html, "dt-table-note"));
     }
 
     [Fact]
-    public async Task The_screen_asks_for_the_first_page_at_the_validator_s_own_maximum()
+    public async Task The_screen_asks_for_the_first_page_newest_first()
     {
         // The page the screen asks for is not observable in its markup, so without this nothing
-        // holds it to the number the banner is compared against. A smaller limit would render fewer
-        // rows with IsTruncated still measuring against MaximumLimit - a screen silently hiding
-        // attempts while claiming there are no more - and a larger one would make the real
-        // validator refuse every administrator. Both leave every other test here green.
+        // holds it to the design: page one, ten rows, the newest attempt at the top. A larger limit
+        // than the validator's would make the real service refuse every administrator.
         var log = new StubLog(Attempts);
 
         await ComponentRenderer.RenderAsync<Web.Components.Pages.Admin.Notifications>(
@@ -237,7 +220,10 @@ public class NotificationScreenTests
         var asked = Assert.IsType<ListNotificationAttemptsQuery>(log.Asked);
 
         Assert.Equal(0, asked.Offset);
-        Assert.Equal(ListNotificationAttemptsQueryValidator.MaximumLimit, asked.Limit);
+        Assert.Equal(TableQuery.DefaultPageSize, asked.Limit);
+        Assert.True(asked.Limit <= ListNotificationAttemptsQueryValidator.MaximumLimit);
+        Assert.Equal(nameof(NotificationSort.AttemptedAt), asked.Sort);
+        Assert.True(asked.Descending);
     }
 
     [Fact]
@@ -390,13 +376,13 @@ public class NotificationScreenTests
         /// <summary>The page the screen asked for, or null until it has asked.</summary>
         public ListNotificationAttemptsQuery? Asked { get; private set; }
 
-        public Task<IReadOnlyList<NotificationAttemptSummary>> ListAsync(
+        public Task<Paged<NotificationAttemptSummary>> ListAsync(
             ListNotificationAttemptsQuery query,
             CancellationToken cancellationToken)
         {
             Asked = query;
 
-            return Task.FromResult(attempts);
+            return Task.FromResult(TestPage.Of(attempts, query.Offset, query.Limit));
         }
     }
 
@@ -406,9 +392,9 @@ public class NotificationScreenTests
     /// </summary>
     private sealed class NeverAnswers : INotificationLogService
     {
-        public Task<IReadOnlyList<NotificationAttemptSummary>> ListAsync(
+        public Task<Paged<NotificationAttemptSummary>> ListAsync(
             ListNotificationAttemptsQuery query,
             CancellationToken cancellationToken) =>
-            new TaskCompletionSource<IReadOnlyList<NotificationAttemptSummary>>().Task;
+            new TaskCompletionSource<Paged<NotificationAttemptSummary>>().Task;
     }
 }

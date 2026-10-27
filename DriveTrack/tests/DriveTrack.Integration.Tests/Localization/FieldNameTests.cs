@@ -88,7 +88,7 @@ public class FieldNameTests
     /// The field labels no form shows, so there is no wording for them to agree with. Paging
     /// bounds: a caller can be refused on one, and no screen offers a box for either.
     /// </summary>
-    private static readonly string[] NotShownOnAForm = ["Limit", "Offset"];
+    private static readonly string[] NotShownOnAForm = ["Limit", "Offset", "Sort"];
 
     [Fact]
     public void Every_field_a_validator_can_name_has_a_label()

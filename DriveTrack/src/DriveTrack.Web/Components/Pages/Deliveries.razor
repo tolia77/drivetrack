@@ -5,9 +5,9 @@
    boundary. It is a convenience, not the decision: IAccessGuard inside IDeliveryService settles
    whether this caller may run dispatch, and it runs whether or not this screen was ever rendered.
 
-   Sorting and filtering happen here, over the page already fetched. PRD section 8 excludes
-   server-side filtering, sorting and result counts, so a column heading never becomes a query and
-   no repository method gained a sort parameter.
+   Sorting and filtering happen on the server, over every delivery, a page at a time: a heading,
+   a filter or the pager changes the view, the view is written into the address - so a reload, Back
+   and a shared link all reproduce it - and the page that answers it is what the table draws.
 
    The @if blocks below are independent rather than if/else chains: an `else` at markup level reads
    to NFR-14's source scan as a rendered English word. *@
@@ -20,7 +20,7 @@
 @inject IClientAdministrationService ClientRoster
 @inject ICurrentUser Caller
 @inject IStringLocalizer<UiText> Localizer
-@inherits CircuitScopedComponent
+@inherits PagedScreen<ListDeliveriesQuery, DeliverySummary, DeliverySort>
 
 <PageTitle>@Localizer["DeliveriesTitle"]</PageTitle>
 
@@ -50,47 +50,54 @@
 
    A <form> rather than a <div>, so the group has a role and an accessible name: a screen reader
    announces the ten controls as the filters they are instead of as ten unrelated boxes between the
-   heading and the table. Nothing is posted - every box is two-way bound and the table re-renders as
-   it is typed in - so the default submission is prevented rather than handled. *@
+   heading and the table. Nothing is posted - every box is two-way bound and asks the server for page
+   one of what it now matches as it is typed in - so the default submission is prevented rather than
+   handled. *@
 <form class="dt-card dt-filters mb-4" aria-label="@Localizer["Filters"]"
       @onsubmit="KeepFilters" @onsubmit:preventDefault>
     <div class="dt-filters-grid">
         <div>
             <label class="form-label" for="delivery-filter-driver">@Localizer["Driver"]</label>
             <input id="delivery-filter-driver" type="search" class="form-control"
-                   @bind="_filter.Driver" @bind:event="oninput" />
+                   @bind="_filter.Driver" @bind:event="oninput"
+                   @bind:after="FilterTypedAsync" />
         </div>
         <div>
             <label class="form-label" for="delivery-filter-client">@Localizer["Client"]</label>
             <input id="delivery-filter-client" type="search" class="form-control"
-                   @bind="_filter.Client" @bind:event="oninput" />
+                   @bind="_filter.Client" @bind:event="oninput"
+                   @bind:after="FilterTypedAsync" />
         </div>
         <div>
             <label class="form-label" for="delivery-filter-pickup">@Localizer["Pickup"]</label>
             <input id="delivery-filter-pickup" type="search" class="form-control"
-                   @bind="_filter.Pickup" @bind:event="oninput" />
+                   @bind="_filter.Pickup" @bind:event="oninput"
+                   @bind:after="FilterTypedAsync" />
         </div>
         <div>
             <label class="form-label" for="delivery-filter-dropoff">@Localizer["Dropoff"]</label>
             <input id="delivery-filter-dropoff" type="search" class="form-control"
-                   @bind="_filter.Dropoff" @bind:event="oninput" />
+                   @bind="_filter.Dropoff" @bind:event="oninput"
+                   @bind:after="FilterTypedAsync" />
         </div>
         <div>
             <label class="form-label" for="delivery-filter-details">@Localizer["PackageDetails"]</label>
             <input id="delivery-filter-details" type="search" class="form-control"
-                   @bind="_filter.PackageDetails" @bind:event="oninput" />
+                   @bind="_filter.PackageDetails" @bind:event="oninput"
+                   @bind:after="FilterTypedAsync" />
         </div>
         <div>
             <label class="form-label" for="delivery-filter-notes">@Localizer["DeliveryNotes"]</label>
             <input id="delivery-filter-notes" type="search" class="form-control"
-                   @bind="_filter.DeliveryNotes" @bind:event="oninput" />
+                   @bind="_filter.DeliveryNotes" @bind:event="oninput"
+                   @bind:after="FilterTypedAsync" />
         </div>
     </div>
 
     <div class="dt-filters-row">
         <div class="dt-filters-field">
             <label class="form-label" for="delivery-filter-status">@Localizer["Status"]</label>
-            <DtSelect Id="delivery-filter-status" @bind-Value="_filter.Status">
+            <DtSelect Id="delivery-filter-status" @bind-Value="_filter.Status" @bind-Value:after="FilterChosenAsync">
                 <option value="">@Localizer["FilterAll"]</option>
                 @* The value is the enum member rendered, not a literal beside it: AD-21 makes the
                    member name the wire form, and writing it out here would be a second copy to
@@ -104,12 +111,12 @@
         <div class="dt-filters-field">
             <label class="form-label" for="delivery-filter-created-from">@Localizer["CreatedFrom"]</label>
             <input id="delivery-filter-created-from" type="date" class="form-control"
-                   @bind="_filter.CreatedFrom" />
+                   @bind="_filter.CreatedFrom" @bind:after="FilterChosenAsync" />
         </div>
         <div class="dt-filters-field">
             <label class="form-label" for="delivery-filter-created-to">@Localizer["CreatedTo"]</label>
             <input id="delivery-filter-created-to" type="date" class="form-control"
-                   @bind="_filter.CreatedTo" />
+                   @bind="_filter.CreatedTo" @bind:after="FilterChosenAsync" />
         </div>
 
         @* The box and its word are one control, so the label wraps the input as well as pointing at
@@ -118,7 +125,8 @@
            restyled one, because the tick is painted with `accent-color` and an `appearance: none`
            control has no tick left to paint. *@
         <label class="dt-check" for="delivery-filter-overdue">
-            <input id="delivery-filter-overdue" type="checkbox" @bind="_filter.OverdueOnly" />
+            <input id="delivery-filter-overdue" type="checkbox" @bind="_filter.OverdueOnly"
+                   @bind:after="FilterChosenAsync" />
             @Localizer["OverdueOnly"]
         </label>
 
@@ -133,9 +141,8 @@
     </div>
 </form>
 
-@* NFR-27 keeps paging, and this screen asks for the first page and filters it in the browser - so
-   past a full page the rest is neither shown nor findable. Saying so is the difference between a
-   limit and a screen that quietly lies about how much work there is. *@
+@* NFR-27: one page of the board at a time, filtered and sorted by the server over every delivery,
+   with the pager under the table saying how many matched and how far through them the page is. *@
 @* `dt-table-cards` is where this screen opts into the shared collapse: below the phone breakpoint
    the table's rows stop being rows and become cards. Ten columns is the widest table in the
    product and the one that needed it most - until this wrapper the board was a horizontal
@@ -148,14 +155,16 @@
    table has to be inside. *@
 <div class="dt-deliveries dt-table-cards">
     <DtDataTable TItem="DeliverySummary"
-                 IsTruncated="IsTruncated"
-                 Note="@Localizer["DeliveriesTruncated"]"
-                 Items="Visible"
-                 IsLoading="_loading"
+                 Page="Listed"
+                 OnPage="GoToPageAsync"
+                 OnPageSize="ResizeAsync"
+                 CountOne="@Localizer["DeliveriesCountOne"]"
+                 CountMany="@Localizer["DeliveriesCountMany"]"
+                 IsLoading="Loading"
                  EmptyText="@Localizer["DeliveriesEmpty"]">
         @* The way out of an empty list, under the sentence that says it is empty - and only when there
-           is a way out to offer. An empty board has two causes: filters that match none of the fetched
-           rows, and a fetch that came back with nothing. Clearing helps with the first and does nothing
+           is a way out to offer. An empty board has two causes: filters that match no delivery, and a
+           board with nothing on it at all. Clearing helps with the first and does nothing
            at all about the second, so the action is offered only when something is actually set to be
            cleared; an unfiltered empty board says it is empty and stops there. *@
         <EmptyAction>
@@ -169,7 +178,8 @@
         </EmptyAction>
         <HeaderTemplate>
             @* DtDataTable carries no sorting of its own - it renders whatever rows it is given - so the
-               sort controls belong to the consumer, and a heading is the control. The handlers are
+               sort controls belong to the consumer, and a heading is the control. Pressing one asks the
+               server for page one in the new order; the ordering itself is the repository's. The handlers are
                built in code rather than written as lambdas here: a `=>` inside an attribute closes the
                tag as far as a source scan is concerned.
 
@@ -185,49 +195,49 @@
                by the brand colour alone. Chosen in a method keyed on the column, exactly as the ARIA
                state is - a method call is legal in an attribute value, and the two alternatives are the
                `=>` and the call inside an @@if that the Razor idioms here forbid. *@
-            <th scope="col" aria-sort="@SortState(DeliveryColumn.Window)">
-                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(DeliveryColumn.Window)">
-                    @Localizer["DeliveryWindow"]<Icon Name="@SortGlyph(DeliveryColumn.Window)" />
+            <th scope="col" aria-sort="@SortState(DeliverySort.Window)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(DeliverySort.Window)">
+                    @Localizer["DeliveryWindow"]<Icon Name="@SortGlyph(DeliverySort.Window)" />
                 </button>
             </th>
-            <th scope="col" aria-sort="@SortState(DeliveryColumn.Driver)">
-                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(DeliveryColumn.Driver)">
-                    @Localizer["Driver"]<Icon Name="@SortGlyph(DeliveryColumn.Driver)" />
+            <th scope="col" aria-sort="@SortState(DeliverySort.Driver)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(DeliverySort.Driver)">
+                    @Localizer["Driver"]<Icon Name="@SortGlyph(DeliverySort.Driver)" />
                 </button>
             </th>
-            <th scope="col" aria-sort="@SortState(DeliveryColumn.Client)">
-                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(DeliveryColumn.Client)">
-                    @Localizer["Client"]<Icon Name="@SortGlyph(DeliveryColumn.Client)" />
+            <th scope="col" aria-sort="@SortState(DeliverySort.Client)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(DeliverySort.Client)">
+                    @Localizer["Client"]<Icon Name="@SortGlyph(DeliverySort.Client)" />
                 </button>
             </th>
-            <th scope="col" aria-sort="@SortState(DeliveryColumn.Pickup)">
-                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(DeliveryColumn.Pickup)">
-                    @Localizer["Pickup"]<Icon Name="@SortGlyph(DeliveryColumn.Pickup)" />
+            <th scope="col" aria-sort="@SortState(DeliverySort.Pickup)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(DeliverySort.Pickup)">
+                    @Localizer["Pickup"]<Icon Name="@SortGlyph(DeliverySort.Pickup)" />
                 </button>
             </th>
-            <th scope="col" aria-sort="@SortState(DeliveryColumn.Dropoff)">
-                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(DeliveryColumn.Dropoff)">
-                    @Localizer["Dropoff"]<Icon Name="@SortGlyph(DeliveryColumn.Dropoff)" />
+            <th scope="col" aria-sort="@SortState(DeliverySort.Dropoff)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(DeliverySort.Dropoff)">
+                    @Localizer["Dropoff"]<Icon Name="@SortGlyph(DeliverySort.Dropoff)" />
                 </button>
             </th>
-            <th scope="col" aria-sort="@SortState(DeliveryColumn.PackageDetails)">
-                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(DeliveryColumn.PackageDetails)">
-                    @Localizer["PackageDetails"]<Icon Name="@SortGlyph(DeliveryColumn.PackageDetails)" />
+            <th scope="col" aria-sort="@SortState(DeliverySort.PackageDetails)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(DeliverySort.PackageDetails)">
+                    @Localizer["PackageDetails"]<Icon Name="@SortGlyph(DeliverySort.PackageDetails)" />
                 </button>
             </th>
-            <th scope="col" aria-sort="@SortState(DeliveryColumn.DeliveryNotes)">
-                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(DeliveryColumn.DeliveryNotes)">
-                    @Localizer["DeliveryNotes"]<Icon Name="@SortGlyph(DeliveryColumn.DeliveryNotes)" />
+            <th scope="col" aria-sort="@SortState(DeliverySort.DeliveryNotes)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(DeliverySort.DeliveryNotes)">
+                    @Localizer["DeliveryNotes"]<Icon Name="@SortGlyph(DeliverySort.DeliveryNotes)" />
                 </button>
             </th>
-            <th scope="col" aria-sort="@SortState(DeliveryColumn.Status)">
-                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(DeliveryColumn.Status)">
-                    @Localizer["Status"]<Icon Name="@SortGlyph(DeliveryColumn.Status)" />
+            <th scope="col" aria-sort="@SortState(DeliverySort.Status)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(DeliverySort.Status)">
+                    @Localizer["Status"]<Icon Name="@SortGlyph(DeliverySort.Status)" />
                 </button>
             </th>
-            <th scope="col" aria-sort="@SortState(DeliveryColumn.CreatedAt)">
-                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(DeliveryColumn.CreatedAt)">
-                    @Localizer["CreatedAt"]<Icon Name="@SortGlyph(DeliveryColumn.CreatedAt)" />
+            <th scope="col" aria-sort="@SortState(DeliverySort.CreatedAt)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(DeliverySort.CreatedAt)">
+                    @Localizer["CreatedAt"]<Icon Name="@SortGlyph(DeliverySort.CreatedAt)" />
                 </button>
             </th>
             @* The actions column keeps its heading for a screen reader and drops it on screen: the
@@ -612,7 +622,58 @@
 
     private DeliveryFilter _filter = new();
 
-    private IReadOnlyList<DeliverySummary> _deliveries = [];
+    // The filter panel's address names. Short, because they are what a shared link carries.
+    private const string DriverName = "driver";
+    private const string ClientName = "client";
+    private const string PickupName = "pickup";
+    private const string DropoffName = "dropoff";
+    private const string DetailsName = "details";
+    private const string NotesName = "notes";
+    private const string StatusName = "status";
+    private const string FromName = "from";
+    private const string ToName = "to";
+    private const string OverdueName = "overdue";
+
+    /// <summary>The driver filter, as the address carries it.</summary>
+    [SupplyParameterFromQuery(Name = DriverName)]
+    public string? DriverParameter { get; set; }
+
+    /// <summary>The client filter, as the address carries it.</summary>
+    [SupplyParameterFromQuery(Name = ClientName)]
+    public string? ClientParameter { get; set; }
+
+    /// <summary>The pickup filter, as the address carries it.</summary>
+    [SupplyParameterFromQuery(Name = PickupName)]
+    public string? PickupParameter { get; set; }
+
+    /// <summary>The dropoff filter, as the address carries it.</summary>
+    [SupplyParameterFromQuery(Name = DropoffName)]
+    public string? DropoffParameter { get; set; }
+
+    /// <summary>The package details filter, as the address carries it.</summary>
+    [SupplyParameterFromQuery(Name = DetailsName)]
+    public string? DetailsParameter { get; set; }
+
+    /// <summary>The notes filter, as the address carries it.</summary>
+    [SupplyParameterFromQuery(Name = NotesName)]
+    public string? NotesParameter { get; set; }
+
+    /// <summary>The status filter, by member name, as the address carries it.</summary>
+    [SupplyParameterFromQuery(Name = StatusName)]
+    public string? StatusParameter { get; set; }
+
+    /// <summary>The first creation day, ISO form, as the address carries it.</summary>
+    [SupplyParameterFromQuery(Name = FromName)]
+    public string? FromParameter { get; set; }
+
+    /// <summary>The last creation day, ISO form, as the address carries it.</summary>
+    [SupplyParameterFromQuery(Name = ToName)]
+    public string? ToParameter { get; set; }
+
+    /// <summary>The overdue switch, as the address carries it.</summary>
+    [SupplyParameterFromQuery(Name = OverdueName)]
+    public string? OverdueParameter { get; set; }
+
     private IReadOnlyList<DriverSummary> _drivers = [];
     private IReadOnlyList<ClientAccount> _clients = [];
     private IReadOnlyList<VehicleSummary> _vehicles = [];
@@ -663,11 +724,6 @@
     private DtDialog? _proofDialog;
     private DtConfirmDialog? _deleteDialog;
 
-    // The board opens on the column the design leads with: a dispatcher's question is what is due
-    // next, and the creation order answers a different one.
-    private DeliveryColumn _sortColumn = DeliveryColumn.Window;
-    private bool _sortDescending;
-    private bool _loading = true;
     private bool _isAdmin;
 
     /// <summary>
@@ -676,16 +732,6 @@
     /// plate the way a vehicle does — so a second click would simply be a second delivery.
     /// </summary>
     private bool _saving;
-
-    /// <summary>The rows the filters leave, in the order the headings asked for.</summary>
-    private IReadOnlyCollection<DeliverySummary> Visible =>
-        Sort([.. _deliveries.Where(delivery => Matches(delivery, _filter))], _sortColumn, _sortDescending);
-
-    /// <summary>
-    /// True when the page came back full, which is as much as this screen can know: the query
-    /// returns no total (PRD section 8 excludes one), so "there may be more" is the honest claim.
-    /// </summary>
-    private bool IsTruncated => _deliveries.Count >= ListDeliveriesQueryValidator.MaximumLimit;
 
     /// <summary>
     /// The capacity of the vehicle the selected driver holds, or null when there is no driver or
@@ -698,7 +744,7 @@
     /// driver is not on the page, or they hold nothing.
     /// </summary>
     /// <remarks>
-    /// Internal and static for the same reason <see cref="Matches"/> is: static rendering
+    /// Internal and static so it can be tested directly: static rendering
     /// dispatches no events, so no render test can select a driver, and the number this hint exists
     /// to show would otherwise be asserted nowhere at all.
     /// </remarks>
@@ -744,26 +790,104 @@
         // caller, so asking outside that branch would take the screen down instead of refusing it.
         _isAdmin = Caller.Role == UserRole.Admin;
 
-        await LoadAsync();
+        await LoadPickersAsync();
+
+        await base.OnInitializedAsync();
     }
 
-    /// <summary>The heading's sort action, bound as a delegate so no lambda has to live in markup.</summary>
-    private Action SortHandler(DeliveryColumn column) => () => SortBy(column);
+    /// <summary>The board opens on the column the design leads with: a dispatcher's question is what is due next.</summary>
+    protected override DeliverySort DefaultSort => DeliverySort.Window;
 
-    /// <summary>
-    /// The ARIA sort state of a heading: which way this column is ordered, or that it is not the
-    /// column the table is ordered by. The three values are ARIA tokens rather than text a user
-    /// reads, so they are literals here and carry no resource key (NFR-14).
-    /// </summary>
-    private string SortState(DeliveryColumn column)
+    /// <inheritdoc />
+    protected override IReadOnlyCollection<DeliverySort> Sortable { get; } = Enum.GetValues<DeliverySort>();
+
+    /// <inheritdoc />
+    protected override ListDeliveriesQuery Compose(int offset, int limit, DeliverySort sort, bool descending) =>
+        new(
+            offset,
+            limit,
+            sort.ToString(),
+            descending,
+            TableQuery.Text(DriverParameter),
+            TableQuery.Text(ClientParameter),
+            TableQuery.Text(PickupParameter),
+            TableQuery.Text(DropoffParameter),
+            TableQuery.Text(DetailsParameter),
+            TableQuery.Text(NotesParameter),
+            TableQuery.Member<DeliveryStatus>(StatusParameter),
+            TableQuery.Date(FromParameter),
+            TableQuery.Date(ToParameter),
+            TableQuery.Flag(OverdueParameter));
+
+    /// <inheritdoc />
+    protected override (int Offset, int Limit, DeliverySort Sort, bool Descending) Paging(ListDeliveriesQuery view) =>
+        (view.Offset, view.Limit, ListSort.Parse<DeliverySort>(view.Sort) ?? DefaultSort, view.Descending);
+
+    /// <inheritdoc />
+    protected override ListDeliveriesQuery Repaged(
+        ListDeliveriesQuery view,
+        int offset,
+        int limit,
+        DeliverySort sort,
+        bool descending) =>
+        view with { Offset = offset, Limit = limit, Sort = sort.ToString(), Descending = descending };
+
+    /// <inheritdoc />
+    protected override void AddFilters(ListDeliveriesQuery view, IDictionary<string, object?> address)
     {
-        if (_sortColumn != column)
-        {
-            return "none";
-        }
-
-        return _sortDescending ? "descending" : "ascending";
+        address[DriverName] = view.Driver;
+        address[ClientName] = view.Client;
+        address[PickupName] = view.Pickup;
+        address[DropoffName] = view.Dropoff;
+        address[DetailsName] = view.PackageDetails;
+        address[NotesName] = view.DeliveryNotes;
+        address[StatusName] = view.Status?.ToString();
+        address[FromName] = TableQuery.DateValue(view.CreatedFrom);
+        address[ToName] = TableQuery.DateValue(view.CreatedTo);
+        address[OverdueName] = TableQuery.FlagValue(view.OverdueOnly);
     }
+
+    /// <inheritdoc />
+    protected override void Adopt(ListDeliveriesQuery view) =>
+        _filter = new DeliveryFilter
+        {
+            Driver = view.Driver,
+            Client = view.Client,
+            Pickup = view.Pickup,
+            Dropoff = view.Dropoff,
+            PackageDetails = view.PackageDetails,
+            DeliveryNotes = view.DeliveryNotes,
+            Status = view.Status,
+            CreatedFrom = view.CreatedFrom,
+            CreatedTo = view.CreatedTo,
+            OverdueOnly = view.OverdueOnly,
+        };
+
+    /// <inheritdoc />
+    protected override async Task<Paged<DeliverySummary>?> FetchAsync(ListDeliveriesQuery view) =>
+        await Dispatch.ListAsync(view, CircuitToken);
+
+    /// <summary>The view the filter panel describes, at page one: a new filter is a new list.</summary>
+    private ListDeliveriesQuery Filtered() =>
+        FirstPage(View) with
+        {
+            Driver = TableQuery.Text(_filter.Driver),
+            Client = TableQuery.Text(_filter.Client),
+            Pickup = TableQuery.Text(_filter.Pickup),
+            Dropoff = TableQuery.Text(_filter.Dropoff),
+            PackageDetails = TableQuery.Text(_filter.PackageDetails),
+            DeliveryNotes = TableQuery.Text(_filter.DeliveryNotes),
+            Status = _filter.Status,
+            CreatedFrom = _filter.CreatedFrom,
+            CreatedTo = _filter.CreatedTo,
+            OverdueOnly = _filter.OverdueOnly,
+        };
+
+    /// <summary>A text filter changed under the dispatcher's fingers: replace the history entry.</summary>
+    private Task FilterTypedAsync() => MoveAsync(Filtered(), replace: true);
+
+    /// <summary>A status, a date or the overdue switch changed: a history entry of its own.</summary>
+    private Task FilterChosenAsync() => MoveAsync(Filtered(), replace: false);
 
     /// <summary>The row's edit action, for the same reason.</summary>
     private Func<Task> EditHandler(DeliverySummary delivery) => () => OpenEditAsync(delivery);
@@ -779,48 +903,6 @@
 
     /// <summary>The row's proof action, for the same reason.</summary>
     private Func<Task> ProofHandler(DeliverySummary delivery) => () => ShowProofAsync(delivery);
-
-    /// <summary>
-    /// The glyph a heading wears: the stacked pair on every column that can be sorted by, and a
-    /// single chevron on the one the rows are actually ordered by, pointing the way they went.
-    /// <para>
-    /// The sighted half of <see cref="SortState" />. The design marks the sorted column by colour
-    /// alone, which leaves ascending and descending identical to anyone reading the shapes - and
-    /// leaves the direction available only through an attribute a sighted reader never hears.
-    /// </para>
-    /// <para>
-    /// A method keyed on the column, exactly as the ARIA state is: a method call is legal in an
-    /// attribute value, and the two alternatives - a <c>=&gt;</c> in the attribute, or the call
-    /// inside an <c>@@if</c> - are both what the Razor idioms on this screen forbid.
-    /// </para>
-    /// </summary>
-    private IconName SortGlyph(DeliveryColumn column) =>
-        GlyphFor(column, _sortColumn, _sortDescending);
-
-    /// <summary>
-    /// Which of the three glyphs a heading wears, as a function of the board's sort state alone.
-    /// </summary>
-    /// <remarks>
-    /// Static and internal for the reason <see cref="CapacityOf" /> is: the descending arm is
-    /// unreachable from a rendering test. This harness renders HTML and never presses anything, so
-    /// a board rendered fresh is always ascending, and a test written against the markup can only
-    /// ever see two of the three answers. Pulling the choice out of the instance lets the third be
-    /// asserted directly, which matters here because the whole point of the glyph is that the two
-    /// directions differ - and a version that returned the same chevron for both would render
-    /// perfectly and pass every assertion the page can make about itself.
-    /// </remarks>
-    internal static IconName GlyphFor(
-        DeliveryColumn column,
-        DeliveryColumn sorted,
-        bool descending)
-    {
-        if (column != sorted)
-        {
-            return IconName.Sort;
-        }
-
-        return descending ? IconName.SortDescending : IconName.SortAscending;
-    }
 
     /// <summary>
     /// The creation instant in local time (AD-13: storage is offset zero, and the conversion
@@ -874,137 +956,8 @@
             + " — " + (driver.OnDuty ? Localizer["ShiftOpen"] : Localizer["ShiftClosed"]);
 
     /// <summary>
-    /// Whether a delivery survives every filter the dispatcher has set (FR-20).
-    /// </summary>
-    /// <remarks>
-    /// Internal and static so it can be tested directly: static rendering dispatches no events, so
-    /// this is the one thing on the screen a render test cannot reach. Every text comparison is
-    /// culture-aware and case-insensitive — a dispatcher typing a name in lower case is looking for
-    /// the same delivery.
-    /// </remarks>
-    /// <param name="delivery">The row being considered.</param>
-    /// <param name="filter">What the dispatcher has narrowed by. A blank field narrows nothing.</param>
-    internal static bool Matches(DeliverySummary delivery, DeliveryFilter filter)
-    {
-        ArgumentNullException.ThrowIfNull(delivery);
-        ArgumentNullException.ThrowIfNull(filter);
-
-        // The creation date is compared as a date rather than an instant: the two range boxes are
-        // dates, and a delivery created at 18:00 on the last day of the range is inside it.
-        var created = DateOnly.FromDateTime(delivery.CreatedAt.ToLocalTime().DateTime);
-
-        return Contains(delivery.Driver?.Name, filter.Driver)
-            && Contains(delivery.Client?.Name, filter.Client)
-            && Contains(LocationText.Describe(delivery.Pickup), filter.Pickup)
-            && Contains(LocationText.Describe(delivery.Dropoff), filter.Dropoff)
-            && Contains(delivery.PackageDetails, filter.PackageDetails)
-            && Contains(delivery.DeliveryNotes, filter.DeliveryNotes)
-            && (filter.Status is not { } status || delivery.Status == status)
-            && (filter.CreatedFrom is not { } from || created >= from)
-            && (filter.CreatedTo is not { } to || created <= to)
-            && (!filter.OverdueOnly || delivery.IsOverdue);
-    }
-
-    /// <summary>
-    /// The deliveries in the order a column heading asked for, with the row id as the tie-break so
-    /// two rows that compare equal do not swap places between renders.
-    /// </summary>
-    /// <remarks>
-    /// Internal and static for the reason <see cref="Matches"/> is, and pure for a second one: this
-    /// is what makes "sorting issues no second request" a property a test can assert rather than a
-    /// claim about the network.
-    /// </remarks>
-    /// <param name="deliveries">The rows to order.</param>
-    /// <param name="column">The column the dispatcher clicked.</param>
-    /// <param name="descending">True on the second click of the same heading.</param>
-    internal static IReadOnlyList<DeliverySummary> Sort(
-        IReadOnlyList<DeliverySummary> deliveries,
-        DeliveryColumn column,
-        bool descending)
-    {
-        ArgumentNullException.ThrowIfNull(deliveries);
-
-        var ordered = column switch
-        {
-            DeliveryColumn.Driver => deliveries.OrderBy(Text(delivery => delivery.Driver?.Name)),
-            DeliveryColumn.Client => deliveries.OrderBy(Text(delivery => delivery.Client?.Name)),
-            DeliveryColumn.Pickup => deliveries.OrderBy(Text(delivery => LocationText.Describe(delivery.Pickup))),
-            DeliveryColumn.Dropoff => deliveries.OrderBy(Text(delivery => LocationText.Describe(delivery.Dropoff))),
-            DeliveryColumn.PackageDetails => deliveries.OrderBy(Text(delivery => delivery.PackageDetails)),
-            DeliveryColumn.DeliveryNotes => deliveries.OrderBy(Text(delivery => delivery.DeliveryNotes)),
-
-            // By the member rather than by its label: the lifecycle has an order, and sorting a
-            // status column alphabetically would put "Delivered" before "Pending" for no reason a
-            // dispatcher could name.
-            DeliveryColumn.Status => deliveries.OrderBy(delivery => delivery.Status),
-            DeliveryColumn.CreatedAt => deliveries.OrderBy(delivery => delivery.CreatedAt),
-
-            // By when the parcel is first due, which is the near bound when it has one and the far
-            // bound when that is all it was given - keying a "by noon" delivery off its missing
-            // near bound would file it with the deliveries that carry no window at all.
-            //
-            // Those sort to the far end in BOTH directions, which is why this arm is the one that
-            // reads `descending`: "nothing is due" is neither the earliest thing on the board nor
-            // the latest, and a single sentinel key would be carried to the front by the reversal
-            // below. Ordering the two groups the other way round before that reversal is what keeps
-            // the windowless rows out of the way of a dispatcher scanning from the top, whichever
-            // way the column is pointing.
-            DeliveryColumn.Window => deliveries
-                .OrderBy(delivery => (Due(delivery) is null) != descending)
-                .ThenBy(delivery => Due(delivery) ?? DateTimeOffset.MaxValue),
-
-            // Total over the enum: a column added without an ordering fails loudly here rather than
-            // silently rendering the rows in whatever order they arrived.
-            _ => throw new ArgumentOutOfRangeException(
-                nameof(column),
-                column,
-                "No ordering is defined for this column."),
-        };
-
-        var stable = ordered.ThenBy(delivery => delivery.Id);
-
-        return descending ? [.. stable.Reverse()] : [.. stable];
-    }
-
-    /// <summary>
-    /// When a delivery is first due: the near bound of its window, or the far bound when that is the
-    /// only one it was given. Null when it was promised no window at all, which is not a time and
-    /// must not be sorted as one.
-    /// </summary>
-    private static DateTimeOffset? Due(DeliverySummary delivery) =>
-        delivery.WindowEarliestAt ?? delivery.WindowLatestAt;
-
-    /// <summary>
-    /// A text key for a column, with a null reading as empty so an unassigned row sorts to one end
-    /// rather than throwing.
-    /// </summary>
-    private static Func<DeliverySummary, string> Text(Func<DeliverySummary, string?> select) =>
-        delivery => select(delivery) ?? string.Empty;
-
-    /// <summary>True when the haystack carries the needle, or the needle is blank.</summary>
-    private static bool Contains(string? value, string? needle)
-    {
-        if (string.IsNullOrWhiteSpace(needle))
-        {
-            return true;
-        }
-
-        return value is not null
-            && value.Contains(needle.Trim(), StringComparison.CurrentCultureIgnoreCase);
-    }
-
-    private void SortBy(DeliveryColumn column)
-    {
-        // The second click on the same heading reverses; a click on another heading starts that
-        // column ascending. Nothing here fetches anything: the rows are already in the browser.
-        _sortDescending = _sortColumn == column && !_sortDescending;
-        _sortColumn = column;
-    }
-
-    /// <summary>
-    /// True when the dispatcher has narrowed the fetched page at all, which is the only state
-    /// "clear the filters" is an answer to. A blank box is not a filter, which is the same reading
-    /// <see cref="Contains" /> gives a blank needle.
+    /// True when the dispatcher has narrowed the board at all, which is the only state "clear the
+    /// filters" is an answer to. A blank box is not a filter - the server reads it the same way.
     /// </summary>
     private bool IsFiltered =>
         Narrows(_filter.Driver)
@@ -1025,7 +978,7 @@
     /// What Enter in a filter box does, which is nothing.
     /// <para>
     /// The panel is a real <c>&lt;form&gt;</c> so the ten controls have a role and an accessible
-    /// name, and a form submits. Every box is two-way bound and the table re-renders as it is typed
+    /// name, and a form submits. Every box is two-way bound and asks for its page as it is typed
     /// in, so there is nothing to send - and the default submission would be a GET to this same
     /// address that threw away every filter the dispatcher had set.
     /// </para>
@@ -1041,43 +994,28 @@
         // Deliberately empty: the filters are already applied.
     }
 
-    private void ResetFilters() => _filter = new DeliveryFilter();
+    private Task ResetFilters()
+    {
+        _filter = new DeliveryFilter();
+
+        return MoveAsync(Filtered(), replace: false);
+    }
 
     private void PickPickup(MapLocation picked) => _form.Pickup = picked;
 
     private void PickDropoff(MapLocation picked) => _form.Dropoff = picked;
 
-    private async Task LoadAsync()
+    /// <summary>
+    /// The three lists the form is built from. Read once rather than when the dialog opens, so
+    /// choosing a driver does not wait on a round trip - and so the capacity hint has something to
+    /// read the moment a driver is picked. Unpaged, every one of them: a picker capped at a table's
+    /// page would leave the driver, client or vehicle on the next page impossible to choose.
+    /// </summary>
+    private async Task LoadPickersAsync()
     {
-        _loading = true;
-
-        // Rendered before the await, or the flag is set and cleared inside one synchronous stretch
-        // and DtDataTable's loading row never reaches the browser on a post-write refetch.
-        StateHasChanged();
-
-        try
-        {
-            // NFR-27's default page, stated rather than assumed: the service refuses anything the
-            // original would have passed to the database unchecked.
-            _deliveries = await Dispatch.ListAsync(
-                new ListDeliveriesQuery(0, ListDeliveriesQueryValidator.MaximumLimit),
-                CircuitToken);
-
-            // The three lists the form is built from. Read here rather than when the dialog opens,
-            // so choosing a driver does not wait on a round trip - and so the capacity hint has
-            // something to read the moment a driver is picked.
-            _drivers = await DriverRoster.ListAsync(CircuitToken);
-            _clients = await ClientRoster.ListAsync(CircuitToken);
-            _vehicles = await VehicleFleet.ListAsync(
-                new ListVehiclesQuery(0, ListVehiclesQueryValidator.MaximumLimit),
-                CircuitToken);
-        }
-        finally
-        {
-            // In a finally so a refused or failed read leaves the table in its empty state rather
-            // than spinning forever, which reads to a user as a hung screen.
-            _loading = false;
-        }
+        _drivers = await DriverRoster.ListAllAsync(CircuitToken);
+        _clients = await ClientRoster.ListAllAsync(CircuitToken);
+        _vehicles = await VehicleFleet.ListAllAsync(CircuitToken);
     }
 
     private async Task OpenCreateAsync()
@@ -1284,50 +1222,10 @@
     private static LocationInput? Coordinates(MapLocation? point) =>
         point is { } value ? new LocationInput(value.Latitude, value.Longitude) : null;
 
-    /// <summary>The columns the dispatch table can be ordered by (FR-20).</summary>
-    internal enum DeliveryColumn
-    {
-        /// <summary>
-        /// The window the delivery was promised in, which is the column the board leads with.
-        /// <para>
-        /// It replaced an Overdue column rather than joining one: overdue is derived from this
-        /// window and the clock, so the two were the same fact in two places, and the badge now
-        /// sits inside this column's cell. Ordering by overdue is gone with it - a two-valued sort
-        /// that only ever produced two blocks - and the overdue filter keeps the capability that
-        /// was worth having.
-        /// </para>
-        /// </summary>
-        Window,
-
-        /// <summary>The assigned driver's name.</summary>
-        Driver,
-
-        /// <summary>The requesting client's name.</summary>
-        Client,
-
-        /// <summary>The pickup point, as the cell shows it.</summary>
-        Pickup,
-
-        /// <summary>The dropoff point, as the cell shows it.</summary>
-        Dropoff,
-
-        /// <summary>What is being moved.</summary>
-        PackageDetails,
-
-        /// <summary>The free-text instructions.</summary>
-        DeliveryNotes,
-
-        /// <summary>Where the delivery is in its lifecycle.</summary>
-        Status,
-
-        /// <summary>When the delivery was opened.</summary>
-        CreatedAt,
-    }
-
     /// <summary>
-    /// What the dispatcher has narrowed the fetched page by (FR-20, FR-101). A plain settable class
-    /// rather than a record: every field is two-way bound to an input, and resetting is a new
-    /// instance.
+    /// What the dispatcher has narrowed the board by (FR-20, FR-101), as the panel's boxes hold it. A
+    /// plain settable class rather than a record: every field is two-way bound to an input, and
+    /// resetting is a new instance. The server does the narrowing; this is only what the boxes say.
     /// </summary>
     internal sealed class DeliveryFilter
     {
@@ -1367,8 +1265,7 @@
     /// fields are <c>Optional&lt;T&gt;</c>, and two-way binding needs somewhere plain to write.
     /// </summary>
     /// <remarks>
-    /// Internal rather than private, for the reason <see cref="Matches" /> and <see cref="Sort" />
-    /// are: static rendering dispatches no events, so nothing a render test can do reaches the two
+    /// Internal rather than private because static rendering dispatches no events, so nothing a render test can do reaches the two
     /// address boxes, and the wiring between a box and the point it fills would otherwise be
     /// asserted nowhere at all.
     /// </remarks>

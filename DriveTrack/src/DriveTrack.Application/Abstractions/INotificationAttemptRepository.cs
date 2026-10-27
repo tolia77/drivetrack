@@ -1,3 +1,5 @@
+using DriveTrack.Application.Common;
+using DriveTrack.Application.Notifications;
 using DriveTrack.Domain.Deliveries;
 
 namespace DriveTrack.Application.Abstractions;
@@ -21,18 +23,16 @@ public interface INotificationAttemptRepository
     /// screen is opened.
     /// </para>
     /// <para>
-    /// The two administration rosters — <see cref="IClientRepository.ListAsync"/> and
-    /// <see cref="IDriverRepository.ListAsync"/> — are still unpaged, and that is not an oversight
-    /// this should follow: they are bounded by headcount, which is a number somebody hires. This
-    /// table is bounded by nothing.
+    /// Sorted in SQL over the whole log, with the log's total, so the oldest attempt is reachable
+    /// from the screen and the pager can say how far through the history a page is.
     /// </para>
     /// </summary>
-    /// <param name="offset">Rows to skip. Zero is the first page.</param>
-    /// <param name="limit">Rows to take.</param>
+    /// <param name="query">The page and the direction. The caller has already validated it.</param>
+    /// <param name="sort">The column, already parsed; null for newest first.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    Task<IReadOnlyList<NotificationAttempt>> ListAsync(
-        int offset,
-        int limit,
+    Task<Paged<NotificationAttempt>> ListAsync(
+        ListNotificationAttemptsQuery query,
+        NotificationSort? sort,
         CancellationToken cancellationToken);
 
     /// <summary>Stages a new attempt for the next commit.</summary>

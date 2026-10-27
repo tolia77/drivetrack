@@ -1,3 +1,4 @@
+using DriveTrack.Application.Common;
 using System.Text.RegularExpressions;
 using DriveTrack.Application.Authorization;
 using DriveTrack.Application.Users;
@@ -523,8 +524,10 @@ public class SubmitGuardTests
             CancellationToken cancellationToken) =>
             throw new NotSupportedException("A static render must not write.");
 
-        public Task<IReadOnlyList<DispatcherAccount>> ListAsync(CancellationToken cancellationToken) =>
-            Task.FromResult<IReadOnlyList<DispatcherAccount>>(Accounts);
+        public Task<Paged<DispatcherAccount>> ListAsync(
+            ListDispatchersQuery query,
+            CancellationToken cancellationToken) =>
+            Task.FromResult(TestPage.Of<DispatcherAccount>(Accounts, query.Offset, query.Limit));
 
         public Task<DispatcherAccount> GetAsync(UserId userId, CancellationToken cancellationToken) =>
             throw new NotSupportedException("A rendered screen does not read one dispatcher.");

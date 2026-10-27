@@ -270,7 +270,7 @@ public class DeliveryRequestTests(PostgresFixture postgres)
         {
             // The deletion route is keyed on the account, not on the client row, so the id comes
             // back off the roster - the same read the arrangement uses to learn the client id.
-            userId = (await FleetApi.DataAsync(roster, cancellationToken))
+            userId = (await FleetApi.ItemsAsync(roster, cancellationToken))
                 .EnumerateArray()
                 .Single(candidate => candidate.GetProperty("email").GetString() == requester.Email)
                 .GetProperty("userId")
@@ -497,7 +497,7 @@ public class DeliveryRequestTests(PostgresFixture postgres)
         {
             Assert.Equal(HttpStatusCode.OK, mine.StatusCode);
 
-            var row = (await FleetApi.DataAsync(mine, cancellationToken))
+            var row = (await FleetApi.ItemsAsync(mine, cancellationToken))
                 .EnumerateArray()
                 .Single(candidate => candidate.GetProperty("id").GetInt32() == deliveryId);
 
@@ -515,7 +515,7 @@ public class DeliveryRequestTests(PostgresFixture postgres)
         {
             Assert.Equal(HttpStatusCode.OK, board.StatusCode);
 
-            var row = (await FleetApi.DataAsync(board, cancellationToken))
+            var row = (await FleetApi.ItemsAsync(board, cancellationToken))
                 .EnumerateArray()
                 .Single(candidate => candidate.GetProperty("id").GetInt32() == deliveryId);
 
@@ -583,7 +583,7 @@ public class DeliveryRequestTests(PostgresFixture postgres)
         {
             Assert.Equal(HttpStatusCode.OK, mine.StatusCode);
 
-            var ids = (await FleetApi.DataAsync(mine, cancellationToken))
+            var ids = (await FleetApi.ItemsAsync(mine, cancellationToken))
                 .EnumerateArray()
                 .Select(row => row.GetProperty("id").GetInt32())
                 .ToArray();
@@ -607,7 +607,7 @@ public class DeliveryRequestTests(PostgresFixture postgres)
         {
             Assert.Equal(HttpStatusCode.OK, board.StatusCode);
 
-            var ids = (await FleetApi.DataAsync(board, cancellationToken))
+            var ids = (await FleetApi.ItemsAsync(board, cancellationToken))
                 .EnumerateArray()
                 .Select(row => row.GetProperty("id").GetInt32())
                 .ToArray();

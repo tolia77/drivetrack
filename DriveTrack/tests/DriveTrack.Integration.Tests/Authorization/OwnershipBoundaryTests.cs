@@ -144,7 +144,7 @@ public class OwnershipBoundaryTests(PostgresFixture postgres)
         {
             Assert.Equal(HttpStatusCode.OK, mine.StatusCode);
 
-            var rows = (await FleetApi.DataAsync(mine, cancellationToken)).EnumerateArray().ToArray();
+            var rows = (await FleetApi.ItemsAsync(mine, cancellationToken)).EnumerateArray().ToArray();
 
             Assert.DoesNotContain(rows, row => row.GetProperty("id").GetInt32() == world.DeliveryId);
         }
@@ -178,7 +178,7 @@ public class OwnershipBoundaryTests(PostgresFixture postgres)
         {
             Assert.Equal(HttpStatusCode.OK, mine.StatusCode);
 
-            var rows = (await FleetApi.DataAsync(mine, cancellationToken)).EnumerateArray().ToArray();
+            var rows = (await FleetApi.ItemsAsync(mine, cancellationToken)).EnumerateArray().ToArray();
 
             Assert.Contains(rows, row => row.GetProperty("id").GetInt32() == world.DeliveryId);
         }

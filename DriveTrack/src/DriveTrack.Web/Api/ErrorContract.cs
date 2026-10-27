@@ -33,6 +33,7 @@ internal static class ErrorContract
         ErrorCode.COMMON_FIELD_REQUIRED => StatusCodes.Status422UnprocessableEntity,
         ErrorCode.COMMON_PAGING_OFFSET_INVALID => StatusCodes.Status422UnprocessableEntity,
         ErrorCode.COMMON_PAGING_LIMIT_INVALID => StatusCodes.Status422UnprocessableEntity,
+        ErrorCode.COMMON_SORT_INVALID => StatusCodes.Status422UnprocessableEntity,
         ErrorCode.COMMON_COORDINATE_OUT_OF_RANGE => StatusCodes.Status422UnprocessableEntity,
         ErrorCode.AUTH_UNAUTHENTICATED => StatusCodes.Status401Unauthorized,
         ErrorCode.AUTH_FORBIDDEN => StatusCodes.Status403Forbidden,

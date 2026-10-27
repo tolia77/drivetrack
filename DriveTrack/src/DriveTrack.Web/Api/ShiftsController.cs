@@ -1,3 +1,4 @@
+using DriveTrack.Application.Common;
 using DriveTrack.Application.Shifts;
 using DriveTrack.Domain.Identity;
 using Microsoft.AspNetCore.Authorization;
@@ -42,18 +43,31 @@ public sealed class ShiftsController(IShiftService shifts) : ControllerBase
     /// nothing". <c>driverId</c> is a dispatcher's filter; a driver's own narrowing comes from the
     /// guard and overrides it, so passing somebody else's id narrows to the caller rather than
     /// widening to the other driver.
+    /// <para>
+    /// <c>sort</c> is a column name and is refused with <c>COMMON_SORT_INVALID</c> when the list has
+    /// no such column; <c>desc=true</c> reverses it; <c>search</c> narrows by the driver's name;
+    /// <c>open=true</c> lists only the shifts still running.
+    /// </para>
     /// </remarks>
     [HttpGet]
-    public Task<IReadOnlyList<ShiftSummary>> ListAsync(
+    public Task<Paged<ShiftSummary>> ListAsync(
         [FromQuery] int? offset,
         [FromQuery] int? limit,
         [FromQuery] int? driverId,
+        [FromQuery] string? sort,
+        [FromQuery] bool? desc,
+        [FromQuery] string? search,
+        [FromQuery] bool? open,
         CancellationToken cancellationToken) =>
         shifts.ListAsync(
             new ListShiftsQuery(
                 offset ?? 0,
                 limit ?? ListShiftsQueryValidator.MaximumLimit,
-                driverId),
+                driverId,
+                sort,
+                desc ?? false,
+                search,
+                open ?? false),
             cancellationToken);
 
     /// <summary>One shift.</summary>

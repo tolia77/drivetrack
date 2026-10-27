@@ -31,7 +31,8 @@ namespace DriveTrack.Application.Shifts;
 public interface IShiftService
 {
     /// <summary>
-    /// One page of shifts, newest first (FR-112, FR-113).
+    /// One page of shifts, newest first unless a column is named, with the size of the whole set
+    /// the caller may see (FR-112, FR-113).
     /// <para>
     /// Whose shifts is the guard's answer, not the query's: dispatch reads every driver's and may
     /// narrow with <see cref="ListShiftsQuery.DriverId"/>, a driver reads their own and the
@@ -42,8 +43,10 @@ public interface IShiftService
     /// The caller is anonymous (<c>AUTH_UNAUTHENTICATED</c>, 401), or is a client, or is a driver
     /// whose claims carry no driver row id (<c>AUTH_FORBIDDEN</c>, 403).
     /// </exception>
-    /// <exception cref="Common.ValidationException">The paging parameters are out of range (NFR-27).</exception>
-    Task<IReadOnlyList<ShiftSummary>> ListAsync(
+    /// <exception cref="Common.ValidationException">
+    /// The paging parameters are out of range, or the sort names no column (NFR-27).
+    /// </exception>
+    Task<Common.Paged<ShiftSummary>> ListAsync(
         ListShiftsQuery query,
         CancellationToken cancellationToken);
 

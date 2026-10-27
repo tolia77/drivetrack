@@ -189,7 +189,7 @@ internal static class ReviewApi
     {
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        return [.. (await FleetApi.DataAsync(response, cancellationToken)).EnumerateArray()];
+        return [.. (await FleetApi.ItemsAsync(response, cancellationToken)).EnumerateArray()];
     }
 
     /// <summary>The driver roster as dispatch reads it, which is where FR-98's aggregate lands.</summary>
@@ -203,7 +203,7 @@ internal static class ReviewApi
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        return [.. (await FleetApi.DataAsync(response, cancellationToken)).EnumerateArray()];
+        return [.. (await FleetApi.ItemsAsync(response, cancellationToken)).EnumerateArray()];
     }
 
     private static async Task AdvanceAsync(

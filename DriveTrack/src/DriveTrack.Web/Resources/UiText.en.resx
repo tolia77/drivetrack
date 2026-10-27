@@ -367,8 +367,75 @@
   <data name="DateParseError" xml:space="preserve">
     <value>Enter a valid date.</value>
   </data>
-  <data name="ListTruncated" xml:space="preserve">
-    <value>Only the first page is shown: the fleet may hold more vehicles than this list fits.</value>
+  <!-- The pager under every table. The range reads "41–50 of 86 deliveries": each list names its rows in the singular after one and the plural otherwise. -->
+  <data name="PagerRange" xml:space="preserve">
+    <value>{0}–{1} of {2} {3}</value>
+  </data>
+  <data name="PagerLabel" xml:space="preserve">
+    <value>Pages of {0}</value>
+  </data>
+  <data name="RowsPerPage" xml:space="preserve">
+    <value>Rows per page</value>
+  </data>
+  <data name="PagerPrevious" xml:space="preserve">
+    <value>Previous</value>
+  </data>
+  <data name="PagerNext" xml:space="preserve">
+    <value>Next</value>
+  </data>
+  <data name="PagerPage" xml:space="preserve">
+    <value>Page {0}</value>
+  </data>
+  <data name="PagerPhoneStatus" xml:space="preserve">
+    <value>Page {0} of {1}</value>
+  </data>
+  <data name="DeliveriesCountOne" xml:space="preserve">
+    <value>delivery</value>
+  </data>
+  <data name="DeliveriesCountMany" xml:space="preserve">
+    <value>deliveries</value>
+  </data>
+  <data name="DriversCountOne" xml:space="preserve">
+    <value>driver</value>
+  </data>
+  <data name="DriversCountMany" xml:space="preserve">
+    <value>drivers</value>
+  </data>
+  <data name="VehiclesCountOne" xml:space="preserve">
+    <value>vehicle</value>
+  </data>
+  <data name="VehiclesCountMany" xml:space="preserve">
+    <value>vehicles</value>
+  </data>
+  <data name="ShiftsCountOne" xml:space="preserve">
+    <value>shift</value>
+  </data>
+  <data name="ShiftsCountMany" xml:space="preserve">
+    <value>shifts</value>
+  </data>
+  <data name="ReviewsCountOne" xml:space="preserve">
+    <value>review</value>
+  </data>
+  <data name="ReviewsCountMany" xml:space="preserve">
+    <value>reviews</value>
+  </data>
+  <data name="ClientsCountOne" xml:space="preserve">
+    <value>client</value>
+  </data>
+  <data name="ClientsCountMany" xml:space="preserve">
+    <value>clients</value>
+  </data>
+  <data name="DispatchersCountOne" xml:space="preserve">
+    <value>dispatcher</value>
+  </data>
+  <data name="DispatchersCountMany" xml:space="preserve">
+    <value>dispatchers</value>
+  </data>
+  <data name="NotificationsCountOne" xml:space="preserve">
+    <value>send attempt</value>
+  </data>
+  <data name="NotificationsCountMany" xml:space="preserve">
+    <value>send attempts</value>
   </data>
   <data name="NavDeliveries" xml:space="preserve">
     <value>Deliveries</value>
@@ -390,9 +457,6 @@
   </data>
   <data name="MyDeliveriesEmptyClient" xml:space="preserve">
     <value>You have no deliveries yet.</value>
-  </data>
-  <data name="DeliveriesTruncated" xml:space="preserve">
-    <value>Only the first page is shown: there may be more deliveries than this list fits.</value>
   </data>
   <data name="DeliveryForm" xml:space="preserve">
     <value>Delivery record</value>
@@ -558,9 +622,6 @@
   </data>
   <data name="NotificationsEmpty" xml:space="preserve">
     <value>Not a single notification has been sent yet.</value>
-  </data>
-  <data name="NotificationsTruncated" xml:space="preserve">
-    <value>Only the first page is shown: there may be more send attempts than this list fits.</value>
   </data>
   <data name="NotificationDelivery" xml:space="preserve">
     <value>Delivery</value>

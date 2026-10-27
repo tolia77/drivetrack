@@ -251,4 +251,13 @@ internal static class FleetApi
 
         return envelope.GetProperty("data");
     }
+
+    /// <summary>
+    /// The rows of a list response. Every list answers a page - <c>items</c>, <c>total</c>,
+    /// <c>offset</c>, <c>limit</c> - so a caller that only wants the rows reads them here.
+    /// </summary>
+    public static async Task<JsonElement> ItemsAsync(
+        HttpResponseMessage response,
+        CancellationToken cancellationToken) =>
+        (await DataAsync(response, cancellationToken)).GetProperty("items");
 }

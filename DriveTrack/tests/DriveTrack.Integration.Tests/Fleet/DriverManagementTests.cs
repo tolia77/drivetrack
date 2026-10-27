@@ -616,7 +616,7 @@ public class DriverManagementTests(PostgresFixture postgres)
         using var listed = await FleetApi.SendAsync(
             client, HttpMethod.Get, "/api/drivers", token, body: null, cancellationToken);
 
-        var rows = (await FleetApi.DataAsync(listed, cancellationToken)).EnumerateArray().ToArray();
+        var rows = (await FleetApi.ItemsAsync(listed, cancellationToken)).EnumerateArray().ToArray();
 
         Assert.Equal(2, rows.Length);
         Assert.Contains(rows, row => row.GetProperty("vehicleModel").GetString() == "Рено Мастер");

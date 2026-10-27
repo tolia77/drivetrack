@@ -71,7 +71,7 @@ public class NotificationLogTests(PostgresFixture postgres)
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var rows = (await FleetApi.DataAsync(response, cancellationToken)).EnumerateArray().ToArray();
+        var rows = (await FleetApi.ItemsAsync(response, cancellationToken)).EnumerateArray().ToArray();
 
         Assert.Equal(2, rows.Length);
 
@@ -223,7 +223,7 @@ public class NotificationLogTests(PostgresFixture postgres)
         using var response = await ReadLogAsync(client, admin, cancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Empty((await FleetApi.DataAsync(response, cancellationToken)).EnumerateArray());
+        Assert.Empty((await FleetApi.ItemsAsync(response, cancellationToken)).EnumerateArray());
     }
 
     [Fact]
@@ -332,7 +332,7 @@ public class NotificationLogTests(PostgresFixture postgres)
 
         return
         [
-            .. (await FleetApi.DataAsync(response, cancellationToken))
+            .. (await FleetApi.ItemsAsync(response, cancellationToken))
                 .EnumerateArray()
                 .Select(row => row.GetProperty("id").GetInt32()),
         ];

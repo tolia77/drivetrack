@@ -577,14 +577,17 @@ public class DeliveryTimelineTests
             CancellationToken cancellationToken) =>
             throw new NotSupportedException("Static rendering dispatches no events.");
 
-        public Task<IReadOnlyList<DeliverySummary>> ListAsync(
+        public Task<Paged<DeliverySummary>> ListAsync(
             ListDeliveriesQuery query,
             CancellationToken cancellationToken) =>
             throw new NotSupportedException("The panel reads only the timeline.");
 
-        public Task<IReadOnlyList<AssignedDeliverySummary>> ListMineAsync(
+        public Task<Paged<AssignedDeliverySummary>> ListMineAsync(
             ListDeliveriesQuery query,
             CancellationToken cancellationToken) =>
+            throw new NotSupportedException("The panel reads only the timeline.");
+
+        public Task<IReadOnlyList<AssignedDeliverySummary>> ListAllMineAsync(CancellationToken cancellationToken) =>
             throw new NotSupportedException("The panel reads only the timeline.");
 
         public Task<DeliverySummary> GetAsync(int id, CancellationToken cancellationToken) =>

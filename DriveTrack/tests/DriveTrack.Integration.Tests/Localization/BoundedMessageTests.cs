@@ -82,9 +82,9 @@ public class BoundedMessageTests
 
     /// <summary>
     /// The page ceiling the shared paging sentence quotes. Every list validator declares its own,
-    /// and <see cref="The_five_list_validators_agree_on_one_page_ceiling"/> is what lets one
-    /// sentence speak for all five - without it, pinning the message to one of them would leave the
-    /// other four free to drift away from the number their own refusal renders.
+    /// and <see cref="The_list_validators_agree_on_one_page_ceiling"/> is what lets one
+    /// sentence speak for all of them - without it, pinning the message to one of them would leave the
+    /// others free to drift away from the number their own refusal renders.
     /// </summary>
     private const int PageCeiling = ListDeliveriesQueryValidator.MaximumLimit;
 
@@ -127,11 +127,11 @@ public class BoundedMessageTests
     }
 
     [Fact]
-    public void The_five_list_validators_agree_on_one_page_ceiling()
+    public void The_list_validators_agree_on_one_page_ceiling()
     {
-        // The shared paging sentence names one number for five validators, so the five have to be
+        // The shared paging sentence names one number for eight validators, so the eight have to be
         // one number. Pinning the sentence to Deliveries alone would have said nothing about the
-        // other four - and a widened ceiling on any of them would then refuse at 200 while telling
+        // other seven - and a widened ceiling on any of them would then refuse at 200 while telling
         // the caller the limit was 100.
         int[] ceilings =
         [
@@ -140,6 +140,9 @@ public class BoundedMessageTests
             ListShiftsQueryValidator.MaximumLimit,
             ListReviewsQueryValidator.MaximumLimit,
             ListNotificationAttemptsQueryValidator.MaximumLimit,
+            ListDriversQueryValidator.MaximumLimit,
+            ListClientsQueryValidator.MaximumLimit,
+            ListDispatchersQueryValidator.MaximumLimit,
         ];
 
         Assert.All(ceilings, ceiling => Assert.Equal(PageCeiling, ceiling));

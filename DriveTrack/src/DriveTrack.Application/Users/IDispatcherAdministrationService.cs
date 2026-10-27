@@ -23,8 +23,17 @@ public interface IDispatcherAdministrationService
         CreateDispatcherCommand command,
         CancellationToken cancellationToken);
 
-    /// <summary>Every dispatcher (FR-49).</summary>
-    Task<IReadOnlyList<DispatcherAccount>> ListAsync(CancellationToken cancellationToken);
+    /// <summary>
+    /// One page of the dispatcher roster, sorted over every dispatcher, with the size of the roster
+    /// (FR-49, NFR-27). Administrators only.
+    /// </summary>
+    /// <exception cref="Common.ForbiddenException">The caller does not run the system.</exception>
+    /// <exception cref="Common.ValidationException">
+    /// The paging parameters are out of range, or the sort names no column.
+    /// </exception>
+    Task<Common.Paged<DispatcherAccount>> ListAsync(
+        ListDispatchersQuery query,
+        CancellationToken cancellationToken);
 
     /// <summary>One dispatcher (FR-49).</summary>
     /// <exception cref="Common.NotFoundException">

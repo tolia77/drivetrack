@@ -1,4 +1,6 @@
 using DriveTrack.Application.Abstractions;
+using DriveTrack.Application.Common;
+using DriveTrack.Application.Vehicles;
 using DriveTrack.Domain.Identity;
 using DriveTrack.Domain.Vehicles;
 using Microsoft.EntityFrameworkCore;
@@ -13,17 +15,53 @@ internal sealed class EfVehicleRepository(AppDbContext context) : IVehicleReposi
         context.Vehicles.FirstOrDefaultAsync(vehicle => vehicle.Id == id, cancellationToken);
 
     /// <inheritdoc />
-    public async Task<IReadOnlyList<Vehicle>> ListAsync(
-        int offset,
-        int limit,
-        CancellationToken cancellationToken) =>
-        // Ordered explicitly: PostgreSQL is free to return rows in any order without an ORDER BY,
-        // and an unordered OFFSET is a page that can repeat and skip rows between requests.
+    public Task<Paged<Vehicle>> ListAsync(
+        ListVehiclesQuery query,
+        VehicleSort? sort,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+
+        var rows = context.Vehicles.AsNoTracking();
+
+        // The search is a WHERE over the whole fleet, before OFFSET and LIMIT - so a vehicle past
+        // the first page is found, and the total counts what matched rather than what fits.
+        if (ListQueries.Term(query.Search) is { } term)
+        {
+            var pattern = ListQueries.Contains(term);
+
+            rows = rows.Where(vehicle =>
+                EF.Functions.ILike(vehicle.Model, pattern, ListQueries.EscapeCharacter)
+                || EF.Functions.ILike(vehicle.LicensePlate, pattern, ListQueries.EscapeCharacter));
+        }
+
+        var descending = query.Descending;
+
+        // Ordered explicitly, and always ending on the id: PostgreSQL is free to return rows in any
+        // order without an ORDER BY, and an unordered OFFSET is a page that can repeat and skip
+        // rows between requests. With no sort named the fleet keeps the original's order, oldest
+        // first.
+        return rows.ToPageAsync(
+            filtered => sort switch
+            {
+                VehicleSort.Model => filtered.SortBy(vehicle => vehicle.Model, descending)
+                    .ThenSortBy(vehicle => vehicle.Id, descending),
+                VehicleSort.LicensePlate => filtered.SortBy(vehicle => vehicle.LicensePlate, descending)
+                    .ThenSortBy(vehicle => vehicle.Id, descending),
+                VehicleSort.CapacityKg => filtered.SortBy(vehicle => vehicle.CapacityKg, descending)
+                    .ThenSortBy(vehicle => vehicle.Id, descending),
+                _ => filtered.SortBy(vehicle => vehicle.Id, descending),
+            },
+            query.Offset,
+            query.Limit,
+            cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<Vehicle>> ListAllAsync(CancellationToken cancellationToken) =>
         await context.Vehicles
             .AsNoTracking()
             .OrderBy(vehicle => vehicle.Id)
-            .Skip(offset)
-            .Take(limit)
             .ToListAsync(cancellationToken);
 
     /// <inheritdoc />

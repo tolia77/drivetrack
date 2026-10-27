@@ -49,6 +49,14 @@ public enum ErrorCode
     COMMON_PAGING_LIMIT_INVALID,
 
     /// <summary>
+    /// A sort column the list does not have. 422, shared across every list query for the reason the
+    /// two paging codes are: no screen offers a box to type one into, so the only caller who can
+    /// send an unknown one is somebody editing a URL, and one sentence naming the parameter serves
+    /// them (NFR-27).
+    /// </summary>
+    COMMON_SORT_INVALID,
+
+    /// <summary>
     /// A coordinate outside the ranges a map has. 422, stated by <c>LocationInputValidator</c> so
     /// the refusal names the point the caller sent rather than arriving as
     /// <see cref="MapLocation"/>'s constructor throwing into the unexpected-error arm.

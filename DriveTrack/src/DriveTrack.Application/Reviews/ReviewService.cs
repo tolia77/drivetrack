@@ -119,7 +119,7 @@ public sealed class ReviewService(
     }
 
     /// <inheritdoc />
-    public async Task<IReadOnlyList<ReviewSummary>> ListAsync(
+    public async Task<Paged<ReviewSummary>> ListAsync(
         ListReviewsQuery query,
         CancellationToken cancellationToken)
     {
@@ -136,7 +136,7 @@ public sealed class ReviewService(
 
         await ValidatorExtensions.ValidateAndThrowAsync(listValidator, query, cancellationToken);
 
-        List<Review> reviews;
+        Paged<Review> reviews;
 
         // An explicit block rather than a method-wide `await using`, so the scope is closed before
         // the party reads below open theirs. Those go through another capability's service, which
@@ -144,14 +144,11 @@ public sealed class ReviewService(
         // read for no reason.
         await using (var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken))
         {
-            reviews =
-            [
-                .. await unitOfWork.Reviews.ListAsync(
-                    scope,
-                    query.Offset,
-                    query.Limit,
-                    cancellationToken),
-            ];
+            reviews = await unitOfWork.Reviews.ListPageAsync(
+                scope,
+                query,
+                ListSort.Parse<ReviewSort>(query.Sort),
+                cancellationToken);
         }
 
         // AD-24: the parties are the Deliveries capability's answer, not a join this capability
@@ -165,13 +162,11 @@ public sealed class ReviewService(
         // round-trips-must-not-scale-with-rows rule the aggregate follows, and it is the reason the
         // door on IDeliveryService is a plural one.
         var byDeliveryId = (await deliveries.ListByIdsAsync(
-                [.. reviews.Select(review => review.DeliveryId).Distinct()],
+                [.. reviews.Items.Select(review => review.DeliveryId).Distinct()],
                 cancellationToken))
             .ToDictionary(delivery => delivery.Id);
 
-        return
-        [
-            .. reviews.Select(review =>
+        return reviews.Map(review =>
             {
                 // A delivery that vanished between the two reads - an administrator deleting a
                 // terminal parcel mid-page - leaves its review unresolved rather than failing the
@@ -188,12 +183,11 @@ public sealed class ReviewService(
                     review.CreatedAt,
                     delivery?.Client,
                     delivery?.Driver);
-            }),
-        ];
+            });
     }
 
     /// <inheritdoc />
-    public async Task<IReadOnlyList<AuthoredReviewSummary>> ListMineAsync(
+    public async Task<Paged<AuthoredReviewSummary>> ListMineAsync(
         ListReviewsQuery query,
         CancellationToken cancellationToken)
     {
@@ -206,17 +200,46 @@ public sealed class ReviewService(
 
         await ValidatorExtensions.ValidateAndThrowAsync(listValidator, query, cancellationToken);
 
+        var sort = ListSort.Parse<ReviewSort>(query.Sort);
+
+        // AD-17: this list carries no party, and ordering an author's reviews by the driver's name
+        // is a way of reading it. The author is the caller, so ordering by their own name would order
+        // nothing. Both are refused as columns this list does not have.
+        if (sort is ReviewSort.Client or ReviewSort.Driver)
+        {
+            throw new Common.ValidationException(
+                ErrorCode.COMMON_VALIDATION_FAILED,
+                "An author's own reviews cannot be sorted by a party's name.",
+                [new FieldError(nameof(ListReviewsQuery.Sort), nameof(ErrorCode.COMMON_SORT_INVALID))]);
+        }
+
         await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
 
         // AD-3: the narrowing reaches the WHERE clause rather than filtering a materialized page.
-        var reviews = await unitOfWork.Reviews.ListAsync(
+        var reviews = await unitOfWork.Reviews.ListPageAsync(
             new AccessScope(null, clientId),
-            query.Offset,
-            query.Limit,
+            query,
+            sort,
             cancellationToken);
 
         // No party lookup at all, and nothing to strip: the type has no field a counterparty's name
         // could be written into (AD-17).
+        return reviews.Map(Authored);
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<AuthoredReviewSummary>> ListAllMineAsync(
+        CancellationToken cancellationToken)
+    {
+        // The same door as ListMineAsync, unpaged, and narrowed the same way.
+        var clientId = accessGuard.RequireReviewAuthor();
+
+        await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
+
+        var reviews = await unitOfWork.Reviews.ListAllAsync(
+            new AccessScope(null, clientId),
+            cancellationToken);
+
         return [.. reviews.Select(Authored)];
     }
 
