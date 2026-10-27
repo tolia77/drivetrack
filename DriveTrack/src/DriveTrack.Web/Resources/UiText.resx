@@ -1070,10 +1070,7 @@
     <value>Розділи сторінки</value>
   </data>
   <data name="LandingNavFeatures" xml:space="preserve">
-    <value>Можливості</value>
-  </data>
-  <data name="LandingNavRoles" xml:space="preserve">
-    <value>Для кого</value>
+    <value>Що ви отримуєте</value>
   </data>
   <data name="LandingNavHow" xml:space="preserve">
     <value>Як це працює</value>
@@ -1085,222 +1082,102 @@
     <value>Створити акаунт</value>
   </data>
   <data name="LandingHeroTitle" xml:space="preserve">
-    <value>Кожна доставка, водій і зміна на одній дошці</value>
+    <value>Відправте посилку. Стежте за нею до дверей.</value>
   </data>
   <data name="LandingHeroLead" xml:space="preserve">
-    <value>Заявки, водії, автомобілі, зміни, підтвердження вручення й розмови з диспетчером в одному сервісі. Українською та англійською — за комп’ютером і на порозі.</value>
-  </data>
-  <data name="LandingCreateClientAccount" xml:space="preserve">
-    <value>Створити акаунт клієнта</value>
-  </data>
-  <data name="LandingSeeHow" xml:space="preserve">
-    <value>Дізнатися, як це працює</value>
+    <value>Замовте доставку онлайн. Ми надсилатимемо вам листи, поки посилка в дорозі, а коли її доставлять — ви побачите, хто її отримав, із підписом і фото.</value>
   </data>
   <data name="LandingFeaturesTitle" xml:space="preserve">
-    <value>Уся доставка — від заявки до підпису</value>
+    <value>Усе про вашу посилку в одному місці</value>
   </data>
   <data name="LandingFeaturesLead" xml:space="preserve">
-    <value>Нічого не живе в таблицях чи телефонних дзвінках. Кожна частина пише в той самий запис.</value>
-  </data>
-  <data name="LandingFeatureBoard" xml:space="preserve">
-    <value>Одна дошка доставок</value>
-  </data>
-  <data name="LandingFeatureBoardBody" xml:space="preserve">
-    <value>Кожна доставка з водієм, клієнтом, обома адресами, вантажем, часовим вікном і станом. Фільтри за шістьма полями, станом, проміжком дат і простроченням.</value>
-  </data>
-  <data name="LandingFeatureMap" xml:space="preserve">
-    <value>Адреси на карті</value>
-  </data>
-  <data name="LandingFeatureMapBody" xml:space="preserve">
-    <value>Знайдіть адресу або клацніть на карті, щоб задати місця забирання й доставляння. Водій відкриває ту саму точку в дорозі.</value>
+    <value>Від замовлення до вручення біля дверей.</value>
   </data>
   <data name="LandingFeatureProof" xml:space="preserve">
-    <value>Підтвердження на порозі</value>
+    <value>Підтвердження біля дверей</value>
   </data>
   <data name="LandingFeatureProofBody" xml:space="preserve">
-    <value>Водій фіксує ім’я отримувача, підпис і до п’яти фото з телефона. Клієнт бачить підтвердження власної доставки.</value>
-  </data>
-  <data name="LandingFeatureChat" xml:space="preserve">
-    <value>Розмови диспетчера й водія</value>
-  </data>
-  <data name="LandingFeatureChatBody" xml:space="preserve">
-    <value>Повідомлення надходять одразу. Водій пише диспетчерам, не обираючи адресата, а історія зберігається після перезавантаження.</value>
-  </data>
-  <data name="LandingFeatureFleet" xml:space="preserve">
-    <value>Зміни, водії, автомобілі</value>
-  </data>
-  <data name="LandingFeatureFleetBody" xml:space="preserve">
-    <value>Водії самі починають і завершують зміни. Диспетчери бачать, хто на зміні, і ведуть автомобілі, пробіг і дати ТО в одному списку.</value>
-  </data>
-  <data name="LandingFeatureTimeline" xml:space="preserve">
-    <value>Історія, яку можна прочитати</value>
-  </data>
-  <data name="LandingFeatureTimelineBody" xml:space="preserve">
-    <value>Кожна зміна стану зберігає, хто її зробив, коли й з яким коментарем. Нічого в історії не редагується й не видаляється.</value>
-  </data>
-  <data name="LandingRolesTitle" xml:space="preserve">
-    <value>Чотири ролі — чотири різні екрани</value>
-  </data>
-  <data name="LandingRolesLead" xml:space="preserve">
-    <value>Кожна роль бачить свої розділи й свої дані. Кожен дозвіл вирішує сервер, а не меню.</value>
-  </data>
-  <data name="LandingClientOrigin" xml:space="preserve">
-    <value>Реєструється сам</value>
-  </data>
-  <data name="LandingClientDoes1" xml:space="preserve">
-    <value>Замовити доставку</value>
-  </data>
-  <data name="LandingClientDoes2" xml:space="preserve">
-    <value>Стежити за забиранням, доставлянням і станом</value>
-  </data>
-  <data name="LandingClientDoes3" xml:space="preserve">
-    <value>Бачити підтвердження власної доставки</value>
-  </data>
-  <data name="LandingClientDoes4" xml:space="preserve">
-    <value>Оцінити завершену доставку</value>
-  </data>
-  <data name="LandingDriverOrigin" xml:space="preserve">
-    <value>Створює диспетчер</value>
-  </data>
-  <data name="LandingDriverDoes1" xml:space="preserve">
-    <value>Починати й завершувати зміну</value>
-  </data>
-  <data name="LandingDriverDoes2" xml:space="preserve">
-    <value>Свої доставки за часовими вікнами</value>
-  </data>
-  <data name="LandingDriverDoes3" xml:space="preserve">
-    <value>Змінювати стан у дорозі</value>
-  </data>
-  <data name="LandingDriverDoes4" xml:space="preserve">
-    <value>Фіксувати вручення на порозі</value>
-  </data>
-  <data name="LandingDispatcherOrigin" xml:space="preserve">
-    <value>Створює адміністратор</value>
-  </data>
-  <data name="LandingDispatcherDoes1" xml:space="preserve">
-    <value>Створювати й редагувати доставки</value>
-  </data>
-  <data name="LandingDispatcherDoes2" xml:space="preserve">
-    <value>Призначати водіїв і автомобілі</value>
-  </data>
-  <data name="LandingDispatcherDoes3" xml:space="preserve">
-    <value>Розмовляти з водіями наживо</value>
-  </data>
-  <data name="LandingDispatcherDoes4" xml:space="preserve">
-    <value>Стежити за всіма доставками</value>
-  </data>
-  <data name="LandingAdminOrigin" xml:space="preserve">
-    <value>Заведений у базі даних</value>
-  </data>
-  <data name="LandingAdminDoes1" xml:space="preserve">
-    <value>Усе, що може диспетчер</value>
-  </data>
-  <data name="LandingAdminDoes2" xml:space="preserve">
-    <value>Керувати диспетчерами й клієнтами</value>
-  </data>
-  <data name="LandingAdminDoes3" xml:space="preserve">
-    <value>Виправляти записи змін</value>
-  </data>
-  <data name="LandingAdminDoes4" xml:space="preserve">
-    <value>Модерувати відгуки</value>
+    <value>Ви побачите, хто отримав посилку, підпис, фото, а також коли й де її вручили. А потім зможете оцінити доставку.</value>
   </data>
   <data name="LandingHowTitle" xml:space="preserve">
-    <value>Від порожнього парку до підписаної доставки</value>
+    <value>Чотири кроки до дверей</value>
   </data>
   <data name="LandingStep1" xml:space="preserve">
-    <value>Додайте парк</value>
+    <value>Створіть акаунт</value>
   </data>
   <data name="LandingStep1Body" xml:space="preserve">
-    <value>Адміністратор створює автомобілі й водіїв і дає кожному водієві автомобіль зі списку вільних.</value>
+    <value>Ім’я, пошта й телефон — один раз.</value>
   </data>
   <data name="LandingStep2" xml:space="preserve">
-    <value>Розподіліть роботу</value>
+    <value>Замовте доставку</value>
   </data>
   <data name="LandingStep2Body" xml:space="preserve">
-    <value>Диспетчер додає доставку, обирає водія й клієнта та задає обидві точки на карті.</value>
+    <value>Звідки, куди і що всередині.</value>
   </data>
   <data name="LandingStep3" xml:space="preserve">
-    <value>Доставте й закрийте</value>
+    <value>Ми заберемо й доставимо</value>
   </data>
   <data name="LandingStep3Body" xml:space="preserve">
-    <value>Водій починає зміну, переводить доставку в стан «У дорозі» і фіксує вручення на порозі.</value>
+    <value>На кожному кроці ви отримуєте лист.</value>
   </data>
   <data name="LandingStep4" xml:space="preserve">
-    <value>Прочитайте запис</value>
+    <value>Посилку доставлено</value>
   </data>
   <data name="LandingStep4Body" xml:space="preserve">
-    <value>Клієнт стежить за станом і залишає відгук. Адміністратор читає історію й підтвердження.</value>
+    <value>Ви бачите, хто її отримав, і оцінюєте доставку.</value>
   </data>
   <data name="LandingFaqTitle" xml:space="preserve">
-    <value>Що питають насамперед</value>
+    <value>Що питають клієнти</value>
   </data>
   <data name="LandingFaq1" xml:space="preserve">
-    <value>Чи бачить клієнт, який водій везе його посилку?</value>
+    <value>Чи потрібен акаунт?</value>
   </data>
   <data name="LandingFaq1Answer" xml:space="preserve">
-    <value>Ні. Клієнт бачить місця забирання й доставляння, вантаж, стан, історію та підтвердження власних доставок, але ніколи — призначеного водія.</value>
+    <value>Так. Це займає хвилину, і всі ваші доставки зберігаються в одному місці.</value>
   </data>
   <data name="LandingFaq2" xml:space="preserve">
-    <value>Хто може створювати акаунти?</value>
+    <value>Як я дізнаюся, що посилку доставлено?</value>
   </data>
   <data name="LandingFaq2Answer" xml:space="preserve">
-    <value>Клієнти реєструються самі. Диспетчери створюють водіїв, адміністратори — диспетчерів, а акаунти адміністраторів заводяться в базі даних.</value>
+    <value>Ви отримаєте лист, а в доставці буде видно, хто її отримав, підпис і фото.</value>
   </data>
   <data name="LandingFaq3" xml:space="preserve">
-    <value>Чи працює це на телефоні?</value>
+    <value>Що, як нікого немає вдома?</value>
   </data>
   <data name="LandingFaq3Answer" xml:space="preserve">
-    <value>Так. Бічне меню згортається на екранах, вужчих за 641 піксель, а фіксацію вручення зроблено насамперед для телефона — отримувач підписується пальцем на порозі.</value>
+    <value>Ви отримаєте лист, а в примітці кур’єра до вашої доставки буде сказано, що сталося.</value>
   </data>
   <data name="LandingFaq4" xml:space="preserve">
-    <value>Якими мовами працює сервіс?</value>
+    <value>Чи можна користуватися з телефона?</value>
   </data>
   <data name="LandingFaq4Answer" xml:space="preserve">
-    <value>Українською та англійською, з перемиканням будь-де в застосунку. Кожен рядок береться з каталогу ресурсів, тож третя мова — це переклад, а не перебудова.</value>
+    <value>Так. Усе працює в браузері телефона.</value>
   </data>
   <data name="LandingCtaTitle" xml:space="preserve">
-    <value>Готові запустити дошку в роботу?</value>
+    <value>Готові відправити посилку?</value>
   </data>
   <data name="LandingCtaLead" xml:space="preserve">
-    <value>Створіть акаунт клієнта за хвилину або попросіть в адміністратора вхід для диспетчера.</value>
+    <value>Створіть акаунт і замовте першу доставку.</value>
   </data>
   <data name="LandingFootTagline" xml:space="preserve">
-    <value>Керування доставками для невеликого кур’єрського парку.</value>
-  </data>
-  <data name="LandingFootProduct" xml:space="preserve">
-    <value>Продукт</value>
+    <value>Відправляйте посилки й стежте за ними до дверей.</value>
   </data>
   <data name="LandingFootAccount" xml:space="preserve">
     <value>Акаунт</value>
   </data>
-  <data name="LandingFootCompany" xml:space="preserve">
-    <value>Компанія</value>
+  <data name="LandingFeatureRequest" xml:space="preserve">
+    <value>Замовлення за хвилину</value>
   </data>
-  <data name="LandingFootLegal" xml:space="preserve">
-    <value>Правова інформація</value>
+  <data name="LandingFeatureRequestBody" xml:space="preserve">
+    <value>Знайдіть адреси забирання й доставляння або вкажіть їх на карті, опишіть вантаж і залиште примітку для кур’єра.</value>
   </data>
-  <data name="LandingForgotPassword" xml:space="preserve">
-    <value>Забули пароль</value>
+  <data name="LandingFeatureUpdates" xml:space="preserve">
+    <value>Завжди знаєте, що відбувається</value>
   </data>
-  <data name="LandingAbout" xml:space="preserve">
-    <value>Про сервіс</value>
+  <data name="LandingFeatureUpdatesBody" xml:space="preserve">
+    <value>Лист, коли посилка в дорозі, доставлена або її не вдалося доставити. Час доставки з’являється, щойно його призначать, а до будь-якої доставки можна залишити коментар.</value>
   </data>
-  <data name="LandingContact" xml:space="preserve">
-    <value>Контакти</value>
-  </data>
-  <data name="LandingServiceStatus" xml:space="preserve">
-    <value>Стан сервісу</value>
-  </data>
-  <data name="LandingTerms" xml:space="preserve">
-    <value>Умови використання</value>
-  </data>
-  <data name="LandingPrivacy" xml:space="preserve">
-    <value>Політика конфіденційності</value>
-  </data>
-  <data name="LandingCookies" xml:space="preserve">
-    <value>Політика щодо куки-файлів</value>
-  </data>
-  <data name="LandingDataProcessing" xml:space="preserve">
-    <value>Обробка даних</value>
+  <data name="LandingFootSections" xml:space="preserve">
+    <value>На цій сторінці</value>
   </data>
 </root>

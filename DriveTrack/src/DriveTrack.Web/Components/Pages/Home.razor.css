@@ -192,7 +192,6 @@
 
 .dt-landing-tile-title,
 .dt-landing-tile-body,
-.dt-landing-origin,
 .dt-landing-title,
 .dt-landing-lead {
     margin: 0;
@@ -281,46 +280,7 @@
     border-bottom: 0;
 }
 
-/* The note a cut-off page carries, as DataTable draws it: warning ink on the warning tint. */
-.dt-landing-board-note {
-    display: flex;
-    align-items: flex-start;
-    margin: var(--dt-space-3) 0 0;
-    padding: var(--dt-space-2) var(--dt-space-3);
-    border-radius: var(--dt-radius-sm);
-    background-color: var(--dt-warning-subtle);
-    color: var(--dt-warning-text);
-    font-size: var(--dt-small-font-size);
-    line-height: var(--dt-small-line-height);
-}
-
-.dt-landing-board-note ::deep .dt-icon {
-    color: var(--dt-warning-mark);
-}
-
-/* ---------------------------------------------------------------- roles and steps */
-
-.dt-landing-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--dt-space-1);
-    margin: var(--dt-space-1) 0 0;
-    padding: 0;
-    list-style: none;
-    font-size: var(--dt-table-font-size);
-    line-height: var(--dt-table-line-height);
-}
-
-/* The icon's own end margin and this gap together are the design's space between tick and words. */
-.dt-landing-list li {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--dt-space-1);
-}
-
-.dt-landing-list ::deep .dt-icon {
-    color: var(--dt-success);
-}
+/* ---------------------------------------------------------------- steps */
 
 .dt-landing-steps {
     margin: 0;
@@ -408,7 +368,7 @@
 
 .dt-landing-foot-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1.4fr) repeat(4, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr));
     gap: var(--dt-space-5);
     padding: var(--dt-space-6) 0 var(--dt-space-5);
 }

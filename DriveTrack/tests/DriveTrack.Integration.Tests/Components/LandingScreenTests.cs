@@ -17,8 +17,8 @@ namespace DriveTrack.Integration.Tests.Components;
 /// </summary>
 public class LandingScreenTests
 {
-    /// <summary>The four sections the header's anchors jump to, in the design's order.</summary>
-    private static readonly string[] Sections = ["features", "roles", "how", "faq"];
+    /// <summary>The three sections the header's anchors jump to, in the design's order.</summary>
+    private static readonly string[] Sections = ["features", "how", "faq"];
 
     [Fact]
     public async Task An_anonymous_visitor_is_offered_every_entry_point_the_design_draws()
@@ -31,11 +31,11 @@ public class LandingScreenTests
         AssertActionWithIcon(header, "sign-in");
         AssertActionWithIcon(header, "register");
 
-        // The hero: create a client account, and the jump to how it works.
+        // The hero: create an account, and sign in.
         var hero = Section(html, "top");
 
         AssertActionWithIcon(hero, "register");
-        AssertActionWithIcon(hero, "#how");
+        AssertActionWithIcon(hero, "sign-in");
 
         // The closing band: both again.
         var cta = SharedMarkup.ElementWithClass(html, "section", "dt-landing-cta");
@@ -50,11 +50,17 @@ public class LandingScreenTests
         Assert.Contains("sign-in", footerLinks);
         Assert.Contains("register", footerLinks);
 
-        // Four ways to register and three to sign in, and none of them leads into the application.
+        // Four ways to register and four to sign in, and none of them leads into the application.
         var links = Hrefs(html);
 
         Assert.Equal(4, links.Count(href => href == "register"));
-        Assert.Equal(3, links.Count(href => href == "sign-in"));
+        Assert.Equal(4, links.Count(href => href == "sign-in"));
+
+        // Every other link goes somewhere on this page: no company or legal pages, no contacts.
+        Assert.DoesNotContain("#", links);
+        Assert.All(
+            links.Where(href => href != "register" && href != "sign-in"),
+            href => Assert.Contains(href, new[] { "#top", "#features", "#how", "#faq" }));
         Assert.DoesNotContain("/dashboard", links);
         Assert.DoesNotContain("/profile", links);
     }
@@ -98,6 +104,12 @@ public class LandingScreenTests
 
         Assert.DoesNotContain("sign-in", links);
         Assert.DoesNotContain("register", links);
+
+        // And no link to nowhere: everything else is this page's own sections.
+        Assert.DoesNotContain("#", links);
+        Assert.All(
+            links.Where(href => href != destination),
+            href => Assert.Contains(href, new[] { "#top", "#features", "#how", "#faq" }));
         Assert.DoesNotContain("dt-landing-cta", html, StringComparison.Ordinal);
     }
 

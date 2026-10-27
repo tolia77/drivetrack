@@ -131,18 +131,17 @@ public class ShellRoutingTests
         Assert.DoesNotContain(@"href=""profile""", home, StringComparison.Ordinal);
 
         // NFR-24: every glyph on the page is a named one from the shared set, and there are
-        // twenty-three in the source. The brand mark twice, header and footer. The calls to action:
-        // the signed-in way in, drawn once as the dashboard's glyph and once as the profile's, and
-        // the visitor's sign in and register in the header, register in the hero and both again in
-        // the closing band. The hero's "how it works" link - the eyebrow badge above the headline
-        // was taken off the page. The illustration's create action and its cut-off note - its
-        // overdue badge brings its own. Six feature tiles, four role tiles, and the one tick every
-        // line of a role's list is drawn with.
+        // fourteen in the source. The brand mark twice, header and footer. The calls to action: the
+        // signed-in way in, drawn once as the dashboard's glyph and once as the profile's, and the
+        // visitor's sign in and register in the header, the hero and the closing band. The
+        // illustration's request action. Three feature tiles. The page has no badge, no role cards
+        // and no cut-off note - the eyebrow badge, the roles section and the dispatch-board picture
+        // were all taken off it.
         //
         // Stated as a count for the reason the navigation's is: an action drawn without a glyph is
         // markup with nothing behind it, so a new one has to be a deliberate edit here rather than
         // an empty box nobody notices.
-        Assert.Equal(23, SharedMarkup.Occurrences(home, "<Icon Name="));
+        Assert.Equal(14, SharedMarkup.Occurrences(home, "<Icon Name="));
 
         // The signed-in branches read the role only behind the authenticated check, because
         // ICurrentUser.Role throws for an anonymous visitor.
