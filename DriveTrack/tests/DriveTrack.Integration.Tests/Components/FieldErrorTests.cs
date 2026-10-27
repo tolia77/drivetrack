@@ -83,8 +83,9 @@ public class FieldErrorTests
         Assert.True(SharedMarkup.IsUkrainian(text), text);
         Assert.False(SharedMarkup.HasLatinWord(text), text);
 
-        // The figure the validator holds, so the sentence is specific rather than merely different.
-        Assert.Contains("9999999,999", text, StringComparison.Ordinal);
+        // The field's own sentence rather than the generic refusal. Not the validator's figure: a
+        // column's precision is not a limit anyone weighs a parcel against, so it says what to do.
+        Assert.Contains("Вага вантажу завелика", text, StringComparison.Ordinal);
         Assert.Contains("role=\"alert\"", html, StringComparison.Ordinal);
 
         // No label: the input's own <label> is directly above it, and repeating the name here is

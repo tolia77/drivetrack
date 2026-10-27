@@ -72,15 +72,17 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <!-- {0} is the delivery's number, which is the one thing a client can quote back to dispatch. -->
+  <!-- {0} is the state the delivery holds now. No number: the screens never show one, so a
+       client had nothing to match it against. -->
   <data name="StatusChangeSubject" xml:space="preserve">
-    <value>Доставка №{0}: стан змінено</value>
+    <value>Ваша доставка: {0}</value>
   </data>
-  <!-- {0} the delivery's number, {1} the state it held, {2} the state it holds now. -->
+  <!-- {0} where it is going - the drop-off address the client sees on "Мої доставки" -, {1} the
+       state it held, {2} the state it holds now. -->
   <data name="StatusChangeBody" xml:space="preserve">
     <value>Доброго дня!
 
-Стан вашої доставки №{0} змінено з «{1}» на «{2}».
+Стан вашої доставки за адресою {0} змінено з «{1}» на «{2}».
 
 Це повідомлення сформовано автоматично, відповідати на нього не потрібно.</value>
   </data>

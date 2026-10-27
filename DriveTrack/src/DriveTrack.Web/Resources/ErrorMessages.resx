@@ -67,13 +67,13 @@
     <value>Сталася неочікувана помилка. Спробуйте ще раз пізніше.</value>
   </data>
   <data name="COMMON_NOT_FOUND" xml:space="preserve">
-    <value>Запитаний ресурс не знайдено.</value>
+    <value>Не знайдено. Можливо, цей запис уже видалено.</value>
   </data>
   <data name="COMMON_VALIDATION_FAILED" xml:space="preserve">
-    <value>Дані запиту не пройшли перевірку.</value>
+    <value>Перевірте введені дані.</value>
   </data>
   <data name="COMMON_CONFLICT" xml:space="preserve">
-    <value>Операція суперечить поточному стану даних.</value>
+    <value>Хтось щойно змінив ці дані. Оновіть сторінку й спробуйте ще раз.</value>
   </data>
   <!-- The shared presence code. It says nothing about which box, and does not have to: the field
        travels beside it, so DtFieldError renders it under the input and DtFailureBanner puts the
@@ -89,10 +89,10 @@
     <value>Кількість записів має бути від 1 до 100.</value>
   </data>
   <data name="COMMON_COORDINATE_OUT_OF_RANGE" xml:space="preserve">
-    <value>Координати точки виходять за межі карти.</value>
+    <value>Ця точка поза межами карти. Оберіть іншу.</value>
   </data>
   <data name="AUTH_UNAUTHENTICATED" xml:space="preserve">
-    <value>Потрібна автентифікація. Увійдіть до системи.</value>
+    <value>Увійдіть до системи, щоб продовжити.</value>
   </data>
   <data name="AUTH_FORBIDDEN" xml:space="preserve">
     <value>У вас немає прав на цю дію.</value>
@@ -101,7 +101,7 @@
     <value>Такий запис уже існує.</value>
   </data>
   <data name="PERSISTENCE_CHECK_VIOLATION" xml:space="preserve">
-    <value>Значення виходить за межі допустимого діапазону.</value>
+    <value>Одне зі значень недопустиме. Перевірте введені дані.</value>
   </data>
   <data name="AUTH_INVALID_CREDENTIALS" xml:space="preserve">
     <value>Невірна електронна пошта або пароль.</value>
@@ -154,7 +154,7 @@
     <value>Вантажопідйомність має бути більшою за нуль.</value>
   </data>
   <data name="FLEET_CAPACITY_TOO_LARGE" xml:space="preserve">
-    <value>Вантажопідйомність завелика: максимум 99999999,99 кг.</value>
+    <value>Вантажопідйомність завелика. Перевірте, чи правильно введено число.</value>
   </data>
   <data name="FLEET_MILEAGE_NEGATIVE" xml:space="preserve">
     <value>Пробіг не може бути від’ємним.</value>
@@ -181,7 +181,7 @@
     <value>Вага вантажу має бути більшою за нуль.</value>
   </data>
   <data name="DELIVERY_PACKAGE_WEIGHT_TOO_LARGE" xml:space="preserve">
-    <value>Вага вантажу завелика: максимум 9999999,999 кг.</value>
+    <value>Вага вантажу завелика. Перевірте, чи правильно введено число.</value>
   </data>
   <!-- FR-100. States which end has to be later, for the reason SHIFT_ENDED_BEFORE_STARTED does. -->
   <data name="DELIVERY_WINDOW_ENDS_BEFORE_IT_STARTS" xml:space="preserve">
@@ -214,7 +214,7 @@
        the two statuses travel in the log message, and the screen already shows where the delivery
        is and which moves it offers. -->
   <data name="DELIVERY_INVALID_STATUS_TRANSITION" xml:space="preserve">
-    <value>Такий перехід стану доставки неможливий з її поточного стану.</value>
+    <value>З поточного стану доставку не можна перевести в обраний.</value>
   </data>
   <!-- FR-120. The sentence names both ways out, because the caller who meets this refusal is
        standing at a door with a phone and needs to know which of the two to do next. -->
@@ -232,12 +232,12 @@
     <value>Цей файл не є зображенням дозволеного формату.</value>
   </data>
   <data name="DELIVERY_PROOF_ASSET_TOO_LARGE" xml:space="preserve">
-    <value>Кожне зображення має бути не порожнім і не більшим за 5 МіБ.</value>
+    <value>Кожне фото має бути не більшим за 5 МБ.</value>
   </data>
   <!-- FR-71. A conversation is keyed on a driver row, so a driver who is no longer on the fleet
        takes their conversation with them: the sentence says that rather than "не знайдено". -->
   <data name="CHAT_THREAD_NOT_FOUND" xml:space="preserve">
-    <value>Такої розмови немає: водія з цим номером не знайдено.</value>
+    <value>Розмову не знайдено: цього водія вже немає.</value>
   </data>
   <data name="CHAT_MESSAGE_TEXT_REQUIRED" xml:space="preserve">
     <value>Повідомлення не може бути порожнім.</value>
@@ -256,7 +256,7 @@
   <!-- FR-67. The bounds are stated rather than only refused: the scale is the one thing a caller
        cannot guess from a rejected value. -->
   <data name="REVIEW_RATING_OUT_OF_RANGE" xml:space="preserve">
-    <value>Оцінка має бути цілим числом від 1 до 5.</value>
+    <value>Оберіть оцінку від 1 до 5.</value>
   </data>
   <data name="REVIEW_TEXT_REQUIRED" xml:space="preserve">
     <value>Текст відгуку не може бути порожнім.</value>

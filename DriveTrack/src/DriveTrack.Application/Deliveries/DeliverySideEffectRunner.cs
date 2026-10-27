@@ -262,7 +262,7 @@ public sealed class DeliverySideEffectRunner(
         try
         {
             await emailSender.SendAsync(
-                StatusChangeEmail.For(account.Email, delivery.Id, previous, next),
+                StatusChangeEmail.For(account.Email, delivery.DropoffLocation, previous, next),
                 cancellationToken);
         }
         catch (Exception exception)

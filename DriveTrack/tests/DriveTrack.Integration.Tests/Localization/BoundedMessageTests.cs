@@ -53,11 +53,9 @@ public class BoundedMessageTests
         (ErrorCode.AUTH_PASSWORD_TOO_LONG, [RegisterClientCommandValidator.PasswordMaximumLength]),
         (ErrorCode.FLEET_MODEL_TOO_LONG, [CreateVehicleCommandValidator.ModelMaximumLength]),
         (ErrorCode.FLEET_LICENSE_PLATE_TOO_LONG, [CreateVehicleCommandValidator.LicensePlateMaximumLength]),
-        (ErrorCode.FLEET_CAPACITY_TOO_LARGE, [CreateVehicleCommandValidator.CapacityMaximum]),
         (ErrorCode.FLEET_LICENSE_NUMBER_TOO_LONG, [CreateDriverCommandValidator.LicenseNumberMaximumLength]),
         (ErrorCode.DELIVERY_PACKAGE_DETAILS_TOO_LONG, [CreateDeliveryCommandValidator.PackageDetailsMaximumLength]),
         (ErrorCode.DELIVERY_NOTES_TOO_LONG, [CreateDeliveryCommandValidator.DeliveryNotesMaximumLength]),
-        (ErrorCode.DELIVERY_PACKAGE_WEIGHT_TOO_LARGE, [CreateDeliveryCommandValidator.PackageWeightMaximum]),
         (ErrorCode.DELIVERY_NOTE_TOO_LONG, [TimelineEntry.NoteMaximumLength]),
         (ErrorCode.DELIVERY_RECIPIENT_NAME_TOO_LONG, [CaptureProofCommandValidator.RecipientNameMaximumLength]),
         (ErrorCode.DELIVERY_PROOF_TOO_MANY_PHOTOS, [ProofAssetRules.MaximumPhotos]),
@@ -70,7 +68,12 @@ public class BoundedMessageTests
         // Declared with no figure, which is a decision rather than an omission. Each of these names
         // its bound in words because the bound is not a number a caller could usefully be told:
         // "більшою за нуль" is the floor, "від'ємним" is the same claim from the other side, and a
-        // coordinate's ±90/±180 describe the map rather than anything typed into a box.
+        // coordinate's ±90/±180 describe the map rather than anything typed into a box. The two
+        // ceilings on weight and capacity are a decimal column's precision - 9999999,999 kg - which
+        // no parcel or van comes near; quoting it read as a fault, so the sentence says what to
+        // check instead.
+        (ErrorCode.FLEET_CAPACITY_TOO_LARGE, []),
+        (ErrorCode.DELIVERY_PACKAGE_WEIGHT_TOO_LARGE, []),
         (ErrorCode.FLEET_CAPACITY_NOT_POSITIVE, []),
         (ErrorCode.DELIVERY_PACKAGE_WEIGHT_NOT_POSITIVE, []),
         (ErrorCode.FLEET_MILEAGE_NEGATIVE, []),

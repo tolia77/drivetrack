@@ -68,13 +68,13 @@
     <value>An unexpected error occurred. Try again later.</value>
   </data>
   <data name="COMMON_NOT_FOUND" xml:space="preserve">
-    <value>The requested resource was not found.</value>
+    <value>Not found. It may have been deleted.</value>
   </data>
   <data name="COMMON_VALIDATION_FAILED" xml:space="preserve">
-    <value>The request data did not pass validation.</value>
+    <value>Check the details you entered.</value>
   </data>
   <data name="COMMON_CONFLICT" xml:space="preserve">
-    <value>The operation contradicts the current state of the data.</value>
+    <value>Someone has just changed this. Reload the page and try again.</value>
   </data>
   <!-- The shared presence code. It says nothing about which box, and does not have to: the field
        travels beside it, so DtFieldError renders it under the input and DtFailureBanner puts the
@@ -91,10 +91,10 @@
     <value>The number of records must be from 1 to 100.</value>
   </data>
   <data name="COMMON_COORDINATE_OUT_OF_RANGE" xml:space="preserve">
-    <value>The coordinates of the point are outside the map.</value>
+    <value>This point is outside the map. Pick another one.</value>
   </data>
   <data name="AUTH_UNAUTHENTICATED" xml:space="preserve">
-    <value>Authentication is required. Sign in to the system.</value>
+    <value>Sign in to continue.</value>
   </data>
   <data name="AUTH_FORBIDDEN" xml:space="preserve">
     <value>You have no right to perform this action.</value>
@@ -103,7 +103,7 @@
     <value>Such a record already exists.</value>
   </data>
   <data name="PERSISTENCE_CHECK_VIOLATION" xml:space="preserve">
-    <value>The value falls outside the permitted range.</value>
+    <value>One of the values is not allowed. Check the details you entered.</value>
   </data>
   <data name="AUTH_INVALID_CREDENTIALS" xml:space="preserve">
     <value>Incorrect email address or password.</value>
@@ -156,7 +156,7 @@
     <value>The load capacity must be greater than zero.</value>
   </data>
   <data name="FLEET_CAPACITY_TOO_LARGE" xml:space="preserve">
-    <value>The load capacity is too large: 99999999.99 kg at most.</value>
+    <value>The load capacity is too large. Check that the number is right.</value>
   </data>
   <data name="FLEET_MILEAGE_NEGATIVE" xml:space="preserve">
     <value>The mileage cannot be negative.</value>
@@ -183,7 +183,7 @@
     <value>The package weight must be greater than zero.</value>
   </data>
   <data name="DELIVERY_PACKAGE_WEIGHT_TOO_LARGE" xml:space="preserve">
-    <value>The package weight is too large: 9999999.999 kg at most.</value>
+    <value>The package weight is too large. Check that the number is right.</value>
   </data>
   <!-- FR-100. States which end has to be later, for the reason SHIFT_ENDED_BEFORE_STARTED does. -->
   <data name="DELIVERY_WINDOW_ENDS_BEFORE_IT_STARTS" xml:space="preserve">
@@ -213,7 +213,7 @@
     <value>Enter at least 3 characters to search.</value>
   </data>
   <data name="DELIVERY_INVALID_STATUS_TRANSITION" xml:space="preserve">
-    <value>Such a delivery status transition is not possible from its current state.</value>
+    <value>The delivery cannot move to that status from its current one.</value>
   </data>
   <data name="DELIVERY_PROOF_REQUIRED" xml:space="preserve">
     <value>To mark the delivery as completed, record the proof of delivery or add a note explaining why.</value>
@@ -225,10 +225,10 @@
     <value>This file is not an image of a permitted format.</value>
   </data>
   <data name="DELIVERY_PROOF_ASSET_TOO_LARGE" xml:space="preserve">
-    <value>Each image must be non-empty and no larger than 5 MiB.</value>
+    <value>Each photo must be 5 MB or smaller.</value>
   </data>
   <data name="CHAT_THREAD_NOT_FOUND" xml:space="preserve">
-    <value>There is no such conversation: no driver with this number was found.</value>
+    <value>Conversation not found: this driver no longer exists.</value>
   </data>
   <data name="CHAT_MESSAGE_TEXT_REQUIRED" xml:space="preserve">
     <value>A message cannot be empty.</value>
@@ -240,7 +240,7 @@
     <value>A review can be left only about a delivery that has already been completed or marked as failed.</value>
   </data>
   <data name="REVIEW_RATING_OUT_OF_RANGE" xml:space="preserve">
-    <value>The score must be a whole number from 1 to 5.</value>
+    <value>Choose a score from 1 to 5.</value>
   </data>
   <data name="REVIEW_TEXT_REQUIRED" xml:space="preserve">
     <value>The review text cannot be empty.</value>

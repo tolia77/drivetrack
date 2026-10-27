@@ -90,16 +90,16 @@
     <value>Головна</value>
   </data>
   <data name="CircuitError" xml:space="preserve">
-    <value>Сталася необроблена помилка.</value>
+    <value>Щось пішло не так.</value>
   </data>
   <data name="Reload" xml:space="preserve">
     <value>Перезавантажити</value>
   </data>
   <data name="ReconnectRejoining" xml:space="preserve">
-    <value>Повторне під’єднання до сервера…</value>
+    <value>Відновлюємо з’єднання…</value>
   </data>
   <data name="ReconnectRetryPrefix" xml:space="preserve">
-    <value>Не вдалося під’єднатися… наступна спроба через</value>
+    <value>Немає з’єднання. Наступна спроба через</value>
   </data>
   <!-- Abbreviated because the countdown produces 1, 2-4 and 5+, which take three different
        Ukrainian plural forms; an abbreviation is correct for all of them. -->
@@ -107,7 +107,7 @@
     <value>с.</value>
   </data>
   <data name="ReconnectFailed" xml:space="preserve">
-    <value>Не вдалося під’єднатися знову.</value>
+    <value>Не вдалося відновити з’єднання.</value>
   </data>
   <data name="ReconnectRetryHint" xml:space="preserve">
     <value>Спробуйте ще раз або перезавантажте сторінку.</value>
@@ -116,10 +116,10 @@
     <value>Повторити</value>
   </data>
   <data name="SessionPaused" xml:space="preserve">
-    <value>Сеанс призупинено сервером.</value>
+    <value>Сторінку призупинено.</value>
   </data>
   <data name="ResumeFailed" xml:space="preserve">
-    <value>Не вдалося відновити сеанс.</value>
+    <value>Не вдалося відновити сторінку.</value>
   </data>
   <data name="Resume" xml:space="preserve">
     <value>Відновити</value>
@@ -759,7 +759,7 @@
   <!-- A client or an administrator: chat has two participants and neither is one of them, so the
        sentence says that rather than offering an empty conversation. -->
   <data name="ChatNotParticipant" xml:space="preserve">
-    <value>Розмови ведуть диспетчери та водії. Ваша роль до них доступу не має.</value>
+    <value>Розмови доступні лише диспетчерам і водіям.</value>
   </data>
   <!-- The roster's search box. A placeholder and an accessible name rather than a visible label:
        the box is the first thing in a panel already headed "Водії", and a second heading under it
@@ -804,7 +804,7 @@
   <!-- A driver. They are the party a review judges, so the sentence says whose screen this is
        rather than showing them an empty table, which would read as "nobody has written anything". -->
   <data name="ReviewsNotAvailable" xml:space="preserve">
-    <value>Відгуки пишуть клієнти, а читають диспетчери. Ваша роль до них доступу не має.</value>
+    <value>Відгуки доступні лише клієнтам і диспетчерам.</value>
   </data>
   <data name="WriteReview" xml:space="preserve">
     <value>Написати відгук</value>
@@ -978,7 +978,7 @@
     <value>Додати</value>
   </data>
   <data name="NavDashboard" xml:space="preserve">
-    <value>Огляд</value>
+    <value>Панель керування</value>
   </data>
   <data name="DashboardGreetingMorning" xml:space="preserve">
     <value>Доброго ранку, {0}</value>
@@ -1265,7 +1265,7 @@
     <value>Створіть акаунт клієнта за хвилину або попросіть в адміністратора вхід для диспетчера.</value>
   </data>
   <data name="LandingFootTagline" xml:space="preserve">
-    <value>Керування доставками для невеликого кур’єрського парку. Зроблено в Києві.</value>
+    <value>Керування доставками для невеликого кур’єрського парку.</value>
   </data>
   <data name="LandingFootProduct" xml:space="preserve">
     <value>Продукт</value>

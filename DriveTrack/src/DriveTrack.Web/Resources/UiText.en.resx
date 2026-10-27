@@ -92,16 +92,16 @@
     <value>Home</value>
   </data>
   <data name="CircuitError" xml:space="preserve">
-    <value>An unhandled error has occurred.</value>
+    <value>Something went wrong.</value>
   </data>
   <data name="Reload" xml:space="preserve">
     <value>Reload</value>
   </data>
   <data name="ReconnectRejoining" xml:space="preserve">
-    <value>Rejoining the server…</value>
+    <value>Reconnecting…</value>
   </data>
   <data name="ReconnectRetryPrefix" xml:space="preserve">
-    <value>Could not connect… next attempt in</value>
+    <value>No connection. Next attempt in</value>
   </data>
   <data name="ReconnectRetrySuffix" xml:space="preserve">
     <value>sec.</value>
@@ -116,10 +116,10 @@
     <value>Retry</value>
   </data>
   <data name="SessionPaused" xml:space="preserve">
-    <value>The session was paused by the server.</value>
+    <value>This page was paused.</value>
   </data>
   <data name="ResumeFailed" xml:space="preserve">
-    <value>Could not resume the session.</value>
+    <value>Could not resume this page.</value>
   </data>
   <data name="Resume" xml:space="preserve">
     <value>Resume</value>
@@ -698,7 +698,7 @@
     <value>Send</value>
   </data>
   <data name="ChatNotParticipant" xml:space="preserve">
-    <value>Conversations are held by dispatchers and drivers. Your role has no access to them.</value>
+    <value>Conversations are only for dispatchers and drivers.</value>
   </data>
   <data name="ChatFindDriver" xml:space="preserve">
     <value>Find a driver</value>
@@ -728,7 +728,7 @@
     <value>There are no reviews yet.</value>
   </data>
   <data name="ReviewsNotAvailable" xml:space="preserve">
-    <value>Reviews are written by clients and read by dispatchers. Your role has no access to them.</value>
+    <value>Reviews are only for clients and dispatchers.</value>
   </data>
   <data name="WriteReview" xml:space="preserve">
     <value>Write a review</value>
@@ -1156,7 +1156,7 @@
     <value>Create a client account in a minute, or ask your administrator for a dispatcher login.</value>
   </data>
   <data name="LandingFootTagline" xml:space="preserve">
-    <value>Delivery management for a small courier fleet. Built in Kyiv.</value>
+    <value>Delivery management for a small courier fleet.</value>
   </data>
   <data name="LandingFootProduct" xml:space="preserve">
     <value>Product</value>
