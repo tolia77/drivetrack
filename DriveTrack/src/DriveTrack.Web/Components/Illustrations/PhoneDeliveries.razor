@@ -1,0 +1,53 @@
+@inject IStringLocalizer<UiText> Localizer
+
+@* The client's "My deliveries" on a phone, beside the questions - the last of which is whether it
+   works on one. Three parcels, one in each state a client watches: in transit with its route and
+   delivery time, delivered with the rating they gave it, and pending.
+
+   A picture, hidden from assistive technology and holding nothing that can take focus: the request
+   action is a span drawn as a button. The screen's words come from the catalogue; the addresses,
+   the parcels, the time and the initials are literals, for the reason LandingHeroScene gives. *@
+
+<div class="dt-pic-phonewrap" aria-hidden="true">
+    <div class="dt-pic-phonebg"></div>
+    <div class="dt-pic-phone">
+        <div class="dt-pic-screen">
+            <div class="dt-pic-sbar">
+                <span class="dt-nav__mark dt-icon-only dt-pic-sbar__mark"><Icon Name="IconName.Location" /></span>DriveTrack
+                <span class="dt-pic-sbar__spacer"></span>
+                <span class="dt-pic-sbar__avatar">ОК</span>
+            </div>
+            <div class="dt-pic-sbody">
+                <span class="dt-pic-sbody__title">@Localizer["MyDeliveriesTitle"]</span>
+                <span class="btn btn-primary dt-pic-sbody__create"><Icon Name="IconName.Create" />@Localizer["RequestDeliveryAction"]</span>
+
+                <div class="dt-pic-dcard">
+                    <div class="dt-pic-dcard__top">
+                        <span class="dt-pic-dcard__to">просп. Перемоги, 5</span>
+                        <DeliveryStatusLabel Status="DeliveryStatus.InTransit" />
+                    </div>
+                    <span class="dt-pic-dcard__from">@Localizer["LandingPictureFrom"] вул. Антоновича, 50 · 1 коробка</span>
+                    <MapStrip />
+                    <span class="dt-pic-dcard__time">@Localizer["LandingPictureDeliveryTime"] 14:30</span>
+                </div>
+
+                <div class="dt-pic-dcard">
+                    <div class="dt-pic-dcard__top">
+                        <span class="dt-pic-dcard__to">вул. Ділова, 2</span>
+                        <DeliveryStatusLabel Status="DeliveryStatus.Delivered" />
+                    </div>
+                    <span class="dt-pic-dcard__from">@Localizer["LandingPictureFrom"] вул. Хрещатик, 10 · 2 коробки</span>
+                    <span class="dt-pic-dcard__rating"><DtRatingDisplay Rating="5" /></span>
+                </div>
+
+                <div class="dt-pic-dcard">
+                    <div class="dt-pic-dcard__top">
+                        <span class="dt-pic-dcard__to">вул. Лесі Українки, 7</span>
+                        <DeliveryStatusLabel Status="DeliveryStatus.Pending" />
+                    </div>
+                    <span class="dt-pic-dcard__from">@Localizer["LandingPictureFrom"] вул. Хрещатик, 10 · Документи</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

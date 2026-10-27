@@ -1180,4 +1180,41 @@
   <data name="LandingFootSections" xml:space="preserve">
     <value>На цій сторінці</value>
   </data>
+  <!-- The landing page's header menus and the words its illustrations draw (the pictures' addresses, names, times and parcels stay literals). -->
+  <data name="LandingTickEmail" xml:space="preserve">
+    <value>Лист на кожному кроці</value>
+  </data>
+  <data name="LandingTickProof" xml:space="preserve">
+    <value>Підпис і фото</value>
+  </data>
+  <data name="LandingTickPhone" xml:space="preserve">
+    <value>Працює на вашому телефоні</value>
+  </data>
+  <data name="LandingMyProfile" xml:space="preserve">
+    <value>Мій профіль</value>
+  </data>
+  <data name="LandingAccountMenu" xml:space="preserve">
+    <value>Меню облікового запису</value>
+  </data>
+  <data name="LandingPictureDeliveryTime" xml:space="preserve">
+    <value>Час доставки</value>
+  </data>
+  <data name="LandingPictureReceivedBy" xml:space="preserve">
+    <value>Отримувач:</value>
+  </data>
+  <data name="LandingPictureFrom" xml:space="preserve">
+    <value>Від</value>
+  </data>
+  <data name="LandingPictureTo" xml:space="preserve">
+    <value>До</value>
+  </data>
+  <data name="LandingPictureMailOnItsWay" xml:space="preserve">
+    <value>Ваша посилка в дорозі</value>
+  </data>
+  <data name="LandingPictureMailTimeSet" xml:space="preserve">
+    <value>Час доставки призначено на</value>
+  </data>
+  <data name="LandingPictureMailDelivered" xml:space="preserve">
+    <value>Доставлено за адресою</value>
+  </data>
 </root>

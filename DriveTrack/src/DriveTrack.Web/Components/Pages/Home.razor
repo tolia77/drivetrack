@@ -26,7 +26,8 @@
    place of every sign-in and register entry point on the page - the header, the hero, the footer -
    and the closing call to action, which exists only to sign somebody up, is not drawn at all. Where
    that way in goes belongs to LandingRoute, which is the one place that knows where a role lands,
-   and the button names the place it goes to.
+   and the button names the place it goes to. Their name opens a small account menu - their own
+   profile, and signing out - so a session started here can also be ended here.
 
    NFR-24: every action carries an icon AND its text. An icon on its own is a guess.
 
@@ -49,27 +50,84 @@
             </nav>
 
             <div class="dt-landing-account">
-                <DtLanguageSwitch ReturnUrl="/" Tone="DtLanguageTone.Light" />
+                @* The reading language, as the design draws it: a borderless button naming the
+                   current one, opening a menu of both. Each choice is a submit button of one form
+                   posting to /set-culture - the endpoint, the antiforgery token and the full-page
+                   navigation are DtLanguageSwitch's, for the reason it gives: a cookie cannot be
+                   written from a live circuit. The footer keeps that component as it was.
 
-                @* The claim set carries no display name, so the name is the caller's own profile,
-                   read once, and it is only ever read for a signed-in caller. If that read fails
-                   the button stays and the name goes - a missing name is not worth losing the way
-                   in over. *@
-                @if (_me is not null)
-                {
-                    <span class="dt-landing-me">
-                        <span class="dt-landing-avatar" aria-hidden="true">@Initials</span>@_me.FirstName @_me.LastName
-                    </span>
-                }
+                   Both menus here are native popovers rather than state on the circuit: the browser
+                   opens one on its button, closes it on Escape and on a click anywhere else, puts
+                   its contents next in the tab order and tells assistive technology whether it is
+                   expanded - all without a round trip or a script. Where the browser can anchor a
+                   popover it is drawn under its button; where it cannot, it is drawn centred on the
+                   screen, which is the platform's own fallback and still usable. *@
+                <button class="dt-landing-menu-button dt-landing-menu-button--language" type="button"
+                        popovertarget="dt-landing-language-menu"
+                        aria-label="@LanguageButtonLabel">
+                    <Icon Name="IconName.Language" />@CurrentLanguage<span class="dt-landing-chevron dt-icon-only"><Icon Name="IconName.Expand" /></span>
+                </button>
+                <div class="dt-landing-menu dt-landing-menu--language" id="dt-landing-language-menu" popover>
+                    <form class="dt-lang" method="post" action="/set-culture">
+                        <AntiforgeryToken />
+                        <input type="hidden" name="returnUrl" value="/" />
+                        <button class="dt-landing-menu-item" type="submit" name="culture" value="uk-UA"
+                                aria-current="@CurrentWhen(IsUkrainian)">
+                            <span class="dt-landing-menu-check"><Icon Name="IconName.Confirm" /></span>@Localizer["LanguageUkrainian"]
+                        </button>
+                        <button class="dt-landing-menu-item" type="submit" name="culture" value="en-US"
+                                aria-current="@CurrentWhen(!IsUkrainian)">
+                            <span class="dt-landing-menu-check"><Icon Name="IconName.Confirm" /></span>@Localizer["LanguageEnglish"]
+                        </button>
+                    </form>
+                </div>
 
+                <span class="dt-landing-divider" aria-hidden="true"></span>
+
+                @* The person, as a borderless button opening their account menu: their profile, and
+                   the sign-out POST the navigation uses. The claim set carries no display name, so
+                   the name is the caller's own profile, read once and only for a signed-in caller.
+                   If that read fails the menu stays and the name goes - the button is then the
+                   profile glyph, named in words for assistive technology - because losing the way
+                   out over a missing name would be worse than not greeting somebody. *@
                 @if (Caller.IsAuthenticated)
                 {
+                    <button class="dt-landing-menu-button dt-landing-menu-button--account" type="button"
+                            popovertarget="dt-landing-account-menu"
+                            aria-label="@AccountButtonLabel">
+                        @if (_me is not null)
+                        {
+                            <span class="dt-landing-me"><span class="dt-landing-avatar" aria-hidden="true">@Initials</span>@_me.FirstName @_me.LastName</span>
+                        }
+                        @if (_me is null)
+                        {
+                            <Icon Name="IconName.Profile" />
+                        }
+                        <span class="dt-landing-chevron dt-icon-only"><Icon Name="IconName.Expand" /></span>
+                    </button>
                     <a class="btn btn-primary" href="@LandingRoute.For(Caller.Role)">@WayIn</a>
+
+                    @* The menu comes after the way in in the source, though it opens under the person:
+                       a popover is drawn in the top layer wherever it sits, and the browser puts its
+                       contents next in the tab order after the button that opened it. *@
+                    <div class="dt-landing-menu dt-landing-menu--account" id="dt-landing-account-menu" popover>
+                        <a class="dt-landing-menu-item" href="/profile">
+                            <Icon Name="IconName.Profile" />@Localizer["LandingMyProfile"]
+                        </a>
+                        <form method="post" action="/sign-out">
+                            <AntiforgeryToken />
+                            <button class="dt-landing-menu-item" type="submit">
+                                <Icon Name="IconName.SignOut" />@Localizer["SignOut"]
+                            </button>
+                        </form>
+                    </div>
                 }
 
+                @* Sign in is borderless here, as the design draws it: the header's one filled button
+                   is the one it wants pressed. *@
                 @if (!Caller.IsAuthenticated)
                 {
-                    <a class="btn btn-outline-secondary" href="sign-in">
+                    <a class="btn dt-landing-ghost" href="sign-in">
                         <Icon Name="IconName.SignIn" />@Localizer["SignIn"]
                     </a>
                     <a class="btn btn-primary" href="register">
@@ -104,81 +162,30 @@
                             </a>
                         }
                     </div>
+
+                    @* Three things a client can count on, each ticked in the success colour. Words a
+                       reader reads, so a list rather than a picture; the ticks are the glyph's own
+                       `aria-hidden`. *@
+                    <ul class="dt-landing-ticks">
+                        <li><Icon Name="IconName.Confirm" />@Localizer["LandingTickEmail"]</li>
+                        <li><Icon Name="IconName.Confirm" />@Localizer["LandingTickProof"]</li>
+                        <li><Icon Name="IconName.Confirm" />@Localizer["LandingTickPhone"]</li>
+                    </ul>
                 </div>
 
-                @* An illustration of the product rather than a piece of it: a simplified picture of
-                   the client's own "My deliveries" list, with three invented parcels drawn in its
-                   vocabulary - its title, its request action, its column headings and status labels.
-                   Simplified as the design draws it: the real list also carries the window and the
-                   weight; the picture keeps the four columns a visitor reads at a glance. No driver
-                   column, because a client is never shown one (FR-27). Hidden from assistive
-                   technology: a screen reader has nothing to do with a picture of a table whose rows
-                   do not exist, and the sentence beside it already says what a client gets.
-
-                   The rows are written as literals rather than as resource keys. The addresses and the
-                   parcels are decorative filler, and a key apiece would put invented data in the
-                   translation catalogue, where a translator would have to render Kyiv street names
-                   into English - which is not a thing that should happen to a street name. *@
-                <div class="dt-landing-preview" aria-hidden="true">
-                    @* The request action the design draws in the card head is a picture of a button,
-                       not one: a span, inside an `aria-hidden` illustration. Below the phone
-                       breakpoint it is not drawn - stacked, it lands directly under the page's own
-                       call to action, where a tap that does nothing is the likeliest tap on the
-                       screen. *@
-                    <DtCard Title="@Localizer["MyDeliveriesTitle"]">
-                        <Actions>
-                            <span class="btn btn-primary btn-sm dt-landing-preview-create">
-                                <Icon Name="IconName.Create" />@Localizer["RequestDeliveryAction"]
-                            </span>
-                        </Actions>
-                        <ChildContent>
-                            @* The table keeps its natural width and scrolls inside the card on a
-                               phone, rather than pushing the whole page wider than the screen.
-                               `tabindex="-1"` because Chrome makes a scrolling box
-                               keyboard-focusable on its own, and a focus stop inside an
-                               `aria-hidden` illustration is one a screen reader lands on and cannot
-                               name. *@
-                            <div class="dt-landing-board-scroll" tabindex="-1">
-                                <table class="dt-landing-board dt-type-table">
-                                    <thead>
-                                        <tr>
-                                            <th>@Localizer["Pickup"]</th>
-                                            <th>@Localizer["Dropoff"]</th>
-                                            <th>@Localizer["Package"]</th>
-                                            <th>@Localizer["Status"]</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td>вул. Хрещатик, 10</td>
-                                            <td>вул. Ділова, 2</td>
-                                            <td>2 коробки</td>
-                                            <td><DeliveryStatusLabel Status="DeliveryStatus.Delivered" /></td>
-                                        </tr>
-                                        <tr>
-                                            <td>вул. Антоновича, 50</td>
-                                            <td>просп. Перемоги, 5</td>
-                                            <td>1 коробка</td>
-                                            <td><DeliveryStatusLabel Status="DeliveryStatus.InTransit" /></td>
-                                        </tr>
-                                        <tr>
-                                            <td>вул. Хрещатик, 10</td>
-                                            <td>вул. Лесі Українки, 7</td>
-                                            <td>Документи</td>
-                                            <td><DeliveryStatusLabel Status="DeliveryStatus.Pending" /></td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </ChildContent>
-                    </DtCard>
-                </div>
+                @* The picture of the product - a map, a parcel on its way, its proof and the
+                   client's own list - is its own component, kept apart from the page: it is drawn
+                   in the artboard's colours rather than the palette's, and is decoration from end
+                   to end. *@
+                <LandingHeroScene />
             </div>
         </section>
 
-        @* What a client gets, one card each for asking, knowing and proof. The glyphs are the
-           shared set's own: the place for the addresses, the timeline for what happens, the proof
-           for the proof. *@
+        @* What a client gets, one card each for asking, knowing and proof. Each card opens on a
+           picture of what it promises - the request form's addresses, the emails, the proof - drawn
+           by its own illustration component in a panel the card bleeds to its edges, and its title
+           carries the shared set's glyph: the create action for the request, the notifications log
+           for the emails, the proof for the proof. *@
         <section class="dt-landing-section dt-landing-section--tint" id="features">
             <div class="dt-landing-wrap">
                 <div class="dt-landing-head">
@@ -188,20 +195,26 @@
                 </div>
 
                 <div class="dt-landing-grid dt-landing-grid--3">
-                    <article class="dt-card dt-landing-tile">
-                        <span class="dt-landing-glyph dt-icon-only" aria-hidden="true"><Icon Name="IconName.Location" /></span>
-                        <h3 class="dt-type-h2 dt-landing-tile-title">@Localizer["LandingFeatureRequest"]</h3>
-                        <p class="dt-landing-tile-body dt-muted">@Localizer["LandingFeatureRequestBody"]</p>
+                    <article class="dt-card dt-landing-tile dt-landing-tile--pictured">
+                        <div class="dt-landing-vis"><RequestIllustration /></div>
+                        <div class="dt-landing-tile-text">
+                            <h3 class="dt-type-h2 dt-landing-tile-title"><Icon Name="IconName.Create" />@Localizer["LandingFeatureRequest"]</h3>
+                            <p class="dt-landing-tile-body dt-muted">@Localizer["LandingFeatureRequestBody"]</p>
+                        </div>
                     </article>
-                    <article class="dt-card dt-landing-tile">
-                        <span class="dt-landing-glyph dt-icon-only" aria-hidden="true"><Icon Name="IconName.Timeline" /></span>
-                        <h3 class="dt-type-h2 dt-landing-tile-title">@Localizer["LandingFeatureUpdates"]</h3>
-                        <p class="dt-landing-tile-body dt-muted">@Localizer["LandingFeatureUpdatesBody"]</p>
+                    <article class="dt-card dt-landing-tile dt-landing-tile--pictured">
+                        <div class="dt-landing-vis"><UpdatesIllustration /></div>
+                        <div class="dt-landing-tile-text">
+                            <h3 class="dt-type-h2 dt-landing-tile-title"><Icon Name="IconName.Notifications" />@Localizer["LandingFeatureUpdates"]</h3>
+                            <p class="dt-landing-tile-body dt-muted">@Localizer["LandingFeatureUpdatesBody"]</p>
+                        </div>
                     </article>
-                    <article class="dt-card dt-landing-tile">
-                        <span class="dt-landing-glyph dt-icon-only" aria-hidden="true"><Icon Name="IconName.Proof" /></span>
-                        <h3 class="dt-type-h2 dt-landing-tile-title">@Localizer["LandingFeatureProof"]</h3>
-                        <p class="dt-landing-tile-body dt-muted">@Localizer["LandingFeatureProofBody"]</p>
+                    <article class="dt-card dt-landing-tile dt-landing-tile--pictured">
+                        <div class="dt-landing-vis"><ProofIllustration /></div>
+                        <div class="dt-landing-tile-text">
+                            <h3 class="dt-type-h2 dt-landing-tile-title"><Icon Name="IconName.Proof" />@Localizer["LandingFeatureProof"]</h3>
+                            <p class="dt-landing-tile-body dt-muted">@Localizer["LandingFeatureProofBody"]</p>
+                        </div>
                     </article>
                 </div>
             </div>
@@ -216,7 +229,8 @@
 
                 @* An ordered list, so the numbers are the list's own: the figure in each disc is
                    drawn for the eye and hidden from a screen reader, which announces the position
-                   itself. *@
+                   itself. The discs are joined by a dashed line drawn by the list, and the last is
+                   in the success colour - the step where the parcel has arrived. *@
                 <ol class="dt-landing-grid dt-landing-grid--4 dt-landing-steps">
                     <li class="dt-landing-step">
                         <span class="dt-landing-step-no" aria-hidden="true">1</span>
@@ -234,7 +248,7 @@
                         <p class="dt-landing-tile-body dt-muted">@Localizer["LandingStep3Body"]</p>
                     </li>
                     <li class="dt-landing-step">
-                        <span class="dt-landing-step-no" aria-hidden="true">4</span>
+                        <span class="dt-landing-step-no dt-landing-step-no--done" aria-hidden="true">4</span>
                         <h3 class="dt-type-h2 dt-landing-tile-title">@Localizer["LandingStep4"]</h3>
                         <p class="dt-landing-tile-body dt-muted">@Localizer["LandingStep4Body"]</p>
                     </li>
@@ -242,31 +256,37 @@
             </div>
         </section>
 
+        @* The questions as one column, with the client's list on a phone beside it - the last
+           question is whether it works on one. *@
         <section class="dt-landing-section dt-landing-section--tint" id="faq">
-            <div class="dt-landing-wrap">
-                <div class="dt-landing-head">
-                    <span class="dt-landing-eyebrow">@Localizer["LandingNavFaq"]</span>
-                    <h2 class="dt-type-h1 dt-landing-h2">@Localizer["LandingFaqTitle"]</h2>
+            <div class="dt-landing-wrap dt-landing-faq-row">
+                <div>
+                    <div class="dt-landing-head">
+                        <span class="dt-landing-eyebrow">@Localizer["LandingNavFaq"]</span>
+                        <h2 class="dt-type-h1 dt-landing-h2">@Localizer["LandingFaqTitle"]</h2>
+                    </div>
+
+                    <div class="dt-landing-faq-list">
+                        <div class="dt-card dt-landing-tile dt-landing-faq">
+                            <h3 class="dt-type-h3 dt-landing-tile-title">@Localizer["LandingFaq1"]</h3>
+                            <p class="dt-landing-tile-body dt-muted">@Localizer["LandingFaq1Answer"]</p>
+                        </div>
+                        <div class="dt-card dt-landing-tile dt-landing-faq">
+                            <h3 class="dt-type-h3 dt-landing-tile-title">@Localizer["LandingFaq2"]</h3>
+                            <p class="dt-landing-tile-body dt-muted">@Localizer["LandingFaq2Answer"]</p>
+                        </div>
+                        <div class="dt-card dt-landing-tile dt-landing-faq">
+                            <h3 class="dt-type-h3 dt-landing-tile-title">@Localizer["LandingFaq3"]</h3>
+                            <p class="dt-landing-tile-body dt-muted">@Localizer["LandingFaq3Answer"]</p>
+                        </div>
+                        <div class="dt-card dt-landing-tile dt-landing-faq">
+                            <h3 class="dt-type-h3 dt-landing-tile-title">@Localizer["LandingFaq4"]</h3>
+                            <p class="dt-landing-tile-body dt-muted">@Localizer["LandingFaq4Answer"]</p>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="dt-landing-grid dt-landing-grid--2">
-                    <div class="dt-card dt-landing-tile dt-landing-faq">
-                        <h3 class="dt-type-h3 dt-landing-tile-title">@Localizer["LandingFaq1"]</h3>
-                        <p class="dt-landing-tile-body dt-muted">@Localizer["LandingFaq1Answer"]</p>
-                    </div>
-                    <div class="dt-card dt-landing-tile dt-landing-faq">
-                        <h3 class="dt-type-h3 dt-landing-tile-title">@Localizer["LandingFaq2"]</h3>
-                        <p class="dt-landing-tile-body dt-muted">@Localizer["LandingFaq2Answer"]</p>
-                    </div>
-                    <div class="dt-card dt-landing-tile dt-landing-faq">
-                        <h3 class="dt-type-h3 dt-landing-tile-title">@Localizer["LandingFaq3"]</h3>
-                        <p class="dt-landing-tile-body dt-muted">@Localizer["LandingFaq3Answer"]</p>
-                    </div>
-                    <div class="dt-card dt-landing-tile dt-landing-faq">
-                        <h3 class="dt-type-h3 dt-landing-tile-title">@Localizer["LandingFaq4"]</h3>
-                        <p class="dt-landing-tile-body dt-muted">@Localizer["LandingFaq4Answer"]</p>
-                    </div>
-                </div>
+                <PhoneDeliveries />
             </div>
         </section>
 
@@ -275,6 +295,8 @@
         @if (!Caller.IsAuthenticated)
         {
             <section class="dt-landing-section dt-landing-dark dt-landing-cta">
+                @* A route ending in a pin, drawn behind the words: the band's one picture. *@
+                <RouteLine />
                 <div class="dt-landing-wrap dt-landing-cta-row">
                     <div class="dt-landing-cta-text">
                         <h2 class="dt-type-h1 dt-landing-h2">@Localizer["LandingCtaTitle"]</h2>
@@ -353,6 +375,28 @@
     };
 
     private UserProfile? _me;
+
+    // The language being read, from the culture the request resolved to - DtLanguageSwitch's own
+    // reading, for its reason: the cookie may hold a value the supported list refused.
+    private static bool IsUkrainian =>
+        string.Equals(
+            System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName,
+            "uk",
+            StringComparison.Ordinal);
+
+    // The language button names the current language by its own short code, as both catalogues do.
+    private string CurrentLanguage =>
+        IsUkrainian ? Localizer["LanguageUkrainian"] : Localizer["LanguageEnglish"];
+
+    // The language button's name: what it is for, then the code it shows, so the visible text is
+    // part of the name a voice user would say.
+    private string LanguageButtonLabel => $"{Localizer["Language"]}: {CurrentLanguage}";
+
+    // Named in words only when the name it would otherwise show could not be read.
+    private string? AccountButtonLabel => _me is null ? Localizer["LandingAccountMenu"].Value : null;
+
+    // `aria-current` on the language being read; absent, rather than "false", on the other.
+    private static string? CurrentWhen(bool current) => current ? "true" : null;
 
     // The avatar's two letters: the first of each name, upper-cased in the culture being read.
     private string Initials => _me is null

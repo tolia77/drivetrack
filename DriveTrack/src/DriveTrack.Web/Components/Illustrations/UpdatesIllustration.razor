@@ -1,0 +1,24 @@
+@inject IStringLocalizer<UiText> Localizer
+
+@* "Always know what's happening", as a picture: the three emails a client gets over one delivery -
+   on its way, the delivery time set, delivered. Hidden from assistive technology; the card's words
+   carry the claim. The subjects come from the catalogue; the times and the address are literals,
+   for the reason LandingHeroScene gives. *@
+
+<div class="dt-pic-mails" aria-hidden="true">
+    <div class="dt-pic-mail">
+        <span class="dt-pic-mail__icon dt-icon-only dt-pic-tone--teal"><Icon Name="IconName.Vehicles" /></span>
+        <span class="dt-pic-mail__text">@Localizer["LandingPictureMailOnItsWay"]</span>
+        <span class="dt-pic-mail__time">10:42</span>
+    </div>
+    <div class="dt-pic-mail">
+        <span class="dt-pic-mail__icon dt-icon-only dt-pic-tone--amber"><Icon Name="IconName.Timeline" /></span>
+        <span class="dt-pic-mail__text">@Localizer["LandingPictureMailTimeSet"] 14:30</span>
+        <span class="dt-pic-mail__time">10:45</span>
+    </div>
+    <div class="dt-pic-mail">
+        <span class="dt-pic-mail__icon dt-icon-only dt-pic-tone--green"><Icon Name="IconName.Confirm" /></span>
+        <span class="dt-pic-mail__text">@Localizer["LandingPictureMailDelivered"] вул. Ділова, 2</span>
+        <span class="dt-pic-mail__time">14:26</span>
+    </div>
+</div>

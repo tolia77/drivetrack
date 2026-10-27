@@ -1,0 +1,12 @@
+@inject IStringLocalizer<UiText> Localizer
+
+@* "Request in a minute", as a picture: the request form's two address fields, filled in, over the
+   strip of map the route is drawn on. Hidden from assistive technology - the card's own title and
+   sentence say the same thing in words. The field names come from the catalogue; the addresses are
+   literals, for the reason LandingHeroScene gives. *@
+
+<div class="dt-pic-request" aria-hidden="true">
+    <div class="dt-pic-field"><span class="dt-pic-field__name">@Localizer["LandingPictureFrom"]</span>вул. Хрещатик, 10</div>
+    <div class="dt-pic-field"><span class="dt-pic-field__name">@Localizer["LandingPictureTo"]</span>вул. Ділова, 2</div>
+    <MapStrip Fill="true" />
+</div>

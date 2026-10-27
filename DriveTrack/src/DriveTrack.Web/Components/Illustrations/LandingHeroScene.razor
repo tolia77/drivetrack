@@ -1,0 +1,105 @@
+@inject IStringLocalizer<UiText> Localizer
+
+@* The landing hero's picture of the product: a street map with a parcel on its way from A to B, the
+   chip a client reads while it travels, the proof they are shown once it arrives, and their own
+   "My deliveries" list in front of it all.
+
+   A picture rather than a piece of the product, so it is hidden from assistive technology and holds
+   nothing that can take focus: the request action in the list's head is a span drawn as a button,
+   and the sentence beside the picture already says what a client gets. No driver column and no
+   driver on the map, because a client is never shown one (FR-27).
+
+   The words a client would read come from the catalogue, so the language switch reaches them. The
+   addresses, the recipient's name, the times and the parcels are literals: they are decorative
+   filler, and a key apiece would put invented data in the translation catalogue, where a translator
+   would have to render Kyiv street names into English - which is not a thing that should happen to a
+   street name.
+
+   NFR-29 does not reach this folder (see DesignTokenTests.ProjectFiles): the map is drawn in the
+   artboard's own colours as SVG, and the floating cards keep the artboard's sizes. *@
+
+<div class="dt-pic-scene" aria-hidden="true">
+    <div class="dt-pic-map">
+        <svg viewBox="0 0 552 440" preserveAspectRatio="xMidYMid slice" focusable="false">
+            <rect width="552" height="440" fill="#e6eaef" />
+            <path d="M-20 70C60 96 120 30 210 52S380 110 572 34" fill="none" stroke="#cfe5e0" stroke-width="30" stroke-linecap="round" />
+            <path d="M0 130H552M0 290H552M0 360H552M60 0V440M250 0V440M340 0V440M450 0V440" fill="none" stroke="#ffffff" stroke-width="7" />
+            <rect x="347" y="207" width="96" height="76" rx="8" fill="#d3ebda" />
+            <circle cx="370" cy="232" r="8" fill="#b9dcc4" />
+            <circle cx="394" cy="254" r="9" fill="#b9dcc4" />
+            <circle cx="420" cy="228" r="7" fill="#b9dcc4" />
+            <circle cx="414" cy="266" r="6" fill="#b9dcc4" />
+            <path d="M0 200H552M150 0V440" fill="none" stroke="#ffffff" stroke-width="14" />
+            <path d="M-10 420L560 250" fill="none" stroke="#ffffff" stroke-width="12" />
+            <text x="456" y="203.5" font-family="system-ui, sans-serif" font-size="9" font-weight="600" fill="#7d8997">вул. Хрещатик</text>
+            <path d="M60 290H150V200H340V130H450" fill="none" stroke="#ffffff" stroke-width="13" stroke-linejoin="round" stroke-linecap="round" />
+            <path d="M60 290H150V200H260" fill="none" stroke="#0c6f62" stroke-width="6" stroke-linejoin="round" stroke-linecap="round" />
+            <path d="M260 200H340V130H450" fill="none" stroke="#0c6f62" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="0.5 11" />
+            <circle cx="60" cy="290" r="12" fill="#151d26" stroke="#ffffff" stroke-width="3" />
+            <text x="60" y="294" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" font-weight="700" fill="#ffffff">A</text>
+            <ellipse cx="450" cy="131" rx="7" ry="2.5" fill="rgba(21, 29, 38, 0.2)" />
+            <path d="M450 130c-5-9-15-16-15-27a15 15 0 0 1 30 0c0 11-10 18-15 27z" fill="#0c6f62" stroke="#ffffff" stroke-width="2.5" />
+            <text x="450" y="107" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" font-weight="700" fill="#ffffff">B</text>
+            <circle cx="260" cy="200" r="26" fill="#0c6f62" opacity="0.14" />
+            <circle cx="260" cy="200" r="16" fill="#ffffff" stroke="#0c6f62" stroke-width="3" />
+            <g transform="translate(250.8 189.5) scale(0.84)" fill="none" stroke="#0c6f62" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 5h13v10H1zM14 9h4l4 4v2h-8" />
+                <circle cx="6" cy="18" r="2" />
+                <circle cx="18" cy="18" r="2" />
+            </g>
+        </svg>
+    </div>
+
+    <div class="dt-pic-float dt-pic-chip">
+        <DeliveryStatusLabel Status="DeliveryStatus.InTransit" />
+        <span>@Localizer["LandingPictureDeliveryTime"] 14:30</span>
+    </div>
+
+    <div class="dt-pic-float dt-pic-proof">
+        <div class="dt-pic-proof__head">
+            <DeliveryStatusLabel Status="DeliveryStatus.Delivered" />
+            <span class="dt-pic-muted">14:26</span>
+        </div>
+        <ProofSignature />
+        <div class="dt-pic-proof__who">
+            <div class="dt-pic-strong">@Localizer["LandingPictureReceivedBy"] Олена К.</div>
+            <div class="dt-pic-muted">вул. Ділова, 2</div>
+        </div>
+        <ProofPhotos />
+    </div>
+
+    <div class="dt-pic-float dt-pic-mini">
+        <div class="dt-pic-mini__head">
+            <span class="dt-pic-mini__title">@Localizer["MyDeliveriesTitle"]</span>
+            <span class="btn btn-primary btn-sm dt-pic-mini__create">
+                <Icon Name="IconName.Create" />@Localizer["RequestDeliveryAction"]
+            </span>
+        </div>
+        <table class="dt-pic-table">
+            <thead>
+                <tr>
+                    <th>@Localizer["Dropoff"]</th>
+                    <th>@Localizer["Package"]</th>
+                    <th>@Localizer["Status"]</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>вул. Ділова, 2</td>
+                    <td>2 коробки</td>
+                    <td><DeliveryStatusLabel Status="DeliveryStatus.Delivered" /></td>
+                </tr>
+                <tr>
+                    <td>просп. Перемоги, 5</td>
+                    <td>1 коробка</td>
+                    <td><DeliveryStatusLabel Status="DeliveryStatus.InTransit" /></td>
+                </tr>
+                <tr>
+                    <td>вул. Лесі Українки, 7</td>
+                    <td>Документи</td>
+                    <td><DeliveryStatusLabel Status="DeliveryStatus.Pending" /></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

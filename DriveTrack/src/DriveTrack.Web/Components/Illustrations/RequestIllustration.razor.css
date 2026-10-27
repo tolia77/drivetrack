@@ -1,0 +1,32 @@
+/* A picture, not interface: the artboard's own colours and sizes (see DesignTokenTests' exemption). */
+
+.dt-pic-request {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    height: 100%;
+}
+
+.dt-pic-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: none;
+    height: 34px;
+    padding: 0 12px;
+    overflow: hidden;
+    border: 1px solid #7d8997;
+    border-radius: 4px;
+    background-color: #ffffff;
+    color: #151d26;
+    font-size: 12px;
+    line-height: 16px;
+    white-space: nowrap;
+}
+
+.dt-pic-field__name {
+    flex: none;
+    width: 34px;
+    color: #56626f;
+    font-weight: 600;
+}

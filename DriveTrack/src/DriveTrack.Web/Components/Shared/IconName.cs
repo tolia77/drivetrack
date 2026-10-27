@@ -117,4 +117,10 @@ public enum IconName
 
     /// <summary>The same column ordered the other way (FR-82).</summary>
     SortDescending,
+
+    /// <summary>The reading language, and the control that changes it (NFR-14).</summary>
+    Language,
+
+    /// <summary>A control that opens a menu below it.</summary>
+    Expand,
 }

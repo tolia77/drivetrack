@@ -18,8 +18,9 @@
    Each language is named by its own short code, identical in both catalogues, so a reader who
    cannot read the page can still find their own language on it.
 
-   One component for the three places the switch is drawn - the navigation's foot, and the landing
-   page's header and footer - so the form the endpoint expects is written once. Where it comes back
+   One component for the places the switch is drawn - the navigation's foot and the landing page's
+   footer - so the form the endpoint expects is written once; the landing page's header draws the
+   same form as a menu of its own. Where it comes back
    to is the caller's answer rather than this component's: the navigation follows the route it is
    on, and the landing page is always the root. *@
 
@@ -48,7 +49,6 @@
     private string SelectClass => Tone switch
     {
         DtLanguageTone.Dark => "dt-lang__select",
-        DtLanguageTone.Light => "dt-lang__select dt-lang__select--light",
         _ => throw new ArgumentOutOfRangeException(
             nameof(Tone),
             Tone,

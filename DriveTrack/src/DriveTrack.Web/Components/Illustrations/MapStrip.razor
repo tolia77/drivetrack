@@ -1,0 +1,16 @@
+@* A strip of street grid with a dashed route from A to B: the shape the request form's map and a
+   delivery card in the client's list both draw, reduced to a picture. Only ever drawn inside an
+   illustration that is already `aria-hidden`; it hides itself as well, so it cannot be reused as
+   anything else by accident. The two letters are the map's own pin labels, not words. *@
+
+<div class="dt-pic-strip @(Fill ? "dt-pic-strip--fill" : null)" aria-hidden="true">
+    <span class="dt-pic-strip__line"></span>
+    <span class="dt-pic-strip__pin dt-pic-strip__pin--a">A</span>
+    <span class="dt-pic-strip__pin dt-pic-strip__pin--b">B</span>
+</div>
+
+@code {
+    /// <summary>True to take whatever height the picture around it leaves; false for a fixed band.</summary>
+    [Parameter]
+    public bool Fill { get; set; }
+}

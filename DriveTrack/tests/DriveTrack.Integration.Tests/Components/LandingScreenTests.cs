@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 using DriveTrack.Domain.Identity;
 using DriveTrack.Integration.Tests.Support;
@@ -80,7 +81,7 @@ public class LandingScreenTests
 
         // The header's two account buttons become the person and one button into the application.
         var header = SharedMarkup.ElementWithClass(html, "header", "dt-landing-header");
-        Assert.Contains("dt-landing-me", header, StringComparison.Ordinal);
+        Assert.Contains("class=\"dt-landing-me\"", header, StringComparison.Ordinal);
         Assert.Matches(@"class=""dt-landing-avatar""[^>]*>ІБ</span>", header);
         Assert.Contains("Ірина Бондар", header, StringComparison.Ordinal);
 
@@ -98,6 +99,17 @@ public class LandingScreenTests
 
         Assert.Contains(destination, Hrefs(footer));
 
+        // The person opens an account menu: their own profile, and signing out by the POST the
+        // navigation uses.
+        Assert.Contains("popovertarget=\"dt-landing-account-menu\"", header, StringComparison.Ordinal);
+
+        var accountMenu = Popover(header, "dt-landing-account-menu");
+        var myProfile = AssertActionWithIcon(accountMenu, "/profile");
+
+        Assert.Equal(Catalogue("LandingMyProfile"), SharedMarkup.TextOf(myProfile));
+        Assert.Matches(@"<form\b[^>]*method=""post""[^>]*action=""/sign-out""", accountMenu);
+        Assert.Contains(Catalogue("SignOut"), accountMenu, StringComparison.Ordinal);
+
         // No sign-in or register entry point anywhere, and no closing band, which exists only to
         // sign somebody up.
         var links = Hrefs(html);
@@ -108,7 +120,7 @@ public class LandingScreenTests
         // And no link to nowhere: everything else is this page's own sections.
         Assert.DoesNotContain("#", links);
         Assert.All(
-            links.Where(href => href != destination),
+            links.Where(href => href != destination && href != "/profile"),
             href => Assert.Contains(href, new[] { "#top", "#features", "#how", "#faq" }));
         Assert.DoesNotContain("dt-landing-cta", html, StringComparison.Ordinal);
     }
@@ -123,7 +135,13 @@ public class LandingScreenTests
         var header = SharedMarkup.ElementWithClass(html, "header", "dt-landing-header");
 
         AssertActionWithIcon(header, LandingRoute.For(role));
-        Assert.DoesNotContain("dt-landing-me", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("class=\"dt-landing-me\"", html, StringComparison.Ordinal);
+
+        // The account menu stays - the way out matters more than the greeting - and its button,
+        // with no name to show, is named in words.
+        Assert.Contains("popovertarget=\"dt-landing-account-menu\"", header, StringComparison.Ordinal);
+        Assert.Contains($"aria-label=\"{Catalogue("LandingAccountMenu")}\"", header, StringComparison.Ordinal);
+        Assert.Contains("action=\"/sign-out\"", header, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -193,7 +211,7 @@ public class LandingScreenTests
                 TimeSpan.FromSeconds(5))
             .ToArray();
 
-        // One in the header, on white, and one in the footer, on the dark band.
+        // One in the header, behind its language menu, and one in the footer, on the dark band.
         Assert.Equal(2, forms.Length);
 
         foreach (var form in forms)
@@ -208,9 +226,28 @@ public class LandingScreenTests
         var header = SharedMarkup.ElementWithClass(html, "header", "dt-landing-header");
         var footer = SharedMarkup.ElementWithClass(html, "footer", "dt-landing-foot");
 
-        Assert.Contains("dt-lang__select--light", header, StringComparison.Ordinal);
+        // The header draws the switch as a menu: a button naming the current language, opening a
+        // popover whose two choices are submit buttons of the form, each carrying its culture.
+        Assert.Contains("popovertarget=\"dt-landing-language-menu\"", header, StringComparison.Ordinal);
+        Assert.Matches(@"id=""dt-landing-language-menu""[^>]*popover", header);
+        Assert.DoesNotContain("<select", header, StringComparison.Ordinal);
+        AssertLanguageMenuMarks(
+            header, current: "uk-UA", other: "en-US", code: Catalogue("LanguageUkrainian"), language: Catalogue("Language"));
+
+        // The footer keeps the select on the dark band.
         Assert.Contains("dt-lang__select", footer, StringComparison.Ordinal);
-        Assert.DoesNotContain("dt-lang__select--light", footer, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(UserRole.Client)]
+    public async Task Under_English_the_language_menu_marks_English_and_its_button_shows_the_English_code(
+        UserRole? role)
+    {
+        var html = await ShellCaller.RenderAsync<Home>(role, culture: new CultureInfo("en-US"));
+        var header = SharedMarkup.ElementWithClass(html, "header", "dt-landing-header");
+
+        AssertLanguageMenuMarks(header, current: "en-US", other: "uk-UA", code: "EN", language: "Language");
     }
 
     [Fact]
@@ -223,7 +260,7 @@ public class LandingScreenTests
 
         foreach (var grid in new[]
                  {
-                     ".dt-landing-hero", ".dt-landing-grid--2", ".dt-landing-grid--3",
+                     ".dt-landing-hero", ".dt-landing-faq-row", ".dt-landing-grid--3",
                      ".dt-landing-grid--4", ".dt-landing-foot-grid",
                  })
         {
@@ -253,6 +290,57 @@ public class LandingScreenTests
         Assert.True(SharedMarkup.IsUkrainian(SharedMarkup.TextOf(body)), $"The '{href}' action reads '{body}'.");
 
         return body;
+    }
+
+    /// <summary>
+    /// The header's language menu under one culture: the button shows the current language's code
+    /// and names itself with it in the reader's language, and of the two choices only the current one is <c>aria-current</c>.
+    /// </summary>
+    private static void AssertLanguageMenuMarks(
+        string header,
+        string current,
+        string other,
+        string code,
+        string language)
+    {
+        var button = Regex.Match(
+            header,
+            @"<button\b[^>]*popovertarget=""dt-landing-language-menu""[^>]*>(?<body>.*?)</button>",
+            RegexOptions.Singleline,
+            TimeSpan.FromSeconds(5));
+
+        Assert.True(button.Success, $"No language menu button in:{Environment.NewLine}{header}");
+        Assert.Contains($"aria-label=\"{language}: {code}\"", button.Value, StringComparison.Ordinal);
+        Assert.Equal(code, SharedMarkup.TextOf(button.Groups["body"].Value));
+
+        var menu = Popover(header, "dt-landing-language-menu");
+
+        Assert.Matches(
+            $@"<button[^>]*type=""submit""[^>]*name=""culture""[^>]*value=""{current}""[^>]*aria-current=""true""",
+            menu);
+
+        var choice = Regex.Match(
+            menu,
+            $@"<button[^>]*value=""{other}""[^>]*>",
+            RegexOptions.None,
+            TimeSpan.FromSeconds(5));
+
+        Assert.True(choice.Success, $"No {other} choice in the language menu.");
+        Assert.DoesNotContain("aria-current", choice.Value, StringComparison.Ordinal);
+    }
+
+    /// <summary>The inner markup of the popover carrying <paramref name="id"/>.</summary>
+    private static string Popover(string html, string id)
+    {
+        var match = Regex.Match(
+            html,
+            $@"<div\b[^>]*id=""{Regex.Escape(id)}""[^>]*\bpopover\b[^>]*>(?<body>.*?)</div>",
+            RegexOptions.Singleline,
+            TimeSpan.FromSeconds(5));
+
+        Assert.True(match.Success, $"No popover '{id}' in:{Environment.NewLine}{html}");
+
+        return match.Groups["body"].Value;
     }
 
     /// <summary>The inner markup of the section carrying <paramref name="id"/>.</summary>

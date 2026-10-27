@@ -1283,13 +1283,29 @@ public class DesignTokenTests
     /// Every hand-written file in the web project: build output, the compiled web root and
     /// vendored third-party source are all excluded, so what remains is what this story is
     /// answerable for.
+    /// <para>
+    /// <c>Components/Illustrations/</c> is exempt, and only that folder. What lives there is
+    /// pictures of the product - the landing page's map scene, the feature-card drawings, the phone
+    /// mock-up, the closing band's route - and the human decision recorded in the landing page's
+    /// illustrated spec (2026-10-27) is that a picture need not follow the design system: it draws
+    /// in the artboard's own colours, sizes and SVG, which the palette does not name and should not
+    /// grow tokens for. Every illustration is <c>aria-hidden</c> decoration with nothing focusable
+    /// inside, which <c>IllustrationTests</c> holds them to; the interface around them - the pages
+    /// that place them - stays under this rule in full.
+    /// </para>
     /// </summary>
     private static IEnumerable<string> ProjectFiles() =>
         Directory.EnumerateFiles(WebProject, "*", SearchOption.AllDirectories)
             .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
             .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
             .Where(path => !IsVendored(path))
-            .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}wwwroot{Path.DirectorySeparatorChar}", StringComparison.Ordinal));
+            .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}wwwroot{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+            .Where(path => !IsIllustration(path));
+
+    private static bool IsIllustration(string path) =>
+        path.Contains(
+            $"{Path.DirectorySeparatorChar}Components{Path.DirectorySeparatorChar}Illustrations{Path.DirectorySeparatorChar}",
+            StringComparison.Ordinal);
 
     /// <summary>
     /// The semantic <c>$dt-</c> variables: everything declared after the "Semantics" divider and

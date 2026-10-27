@@ -1,0 +1,136 @@
+/*
+    A picture, not interface: the artboard's own colours and sizes (see DesignTokenTests' exemption).
+    `::deep` for the rating, which DtRatingDisplay draws.
+
+    The phone is a fixed 272 by 548 - narrower than the smallest column it is ever given, so it
+    never has to shrink - on a tinted grid that spans the column behind it.
+*/
+
+.dt-pic-phonewrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 560px;
+}
+
+.dt-pic-phonebg {
+    position: absolute;
+    inset: 48px 0;
+    border-radius: 24px;
+    background-color: #e4f2ef;
+    background-image:
+        linear-gradient(rgba(12, 111, 98, 0.09) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(12, 111, 98, 0.09) 1px, transparent 1px);
+    background-size: 28px 28px;
+}
+
+.dt-pic-phone {
+    position: relative;
+    width: 272px;
+    height: 548px;
+    padding: 10px;
+    border-radius: 42px;
+    background-color: #151d26;
+    box-shadow: 0 16px 40px rgba(21, 29, 38, 0.24);
+}
+
+.dt-pic-screen {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    border-radius: 32px;
+    background-color: #f2f4f7;
+    color: #151d26;
+}
+
+.dt-pic-sbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 22px 16px 12px;
+    border-bottom: 1px solid #d2d9e0;
+    background-color: #ffffff;
+    font-size: 15px;
+    line-height: 20px;
+    font-weight: 700;
+}
+
+.dt-pic-sbar__mark {
+    width: 26px;
+    height: 26px;
+}
+
+.dt-pic-sbar__spacer {
+    flex: 1;
+}
+
+.dt-pic-sbar__avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background-color: #e6eaef;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.dt-pic-sbody {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+}
+
+.dt-pic-sbody__title {
+    font-size: 15px;
+    line-height: 22px;
+    font-weight: 700;
+}
+
+.dt-pic-sbody__create {
+    justify-content: center;
+    height: 40px;
+    pointer-events: none;
+}
+
+.dt-pic-dcard {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 12px;
+    border: 1px solid #d2d9e0;
+    border-radius: 8px;
+    background-color: #ffffff;
+    font-size: 12px;
+    line-height: 16px;
+}
+
+.dt-pic-dcard__top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.dt-pic-dcard__to {
+    min-width: 0;
+    font-size: 13px;
+    line-height: 18px;
+    font-weight: 700;
+}
+
+.dt-pic-dcard__from {
+    color: #56626f;
+}
+
+.dt-pic-dcard__time {
+    font-weight: 600;
+}
+
+.dt-pic-dcard__rating ::deep .dt-rating {
+    font-size: 12px;
+}

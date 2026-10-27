@@ -1,0 +1,43 @@
+/* A picture, not interface: the artboard's own colours and sizes (see DesignTokenTests' exemption).
+   `::deep` for the glyph, which the Icon component draws. */
+
+.dt-pic-photos {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.dt-pic-photos--stacked {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    height: 100%;
+}
+
+.dt-pic-photo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 52px;
+    border-radius: 8px;
+}
+
+.dt-pic-photos--stacked .dt-pic-photo {
+    height: auto;
+}
+
+.dt-pic-photo svg,
+.dt-pic-photo ::deep .dt-icon {
+    width: 24px;
+    height: 24px;
+    stroke-width: 1.6;
+}
+
+.dt-pic-photo--teal {
+    background-color: #e4f2ef;
+    color: #095a4f;
+}
+
+.dt-pic-photo--amber {
+    background-color: #fcf1d8;
+    color: #7f5200;
+}

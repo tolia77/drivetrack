@@ -1,8 +1,10 @@
 /*
     The landing page's own layout, and nothing else. Everything it is built from - the card surface,
-    the buttons, the illustration's overdue badge and status labels, the type ramps and the muted
-    utility, the shell's brand mark - is the shared vocabulary, so what is left here is how the
-    sections are arranged, the two dark bands, and how the illustration's table is ruled.
+    the buttons, the type ramps and the muted utility, the shell's brand mark - is the shared
+    vocabulary, so what is left here is how the sections are arranged, the header's two menus, and
+    the two dark bands. The pictures - the hero's scene, the feature cards' drawings, the phone, the
+    closing band's route - are components of their own under `Components/Illustrations/`, drawn in
+    the artboard's colours, and none of their paint is here.
 
     NFR-29: every palette value is a `--dt-*` reference. What is literal is geometry the palette
     does not name - the content width, the glyph tiles, the column counts and the phone breakpoint,
@@ -87,7 +89,7 @@
     gap: var(--dt-space-2);
 }
 
-/* Who is signed in: the initials disc and the full name, before the one way in. */
+/* Who is signed in: the initials disc and the full name, inside the account menu's button. */
 .dt-landing-me {
     display: flex;
     align-items: center;
@@ -111,6 +113,158 @@
     font-size: var(--dt-small-font-size);
     line-height: var(--dt-small-line-height);
     font-weight: var(--dt-h1-font-weight);
+}
+
+/*
+    The two menu buttons - the language and the person - are borderless, as the design draws them:
+    the text and its glyphs on the header's own ground, sunk one step under the pointer. The chevron
+    is the muted ink, so the word is what is read first.
+*/
+/* No flex gap: the glyph's own end margin is the icon-to-text spacing, as everywhere else. */
+.dt-landing-menu-button {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--dt-control-height);
+    padding: 0 var(--dt-space-2);
+    border: 0;
+    border-radius: var(--dt-radius-sm);
+    background-color: transparent;
+    color: var(--dt-ink);
+    font-family: var(--dt-font-sans);
+    font-size: var(--dt-label-font-size);
+    line-height: var(--dt-label-line-height);
+    font-weight: var(--dt-label-font-weight);
+    cursor: pointer;
+}
+
+@media (hover: hover) {
+    .dt-landing-menu-button:hover {
+        background-color: var(--dt-surface-sunken);
+    }
+}
+
+/* After the word rather than before it, so it carries its own leading space instead of a gap. */
+.dt-landing-chevron {
+    display: inline-flex;
+    margin-inline-start: var(--dt-space-1);
+    color: var(--dt-ink-muted);
+}
+
+/* The anchors the two menus hang from, where the browser can anchor a popover at all. */
+.dt-landing-menu-button--language {
+    anchor-name: --landing-language;
+}
+
+.dt-landing-menu-button--account {
+    anchor-name: --landing-account;
+}
+
+/* A hairline between the language and the account controls. */
+.dt-landing-divider {
+    flex: none;
+    width: var(--dt-border-width);
+    height: 1.5rem;
+    margin: 0 var(--dt-space-1);
+    background-color: var(--dt-border);
+}
+
+/* Sign in in the header: borderless, the framework's own button machinery on a transparent face. */
+.dt-landing-ghost {
+    --bs-btn-color: var(--dt-ink);
+    --bs-btn-bg: transparent;
+    --bs-btn-border-color: transparent;
+    --bs-btn-hover-color: var(--dt-ink);
+    --bs-btn-hover-bg: var(--dt-surface-sunken);
+    --bs-btn-hover-border-color: transparent;
+    --bs-btn-active-color: var(--dt-ink);
+    --bs-btn-active-bg: var(--dt-surface-sunken);
+    --bs-btn-active-border-color: transparent;
+}
+
+/*
+    The open menu: a card-faced panel raised over the page. The popover's own UA face - its system
+    colours, its solid border and its padding - is replaced wholesale.
+*/
+.dt-landing-menu {
+    min-width: 10rem;
+    padding: var(--dt-space-1);
+    border: var(--dt-border-width) solid var(--dt-border);
+    border-radius: var(--dt-radius-md);
+    background-color: var(--dt-surface-card);
+    box-shadow: var(--dt-shadow-raised);
+    color: var(--dt-ink);
+}
+
+/*
+    Under its button, right edges aligned, where anchor positioning exists. Behind `@supports`
+    because a browser without it would drop `anchor()` and keep `inset: auto`, stranding the menu
+    wherever the top layer happens to put it; without the block it keeps the platform's own
+    placement, centred on the screen.
+*/
+@supports (anchor-name: --landing-language) {
+    .dt-landing-menu {
+        inset: auto;
+        margin: var(--dt-space-1) 0 0;
+        top: anchor(bottom);
+        right: anchor(right);
+    }
+
+    .dt-landing-menu--language {
+        position-anchor: --landing-language;
+    }
+
+    .dt-landing-menu--account {
+        position-anchor: --landing-account;
+    }
+}
+
+.dt-landing-menu form {
+    margin: 0;
+}
+
+.dt-landing-menu-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: var(--dt-space-2) var(--dt-space-3);
+    border: 0;
+    border-radius: var(--dt-radius-sm);
+    background-color: transparent;
+    color: var(--dt-ink);
+    font-family: var(--dt-font-sans);
+    font-size: var(--dt-body-font-size);
+    line-height: var(--dt-body-line-height);
+    font-weight: var(--dt-label-font-weight);
+    text-align: start;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+@media (hover: hover) {
+    .dt-landing-menu-item:hover {
+        background-color: var(--dt-surface-hover);
+        color: var(--dt-ink);
+    }
+}
+
+/* The product's ring on the header's own controls, rather than the browser's default. */
+.dt-landing-menu-button:focus-visible,
+.dt-landing-ghost:focus-visible,
+.dt-landing-menu-item:focus-visible {
+    outline: var(--dt-border-width-focus) solid var(--dt-focus-ring);
+    outline-offset: var(--dt-border-width-focus);
+}
+
+/* The tick holds its place on every row and is drawn only beside the language being read. */
+.dt-landing-menu-check {
+    display: inline-flex;
+    color: var(--dt-brand);
+    visibility: hidden;
+}
+
+.dt-landing-menu-item[aria-current="true"] .dt-landing-menu-check {
+    visibility: visible;
 }
 
 /* ---------------------------------------------------------------- sections */
@@ -166,10 +320,6 @@
     gap: var(--dt-space-4);
 }
 
-.dt-landing-grid--2 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
 .dt-landing-grid--3 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -197,17 +347,41 @@
     margin: 0;
 }
 
-/* The glyph tile: the brand on its own tint, sized one step above the text it heads. */
-.dt-landing-glyph {
+/*
+    A feature card that opens on a picture. The picture's panel runs to the card's edges - so the
+    card gives up its own padding and hands it to the words under the panel - on the page's tint,
+    ruled off from the words by a hairline. Its height is fixed so the three titles line up.
+*/
+.dt-landing-tile--pictured {
+    gap: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+.dt-landing-vis {
+    height: 10.75rem;
+    padding: var(--dt-space-4);
+    overflow: hidden;
+    border-bottom: var(--dt-border-width) solid var(--dt-border);
+    background-color: var(--dt-surface-page);
+}
+
+.dt-landing-tile-text {
+    display: flex;
+    flex-direction: column;
+    gap: var(--dt-space-2);
+    padding: var(--dt-space-4) var(--dt-space-5) var(--dt-space-5);
+}
+
+/* The card title carries its glyph, in the brand. `::deep`: the svg is Icon's. */
+.dt-landing-tile--pictured .dt-landing-tile-title {
     display: flex;
     align-items: center;
-    justify-content: center;
-    width: var(--dt-control-height);
-    height: var(--dt-control-height);
-    border-radius: var(--dt-radius-md);
-    background-color: var(--dt-surface-hover);
+    gap: var(--dt-space-2);
+}
+
+.dt-landing-tile--pictured .dt-landing-tile-title ::deep .dt-icon {
     color: var(--dt-brand);
-    font-size: var(--dt-h2-font-size);
 }
 
 /* ---------------------------------------------------------------- hero */
@@ -217,12 +391,14 @@
 }
 
 /*
-    Two columns, collapsing to one below the breakpoint: the pitch is what the page is for, so it
-    comes first and the illustration follows it rather than pushing it below the fold.
+    The pitch beside the scene. The scene's column is the artboard's 600px at most and shrinks with
+    the page; the pitch takes the rest. Where both no longer fit side by side the hero is one
+    column, the pitch first: it is what the page is for, so the picture follows it rather than
+    pushing it below the fold.
 */
 .dt-landing-hero {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 37.5rem);
     gap: var(--dt-space-6);
     align-items: center;
 }
@@ -231,6 +407,18 @@
     display: flex;
     flex-direction: column;
     gap: var(--dt-space-4);
+}
+
+/*
+    The headline is drawn larger than any step of the type scale - the design writes 46px, and the
+    palette's largest, `display`, is 32. Inventing a token for one headline is how a scale stops
+    being a scale, so it is the CSS absolute size one above `xx-large` instead: a keyword rather
+    than a figure, and the nearest size the platform names to the one the design draws. The line
+    height follows the font rather than a ramp built for a smaller size.
+*/
+.dt-landing-title {
+    font-size: xxx-large;
+    line-height: normal;
 }
 
 /* One step above body text: the lead is read before the reader has decided to read anything. */
@@ -246,46 +434,51 @@
     gap: var(--dt-space-3);
 }
 
-/* The board keeps its natural width and scrolls inside its card instead of widening the page. */
-.dt-landing-board-scroll {
-    overflow-x: auto;
-}
-
-/*
-    The illustration's table. Ruled rather than striped, and the heading rule is the control edge
-    while the row rules are hairlines - the same two weights DataTable uses, so the picture and the
-    screen it is a picture of are drawn the same way.
-*/
-.dt-landing-board {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.dt-landing-board th {
-    padding: var(--dt-space-2);
-    border-bottom: var(--dt-border-width) solid var(--dt-border-control);
+/* The three things a client can count on, each ticked in the success colour. */
+.dt-landing-ticks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--dt-space-2) var(--dt-space-5);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: var(--dt-ink-muted);
+    font-size: var(--dt-label-font-size);
+    line-height: var(--dt-label-line-height);
     font-weight: var(--dt-label-font-weight);
-    text-align: start;
-    white-space: nowrap;
 }
 
-.dt-landing-board td {
-    padding: var(--dt-space-2);
-    border-bottom: var(--dt-border-width) solid var(--dt-border);
-    vertical-align: top;
+.dt-landing-ticks li {
+    display: flex;
+    align-items: center;
 }
 
-/* The card's own edge closes the table; a second rule under the last row would double it. */
-.dt-landing-board tbody tr:last-child td {
-    border-bottom: 0;
+.dt-landing-ticks ::deep .dt-icon {
+    color: var(--dt-success);
 }
 
 /* ---------------------------------------------------------------- steps */
 
+/*
+    The four discs sit on one dashed line, drawn by the list behind them from the first disc's
+    centre to the last's - which starts a quarter of the row from the right, so the line stops a
+    quarter of the row less half a disc short of the end. Each disc wears a ring of the page's own
+    ground, so the line stops short of it rather than running into it.
+*/
 .dt-landing-steps {
+    position: relative;
     margin: 0;
     padding: 0;
     list-style: none;
+}
+
+.dt-landing-steps::before {
+    content: "";
+    position: absolute;
+    left: 1.375rem;
+    right: calc(25% - 1.625rem);
+    top: 1.3125rem;
+    border-top: var(--dt-border-width-focus) dashed var(--dt-border-control);
 }
 
 .dt-landing-step {
@@ -295,15 +488,43 @@
 }
 
 .dt-landing-step-no {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 2rem;
-    height: 2rem;
+    width: var(--dt-touch-target);
+    height: var(--dt-touch-target);
     border-radius: var(--dt-radius-pill);
     background-color: var(--dt-brand);
+    box-shadow: 0 0 0 var(--dt-space-2) var(--dt-surface-card);
     color: var(--dt-ink-inverse);
+    font-size: var(--dt-h2-font-size);
     font-weight: var(--dt-display-font-weight);
+}
+
+/* The last step is the parcel arriving, so its disc is the success colour. */
+.dt-landing-step-no--done {
+    background-color: var(--dt-success);
+}
+
+/* ---------------------------------------------------------------- questions */
+
+/* The questions as one column, and the phone beside them in the artboard's 380px column. */
+.dt-landing-faq-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 23.75rem);
+    gap: var(--dt-space-6);
+    align-items: center;
+}
+
+.dt-landing-faq-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--dt-space-3);
+}
+
+.dt-landing-faq-list .dt-landing-faq {
+    padding: var(--dt-space-4) var(--dt-space-5);
 }
 
 /* ---------------------------------------------------------------- the dark bands */
@@ -326,11 +547,18 @@
     outline-offset: var(--dt-border-width-focus);
 }
 
+/* The route is drawn behind the band's words, so the band is its positioning box and clips it. */
+.dt-landing-cta {
+    position: relative;
+    overflow: hidden;
+}
+
 .dt-landing-cta .dt-landing-h2 {
     color: var(--dt-ink-inverse);
 }
 
 .dt-landing-cta-row {
+    position: relative;
     display: flex;
     align-items: center;
     gap: var(--dt-space-5);
@@ -412,6 +640,20 @@
     flex-grow: 1;
 }
 
+/* ---------------------------------------------------------------- narrower screens */
+
+/*
+    The hero and the questions are two columns only while the pictures beside them fit at the size
+    the design draws them: the scene needs its 600px and the pitch a readable measure beside it.
+    Narrower, each is one column, words first, the picture under them.
+*/
+@media (max-width: 1079.98px) {
+    .dt-landing-hero,
+    .dt-landing-faq-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
 /* ---------------------------------------------------------------- phone */
 
 /*
@@ -447,12 +689,17 @@
         display: none;
     }
 
+    /* Wrapped, the hairline would be left at the end or the start of a row, dividing nothing. */
+    .dt-landing-divider {
+        display: none;
+    }
+
     .dt-landing-brand {
         flex-grow: 1;
     }
 
     .dt-landing-hero,
-    .dt-landing-grid--2,
+    .dt-landing-faq-row,
     .dt-landing-grid--3,
     .dt-landing-grid--4,
     .dt-landing-foot-grid {
@@ -463,8 +710,14 @@
         gap: var(--dt-space-5);
     }
 
-    /* Stacked, the picture of a create button would sit under the real calls to action. */
-    .dt-landing-preview-create {
+    /* The headline at the type scale's own largest step: the design's size would break every word. */
+    .dt-landing-title {
+        font-size: var(--dt-display-font-size);
+        line-height: var(--dt-display-line-height);
+    }
+
+    /* Stacked, the steps no longer share a row, so there is no line to join them. */
+    .dt-landing-steps::before {
         display: none;
     }
 

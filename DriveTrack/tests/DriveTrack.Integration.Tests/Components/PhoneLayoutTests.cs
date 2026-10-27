@@ -198,29 +198,40 @@ public class PhoneLayoutTests
 
     /// <summary>
     /// The landing page fits a phone. A bare <c>1fr</c> track will not shrink below its content's
-    /// min-content width, and the preview board's nowrap headings made that 427px - so the whole
-    /// page scrolled sideways on a 375px handset while every render test stayed green.
+    /// min-content width - the old preview board's nowrap headings once made that 427px, so the whole
+    /// page scrolled sideways on a 375px handset while every render test stayed green. The pictures
+    /// are held to the same rule, and the hero's scene, whose floating cards are laid out absolutely
+    /// at the artboard's size, has to stop being that composition where it cannot fit.
     /// </summary>
     [Fact]
-    public async Task The_landing_grids_can_shrink_and_the_board_scrolls_inside_its_card()
+    public void The_landing_grids_can_shrink_and_the_hero_scene_fits_its_column()
     {
-        var css = WithoutComments(SharedMarkup.ReadComponent("Pages", "Home.razor.css"));
+        var stylesheets = new[] { SharedMarkup.ReadComponent("Pages", "Home.razor.css") }
+            .Concat(Directory.GetFiles(
+                    Path.Combine(SharedMarkup.ComponentsDirectory, "Illustrations"),
+                    "*.razor.css")
+                .Select(File.ReadAllText))
+            .Select(WithoutComments)
+            .ToArray();
 
-        Assert.DoesNotMatch(@"grid-template-columns:[^;]*(?<!minmax\(0,\s*)\b1fr", css);
-        Assert.Matches(@"\.dt-landing-board-scroll\s*\{[^}]*overflow-x:\s*auto", css);
+        Assert.True(stylesheets.Length > 1, "No illustration stylesheets were found to check.");
 
-        // Rendered rather than read off the markup: what the scroll needs is the table inside the
-        // wrapper in the output, and a closing tag moved above the table leaves the class in the
-        // file while the board widens the page again.
-        var html = await ShellCaller.RenderAsync<DriveTrack.Web.Components.Pages.Home>(role: null);
+        foreach (var css in stylesheets)
+        {
+            Assert.DoesNotMatch(@"grid-template-columns:[^;]*(?<!minmax\(0,\s*)\b1fr", css);
+        }
 
-        Assert.Matches(
-            @"<table\b[^>]*class=""dt-landing-board(?![\w-])",
-            BodyOf(html, "dt-landing-board-scroll"));
+        // The scene is as wide as its column, up to the artboard's 600px, rather than 600px always.
+        var scene = WithoutComments(SharedMarkup.ReadComponent("Illustrations", "LandingHeroScene.razor.css"));
 
-        // Out of the tab order: Chrome makes a scrolling box focusable on its own, and this one is
-        // inside an `aria-hidden` illustration.
-        Assert.Matches(@"<div\b[^>]*class=""dt-landing-board-scroll""[^>]*\btabindex=""-1""", html);
+        Assert.Matches(@"\.dt-pic-scene\s*\{[^}]*\bwidth:\s*100%;[^}]*max-width:\s*600px", scene);
+
+        // And on a phone the map and the list leave the composition and stack, full width; the
+        // pieces that only make sense laid over the map are not drawn.
+        var phone = scene[scene.IndexOf("@media (max-width: 640.98px)", StringComparison.Ordinal)..];
+
+        Assert.Matches(@"\.dt-pic-map,\s*\.dt-pic-mini\s*\{[^}]*position:\s*static;[^}]*width:\s*100%", phone);
+        Assert.Matches(@"\.dt-pic-chip,\s*\.dt-pic-proof,[^{]*\{\s*display:\s*none", phone);
     }
 
     /// <summary>

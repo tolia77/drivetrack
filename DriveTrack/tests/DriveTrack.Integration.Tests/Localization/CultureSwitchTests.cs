@@ -410,7 +410,8 @@ public class CultureSwitchTests(PostgresFixture postgres)
         // because the sign-in page renders this menu with no circuit behind it.
         Assert.Contains("onchange=\"this.form.submit()\"", html, StringComparison.Ordinal);
 
-        // On the navigation's dark ground, so the dark face: the light one is the landing header's.
+        // On the navigation's dark ground, so the dark face - the only one the select has now that
+        // the landing header draws a language menu of its own.
         Assert.Contains("class=\"dt-lang__select\"", html, StringComparison.Ordinal);
         Assert.DoesNotContain("dt-lang__select--light", html, StringComparison.Ordinal);
 

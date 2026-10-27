@@ -1,0 +1,18 @@
+@* The two photographs a proof of delivery carries, drawn as tinted tiles: the parcel, and the door
+   it was left at. Side by side under a proof card, or one above the other beside it. *@
+
+<div class="dt-pic-photos @(Stacked ? "dt-pic-photos--stacked" : null)" aria-hidden="true">
+    <span class="dt-pic-photo dt-icon-only dt-pic-photo--teal"><Icon Name="IconName.Deliveries" /></span>
+    <span class="dt-pic-photo dt-icon-only dt-pic-photo--amber">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+             stroke-linecap="round" stroke-linejoin="round" focusable="false">
+            <path d="M5 21V4a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v17M3 21h18M15 12v.01" />
+        </svg>
+    </span>
+</div>
+
+@code {
+    /// <summary>True to put the two tiles one above the other and let them fill the height given.</summary>
+    [Parameter]
+    public bool Stacked { get; set; }
+}

@@ -539,24 +539,6 @@ $dt-breakpoint-phone-max: $dt-breakpoint-phone - 0.02px;
     color: var(--dt-ink);
 }
 
-// The same control on a white surface: the landing page's header. Only the paint moves - the
-// card's face, the control edge every field wears, ink text and the arrow in muted ink - so the
-// switch is one shape wherever it is drawn. After the base rule, which it wins on source order.
-.dt-lang__select--light {
-    border-color: var(--dt-border-control);
-    background-color: var(--dt-surface-card);
-    background-image:
-        linear-gradient(45deg, transparent 50%, var(--dt-ink-muted) 50%),
-        linear-gradient(135deg, var(--dt-ink-muted) 50%, transparent 50%);
-    color: var(--dt-ink);
-}
-
-// On a light surface the ring every field wears there, rather than the on-dark one.
-.dt-lang__select--light:focus-visible {
-    outline: var(--dt-border-width-focus) solid var(--dt-focus-ring);
-    outline-offset: var(--dt-border-width-focus);
-}
-
 // Below the breakpoint the frame is one column and the navigation is a bar across
 // the top of it: the brand, and a button that reveals the rest.
 @media (max-width: $dt-breakpoint-phone-max) {

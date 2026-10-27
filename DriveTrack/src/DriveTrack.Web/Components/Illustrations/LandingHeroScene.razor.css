@@ -1,0 +1,186 @@
+/*
+    A picture, not interface: the artboard's own colours and sizes (see DesignTokenTests' exemption).
+
+    The artboard draws the scene 600 by 520 with everything placed absolutely inside it. Here it
+    keeps that shape but not that size - the box is as wide as its column allows, up to 600px, and
+    the map and the floating cards are placed in proportions of it - so the scene shrinks with the
+    hero's column instead of pushing the page sideways.
+
+    Below the phone breakpoint the overlapping composition cannot fit: the map and the list stack,
+    each the full width of the column, and the chip and the proof card, which only make sense laid
+    over the map, are not drawn.
+*/
+
+.dt-pic-scene {
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+    aspect-ratio: 600 / 520;
+    margin: 0 auto;
+    font-size: 13px;
+    line-height: 18px;
+    color: #151d26;
+}
+
+.dt-pic-map {
+    position: absolute;
+    left: 8%;
+    top: 0;
+    width: 92%;
+    height: 84.6%;
+    overflow: hidden;
+    border: 1px solid #d2d9e0;
+    border-radius: 16px;
+    background-color: #e6eaef;
+    box-shadow: 0 4px 12px rgba(21, 29, 38, 0.12);
+}
+
+.dt-pic-map svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.dt-pic-float {
+    position: absolute;
+    border: 1px solid #d2d9e0;
+    border-radius: 12px;
+    background-color: #ffffff;
+    box-shadow: 0 16px 40px rgba(21, 29, 38, 0.24);
+}
+
+.dt-pic-chip {
+    left: 41.6%;
+    top: 26%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 12px 5px 5px;
+    border-radius: 999px;
+    box-shadow: 0 4px 12px rgba(21, 29, 38, 0.12);
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.dt-pic-proof {
+    right: 0;
+    top: 47%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 212px;
+    padding: 12px;
+}
+
+.dt-pic-proof__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.dt-pic-proof__who {
+    font-size: 12px;
+    line-height: 16px;
+}
+
+.dt-pic-strong {
+    font-weight: 600;
+}
+
+.dt-pic-muted {
+    color: #56626f;
+    font-size: 12px;
+    line-height: 16px;
+}
+
+.dt-pic-mini {
+    left: 0;
+    bottom: 0;
+    width: 64%;
+    overflow: hidden;
+}
+
+.dt-pic-mini__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid #d2d9e0;
+}
+
+.dt-pic-mini__title {
+    font-size: 15px;
+    line-height: 22px;
+    font-weight: 600;
+}
+
+/* A picture of a button, so it never looks pressable under the pointer. */
+.dt-pic-mini__create {
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+.dt-pic-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    line-height: 18px;
+}
+
+.dt-pic-table th {
+    padding: 8px;
+    border-bottom: 1px solid #7d8997;
+    font-weight: 600;
+    text-align: start;
+    white-space: nowrap;
+}
+
+.dt-pic-table td {
+    padding: 8px;
+    border-bottom: 1px solid #d2d9e0;
+    vertical-align: top;
+}
+
+.dt-pic-table tbody tr:nth-child(even) td {
+    background-color: #f2f4f7;
+}
+
+.dt-pic-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+@media (max-width: 640.98px) {
+    .dt-pic-scene {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        aspect-ratio: auto;
+    }
+
+    .dt-pic-map,
+    .dt-pic-mini {
+        position: static;
+        width: 100%;
+    }
+
+    .dt-pic-map {
+        height: 220px;
+    }
+
+    .dt-pic-chip,
+    .dt-pic-proof,
+    .dt-pic-mini__create {
+        display: none;
+    }
+
+    .dt-pic-mini {
+        box-shadow: 0 4px 12px rgba(21, 29, 38, 0.12);
+    }
+
+    .dt-pic-table th {
+        white-space: normal;
+    }
+}

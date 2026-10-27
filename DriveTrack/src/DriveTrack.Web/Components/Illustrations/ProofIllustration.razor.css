@@ -1,0 +1,29 @@
+/* A picture, not interface: the artboard's own colours and sizes (see DesignTokenTests' exemption). */
+
+.dt-pic-proofcard {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    gap: 8px;
+    height: 100%;
+}
+
+.dt-pic-proofcard__sheet {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-width: 0;
+    padding: 10px 12px;
+    border: 1px solid #d2d9e0;
+    border-radius: 8px;
+    background-color: #ffffff;
+}
+
+.dt-pic-proofcard__status {
+    align-self: flex-start;
+}
+
+.dt-pic-proofcard__who {
+    color: #56626f;
+    font-size: 12px;
+    line-height: 16px;
+}

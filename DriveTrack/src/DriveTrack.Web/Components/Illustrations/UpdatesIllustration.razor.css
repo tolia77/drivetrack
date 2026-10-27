@@ -1,0 +1,65 @@
+/* A picture, not interface: the artboard's own colours and sizes (see DesignTokenTests' exemption).
+   `::deep` for the glyphs, which the Icon component draws. */
+
+.dt-pic-mails {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.dt-pic-mail {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 12px 5px 6px;
+    border: 1px solid #d2d9e0;
+    border-radius: 8px;
+    background-color: #ffffff;
+    box-shadow: 0 1px 2px rgba(21, 29, 38, 0.08);
+    color: #151d26;
+    font-size: 12px;
+    line-height: 16px;
+}
+
+.dt-pic-mail__icon {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+}
+
+.dt-pic-mail__icon ::deep .dt-icon {
+    width: 14px;
+    height: 14px;
+}
+
+.dt-pic-mail__text {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    font-weight: 600;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.dt-pic-mail__time {
+    color: #56626f;
+}
+
+.dt-pic-tone--teal {
+    background-color: #e4f2ef;
+    color: #095a4f;
+}
+
+.dt-pic-tone--amber {
+    background-color: #fcf1d8;
+    color: #7f5200;
+}
+
+.dt-pic-tone--green {
+    background-color: #e3f3e7;
+    color: #145c2c;
+}

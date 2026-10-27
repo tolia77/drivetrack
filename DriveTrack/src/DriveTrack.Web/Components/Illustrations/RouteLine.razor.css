@@ -1,0 +1,30 @@
+/*
+    A picture, not interface: the artboard's own colours and sizes (see DesignTokenTests' exemption).
+    Below the phone breakpoint the band's words take the whole width, and a route drawn through them
+    would only make them harder to read, so it is not drawn; the grid stays.
+*/
+
+.dt-pic-route {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    background-size: 40px 40px;
+}
+
+.dt-pic-route__line {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 360px;
+    height: 140px;
+    margin: -70px 0 0 -150px;
+}
+
+@media (max-width: 640.98px) {
+    .dt-pic-route__line {
+        display: none;
+    }
+}

@@ -1,0 +1,13 @@
+/* A picture, not interface: the artboard's own colours and sizes (see DesignTokenTests' exemption). */
+
+.dt-pic-sig {
+    display: flex;
+    align-items: flex-end;
+    height: 52px;
+    border-bottom: 1px solid #7d8997;
+}
+
+.dt-pic-sig svg {
+    display: block;
+    max-width: 100%;
+}
