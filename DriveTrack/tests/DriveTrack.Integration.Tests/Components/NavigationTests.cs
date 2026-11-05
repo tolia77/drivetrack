@@ -31,7 +31,7 @@ public class NavigationTests
         var destinations = NavDestinations.For(role);
 
         Assert.NotEmpty(destinations);
-        Assert.Contains(NavDestination.Home, destinations);
+        Assert.Contains(NavDestination.Profile, destinations);
     }
 
     [Fact]
@@ -171,11 +171,11 @@ public class NavigationTests
     }
 
     [Fact]
-    public void An_anonymous_caller_is_offered_the_page_that_allows_them()
+    public void An_anonymous_caller_is_offered_no_destinations()
     {
-        // The landing page is [AllowAnonymous], so it is the one destination that survives having
-        // no role. Sign-in and registration are account actions, not destinations.
-        Assert.Equal(new[] { NavDestination.Home }, NavDestinations.Anonymous.ToArray());
+        // The landing page is reached through the brand. Sign-in and registration are account
+        // actions, not destinations.
+        Assert.Empty(NavDestinations.Anonymous);
     }
 
     [Fact]
@@ -236,12 +236,12 @@ public class NavigationTests
         Assert.DoesNotContain(@"class=""bi", menu, StringComparison.Ordinal);
         Assert.DoesNotContain(".bi-house-door-fill-nav-menu {", stylesheet, StringComparison.Ordinal);
 
-        // Every link and action carries an icon beside its text (NFR-24): the brand mark, home,
-        // profile, the two fleet screens (4.1), the dispatch board and the own-deliveries screen
-        // (5.1), the two administration rosters (7.1), story 5.2's notification log, sign-out,
-        // sign-in and register, story 8.1's chat destination, story 7.2's reviews, story 4.2's two
-        // shift screens, the phone toggle - and the dispatch dashboard, which is the nineteenth. The toggle is the one this
-        // count moved for: it used to draw its bars as three CSS gradients in the component's own
+        // Every link and action carries an icon beside its text (NFR-24): the brand mark, profile,
+        // the two fleet screens (4.1), the dispatch board and the own-deliveries screen (5.1), the
+        // two administration rosters (7.1), story 5.2's notification log, sign-out, sign-in and
+        // register, story 8.1's chat destination, story 7.2's reviews, story 4.2's two shift
+        // screens, the phone toggle - and the dispatch dashboard, which is the eighteenth. The toggle
+        // is the one this count once moved for: it used to draw its bars as three CSS gradients in the component's own
         // stylesheet, duplicating a glyph `IconName.Menu` already held, and a hamburger nobody can
         // find in the icon set is a hamburger that drifts away from every other glyph in the shell.
         //
@@ -249,7 +249,7 @@ public class NavigationTests
         // glyph is markup with nothing behind it, which is the defect this whole test guards, so
         // adding a link has to be a deliberate edit to this line rather than an empty box nobody
         // notices.
-        Assert.Equal(19, SharedMarkup.Occurrences(menu, "<Icon Name="));
+        Assert.Equal(18, SharedMarkup.Occurrences(menu, "<Icon Name="));
     }
 
     [Fact]
@@ -291,7 +291,10 @@ public class NavigationTests
 
         // FR-77: what the table returns for that role, rendered.
         Assert.Contains("profile", links);
+
+        // The landing page is the brand's link and not one of the destinations.
         Assert.Contains(string.Empty, links);
+        Assert.DoesNotContain(string.Empty, Hrefs(html[html.IndexOf("dt-nav__links", StringComparison.Ordinal)..]));
 
         // The way to the profile is the caller's own name in the foot, and only that: no second
         // profile entry among the destinations.
@@ -361,14 +364,14 @@ public class NavigationTests
         Assert.Equal(role == UserRole.Driver, links.Contains("my-shifts"));
 
         // The dashboard, rendered and stated flatly: dispatch's first screen, and the first link in
-        // its menu - above Home - because it is where both of those roles land.
+        // its menu, because it is where both of those roles land.
         Assert.Equal(destinations.Contains(NavDestination.Dashboard), links.Contains("dashboard"));
         Assert.Equal(runsDispatch, links.Contains("dashboard"));
 
         if (runsDispatch)
         {
-            // The first destination in the list, ahead of Home - read from the list itself, since
-            // the brand above it links to the same place Home does.
+            // The first destination in the list - read from the list itself, since the brand above
+            // it carries a link of its own.
             var list = html[html.IndexOf("dt-nav__links", StringComparison.Ordinal)..];
 
             Assert.Equal("dashboard", Hrefs(list)[0]);
@@ -407,7 +410,10 @@ public class NavigationTests
 
         Assert.Contains("sign-in", links);
         Assert.Contains("register", links);
+
+        // The landing page is the brand's link and not one of the destinations.
         Assert.Contains(string.Empty, links);
+        Assert.DoesNotContain(string.Empty, Hrefs(html[html.IndexOf("dt-nav__links", StringComparison.Ordinal)..]));
 
         // The other half of the guard: a visitor with no session must not be offered a profile
         // they cannot open, a fleet screen they cannot reach, or a sign-out that would do nothing.
@@ -461,7 +467,6 @@ public class NavigationTests
     }
 
     [Theory]
-    [InlineData(UserRole.Admin, null, "")]
     [InlineData(UserRole.Admin, "deliveries", "deliveries")]
     [InlineData(UserRole.Admin, "notifications", "notifications")]
     [InlineData(UserRole.Admin, "deliveries?status=pending", "deliveries")]
@@ -475,7 +480,7 @@ public class NavigationTests
     [InlineData(UserRole.Client, "reviews", "reviews")]
     public async Task One_destination_and_only_one_is_marked_as_the_one_the_caller_is_on(
         UserRole role,
-        string? path,
+        string path,
         string expected)
     {
         // The menu answers this itself rather than letting NavLink write an `active` class, because
@@ -483,12 +488,10 @@ public class NavigationTests
         // reader is told about and the fill a sighted reader sees have to be the same fact. That
         // answer is a path comparison this component owns, and nothing else in the suite renders it.
         //
-        // Four things can go wrong with it and three of them are silent. Every link could match, as
-        // happened to the sortable headers when SortState wrote "none" instead of omitting the
-        // attribute. None could, if the base-relative path kept a leading slash the hrefs do not
-        // have. The home link is the empty path, so a naive "starts with" would mark it on every
-        // screen in the product. And a query string would take the dispatch board off its own
-        // destination the moment a filter was applied - which is the last case below.
+        // Three things can go wrong with it. Every link could match, as happened to the sortable
+        // headers when SortState wrote "none" instead of omitting the attribute. None could, if the
+        // base-relative path kept a leading slash the hrefs do not have. And a query string would
+        // take the dispatch board off its own destination the moment a filter was applied.
         var html = await ShellCaller.RenderAsync<NavMenu>(role, path: path);
 
         // Only the destinations use "page"; the language switcher states its own with "true", so
@@ -507,16 +510,21 @@ public class NavigationTests
             RegexOptions.None,
             TimeSpan.FromSeconds(5));
 
-        // Asserted before the comparison, and it is the home row that needs it: a failed match hands
-        // back an empty group, which is exactly what the home link's own href is. Without this the
-        // first row passes whether the marked link carries `href=""`, a bare minimized `href` with no
-        // value, or no href at all - which is the hazard the `Landing` constant in NavMenu exists to
-        // prevent and would therefore be the one row unable to notice it coming back.
         Assert.True(
             href.Success,
             $"The marked destination carries no href at all: {only.Value}");
 
         Assert.Equal(expected, href.Groups["href"].Value);
+    }
+
+    [Fact]
+    public async Task No_destination_is_marked_on_the_landing_page()
+    {
+        // The landing page is not a destination any more, and the brand that links to it never
+        // carries the mark.
+        var html = await ShellCaller.RenderAsync<NavMenu>(UserRole.Admin);
+
+        Assert.DoesNotContain(@"aria-current=""page""", html, StringComparison.Ordinal);
     }
 
     [Fact]

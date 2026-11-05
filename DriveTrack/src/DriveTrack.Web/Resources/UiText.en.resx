@@ -88,9 +88,6 @@
   <data name="NavigationMenu" xml:space="preserve">
     <value>Navigation menu</value>
   </data>
-  <data name="NavHome" xml:space="preserve">
-    <value>Home</value>
-  </data>
   <data name="CircuitError" xml:space="preserve">
     <value>Something went wrong.</value>
   </data>
