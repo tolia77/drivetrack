@@ -10,9 +10,6 @@ public enum NavDestination
     /// <summary>The day at a glance: where dispatch lands.</summary>
     Dashboard,
 
-    /// <summary>The landing page, which every caller may see (FR-99).</summary>
-    Home,
-
     /// <summary>The signed-in caller's own profile.</summary>
     Profile,
 
@@ -90,7 +87,7 @@ internal static class NavDestinations
 {
     /// <summary>What every signed-in caller is offered, whatever their role.</summary>
     private static readonly IReadOnlySet<NavDestination> Personal =
-        new HashSet<NavDestination> { NavDestination.Home, NavDestination.Profile };
+        new HashSet<NavDestination> { NavDestination.Profile };
 
     /// <summary>
     /// The personal destinations plus the caller's own deliveries, for the two roles that are a
@@ -228,12 +225,12 @@ internal static class NavDestinations
         };
 
     /// <summary>
-    /// What a caller with no session is offered. The landing page is <c>[AllowAnonymous]</c>, so it
-    /// is the one destination that survives having no role at all; the sign-in and registration
-    /// entry points are account actions rather than destinations and are rendered beside these.
+    /// What a caller with no session is offered: nothing. The landing page is reached through the
+    /// brand, and the sign-in and registration entry points are account actions rather than
+    /// destinations, rendered in the menu's foot.
     /// </summary>
     public static IReadOnlySet<NavDestination> Anonymous { get; } =
-        new HashSet<NavDestination> { NavDestination.Home };
+        new HashSet<NavDestination>();
 
     /// <summary>The destinations a caller of that role is offered.</summary>
     /// <param name="role">The caller's single role (AD-4).</param>
