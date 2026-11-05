@@ -21,7 +21,7 @@
       Test-only. The server half is the shared framework DriveTrack.Web already targets, and
       ChatAssetTests pins that the Web project takes no SignalR package of its own.
     -->
-    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.4" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.14" />
   </ItemGroup>
 
   <!--
