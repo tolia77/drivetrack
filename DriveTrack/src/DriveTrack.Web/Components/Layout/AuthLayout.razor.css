@@ -1,0 +1,71 @@
+/*
+    The sign-in and register frame: the top bar and the centred main. The card inside it is the
+    screens' and its rules are the theme's `dt-auth-panel`; the language menu is DtLanguageMenu's and
+    its rules are the theme's too.
+
+    NFR-29: every palette value is a `--dt-*` reference. What is literal is geometry the palette does
+    not name - the bar's height, the viewport's, the phone breakpoint.
+*/
+
+/* The whole viewport, with the browser's own chrome taken off where the unit is known. */
+.dt-auth {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    min-height: 100dvh;
+    background-color: var(--dt-surface-page);
+    color: var(--dt-ink);
+}
+
+/*
+    48px in from either edge, as the landing page's header is: the two spacing steps either side of
+    the row's edge, because the token gate admits no arithmetic there.
+*/
+.dt-auth-header {
+    padding: 0 var(--dt-space-4);
+    background-color: var(--dt-surface-card);
+    border-bottom: var(--dt-border-width) solid var(--dt-border);
+}
+
+.dt-auth-headrow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--dt-space-5);
+    min-height: 4.5rem;
+    padding: 0 var(--dt-space-6);
+}
+
+/* The shell's lock-up on a white ground: the mark is `dt-nav__mark`, the wordmark the brand's. */
+.dt-auth-brand {
+    display: flex;
+    align-items: center;
+    color: var(--dt-ink);
+    font-size: var(--dt-h2-font-size);
+    line-height: var(--dt-h2-line-height);
+    font-weight: var(--dt-display-font-weight);
+    text-decoration: none;
+}
+
+/* The product's ring on the one way off these screens, rather than the browser's default. */
+.dt-auth-brand:focus-visible {
+    outline: var(--dt-border-width-focus) solid var(--dt-focus-ring);
+    outline-offset: var(--dt-border-width-focus);
+}
+
+/* The card centred both ways, and free to grow past a short viewport rather than being clipped. */
+.dt-auth-main {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--dt-space-6) var(--dt-space-4);
+}
+
+/* The theme's phone edge, which this file cannot read from Sass and has to write out. */
+@media (max-width: 640.98px) {
+    .dt-auth-headrow {
+        flex-wrap: wrap;
+        padding: 0;
+    }
+}

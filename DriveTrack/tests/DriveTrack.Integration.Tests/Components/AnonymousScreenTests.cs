@@ -1,5 +1,7 @@
 using System.Net;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
+using DriveTrack.Application.Users;
 using DriveTrack.Integration.Tests.Persistence;
 using DriveTrack.Integration.Tests.Support;
 
@@ -11,9 +13,8 @@ namespace DriveTrack.Integration.Tests.Components;
 /// <para>
 /// <c>AuthenticationTests</c> already drives both forms end to end through the real POST, and
 /// <c>SubmitGuardTests</c> already decides what a guard on them would mean. Neither of them looks
-/// at the shape of the page: both screens spent the whole of Spec A inside four raw Bootstrap
-/// wrappers guessing at a width, with a bare <c>&lt;h1&gt;</c> outside the shared heading row, and
-/// the suite stayed green throughout. This is the class that would have noticed.
+/// at the shape of the page: the frame the design draws - a white top bar and one centred card, with
+/// no application sidebar - is pinned here and nowhere else.
 /// </para>
 /// <para>
 /// Rendered over HTTP rather than through <c>ComponentRenderer</c>, because that is the only place
@@ -24,12 +25,6 @@ namespace DriveTrack.Integration.Tests.Components;
 /// </summary>
 public class AnonymousScreenTests(PostgresFixture postgres)
 {
-    /// <summary>The shared heading row, its class list and what this screen put inside it.</summary>
-    private static readonly Regex PageHead = new(
-        @"<div\b[^>]*class=""(?<classes>[^""]*\bdt-page-head\b[^""]*)""[^>]*>(?<body>.*?)</div>",
-        RegexOptions.Singleline | RegexOptions.CultureInvariant,
-        TimeSpan.FromSeconds(5));
-
     /// <summary>A call to <c>DtCard</c>, with whatever it was handed.</summary>
     private static readonly Regex CardTag = new(
         @"<DtCard\b(?<attributes>[^>]*)>",
@@ -55,11 +50,36 @@ public class AnonymousScreenTests(PostgresFixture postgres)
         { "Register", "dt-register-panel", "dt-register-submit" },
     };
 
-    /// <summary>Each screen's stylesheet and the wrapper it bounds.</summary>
-    public static TheoryData<string, string> Stylesheets() => new()
+    /// <summary>Each screen's stylesheet, the wrapper it bounds and the artboard's width for it.</summary>
+    public static TheoryData<string, string, string> Stylesheets() => new()
     {
-        { "SignIn", "dt-sign-in-panel" },
-        { "Register", "dt-register-panel" },
+        { "SignIn", "dt-sign-in-panel", "26.25rem" },
+        { "Register", "dt-register-panel", "32.5rem" },
+    };
+
+    /// <summary>
+    /// The copy the artboards draw, per screen and language: the title and the subtitle, the sentence
+    /// offering the other form, the link in it, and the submit. Written out rather than read from the
+    /// catalogue, because the catalogue is what this holds to the design.
+    /// </summary>
+    public static TheoryData<string, string, string, string, string, string, string> Copy() => new()
+    {
+        {
+            "/sign-in", "uk-UA", "Вхід", "Увійдіть у свій обліковий запис DriveTrack.",
+            "Ще не маєте облікового запису?", "Зареєструватися", "Увійти"
+        },
+        {
+            "/sign-in", "en-US", "Sign in", "Sign in to your DriveTrack account.",
+            "No account yet?", "Sign up", "Sign in"
+        },
+        {
+            "/register", "uk-UA", "Створення облікового запису", "Заповніть свої дані, щоб почати користуватися DriveTrack.",
+            "Уже маєте обліковий запис?", "Увійти", "Створити акаунт"
+        },
+        {
+            "/register", "en-US", "Create an account", "Fill in your details to start using DriveTrack.",
+            "Already have an account?", "Sign in", "Create account"
+        },
     };
 
     /// <summary>
@@ -82,7 +102,7 @@ public class AnonymousScreenTests(PostgresFixture postgres)
 
     [Theory]
     [MemberData(nameof(Rendered))]
-    public async Task The_screen_renders_anonymously_as_one_heading_over_a_titleless_card(
+    public async Task The_screen_renders_anonymously_as_one_heading_inside_a_titleless_card(
         string route,
         string wrapper,
         string submit,
@@ -97,54 +117,274 @@ public class AnonymousScreenTests(PostgresFixture postgres)
         // a `Title` added later would put the screen's own name on the page twice.
         Assert.Equal(1, SharedMarkup.Occurrences(html, "<h1"));
 
-        var head = PageHead.Match(html);
+        // The wrapper really holds the card, rather than the class appearing somewhere on the
+        // page: a closing </div> moved above the card would leave a `Contains` satisfied and the
+        // width bound wrapped around nothing.
+        var panel = PhoneLayoutTests.BodyOf(html, wrapper);
+        var card = PhoneLayoutTests.BodyOf(panel, "dt-card__body");
 
-        Assert.True(head.Success, $"{route} renders no heading row.");
-        Assert.Contains("<h1", head.Groups["body"].Value, StringComparison.Ordinal);
+        // The heading, the subtitle and the form are all inside the card, in that order: the design
+        // draws no heading row over it.
+        var heading = card.IndexOf("<h1", StringComparison.Ordinal);
+        var subtitle = card.IndexOf("dt-auth-panel__subtitle", StringComparison.Ordinal);
+        var form = card.IndexOf("<form", StringComparison.Ordinal);
 
-        // `mb-4` on the row, and it is the only thing left producing the gap under the title:
-        // `.dt-page-head h1` zeroes the heading's own margin and `.dt-type-h1` declares none, so a
-        // dropped utility leaves the form sitting against the heading with every other assertion
-        // in this class still green.
-        Assert.Contains("mb-4", head.Groups["classes"].Value, StringComparison.Ordinal);
+        Assert.True(heading >= 0, $"The card on {route} holds no heading.");
+        Assert.True(heading < subtitle, $"The subtitle on {route} is not under the heading.");
+        Assert.True(subtitle < form, $"The form on {route} is not under the subtitle.");
+        Assert.Contains(
+            "dt-muted",
+            Regex.Match(card, @"<p\b[^>]*\bdt-auth-panel__subtitle\b[^>]*>", RegexOptions.None, TimeSpan.FromSeconds(5)).Value,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("dt-page-head", html, StringComparison.Ordinal);
 
         // And the heading is bare. Not because there is no navigation to echo - AccessDenied and
         // NotFound are anonymous too and both carry a glyph - but because those two report a
         // status and the glyph is that status, while this is a form whose content is the boxes
         // below. A glyph here would be decoration.
-        Assert.DoesNotContain("<svg", head.Groups["body"].Value, StringComparison.Ordinal);
+        Assert.DoesNotContain("<svg", SharedMarkup.ElementWithClass(card, "h1", "dt-type-h1"), StringComparison.Ordinal);
 
-        // The wrapper really holds the card, rather than the class appearing somewhere on the
-        // page: a closing </div> moved above the card would leave a `Contains` satisfied and the
-        // width bound wrapped around nothing.
-        var panel = PhoneLayoutTests.BodyOf(html, wrapper);
-
-        Assert.Contains("dt-card__body", panel, StringComparison.Ordinal);
-        Assert.Contains("<form", panel, StringComparison.Ordinal);
-
-        // No head on it: DtCard's <h2> would name the screen a second time and cannot stand in for
-        // the <h1> above it in any case.
+        // No head on the card: DtCard's <h2> would name the screen a second time and cannot stand in
+        // for the <h1> in any case.
         Assert.DoesNotContain("dt-card__head", panel, StringComparison.Ordinal);
 
-        // The stopgap, gone from the rendered page rather than only from the source.
-        Assert.DoesNotContain(@"class=""card""", panel, StringComparison.Ordinal);
-        Assert.DoesNotContain("col-md-8", panel, StringComparison.Ordinal);
-        Assert.DoesNotContain("col-lg-5", panel, StringComparison.Ordinal);
+        // The way to the other form, inside the card under the form. A visitor here has no
+        // navigation menu, so this link is the only offered route between the two screens, and it
+        // is pinned the way AccessDeniedDeliveryTests pins that page's way out.
+        Assert.True(
+            card.IndexOf($@"href=""{sibling}""", StringComparison.Ordinal) > card.IndexOf("</form>", StringComparison.Ordinal),
+            $"The way from {route} to {sibling} is not in the card under the form.");
 
-        // The way to the other form, inside the panel with it. A visitor here has no navigation
-        // menu - the shell offers the anonymous entry points and nothing else - so this link is
-        // the only offered route between the two screens, and it is pinned the way
-        // AccessDeniedDeliveryTests pins that page's way out.
-        Assert.Contains($@"href=""{sibling}""", panel, StringComparison.Ordinal);
-
-        // NFR-24: the action carries a glyph AND its word. Neither screen had a `dt-*` hook until
-        // now, so nothing in the suite could name these two buttons except by their colour.
+        // NFR-24: the action carries a glyph AND its word.
         var button = SharedMarkup.ElementWithClass(html, "button", submit);
 
         Assert.Contains("<svg", button, StringComparison.Ordinal);
         Assert.True(
             SharedMarkup.IsUkrainian(SharedMarkup.TextOf(WebUtility.HtmlDecode(button))),
             $"The submit on {route} renders a glyph and no word.");
+    }
+
+    [Theory]
+    [InlineData("/sign-in")]
+    [InlineData("/register")]
+    public async Task The_screen_stands_in_its_own_frame_with_no_sidebar(string route)
+    {
+        var html = await RenderAsync(route);
+
+        // Not the application's shell: the dark navigation is what the design took off these two.
+        Assert.DoesNotContain("dt-shell", html, StringComparison.Ordinal);
+        Assert.DoesNotMatch(@"<nav\b[^>]*\bdt-nav\b", html);
+
+        // The top bar: the shell's lock-up leading to the landing page, and the language menu.
+        var header = SharedMarkup.ElementWithClass(html, "header", "dt-auth-header");
+
+        Assert.Matches(@"<a\b[^>]*\bdt-auth-brand\b[^>]*href=""/""", header);
+        Assert.Contains("dt-nav__mark", header, StringComparison.Ordinal);
+        Assert.Contains(@"popovertarget=""dt-landing-language-menu""", header, StringComparison.Ordinal);
+
+        // The menu comes back to the route it was opened on, as a local address: anything else is
+        // refused by the endpoint and sends the reader to the root.
+        Assert.Contains($@"name=""returnUrl"" value=""{route}""", header, StringComparison.Ordinal);
+        Assert.Contains(@"action=""/set-culture""", header, StringComparison.Ordinal);
+        Assert.Contains("__RequestVerificationToken", header, StringComparison.Ordinal);
+
+        // No select: this is the white header's menu rather than the dark band's control.
+        Assert.DoesNotContain("<select", html, StringComparison.Ordinal);
+
+        // The dock, which only LandingLayout draws here: once, so the frame really does nest in it.
+        Assert.Equal(1, SharedMarkup.Occurrences(html, @"id=""blazor-error-ui"""));
+
+        // The card is the main region's, centred by the frame.
+        Assert.Contains("dt-auth-panel", SharedMarkup.ElementWithClass(html, "main", "dt-auth-main"), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void The_frame_nests_in_the_landing_layout_rather_than_copying_it()
+    {
+        var layout = SharedMarkup.ReadComponent("Layout", "AuthLayout.razor");
+        var markup = Regex.Replace(layout, @"@\*.*?\*@", string.Empty, RegexOptions.Singleline, TimeSpan.FromSeconds(5));
+
+        // The boundary and the dock are LandingLayout's, once.
+        Assert.Contains("@layout LandingLayout", markup, StringComparison.Ordinal);
+        Assert.DoesNotContain("SessionExpiryBoundary", markup, StringComparison.Ordinal);
+        Assert.DoesNotContain("DtConnectionDock", markup, StringComparison.Ordinal);
+        Assert.DoesNotContain("NavMenu", markup, StringComparison.Ordinal);
+
+        // One form written once: the landing page's header draws the same component, and the rules
+        // both wear are the theme's, because a scoped rule could not reach it.
+        Assert.Contains(@"<DtLanguageMenu ReturnUrl=""@ReturnUrl"" />", markup, StringComparison.Ordinal);
+        Assert.Contains(@"<DtLanguageMenu ReturnUrl=""/"" />", SharedMarkup.ReadComponent("Pages", "Home.razor"), StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            ".dt-landing-menu",
+            WithoutComments(SharedMarkup.ReadComponent("Pages", "Home.razor.css")),
+            StringComparison.Ordinal);
+        Assert.Contains(".dt-landing-menu-button", Theme(), StringComparison.Ordinal);
+
+        // The frame as drawn: a 72px bar and the 32px and 16px around the card.
+        var css = WithoutComments(SharedMarkup.ReadComponent("Layout", "AuthLayout.razor.css"));
+
+        Assert.Matches(@"\.dt-auth-headrow\s*\{[^}]*min-height:\s*4\.5rem", css);
+        Assert.Matches(
+            @"\.dt-auth-main\s*\{[^}]*align-items:\s*center;[^}]*justify-content:\s*center;[^}]*padding:\s*var\(--dt-space-6\) var\(--dt-space-4\)",
+            css);
+
+        // On a phone the bar gives up its inset and may wrap, so the brand and the menu always fit.
+        var phone = css[css.IndexOf("@media (max-width: 640.98px)", StringComparison.Ordinal)..];
+
+        Assert.Matches(@"\.dt-auth-headrow\s*\{[^}]*flex-wrap:\s*wrap;", phone);
+        Assert.Matches(@"\.dt-auth-headrow\s*\{[^}]*padding:\s*0;", phone);
+    }
+
+    [Fact]
+    public void The_panel_is_drawn_as_the_artboards_draw_it()
+    {
+        var theme = Theme();
+
+        // 32px inside the card, not the `space-4` every other card has.
+        Assert.Matches(@"\.dt-auth-panel \.dt-card__body\s*\{[^}]*padding:\s*var\(--dt-space-6\)", theme);
+
+        // 16px between the fields and 24px above the form.
+        Assert.Matches(
+            @"\.dt-auth-panel form\s*\{[^}]*gap:\s*var\(--dt-space-4\);[^}]*margin-top:\s*var\(--dt-space-5\)",
+            theme);
+
+        // 44px controls and a full-width submit.
+        Assert.Matches(
+            @"\.dt-auth-panel \.form-control,\s*\.dt-auth-panel \.dt-check,\s*\.dt-auth-panel \.btn\s*\{[^}]*min-height:\s*var\(--dt-touch-target\)",
+            theme);
+        Assert.Matches(@"\.dt-auth-panel \.btn\s*\{[^}]*width:\s*100%", theme);
+
+        // The tick's label no wider than its phrase: stretched, a click in the blank space beside
+        // the words would flip whether the session outlives the browser.
+        Assert.Matches(@"\.dt-auth-panel \.dt-check\s*\{[^}]*align-self:\s*flex-start", theme);
+
+        // The way to the other form, centred and 24px under it.
+        Assert.Matches(
+            @"\.dt-auth-panel__switch\s*\{[^}]*margin:\s*var\(--dt-space-5\) 0 0;[^}]*text-align:\s*center",
+            theme);
+
+        // The name row's own 12rem floor. `.dt-cols` is 14rem, and two of those plus their gap do not
+        // fit the 28.5rem card body, so borrowing it would stack what the artboard sets side by side.
+        // Capped at the row's own width, so a body narrower than the floor does not overflow.
+        Assert.Matches(
+            @"\.dt-auth-panel__names\s*\{[^}]*grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(min\(12rem,\s*100%\),\s*1fr\)\)",
+            theme);
+    }
+
+    [Fact]
+    public async Task First_and_last_name_share_one_row_and_the_placeholder_is_a_number_the_validator_accepts()
+    {
+        var html = await RenderAsync("/register");
+
+        var row = PhoneLayoutTests.BodyOf(html, "dt-auth-panel__names");
+
+        Assert.Contains(@"id=""register-first-name""", row, StringComparison.Ordinal);
+        Assert.Contains(@"id=""register-last-name""", row, StringComparison.Ordinal);
+        Assert.DoesNotContain(@"id=""register-email""", row, StringComparison.Ordinal);
+
+        // The artboard draws spaces in this example, and the validator refuses them: somebody who
+        // copied the example would be told it was wrong.
+        var phone = Box(html, "register-phone");
+        var placeholder = Regex.Match(phone, @"placeholder=""(?<value>[^""]*)""", RegexOptions.None, TimeSpan.FromSeconds(5));
+
+        Assert.True(placeholder.Success, "The phone box carries no placeholder.");
+        Assert.Equal(
+            Catalogue("UiText.resx", "PhoneNumberPlaceholder"),
+            WebUtility.HtmlDecode(placeholder.Groups["value"].Value));
+
+        // In both catalogues, because the English one is read only after a language change.
+        Assert.Matches(RegisterClientCommandValidator.PhoneNumberPattern, Catalogue("UiText.resx", "PhoneNumberPlaceholder"));
+        Assert.Matches(RegisterClientCommandValidator.PhoneNumberPattern, Catalogue("UiText.en.resx", "PhoneNumberPlaceholder"));
+
+        Assert.Contains(@"type=""tel""", phone, StringComparison.Ordinal);
+
+        // The reference resolves: it names an element on the page, and that element holds the hint.
+        var described = Regex.Match(phone, @"aria-describedby=""(?<id>[^""]+)""", RegexOptions.None, TimeSpan.FromSeconds(5));
+
+        Assert.True(described.Success, "The phone box names nothing that describes it.");
+
+        var hint = Regex.Match(
+            html,
+            @"<(?<tag>\w+)\b[^>]*\bid=""" + Regex.Escape(described.Groups["id"].Value) + @"""[^>]*>(?<body>.*?)</\k<tag>>",
+            RegexOptions.Singleline,
+            TimeSpan.FromSeconds(5));
+
+        Assert.True(hint.Success, $"No element carries the id '{described.Groups["id"].Value}'.");
+        Assert.Equal(Catalogue("UiText.resx", "PhoneNumberHint"), Text(hint.Groups["body"].Value));
+    }
+
+    [Theory]
+    [InlineData("/sign-in")]
+    [InlineData("/register")]
+    public async Task No_box_invites_a_browser_bubble_in_front_of_the_servers_field_errors(string route)
+    {
+        var html = await RenderAsync(route);
+
+        foreach (Match box in Regex.Matches(html, @"<input\b[^>]*>", RegexOptions.None, TimeSpan.FromSeconds(5)))
+        {
+            Assert.DoesNotMatch(@"\brequired\b", box.Value);
+            Assert.DoesNotContain(@"type=""email""", box.Value, StringComparison.Ordinal);
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(Copy))]
+    public async Task The_screen_reads_as_the_artboard_does_in_each_language(
+        string route,
+        string culture,
+        string title,
+        string subtitle,
+        string otherFormSentence,
+        string otherFormLink,
+        string submit)
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        await using var factory = await ApiFactory.CreateAsync(
+            postgres.ConnectionString, cancellationToken, useProbeAuthentication: false);
+
+        // Through the same switch a visitor uses, which is the row of the matrix this also covers:
+        // the choice is honoured and the reader comes back to the screen they were on.
+        using var client = factory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false,
+        });
+
+        var opening = await client.GetStringAsync(new Uri(route, UriKind.Relative), cancellationToken);
+        var token = Regex.Match(
+            SharedMarkup.ElementWithClass(opening, "header", "dt-auth-header"),
+            @"name=""__RequestVerificationToken""[^>]*value=""([^""]+)""",
+            RegexOptions.None,
+            TimeSpan.FromSeconds(5));
+
+        Assert.True(token.Success, $"The language menu on {route} carries no antiforgery token.");
+
+        using var form = new FormUrlEncodedContent(new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["culture"] = culture,
+            ["returnUrl"] = route,
+            ["__RequestVerificationToken"] = token.Groups[1].Value,
+        });
+
+        using var switched = await client.PostAsync(new Uri("/set-culture", UriKind.Relative), form, cancellationToken);
+
+        Assert.Equal(HttpStatusCode.Redirect, switched.StatusCode);
+        Assert.Equal(route, switched.Headers.Location?.OriginalString);
+
+        var html = await client.GetStringAsync(new Uri(route, UriKind.Relative), cancellationToken);
+
+        Assert.Equal(title, Text(SharedMarkup.ElementWithClass(html, "h1", "dt-type-h1")));
+        Assert.Equal(subtitle, Text(SharedMarkup.ElementWithClass(html, "p", "dt-auth-panel__subtitle")));
+        Assert.Equal(title, Text(SharedMarkup.ElementWithClass(html, "title", string.Empty)));
+
+        var way = SharedMarkup.ElementWithClass(html, "p", "dt-auth-panel__switch");
+
+        Assert.Equal(otherFormSentence + " " + otherFormLink, Text(way));
+        Assert.Equal(otherFormLink, Text(SharedMarkup.ElementWithClass(way, "a", string.Empty)));
+
+        var button = SharedMarkup.ElementWithClass(html, "button", "dt-" + route.TrimStart('/') + "-submit");
+
+        Assert.Equal(submit, Text(button));
     }
 
     [Theory]
@@ -161,14 +401,7 @@ public class AnonymousScreenTests(PostgresFixture postgres)
         // last signed in on this browser.
         var html = await RenderAsync(route);
 
-        var box = Regex.Match(
-            html,
-            @"<input\b[^>]*\bid=""" + Regex.Escape(id) + @"""[^>]*>",
-            RegexOptions.None,
-            TimeSpan.FromSeconds(5));
-
-        Assert.True(box.Success, $"{route} renders no box with id '{id}'.");
-        Assert.Contains($@"autocomplete=""{token}""", box.Value, StringComparison.Ordinal);
+        Assert.Contains($@"autocomplete=""{token}""", Box(html, id), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -198,9 +431,18 @@ public class AnonymousScreenTests(PostgresFixture postgres)
             },
             cancellationToken);
 
-        var signInPanel = PhoneLayoutTests.BodyOf(refusedSignIn, "dt-sign-in-panel");
+        var signInCard = PhoneLayoutTests.BodyOf(
+            PhoneLayoutTests.BodyOf(refusedSignIn, "dt-sign-in-panel"),
+            "dt-card__body");
 
-        Assert.Contains("dt-banner__body", signInPanel, StringComparison.Ordinal);
+        // In the card, between the subtitle and the form it refuses.
+        var banner = signInCard.IndexOf("dt-banner__body", StringComparison.Ordinal);
+
+        Assert.True(banner > signInCard.IndexOf("dt-auth-panel__subtitle", StringComparison.Ordinal), "The banner is not under the subtitle.");
+        Assert.True(banner < signInCard.IndexOf("<form", StringComparison.Ordinal), "The banner is not above the form.");
+
+        // And the password is not written back into the page.
+        Assert.DoesNotContain("value=", Box(refusedSignIn, "sign-in-password"), StringComparison.Ordinal);
 
         // And a refusal that does name one, which lands under the box it is about rather than in
         // the banner - the same panel, one level further in.
@@ -219,10 +461,15 @@ public class AnonymousScreenTests(PostgresFixture postgres)
             },
             cancellationToken);
 
-        var registerPanel = PhoneLayoutTests.BodyOf(refusedRegistration, "dt-register-panel");
+        var registerCard = PhoneLayoutTests.BodyOf(
+            PhoneLayoutTests.BodyOf(refusedRegistration, "dt-register-panel"),
+            "dt-card__body");
 
-        Assert.Contains("dt-field-error", registerPanel, StringComparison.Ordinal);
-        Assert.Contains("dt-card__body", registerPanel, StringComparison.Ordinal);
+        Assert.Contains("dt-field-error", registerCard, StringComparison.Ordinal);
+
+        // Neither half of the submitted password is written back into the page.
+        Assert.DoesNotContain("value=", Box(refusedRegistration, "register-password"), StringComparison.Ordinal);
+        Assert.DoesNotContain("value=", Box(refusedRegistration, "register-password-confirmation"), StringComparison.Ordinal);
     }
 
     [Theory]
@@ -244,6 +491,7 @@ public class AnonymousScreenTests(PostgresFixture postgres)
         // offenders, and they also fall out of the set - two failures away from one deleted line.
         Assert.Contains("@attribute [ExcludeFromInteractiveRouting]", screen, StringComparison.Ordinal);
         Assert.Contains("@attribute [AllowAnonymous]", screen, StringComparison.Ordinal);
+        Assert.Contains("@layout AuthLayout", screen, StringComparison.Ordinal);
 
         // The hook is on the submit rather than merely somewhere in the file.
         Assert.Matches(
@@ -266,30 +514,23 @@ public class AnonymousScreenTests(PostgresFixture postgres)
         // And the rule in the stylesheet has something to hang from. A scoped selector whose
         // element was renamed matches nothing and reports nothing.
         Assert.Contains(wrapper, screen, StringComparison.Ordinal);
-
-        // The four Bootstrap wrappers are gone rather than left beside their replacement for a
-        // later reader to work out which of the two is in charge of the width.
-        Assert.DoesNotContain("col-md-", screen, StringComparison.Ordinal);
-        Assert.DoesNotContain("col-lg-", screen, StringComparison.Ordinal);
-        Assert.DoesNotContain(@"class=""card""", screen, StringComparison.Ordinal);
-        Assert.DoesNotContain(@"class=""card-body""", screen, StringComparison.Ordinal);
     }
 
     [Theory]
     [MemberData(nameof(Stylesheets))]
-    public void The_panel_is_bounded_on_the_published_token_rather_than_on_a_column_guess(
+    public void The_panel_is_bounded_at_the_artboards_width(
         string file,
-        string wrapper)
+        string wrapper,
+        string width)
     {
         var css = WithoutComments(SharedMarkup.ReadComponent("Account", file + ".razor.css"));
 
         // `max-width` rather than `width`, which is what lets the panel fill a viewport narrower
-        // than the bound instead of overflowing it - and `dialog-narrow` rather than a figure,
-        // which is both NFR-29's rule and the honest reading: a sign-in panel is the same kind of
-        // object as the form dialog the token is published for.
+        // than the bound instead of overflowing it. A figure rather than a token: NFR-29's scan only
+        // refuses the figures the palette names, and this is one screen's geometry.
         Assert.Matches(
             new Regex(
-                @"\." + Regex.Escape(wrapper) + @"\s*\{[^}]*max-width:\s*var\(--dt-dialog-narrow\)",
+                @"\." + Regex.Escape(wrapper) + @"\s*\{[^}]*max-width:\s*" + Regex.Escape(width),
                 RegexOptions.Singleline,
                 TimeSpan.FromSeconds(5)),
             css);
@@ -307,6 +548,47 @@ public class AnonymousScreenTests(PostgresFixture postgres)
     /// <summary>A stylesheet with its <c>/* … */</c> comments removed.</summary>
     private static string WithoutComments(string css) =>
         Regex.Replace(css, @"/\*.*?\*/", " ", RegexOptions.Singleline, TimeSpan.FromSeconds(5));
+
+    /// <summary><c>_theme.scss</c> with its line comments removed.</summary>
+    private static string Theme() =>
+        Regex.Replace(
+            File.ReadAllText(Path.Combine(RepositoryLayout.ProjectDirectory("DriveTrack.Web"), "Styles", "_theme.scss")),
+            @"//[^\n]*",
+            " ",
+            RegexOptions.None,
+            TimeSpan.FromSeconds(5));
+
+    /// <summary>One value from a catalogue under <c>Resources</c>.</summary>
+    private static string Catalogue(string fileName, string key) =>
+        XDocument.Load(Path.Combine(RepositoryLayout.ProjectDirectory("DriveTrack.Web"), "Resources", fileName))
+            .Root!
+            .Elements("data")
+            .Single(element => element.Attribute("name")?.Value == key)
+            .Element("value")!
+            .Value;
+
+    /// <summary>The opening tag of the box with this id.</summary>
+    private static string Box(string html, string id)
+    {
+        var box = Regex.Match(
+            html,
+            @"<input\b[^>]*\bid=""" + Regex.Escape(id) + @"""[^>]*>",
+            RegexOptions.None,
+            TimeSpan.FromSeconds(5));
+
+        Assert.True(box.Success, $"The page renders no box with id '{id}'.");
+
+        return box.Value;
+    }
+
+    /// <summary>What a reader reads in a piece of markup, with its whitespace settled.</summary>
+    private static string Text(string html) =>
+        Regex.Replace(
+            WebUtility.HtmlDecode(SharedMarkup.TextOf(html)),
+            @"\s+",
+            " ",
+            RegexOptions.None,
+            TimeSpan.FromSeconds(5)).Trim();
 
     /// <summary>One of the two screens, fetched anonymously over the real pipeline.</summary>
     /// <remarks>

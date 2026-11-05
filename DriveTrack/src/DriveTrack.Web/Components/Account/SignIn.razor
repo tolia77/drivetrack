@@ -6,45 +6,41 @@
    pages, and HttpContext.SignInAsync is available on the form POST. *@
 @attribute [ExcludeFromInteractiveRouting]
 @attribute [AllowAnonymous]
+@layout AuthLayout
 @inject IUserService Users
 @inject IStringLocalizer<UiText> Localizer
 @inject NavigationManager Navigation
 
 <PageTitle>@Localizer["SignInTitle"]</PageTitle>
 
-@* The screen's title, in the heading row every other screen carries. The wrapper is written here
-   for the same reason it is written on a screen with nothing beside its title: the product has one
-   heading shape, and `.dt-page-head h1` zeroes the heading's own margin so `mb-4` decides the gap
-   under it rather than the browser.
+@* The panel: one card holding the screen's title, its subtitle, the form and the way to the other
+   form, as the design draws it. `dt-auth-panel` is what the two screens share and the theme's;
+   `dt-sign-in-panel` is this screen's width, written on its own wrapper because a `max-width` aimed
+   at `.dt-card` from this file would carry this component's scope attribute onto an element another
+   component rendered and match nothing at all.
+
+   The card itself is titleless. DtCard's head is an <h2> by design and cannot stand in for the <h1>
+   `FocusOnNavigate` looks for, so the screen writes its own inside the card's body.
 
    The heading is bare, and deliberately so. This screen is a form: the heading names the work, and
    a glyph on it would be decoration beside the boxes that are the actual content. The two status
    pages do carry one in their <h1> - AccessDenied and NotFound - and that is not an inconsistency:
    there the glyph IS the status, the whole of what the page has to report, and it says "refused" or
    "nothing here" before a word is read. A form has no status to report until it is submitted. *@
-<div class="dt-page-head mb-4">
-    <h1 class="dt-type-h1">@Localizer["SignInTitle"]</h1>
-</div>
-
-@* The panel, and the whole of what this screen asks about its own width. The wrapper is this
-   screen's element and DtCard's <div> is DtCard's, so the bound is written out here where a scoped
-   rule can reach it - a `max-width` aimed at `.dt-card` from this file would carry this component's
-   scope attribute onto an element another component rendered and match nothing at all.
-
-   The card itself is titleless. A title would put "sign in" on the page twice, and DtCard's head is
-   an <h2> by design - it cannot stand in for the <h1> `FocusOnNavigate` looks for. *@
-<div class="dt-sign-in-panel">
-    @* Inside the panel, on the same measure as the form it refuses. A banner spanning the whole
-       main column above a 30rem card is a sentence whose left edge belongs to one thing and whose
-       right edge belongs to another, and the reader has to find the box it is about anyway.
-
-       It keeps what no box below claims - AUTH_INVALID_CREDENTIALS names no field, and saying so
-       under one of the two inputs would tell an attacker which one was wrong (FR-4). *@
-    <DtFailureBanner Failures="_failures" InlineFields="@InlineFields" />
-
+<div class="dt-auth-panel dt-sign-in-panel">
     <DtCard>
+        <h1 class="dt-type-h1">@Localizer["SignInTitle"]</h1>
+        <p class="dt-muted dt-auth-panel__subtitle">@Localizer["SignInSubtitle"]</p>
+
+        @* In the card, on the same measure as the form it refuses. It keeps what no box below
+           claims - AUTH_INVALID_CREDENTIALS names no field, and saying so under one of the two
+           inputs would tell an attacker which one was wrong (FR-4). *@
+        <DtFailureBanner Failures="_failures" InlineFields="@InlineFields" />
+
+        @* No `required` and no `type="email"` on the boxes, whatever the artboard's markup says: a
+           browser bubble would stand in front of the server's own field errors. *@
         <EditForm Model="Form!" FormName="signIn" OnValidSubmit="SubmitAsync">
-            <div class="mb-4">
+            <div>
                 <label class="form-label" for="sign-in-email">@Localizer["Email"]</label>
                 @* The tokens a password manager fills these two boxes by. `username` rather than
                    `email` on the identifier: this is the credential half of a sign-in pair, and
@@ -53,7 +49,7 @@
                            @bind-Value="Form!.Email" />
                 <DtFieldError Field="Email" Failures="_failures" />
             </div>
-            <div class="mb-4">
+            <div>
                 <label class="form-label" for="sign-in-password">@Localizer["Password"]</label>
                 <InputText id="sign-in-password" type="password" class="form-control"
                            autocomplete="current-password" @bind-Value="Form!.Password" />
@@ -65,12 +61,10 @@
                session cookie is persistent and survives a browser restart for the sliding window
                Program.cs sets. The label wraps the input so the whole phrase is the hit area, as on
                the delivery board's filter. *@
-            <div class="mb-4">
-                <label class="dt-check" for="sign-in-remember">
-                    <InputCheckbox id="sign-in-remember" @bind-Value="Form!.RememberMe" />
-                    @Localizer["RememberMe"]
-                </label>
-            </div>
+            <label class="dt-check" for="sign-in-remember">
+                <InputCheckbox id="sign-in-remember" @bind-Value="Form!.RememberMe" />
+                @Localizer["RememberMe"]
+            </label>
 
             @* NFR-24: the glyph the navigation gives this destination, beside the word. No
                `disabled` binding, and there is nowhere for one to come from - the page renders
@@ -81,9 +75,9 @@
                 <Icon Name="IconName.SignIn" />@Localizer["SignIn"]
             </button>
         </EditForm>
-    </DtCard>
 
-    <p class="mt-4">@Localizer["NoAccount"] <a href="/register">@Localizer["Register"]</a></p>
+        <p class="dt-auth-panel__switch">@Localizer["NoAccount"] <a href="/register">@Localizer["SignUp"]</a></p>
+    </DtCard>
 </div>
 
 @code {

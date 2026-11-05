@@ -1,0 +1,67 @@
+@inject IStringLocalizer<UiText> Localizer
+
+@* The reading language in a public page's white header, as the design draws it: a borderless button
+   naming the current one, opening a menu of both. The landing page draws it, and so does the frame
+   the sign-in and register screens stand in - one form written once, for two headers.
+
+   Each choice is a submit button of one form posting to /set-culture - the endpoint, the antiforgery
+   token and the full-page navigation are DtLanguageSwitch's, for the reason it gives: a cookie cannot
+   be written from a live circuit.
+
+   A native popover rather than state on a circuit, because the screens in that frame have no circuit
+   at all: the browser opens it on its button, closes it on Escape and on a click anywhere else, puts
+   its contents next in the tab order and tells assistive technology whether it is expanded - all
+   without a round trip or a script. Where the browser can anchor a popover it is drawn under its
+   button; where it cannot, it is drawn centred on the screen, which is the platform's own fallback
+   and still usable.
+
+   The rules are in the theme rather than beside this file, because the landing page's account menu
+   wears them too. *@
+
+<button class="dt-landing-menu-button dt-landing-menu-button--language" type="button"
+        popovertarget="dt-landing-language-menu"
+        aria-label="@LanguageButtonLabel">
+    <Icon Name="IconName.Language" />@CurrentLanguage<span class="dt-landing-chevron dt-icon-only"><Icon Name="IconName.Expand" /></span>
+</button>
+<div class="dt-landing-menu dt-landing-menu--language" id="dt-landing-language-menu" popover>
+    <form class="dt-lang" method="post" action="/set-culture">
+        <AntiforgeryToken />
+        <input type="hidden" name="returnUrl" value="@ReturnUrl" />
+        <button class="dt-landing-menu-item" type="submit" name="culture" value="uk-UA"
+                aria-current="@CurrentWhen(IsUkrainian)">
+            <span class="dt-landing-menu-check"><Icon Name="IconName.Confirm" /></span>@Localizer["LanguageUkrainian"]
+        </button>
+        <button class="dt-landing-menu-item" type="submit" name="culture" value="en-US"
+                aria-current="@CurrentWhen(!IsUkrainian)">
+            <span class="dt-landing-menu-check"><Icon Name="IconName.Confirm" /></span>@Localizer["LanguageEnglish"]
+        </button>
+    </form>
+</div>
+
+@code {
+    /// <summary>
+    /// The base-relative address the choice comes back to, starting with a slash. The endpoint
+    /// refuses anything that is not local and sends the caller to the root instead.
+    /// </summary>
+    [Parameter, EditorRequired]
+    public string ReturnUrl { get; set; } = "/";
+
+    // The language being read, from the culture the request resolved to - DtLanguageSwitch's own
+    // reading, for its reason: the cookie may hold a value the supported list refused.
+    private static bool IsUkrainian =>
+        string.Equals(
+            System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName,
+            "uk",
+            StringComparison.Ordinal);
+
+    // The language button names the current language by its own short code, as both catalogues do.
+    private string CurrentLanguage =>
+        IsUkrainian ? Localizer["LanguageUkrainian"] : Localizer["LanguageEnglish"];
+
+    // The language button's name: what it is for, then the code it shows, so the visible text is
+    // part of the name a voice user would say.
+    private string LanguageButtonLabel => $"{Localizer["Language"]}: {CurrentLanguage}";
+
+    // `aria-current` on the language being read; absent, rather than "false", on the other.
+    private static string? CurrentWhen(bool current) => current ? "true" : null;
+}

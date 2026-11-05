@@ -87,8 +87,9 @@ public class SubmitGuardTests
     /// flag, so a <c>disabled</c> binding there could never become true and would be a guard in name
     /// only. The sign-out control is excluded on the same ground from the other direction: it sits in
     /// a plain <c>&lt;form method="post"&gt;</c> posting to an endpoint, and has no C# handler at all.
-    /// The landing page's header menus are the same shape: its language choices post to
-    /// <c>/set-culture</c> and its account menu's sign-out to <c>/sign-out</c>, both plain forms.
+    /// The white headers' menus are the same shape: the language choices in <c>DtLanguageMenu</c> post
+    /// to <c>/set-culture</c> and the landing page's account menu's sign-out to <c>/sign-out</c>, both
+    /// plain forms.
     /// <para>
     /// Paths relative to <c>Components/</c>, forward-slashed, and checked rather than merely allowed:
     /// a file that was renamed or converted to interactive rendering would otherwise leave a licence
@@ -101,6 +102,7 @@ public class SubmitGuardTests
         "Account/SignIn.razor",
         "Layout/NavMenu.razor",
         "Pages/Home.razor",
+        "Shared/DtLanguageMenu.razor",
     ];
 
     public static TheoryData<string, string, string, string> Controls()

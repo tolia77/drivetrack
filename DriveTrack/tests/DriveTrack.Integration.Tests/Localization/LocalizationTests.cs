@@ -57,6 +57,20 @@ public class LocalizationTests(PostgresFixture postgres)
     /// </summary>
     private static readonly string[] EndonymKeys = ["LanguageUkrainian", "LanguageEnglish"];
 
+    /// <summary>
+    /// The keys holding an example of what to type rather than a sentence in either language: a phone
+    /// number reads the same in both, and has no letters for the guards to read. In the catalogue all
+    /// the same, because it is text a reader is shown and a screen should not write it out itself.
+    /// </summary>
+    private static readonly string[] ExampleValueKeys = ["PhoneNumberPlaceholder"];
+
+    /// <summary>
+    /// The one word a Ukrainian sentence may carry in Latin letters, as
+    /// <see cref="UserFacingTextTests"/> allows it in markup: a name in its own script is not an
+    /// untranslated string.
+    /// </summary>
+    private const string BrandName = "DriveTrack";
+
     /// <summary>The English satellites, one per theory case.</summary>
     public static TheoryData<string> EnglishCatalogues() => [.. EnglishResourceFiles];
 
@@ -176,7 +190,7 @@ public class LocalizationTests(PostgresFixture postgres)
         // leaked key. Neither belongs in front of a user (NFR-14).
         var offenders = ResourceFiles
             .SelectMany(file => Guarded(file).Select(entry => (File: file, entry.Key, entry.Value)))
-            .Where(entry => HasLatinWord(entry.Value))
+            .Where(entry => HasLatinWord(entry.Value.Replace(BrandName, string.Empty, StringComparison.Ordinal)))
             .Select(entry => $"{entry.File}:{entry.Key}")
             .ToArray();
 
@@ -377,7 +391,9 @@ public class LocalizationTests(PostgresFixture postgres)
 
     /// <summary>The entries of a catalogue that the language guards judge: everything but the endonyms.</summary>
     private static IEnumerable<(string Key, string Value)> Guarded(string fileName) =>
-        ValuesOf(fileName).Where(entry => !EndonymKeys.Contains(entry.Key, StringComparer.Ordinal));
+        ValuesOf(fileName).Where(entry =>
+            !EndonymKeys.Contains(entry.Key, StringComparer.Ordinal)
+            && !ExampleValueKeys.Contains(entry.Key, StringComparer.Ordinal));
 
     private static IEnumerable<(string Key, string Value)> ValuesOf(string fileName)
     {

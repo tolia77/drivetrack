@@ -134,10 +134,16 @@
     <value>Register</value>
   </data>
   <data name="SignInTitle" xml:space="preserve">
-    <value>Sign in to the system</value>
+    <value>Sign in</value>
+  </data>
+  <data name="SignInSubtitle" xml:space="preserve">
+    <value>Sign in to your DriveTrack account.</value>
   </data>
   <data name="RegisterTitle" xml:space="preserve">
-    <value>Client registration</value>
+    <value>Create an account</value>
+  </data>
+  <data name="RegisterSubtitle" xml:space="preserve">
+    <value>Fill in your details to start using DriveTrack.</value>
   </data>
   <data name="Profile" xml:space="preserve">
     <value>Profile</value>
@@ -159,6 +165,9 @@
   </data>
   <data name="PhoneNumberHint" xml:space="preserve">
     <value>In international format, with a plus sign and a country code.</value>
+  </data>
+  <data name="PhoneNumberPlaceholder" xml:space="preserve">
+    <value>+380671234567</value>
   </data>
   <data name="Password" xml:space="preserve">
     <value>Password</value>
@@ -218,7 +227,10 @@
     <value>Already have an account?</value>
   </data>
   <data name="NoAccount" xml:space="preserve">
-    <value>Do not have an account yet?</value>
+    <value>No account yet?</value>
+  </data>
+  <data name="SignUp" xml:space="preserve">
+    <value>Sign up</value>
   </data>
   <data name="RememberMe" xml:space="preserve">
     <value>Remember me</value>

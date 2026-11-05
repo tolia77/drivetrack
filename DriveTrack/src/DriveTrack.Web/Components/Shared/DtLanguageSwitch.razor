@@ -1,8 +1,8 @@
 @using System.Globalization
 @inject IStringLocalizer<UiText> Localizer
 
-@* NFR-14: the language switch, offered to every caller including an anonymous one - the sign-in
-   page is a screen too, and somebody who cannot read it cannot sign in to change anything.
+@* NFR-14: the language switch, offered to every caller including an anonymous one - somebody who
+   cannot read a page cannot sign in to change anything.
 
    A real form posting to /set-culture rather than an @onclick handler, and that is not a style
    choice: the language is carried by a cookie, and a Blazor Server component cannot write one. By
@@ -12,17 +12,16 @@
 
    The design draws it as the Select component: a native <select> whose change submits its form. A
    plain DOM attribute rather than an @onchange handler, for the reason the menu's disclosure is a
-   <details>: five screens render the navigation with no circuit behind them, and the sign-in page
-   is one of them.
+   <details>: three screens render the navigation with no circuit behind them.
 
    Each language is named by its own short code, identical in both catalogues, so a reader who
    cannot read the page can still find their own language on it.
 
    One component for the places the switch is drawn - the navigation's foot and the landing page's
-   footer - so the form the endpoint expects is written once; the landing page's header draws the
-   same form as a menu of its own. Where it comes back
-   to is the caller's answer rather than this component's: the navigation follows the route it is
-   on, and the landing page is always the root. *@
+   footer - so the form the endpoint expects is written once; DtLanguageMenu draws the same form as
+   a menu for the white headers. Where it comes back to is the caller's answer rather than this
+   component's: the navigation follows the route it is on, and the landing page is always the
+   root. *@
 
 <form class="dt-lang" method="post" action="/set-culture">
     <AntiforgeryToken />

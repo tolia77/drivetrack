@@ -5,64 +5,66 @@
    authentication cookie, and a circuit has no response to write it to. *@
 @attribute [ExcludeFromInteractiveRouting]
 @attribute [AllowAnonymous]
+@layout AuthLayout
 @inject IUserService Users
 @inject IStringLocalizer<UiText> Localizer
 @inject NavigationManager Navigation
 
 <PageTitle>@Localizer["RegisterTitle"]</PageTitle>
 
-@* The heading row every other screen carries, and a bare <h1> inside it for the reason SignIn's
-   is bare: this is a form, so the glyph would be decoration beside the boxes that are the content.
-   AccessDenied and NotFound do carry one, because there the glyph is the status the page exists to
-   report; a form has none to report until it is submitted. *@
-<div class="dt-page-head mb-4">
-    <h1 class="dt-type-h1">@Localizer["RegisterTitle"]</h1>
-</div>
-
-@* The panel and its bound, written the way SignIn writes them: the wrapper is this screen's own
-   element, which is what a scoped `max-width` can reach, and the card is titleless because the
-   screen already owns the one <h1> that names it. *@
-<div class="dt-register-panel">
-    @* Inside the panel, on the same measure as the form it refuses: a refusal wider than the boxes
-       it is about reads as a notice about the page rather than about the form.
-
-       Every refusal about one box moves under that box - AUTH_EMAIL_ALREADY_IN_USE included,
-       which the service raises with no field and FailureKeys pins to Email. What is left here is
-       what no box on the form is about. *@
-    <DtFailureBanner Failures="_failures" InlineFields="@InlineFields" />
-
+@* The panel, written the way SignIn writes it: `dt-auth-panel` is what the two screens share,
+   `dt-register-panel` is this screen's width on its own wrapper, and the card is titleless with a
+   bare <h1> in its body for SignIn's reasons - a form has no status for a glyph to report. *@
+<div class="dt-auth-panel dt-register-panel">
     <DtCard>
+        <h1 class="dt-type-h1">@Localizer["RegisterTitle"]</h1>
+        <p class="dt-muted dt-auth-panel__subtitle">@Localizer["RegisterSubtitle"]</p>
+
+        @* In the card, on the same measure as the form it refuses. Every refusal about one box moves
+           under that box - AUTH_EMAIL_ALREADY_IN_USE included, which the service raises with no
+           field and FailureKeys pins to Email. What is left here is what no box on the form is
+           about. *@
+        <DtFailureBanner Failures="_failures" InlineFields="@InlineFields" />
+
+        @* No `required` and no `type="email"` on the boxes, whatever the artboard's markup says: a
+           browser bubble would stand in front of the server's own field errors. *@
         <EditForm Model="Form!" FormName="register" OnValidSubmit="SubmitAsync">
-            <div class="mb-4">
-                <label class="form-label" for="register-first-name">@Localizer["FirstName"]</label>
-                @* One token per box, so a password manager fills the account it is about to store rather
-                   than guessing from the labels. *@
-                <InputText id="register-first-name" class="form-control" autocomplete="given-name"
-                           @bind-Value="Form!.FirstName" />
-                <DtFieldError Field="FirstName" Failures="_failures" />
+            <div class="dt-auth-panel__names">
+                <div>
+                    <label class="form-label" for="register-first-name">@Localizer["FirstName"]</label>
+                    @* One token per box, so a password manager fills the account it is about to store rather
+                       than guessing from the labels. *@
+                    <InputText id="register-first-name" class="form-control" autocomplete="given-name"
+                               @bind-Value="Form!.FirstName" />
+                    <DtFieldError Field="FirstName" Failures="_failures" />
+                </div>
+                <div>
+                    <label class="form-label" for="register-last-name">@Localizer["LastName"]</label>
+                    <InputText id="register-last-name" class="form-control" autocomplete="family-name"
+                               @bind-Value="Form!.LastName" />
+                    <DtFieldError Field="LastName" Failures="_failures" />
+                </div>
             </div>
-            <div class="mb-4">
-                <label class="form-label" for="register-last-name">@Localizer["LastName"]</label>
-                <InputText id="register-last-name" class="form-control" autocomplete="family-name"
-                           @bind-Value="Form!.LastName" />
-                <DtFieldError Field="LastName" Failures="_failures" />
-            </div>
-            <div class="mb-4">
+            <div>
                 <label class="form-label" for="register-email">@Localizer["Email"]</label>
                 <InputText id="register-email" class="form-control" autocomplete="email"
                            @bind-Value="Form!.Email" />
                 <DtFieldError Field="Email" Failures="_failures" />
             </div>
-            <div class="mb-4">
+            <div>
                 <label class="form-label" for="register-phone">@Localizer["PhoneNumber"]</label>
-                <InputText id="register-phone" class="form-control" autocomplete="tel"
+                @* The placeholder is a number the validator accepts, so it is written with no spaces
+                   where the artboard draws them: copying the example must not be refused. *@
+                <InputText id="register-phone" type="tel" class="form-control" autocomplete="tel"
+                           placeholder="@Localizer["PhoneNumberPlaceholder"]"
+                           aria-describedby="register-phone-hint"
                            @bind-Value="Form!.PhoneNumber" />
                 @* The hint stays a `form-text`: it is the framework's own quiet sentence under a
                    box, and the shape a phone number has to take is a rule about that one box. *@
-                <div class="form-text">@Localizer["PhoneNumberHint"]</div>
+                <div class="form-text dt-type-small" id="register-phone-hint">@Localizer["PhoneNumberHint"]</div>
                 <DtFieldError Field="PhoneNumber" Failures="_failures" />
             </div>
-            <div class="mb-4">
+            <div>
                 <label class="form-label" for="register-password">@Localizer["Password"]</label>
                 @* `new-password` on both halves, which is what stops a manager offering the stored
                    password of whoever last signed in on this browser and what prompts it to
@@ -71,7 +73,7 @@
                            autocomplete="new-password" @bind-Value="Form!.Password" />
                 <DtFieldError Field="Password" Failures="_failures" />
             </div>
-            <div class="mb-4">
+            <div>
                 <label class="form-label" for="register-password-confirmation">@Localizer["PasswordConfirmation"]</label>
                 <InputText id="register-password-confirmation" type="password" class="form-control"
                            autocomplete="new-password" @bind-Value="Form!.PasswordConfirmation" />
@@ -81,12 +83,12 @@
             @* NFR-24, and no `disabled` binding for the reason SignIn's submit carries none: there
                is no circuit behind this page to flip one. *@
             <button class="btn btn-primary dt-register-submit" type="submit">
-                <Icon Name="IconName.Register" />@Localizer["Register"]
+                <Icon Name="IconName.Register" />@Localizer["LandingCreateAccount"]
             </button>
         </EditForm>
-    </DtCard>
 
-    <p class="mt-4">@Localizer["HaveAccount"] <a href="/sign-in">@Localizer["SignIn"]</a></p>
+        <p class="dt-auth-panel__switch">@Localizer["HaveAccount"] <a href="/sign-in">@Localizer["SignIn"]</a></p>
+    </DtCard>
 </div>
 
 @code {

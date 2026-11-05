@@ -1134,6 +1134,216 @@ $dt-breakpoint-phone-max: $dt-breakpoint-phone - 0.02px;
 
 
 // -----------------------------------------------------------------------------
+// The white header's menus
+//
+// The language menu and the landing page's account menu, as the design draws them.
+// App-level because DtLanguageMenu renders the first for two different headers and
+// Home renders the second, and a scoped rule cannot reach an element another
+// component rendered. The `dt-landing-` names stayed when these moved here: the
+// language menu is the same object wherever it is drawn.
+// -----------------------------------------------------------------------------
+
+// Borderless: the text and its glyphs on the header's own ground, sunk one step
+// under the pointer. No flex gap: the glyph's own end margin is the icon-to-text
+// spacing, as everywhere else.
+.dt-landing-menu-button {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--dt-control-height);
+    padding: 0 var(--dt-space-2);
+    border: 0;
+    border-radius: var(--dt-radius-sm);
+    background-color: transparent;
+    color: var(--dt-ink);
+    font-family: var(--dt-font-sans);
+    font-size: var(--dt-label-font-size);
+    line-height: var(--dt-label-line-height);
+    font-weight: var(--dt-label-font-weight);
+    cursor: pointer;
+}
+
+@media (hover: hover) {
+    .dt-landing-menu-button:hover {
+        background-color: var(--dt-surface-sunken);
+    }
+}
+
+// The muted ink, so the word is what is read first. After the word rather than
+// before it, so it carries its own leading space instead of a gap.
+.dt-landing-chevron {
+    display: inline-flex;
+    margin-inline-start: var(--dt-space-1);
+    color: var(--dt-ink-muted);
+}
+
+// The anchors the two menus hang from, where the browser can anchor a popover at all.
+.dt-landing-menu-button--language {
+    anchor-name: --landing-language;
+}
+
+.dt-landing-menu-button--account {
+    anchor-name: --landing-account;
+}
+
+// The open menu: a card-faced panel raised over the page. The popover's own UA face -
+// its system colours, its solid border and its padding - is replaced wholesale.
+.dt-landing-menu {
+    min-width: 10rem;
+    padding: var(--dt-space-1);
+    border: var(--dt-border-width) solid var(--dt-border);
+    border-radius: var(--dt-radius-md);
+    background-color: var(--dt-surface-card);
+    box-shadow: var(--dt-shadow-raised);
+    color: var(--dt-ink);
+}
+
+// Under its button, right edges aligned, where anchor positioning exists. Behind
+// `@supports` because a browser without it would drop `anchor()` and keep
+// `inset: auto`, stranding the menu wherever the top layer happens to put it; without
+// the block it keeps the platform's own placement, centred on the screen.
+@supports (anchor-name: --landing-language) {
+    .dt-landing-menu {
+        inset: auto;
+        margin: var(--dt-space-1) 0 0;
+        top: anchor(bottom);
+        right: anchor(right);
+    }
+
+    .dt-landing-menu--language {
+        position-anchor: --landing-language;
+    }
+
+    .dt-landing-menu--account {
+        position-anchor: --landing-account;
+    }
+}
+
+.dt-landing-menu form {
+    margin: 0;
+}
+
+.dt-landing-menu-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: var(--dt-space-2) var(--dt-space-3);
+    border: 0;
+    border-radius: var(--dt-radius-sm);
+    background-color: transparent;
+    color: var(--dt-ink);
+    font-family: var(--dt-font-sans);
+    font-size: var(--dt-body-font-size);
+    line-height: var(--dt-body-line-height);
+    font-weight: var(--dt-label-font-weight);
+    text-align: start;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+@media (hover: hover) {
+    .dt-landing-menu-item:hover {
+        background-color: var(--dt-surface-hover);
+        color: var(--dt-ink);
+    }
+}
+
+// The product's ring on the header's own controls, rather than the browser's default.
+.dt-landing-menu-button:focus-visible,
+.dt-landing-menu-item:focus-visible {
+    outline: var(--dt-border-width-focus) solid var(--dt-focus-ring);
+    outline-offset: var(--dt-border-width-focus);
+}
+
+// The tick holds its place on every row and is drawn only beside the language being read.
+.dt-landing-menu-check {
+    display: inline-flex;
+    color: var(--dt-brand);
+    visibility: hidden;
+}
+
+.dt-landing-menu-item[aria-current="true"] .dt-landing-menu-check {
+    visibility: visible;
+}
+
+
+// -----------------------------------------------------------------------------
+// The sign-in and register panel
+//
+// One card on the page tint, holding the screen's title, its subtitle, the form and
+// the way to the other form. Here rather than scoped, because two screens share it
+// and scoped CSS cannot be shared - and because the card's body is DtCard's, the
+// <form> EditForm's and the boxes InputText's, none of which carry a screen's scope
+// attribute. Each screen's width is its own stylesheet's.
+// -----------------------------------------------------------------------------
+.dt-auth-panel {
+    width: 100%;
+}
+
+.dt-auth-panel .dt-card__body {
+    padding: var(--dt-space-6);
+}
+
+.dt-auth-panel h1 {
+    margin: 0;
+}
+
+.dt-auth-panel__subtitle {
+    margin: var(--dt-space-1) 0 0;
+}
+
+// The refusal stands between the subtitle and the form, on the form's own gap.
+.dt-auth-panel .alert {
+    margin: var(--dt-space-5) 0 0;
+}
+
+.dt-auth-panel form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--dt-space-4);
+    margin-top: var(--dt-space-5);
+}
+
+// Every control here is `touch-target` tall at every width, as the design draws it:
+// these two screens are the ones most often met on a phone.
+.dt-auth-panel .form-control,
+.dt-auth-panel .dt-check,
+.dt-auth-panel .btn {
+    min-height: var(--dt-touch-target);
+}
+
+// Only as wide as its phrase: stretched by the form's column, a click in the blank
+// space beside the words would flip whether the session outlives the browser.
+.dt-auth-panel .dt-check {
+    align-self: flex-start;
+}
+
+.dt-auth-panel .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.dt-auth-panel .form-text {
+    margin-top: var(--dt-space-2);
+}
+
+// First and last name side by side, stacking when there is no room. Its own grid
+// rather than `.dt-cols`: that floor is 14rem, which stacks inside this card's body.
+.dt-auth-panel__names {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr));
+    gap: var(--dt-space-4);
+}
+
+.dt-auth-panel__switch {
+    margin: var(--dt-space-5) 0 0;
+    text-align: center;
+}
+
+
+// -----------------------------------------------------------------------------
 // The page heading row
 //
 // The screen's title and the one action that opens a new record, on one line.

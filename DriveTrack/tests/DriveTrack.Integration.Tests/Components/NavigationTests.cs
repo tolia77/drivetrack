@@ -622,10 +622,10 @@ public class NavigationTests
         // screen reader as a checkbox and drew its bars as three CSS gradients - the replacement for
         // a hamburger data URI whose stroke was a percent-encoded rgba(), NFR-29's one recorded
         // literal-colour exemption. Then it was a `<button>` with `@onclick`, which is the mechanism
-        // this test now exists to keep out: five components render inside MainLayout carrying
+        // this test now exists to keep out: three components render inside MainLayout carrying
         // `[ExcludeFromInteractiveRouting]`, App.razor hands those a null render mode, and a handler
-        // on a page with no circuit is never wired. The menu on the sign-in page could not open, and
-        // the sign-in page is where the language switcher has to be reachable.
+        // on a page with no circuit is never wired. The menu on those pages could not open, and
+        // below the breakpoint the language switcher is behind it.
         //
         // So it is a `<details>` disclosure: no circuit, no script, and the same behaviour on every
         // page in the product. The absences below are the assertion - a handler or a checkbox

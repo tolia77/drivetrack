@@ -3,13 +3,18 @@
 @* The landing page's frame: the page itself and nothing around it.
 
    The landing page is public marketing, and the design draws it with a header and a footer of its
-   own rather than inside the application's sidebar - so it is the one screen that does not sit in
-   MainLayout's shell. The page brings its own header, language switch and way in.
+   own rather than inside the application's sidebar - so it does not sit in MainLayout's shell. The
+   page brings its own header, language switch and way in. AuthLayout nests here for the same
+   reason: the sign-in and register screens are public pages too, and share this boundary and this
+   dock.
 
    FR-13: the page's failures pass through the one boundary, as every screen in MainLayout's do.
 
    The connection dock stays, for the reason MainLayout keeps it outside its grid: it belongs to the
-   circuit rather than to any screen, and the landing page runs on a circuit like every other. *@
+   circuit rather than to any screen, and the landing page runs on a circuit like every other. The
+   sign-in and register screens have no circuit for it to report on, so on them it stays at its
+   hidden default: they carry it only because this layout does, as NotFound, AccessDenied and Error
+   carry MainLayout's. *@
 
 <SessionExpiryBoundary>
     @Body

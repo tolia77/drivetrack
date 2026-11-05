@@ -360,8 +360,8 @@ public class CultureSwitchTests(PostgresFixture postgres)
         // above still passes while the control on the screen does nothing.
         //
         // Rendered for an anonymous visitor as well as a signed-in one, because the visitor is the
-        // one who needs it most: somebody who cannot read the sign-in page cannot sign in to change
-        // the language.
+        // one who needs it most: somebody who cannot read a page cannot sign in to change the
+        // language.
         // Rendered somewhere other than the root, because the root is the one location for which a
         // component that reads the current path and one that reads nothing produce the same markup.
         const string path = "/deliveries";
@@ -407,7 +407,7 @@ public class CultureSwitchTests(PostgresFixture postgres)
         OptionFor("en-US", html);
 
         // The select posts the moment it changes. A DOM attribute rather than a Blazor handler,
-        // because the sign-in page renders this menu with no circuit behind it.
+        // because the access-denied page renders this menu with no circuit behind it.
         Assert.Contains("onchange=\"this.form.submit()\"", html, StringComparison.Ordinal);
 
         // On the navigation's dark ground, so the dark face - the only one the select has now that

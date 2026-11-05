@@ -57,12 +57,12 @@
 
     @* NFR-22: below the phone breakpoint the links and the foot are behind this control.
 
-       A disclosure rather than a button with a handler, and that is not a style choice. Five
-       components render inside MainLayout with no circuit behind them - SignIn, Register, NotFound,
-       AccessDenied and Error all carry [ExcludeFromInteractiveRouting], for which App.razor hands
-       back a null render mode - so an @@onclick on this control would never be wired on any of them.
-       The sign-in page is the worst of the five to lose: below the breakpoint the language switcher
-       is behind this control, and somebody who cannot read the page cannot sign in to change it.
+       A disclosure rather than a button with a handler, and that is not a style choice. Three
+       components render inside MainLayout with no circuit behind them - NotFound, AccessDenied and
+       Error all carry [ExcludeFromInteractiveRouting], for which App.razor hands back a null render
+       mode - so an @@onclick on this control would never be wired on any of them. Below the
+       breakpoint the language switcher is behind this control, and somebody who cannot read the page
+       has no other way to change it.
 
        `<details>` needs neither a circuit nor a script and behaves the same on every page, and
        `<summary>` is a disclosure button natively - it exposes the expanded state itself, so there

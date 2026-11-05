@@ -312,8 +312,27 @@ public class LandingScreenTests
         Assert.True(button.Success, $"No language menu button in:{Environment.NewLine}{header}");
         Assert.Contains($"aria-label=\"{language}: {code}\"", button.Value, StringComparison.Ordinal);
         Assert.Equal(code, SharedMarkup.TextOf(button.Groups["body"].Value));
+        Assert.Contains("<svg", button.Groups["body"].Value, StringComparison.Ordinal);
 
         var menu = Popover(header, "dt-landing-language-menu");
+
+        // The tick's glyph on both rows: it holds its place on the one not being read. These left
+        // Home's source count with the menu, so this is what notices one going missing.
+        var choices = Regex.Matches(
+            menu,
+            @"<button\b[^>]*name=""culture""[^>]*>(?<body>.*?)</button>",
+            RegexOptions.Singleline,
+            TimeSpan.FromSeconds(5));
+
+        Assert.Equal(2, choices.Count);
+
+        foreach (Match row in choices)
+        {
+            Assert.Contains(
+                "<svg",
+                SharedMarkup.ElementWithClass(row.Groups["body"].Value, "span", "dt-landing-menu-check"),
+                StringComparison.Ordinal);
+        }
 
         Assert.Matches(
             $@"<button[^>]*type=""submit""[^>]*name=""culture""[^>]*value=""{current}""[^>]*aria-current=""true""",

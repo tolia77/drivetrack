@@ -733,7 +733,9 @@ public class AuthenticationTests(PostgresFixture postgres)
             HandleCookies = false,
         });
 
-        using (var anonymous = await client.GetAsync(new Uri("/sign-in", UriKind.Relative), cancellationToken))
+        // /access-denied rather than /sign-in: the sign-in screen stands outside the shell, and this
+        // is the statically rendered page a visitor can read the navigation off.
+        using (var anonymous = await client.GetAsync(new Uri("/access-denied", UriKind.Relative), cancellationToken))
         {
             var html = await anonymous.Content.ReadAsStringAsync(cancellationToken);
 
@@ -750,7 +752,7 @@ public class AuthenticationTests(PostgresFixture postgres)
 
         var cookie = await SignInWithCookieAsync(factory, email, cancellationToken);
 
-        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri("/sign-in", UriKind.Relative));
+        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri("/access-denied", UriKind.Relative));
         request.Headers.Add("Cookie", cookie);
 
         using var signedIn = await client.SendAsync(request, cancellationToken);
@@ -758,6 +760,43 @@ public class AuthenticationTests(PostgresFixture postgres)
 
         Assert.Contains("action=\"/sign-out\"", signedInHtml, StringComparison.Ordinal);
         Assert.Contains("href=\"profile\"", signedInHtml, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_signed_in_visitor_opening_sign_in_is_shown_the_form_in_its_frame_and_the_brand_leads_home()
+    {
+        // No redirect, and no sidebar either: the brand is the way on, to the landing page that
+        // offers this caller their way in and their sign-out.
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await using var factory = await CreateAsync(cancellationToken);
+        using var client = factory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false,
+            HandleCookies = false,
+        });
+
+        var email = UniqueEmail();
+
+        using (var registration = await Register(client, email, cancellationToken))
+        {
+            Assert.Equal(HttpStatusCode.OK, registration.StatusCode);
+        }
+
+        var cookie = await SignInWithCookieAsync(factory, email, cancellationToken);
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri("/sign-in", UriKind.Relative));
+        request.Headers.Add("Cookie", cookie);
+
+        using var response = await client.SendAsync(request, cancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var html = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        Assert.Contains("id=\"sign-in-email\"", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("dt-shell", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("action=\"/sign-out\"", html, StringComparison.Ordinal);
+        Assert.Matches("<a\\b[^>]*\\bdt-auth-brand\\b[^>]*href=\"/\"", html);
     }
 
     [Fact]

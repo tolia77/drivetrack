@@ -1,0 +1,37 @@
+@inherits LayoutComponentBase
+@layout LandingLayout
+@inject NavigationManager Navigation
+
+@* The frame the sign-in and register screens stand in: a white top bar and one centred card on the
+   page tint, as the design draws them, rather than the application's sidebar.
+
+   Nested in LandingLayout rather than copying it, so the failure boundary and the connection dock
+   are stated once for every page outside the shell.
+
+   Every screen in this frame is [ExcludeFromInteractiveRouting], so nothing here can rely on a
+   circuit: the brand is a link and the language menu a form. *@
+
+<div class="dt-auth">
+    <header class="dt-auth-header">
+        <div class="dt-auth-headrow">
+            @* NFR-25: the shell's own lock-up - the same mark, the same glyph - and the way back to
+               the landing page, which is what offers somebody already signed in their way in and
+               their sign-out. *@
+            <a class="dt-auth-brand" href="/">
+                <span class="dt-nav__mark dt-icon-only"><Icon Name="IconName.Location" /></span>DriveTrack
+            </a>
+
+            <DtLanguageMenu ReturnUrl="@ReturnUrl" />
+        </div>
+    </header>
+
+    <main class="dt-auth-main">
+        @Body
+    </main>
+</div>
+
+@code {
+    // Where the language menu comes back to: the screen being read, as the navigation reads it. An absolute
+    // URI here would be refused by the endpoint's local-URL check and send the reader to the root.
+    private string ReturnUrl => "/" + Navigation.ToBaseRelativePath(Navigation.Uri);
+}
