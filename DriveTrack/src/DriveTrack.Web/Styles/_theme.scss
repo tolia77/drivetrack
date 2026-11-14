@@ -1185,6 +1185,38 @@ $dt-breakpoint-phone-max: $dt-breakpoint-phone - 0.02px;
     anchor-name: --landing-account;
 }
 
+.dt-landing-menu-button--phone {
+    anchor-name: --landing-phone;
+}
+
+// The landing page's phone header is one row - the brand, the language and a menu button -
+// so the person's own menu button leaves it (its two items are in the phone's menu) and the
+// phone's appears: the glyph alone at the touch target's size, drawn larger than a label's.
+// Above the phone breakpoint everything in that menu is in the header itself, so it is not
+// drawn. The glyph's rule names the header so it outweighs Icon's own scoped size.
+.dt-landing-menu-button--phone {
+    display: none;
+}
+
+@media (max-width: $dt-breakpoint-phone-max) {
+    .dt-landing-menu-button--account {
+        display: none;
+    }
+
+    .dt-landing-menu-button--phone {
+        display: inline-flex;
+        justify-content: center;
+        width: var(--dt-touch-target);
+        height: var(--dt-touch-target);
+        padding: 0;
+    }
+
+    .dt-landing-header .dt-landing-menu-button--phone .dt-icon {
+        width: 1.375rem;
+        height: 1.375rem;
+    }
+}
+
 // The open menu: a card-faced panel raised over the page. The popover's own UA face -
 // its system colours, its solid border and its padding - is replaced wholesale.
 .dt-landing-menu {
@@ -1215,6 +1247,10 @@ $dt-breakpoint-phone-max: $dt-breakpoint-phone - 0.02px;
 
     .dt-landing-menu--account {
         position-anchor: --landing-account;
+    }
+
+    .dt-landing-menu--phone {
+        position-anchor: --landing-phone;
     }
 }
 
@@ -1253,6 +1289,31 @@ $dt-breakpoint-phone-max: $dt-breakpoint-phone - 0.02px;
 .dt-landing-menu-item:focus-visible {
     outline: var(--dt-border-width-focus) solid var(--dt-focus-ring);
     outline-offset: var(--dt-border-width-focus);
+}
+
+// The landing page's header lies over its hero's photograph and turns white as the page
+// scrolls, so its menu buttons take their inks from the `--landing-head-*` properties
+// Home.razor.css sets and animates on that header - light on the photograph, the white
+// header's own once scrolled. Keyed on the header's hook rather than on the buttons, because
+// the sign-in frame's header draws the same language button on white and must not follow.
+// The hover is a solid dark-ground step rather than the design's translucent white, which
+// NFR-29 refuses here.
+.dt-landing-header--on-photo .dt-landing-menu-button {
+    color: var(--landing-head-ink);
+}
+
+@media (hover: hover) {
+    .dt-landing-header--on-photo .dt-landing-menu-button:hover {
+        background-color: var(--landing-head-hover);
+    }
+}
+
+.dt-landing-header--on-photo .dt-landing-chevron {
+    color: var(--landing-head-muted);
+}
+
+.dt-landing-header--on-photo .dt-landing-menu-button:focus-visible {
+    outline-color: var(--landing-head-ring);
 }
 
 // The tick holds its place on every row and is drawn only beside the language being read.

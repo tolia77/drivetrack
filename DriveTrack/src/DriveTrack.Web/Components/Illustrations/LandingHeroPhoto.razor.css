@@ -1,0 +1,53 @@
+/*
+    A picture, not interface: the artboard's own colours and positions (see DesignTokenTests'
+    exemption). The photo covers its box, framed low so the van and the road stay in view and the
+    bright sky gives way; the scrim darkens it most behind the words on the left and least on the
+    right, where the scene stands, and a band across the top keeps the header's light inks readable
+    over that sky. On a phone the words run the whole width, so the scrim is one flat tone and the
+    photo is framed on the van, right of centre.
+*/
+
+.dt-pic-hero-photo {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    background-color: #34404c;
+    pointer-events: none;
+}
+
+.dt-pic-hero-photo__image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 80%;
+}
+
+.dt-pic-hero-photo__scrim {
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(180deg, rgba(21, 29, 38, 0.6) 0, rgba(21, 29, 38, 0) 9rem),
+        linear-gradient(
+        90deg,
+        rgba(21, 29, 38, 0.88) 0%,
+        rgba(21, 29, 38, 0.7) 45%,
+        rgba(21, 29, 38, 0.35) 100%);
+}
+
+@media (max-width: 640.98px) {
+    .dt-pic-hero-photo__image {
+        object-position: 64% 70%;
+    }
+
+    .dt-pic-hero-photo__scrim {
+        background-image: none;
+        background-color: rgba(21, 29, 38, 0.74);
+    }
+}
+
+/* A picture, not text: nothing in it can be selected or dragged out, as nothing in an image can. */
+.dt-pic-hero-photo {
+    -webkit-user-select: none;
+    user-select: none;
+}

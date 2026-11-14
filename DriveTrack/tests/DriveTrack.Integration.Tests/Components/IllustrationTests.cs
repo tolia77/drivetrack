@@ -93,6 +93,7 @@ public class IllustrationTests
 
     [Theory]
     [InlineData("LandingHeroScene", "dt-pic-scene")]
+    [InlineData("LandingHeroPhoto", "dt-pic-hero-photo")]
     [InlineData("RequestIllustration", "dt-pic-request")]
     [InlineData("UpdatesIllustration", "dt-pic-mails")]
     [InlineData("ProofIllustration", "dt-pic-proofcard")]

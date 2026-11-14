@@ -1,0 +1,18 @@
+@* The landing hero's photograph: a white delivery van on a mountain road (Negley Stockman, Unsplash
+   License - free to use, no credit required), full bleed behind the pitch, under a dark scrim so the
+   white headline over it can be read. The design's own picture ("Landing page (public)" and its
+   phone artboard), served from this application's web root - `@Assets` fingerprints it - and never
+   from anywhere else.
+
+   Decoration from end to end: the sentence beside it says what the product does, so the image is
+   `alt=""` inside an `aria-hidden` wrapper, and nothing in it can take focus. It fills whatever
+   positioned box it is placed in - the hero section, which gives it its height.
+
+   Here rather than in the page's stylesheet because the scrim is a translucent slate, which NFR-29
+   refuses outside this folder (see DesignTokenTests.ProjectFiles). *@
+
+<div class="dt-pic-hero-photo" aria-hidden="true">
+    <img class="dt-pic-hero-photo__image" src="@Assets["images/landing-hero.jpg"]" alt=""
+         width="2880" height="1920" decoding="async" fetchpriority="high" />
+    <div class="dt-pic-hero-photo__scrim"></div>
+</div>

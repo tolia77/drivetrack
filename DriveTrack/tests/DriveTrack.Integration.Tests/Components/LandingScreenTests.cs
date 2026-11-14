@@ -29,8 +29,8 @@ public class LandingScreenTests
         // The header: sign in, and create an account.
         var header = SharedMarkup.ElementWithClass(html, "header", "dt-landing-header");
 
-        AssertActionWithIcon(header, "sign-in");
-        AssertActionWithIcon(header, "register");
+        AssertActionWithIcon(WithoutPhoneMenu(header), "sign-in");
+        AssertActionWithIcon(WithoutPhoneMenu(header), "register");
 
         // The hero: create an account, and sign in.
         var hero = Section(html, "top");
@@ -51,11 +51,13 @@ public class LandingScreenTests
         Assert.Contains("sign-in", footerLinks);
         Assert.Contains("register", footerLinks);
 
-        // Four ways to register and four to sign in, and none of them leads into the application.
+        // Five ways to register and five to sign in - the header, the phone's menu that stands in
+        // for it on a phone, the hero, the closing band and the footer - and none of them leads
+        // into the application.
         var links = Hrefs(html);
 
-        Assert.Equal(4, links.Count(href => href == "register"));
-        Assert.Equal(4, links.Count(href => href == "sign-in"));
+        Assert.Equal(5, links.Count(href => href == "register"));
+        Assert.Equal(5, links.Count(href => href == "sign-in"));
 
         // Every other link goes somewhere on this page: no company or legal pages, no contacts.
         Assert.DoesNotContain("#", links);
@@ -85,7 +87,7 @@ public class LandingScreenTests
         Assert.Matches(@"class=""dt-landing-avatar""[^>]*>ІБ</span>", header);
         Assert.Contains("Ірина Бондар", header, StringComparison.Ordinal);
 
-        var headerWayIn = AssertActionWithIcon(header, destination);
+        var headerWayIn = AssertActionWithIcon(WithoutPhoneMenu(header), destination);
 
         Assert.Equal(label, SharedMarkup.TextOf(headerWayIn));
 
@@ -134,7 +136,7 @@ public class LandingScreenTests
         var html = await ShellCaller.RenderAsync<Home>(role, profileFails: true);
         var header = SharedMarkup.ElementWithClass(html, "header", "dt-landing-header");
 
-        AssertActionWithIcon(header, LandingRoute.For(role));
+        AssertActionWithIcon(WithoutPhoneMenu(header), LandingRoute.For(role));
         Assert.DoesNotContain("class=\"dt-landing-me\"", html, StringComparison.Ordinal);
 
         // The account menu stays - the way out matters more than the greeting - and its button,
@@ -253,22 +255,217 @@ public class LandingScreenTests
     [Fact]
     public void On_a_phone_the_section_anchors_go_and_every_grid_is_one_column()
     {
-        var css = SharedMarkup.ReadComponent("Pages", "Home.razor.css");
-        var phone = css[css.IndexOf("@media (max-width: 640.98px)", StringComparison.Ordinal)..];
+        var phone = PhoneBlock();
 
-        Assert.Matches(@"\.dt-landing-sections\s*\{\s*display:\s*none;", phone);
+        Assert.Matches(@"\.dt-landing-sections\b[^{]*\{\s*display:\s*none;", phone);
 
         foreach (var grid in new[]
                  {
                      ".dt-landing-hero", ".dt-landing-faq-row", ".dt-landing-grid--3",
-                     ".dt-landing-grid--4", ".dt-landing-foot-grid",
+                     ".dt-landing-grid--4",
                  })
         {
             Assert.Matches(
                 Regex.Escape(grid) + @"[^{]*\{\s*grid-template-columns:\s*minmax\(0,\s*1fr\);",
                 phone);
         }
+
+        // The footer, as the phone artboard draws it: the brand and tagline across the top, the two
+        // link columns side by side under it.
+        Assert.Matches(
+            @"\.dt-landing-foot-grid\s*\{\s*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\);",
+            phone);
+        Assert.Matches(@"\.dt-landing-foot-grid > div:first-child\s*\{\s*grid-column:\s*1 / -1;", phone);
     }
+
+    [Fact]
+    public async Task The_hero_stands_on_the_design_s_photograph_under_a_header_marked_for_it()
+    {
+        var html = await ShellCaller.RenderAsync<Home>(role: null);
+
+        // The photograph is the hero's first child, so everything after it is drawn over it; it is
+        // decoration, and its image says so twice - an empty alternative inside a hidden wrapper.
+        Assert.Matches(
+            @"<section\b[^>]*id=""top""[^>]*>\s*<div class=""dt-pic-hero-photo""[^>]*aria-hidden=""true""",
+            html);
+
+        var photo = SharedMarkup.ElementWithClass(html, "div", "dt-pic-hero-photo");
+
+        // An empty alternative: Blazor writes `alt=""` as the bare attribute, which HTML reads the same.
+        Assert.Matches(@"<img\b[^>]*src=""[^""]*images/landing-hero\.jpg""[^>]*\salt(?:="""")?[\s/>]", photo);
+
+        // The theme's hook for the language menu's button, which DtLanguageMenu draws outside this
+        // page's scope - and draws in the sign-in frame's white header too, which carries no hook.
+        Assert.Matches(@"<header\b[^>]*class=""dt-landing-header dt-landing-header--on-photo""", html);
+    }
+
+    [Fact]
+    public void The_photograph_ships_with_the_application_and_goes_through_Assets()
+    {
+        // Served from this application's web root, never hot-linked, and through `@Assets`, so a
+        // changed photograph is a changed URL rather than a stale cache.
+        var image = new FileInfo(Path.Combine(
+            RepositoryLayout.ProjectDirectory("DriveTrack.Web"), "wwwroot", "images", "landing-hero.jpg"));
+
+        Assert.True(image.Exists, "wwwroot/images/landing-hero.jpg is missing.");
+        Assert.True(image.Length > 0, "wwwroot/images/landing-hero.jpg is empty.");
+
+        var source = SharedMarkup.ReadComponent("Illustrations", "LandingHeroPhoto.razor");
+
+        Assert.Contains("src=\"@Assets[\"images/landing-hero.jpg\"]\"", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("http", source, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void The_header_is_pinned_and_turned_white_only_where_the_browser_can_drive_it_from_the_scroll()
+    {
+        var css = WithoutComments(SharedMarkup.ReadComponent("Pages", "Home.razor.css"));
+
+        // By default it lies over the top of the page, see-through, and scrolls away with the hero:
+        // a browser without scroll-driven animations never shows it see-through over white.
+        var header = Regex.Match(
+            css,
+            @"(?<![-\w])\.dt-landing-header\s*\{(?<body>[^}]*)\}",
+            RegexOptions.None,
+            TimeSpan.FromSeconds(5));
+
+        Assert.True(header.Success, "Home.razor.css has no .dt-landing-header rule.");
+        Assert.Contains("position: absolute;", header.Groups["body"].Value, StringComparison.Ordinal);
+        Assert.Contains("background-color: transparent;", header.Groups["body"].Value, StringComparison.Ordinal);
+
+        // Pinned, and recoloured over the header's own height of scroll, only inside the feature
+        // query - and nowhere else.
+        Assert.Matches(
+            @"@supports \(animation-timeline: scroll\(\)\)\s*\{\s*\.dt-landing-header\s*\{[^}]*position:\s*fixed;"
+                + @"[^}]*animation:\s*dt-landing-header-to-white\b[^}]*animation-timeline:\s*scroll\(root\);"
+                + @"[^}]*animation-range:\s*0 4\.5rem;",
+            css);
+        Assert.Equal(1, SharedMarkup.Occurrences(css, "position: fixed"));
+        Assert.DoesNotContain("position: sticky", css, StringComparison.Ordinal);
+
+        // Where it ends up is today's white header.
+        Assert.Matches(
+            @"@keyframes dt-landing-header-to-white\s*\{\s*to\s*\{[^}]*--landing-head-ink:\s*var\(--dt-ink\);"
+                + @"[^}]*background-color:\s*var\(--dt-surface-card\);",
+            css);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(UserRole.Admin)]
+    [InlineData(UserRole.Dispatcher)]
+    [InlineData(UserRole.Driver)]
+    [InlineData(UserRole.Client)]
+    public async Task On_a_phone_the_header_s_menu_holds_the_sections_and_the_way_in(UserRole? role)
+    {
+        var html = await ShellCaller.RenderAsync<Home>(role);
+        var header = SharedMarkup.ElementWithClass(html, "header", "dt-landing-header");
+
+        // The glyph alone, as the phone artboard draws it, and named in words.
+        var button = Regex.Match(
+            header,
+            @"<button\b[^>]*popovertarget=""dt-landing-phone-menu""[^>]*>(?<body>.*?)</button>",
+            RegexOptions.Singleline,
+            TimeSpan.FromSeconds(5));
+
+        Assert.True(button.Success, $"No phone menu button in:{Environment.NewLine}{header}");
+        Assert.Contains($"aria-label=\"{Catalogue("Menu")}\"", button.Value, StringComparison.Ordinal);
+        Assert.Contains("<svg", button.Groups["body"].Value, StringComparison.Ordinal);
+        Assert.Equal(string.Empty, SharedMarkup.TextOf(button.Groups["body"].Value));
+
+        // The three section anchors in the design's order, then the way in.
+        var menu = Popover(header, "dt-landing-phone-menu");
+        var links = Hrefs(menu);
+
+        Assert.Equal(Sections.Select(section => "#" + section).ToArray(), links.Take(3).ToArray());
+
+        // A jump within the page is not a click outside the popover, so each section anchor closes
+        // the menu itself - or it would stay open over the section it jumped to. Decoded first: the
+        // renderer writes the handler's quotes as entities, which the browser reads back.
+        var decoded = System.Net.WebUtility.HtmlDecode(menu);
+
+        foreach (var section in Sections)
+        {
+            Assert.Matches(
+                $@"<a\b[^>]*href=""#{section}""[^>]*onclick=""this\.closest\('\[popover\]'\)\.hidePopover\(\)""",
+                decoded);
+        }
+
+        if (role is null)
+        {
+            Assert.Equal(["sign-in", "register"], links.Skip(3).ToArray());
+            AssertActionWithIcon(menu, "sign-in");
+            AssertActionWithIcon(menu, "register");
+            Assert.DoesNotContain("/sign-out", menu, StringComparison.Ordinal);
+        }
+
+        if (role is { } signedIn)
+        {
+            var destination = LandingRoute.For(signedIn);
+
+            Assert.Equal([destination, "/profile"], links.Skip(3).ToArray());
+            AssertActionWithIcon(menu, destination);
+            Assert.Matches(@"<form\b[^>]*method=""post""[^>]*action=""/sign-out""", menu);
+            Assert.Contains(Catalogue("SignOut"), menu, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
+    public void On_a_phone_the_header_is_one_row_and_the_page_follows_the_phone_artboard()
+    {
+        var phone = PhoneBlock();
+
+        // Brand, language, menu: every other control leaves the row.
+        Assert.Matches(@"\.dt-landing-headrow\s*\{[^}]*flex-wrap:\s*nowrap;", phone);
+        Assert.Matches(
+            @"\.dt-landing-sections,\s*\.dt-landing-divider,\s*\.dt-landing-account > \.btn\s*\{\s*display:\s*none;",
+            phone);
+
+        // The menu buttons are the theme's, with the rest of the menus: the person's leaves the row
+        // on a phone and the phone's appears there, and is not drawn above it.
+        var theme = Regex.Replace(
+            WithoutComments(File.ReadAllText(Path.Combine(
+                RepositoryLayout.ProjectDirectory("DriveTrack.Web"), "Styles", "_theme.scss"))),
+            @"//[^\n]*",
+            " ",
+            RegexOptions.None,
+            TimeSpan.FromSeconds(5));
+        var themePhone = Regex.Match(
+            theme,
+            @"(?<wide>\.dt-landing-menu-button--phone\s*\{\s*display:\s*none;\s*\})\s*"
+                + @"@media \(max-width: \$dt-breakpoint-phone-max\)\s*\{(?<phone>.*?)\n\}",
+            RegexOptions.Singleline,
+            TimeSpan.FromSeconds(5));
+
+        Assert.True(themePhone.Success, "_theme.scss does not hide the phone menu button above the phone breakpoint.");
+        Assert.Matches(
+            @"\.dt-landing-menu-button--account\s*\{\s*display:\s*none;",
+            themePhone.Groups["phone"].Value);
+        Assert.Matches(
+            @"\.dt-landing-menu-button--phone\s*\{[^}]*display:\s*inline-flex;",
+            themePhone.Groups["phone"].Value);
+
+        // The hero's scene and the questions' phone are not drawn; the actions take the full width;
+        // the steps' dashed line runs down through the discs.
+        Assert.Matches(
+            @"\.dt-landing-hero ::deep \.dt-pic-scene,\s*\.dt-landing-faq-row ::deep \.dt-pic-phonewrap\s*\{\s*display:\s*none;",
+            phone);
+        Assert.Matches(@"\.dt-landing-actions \.btn\s*\{\s*flex:\s*1 1 100%;", phone);
+        Assert.Matches(@"\.dt-landing-steps::before\s*\{[^}]*border-top:\s*0;[^}]*border-left:[^;]*dashed", phone);
+        Assert.DoesNotMatch(@"\.dt-landing-steps::before\s*\{\s*display:\s*none;", phone);
+    }
+
+    /// <summary>The landing page's phone block, comments removed.</summary>
+    private static string PhoneBlock()
+    {
+        var css = WithoutComments(SharedMarkup.ReadComponent("Pages", "Home.razor.css"));
+
+        return css[css.IndexOf("@media (max-width: 640.98px)", StringComparison.Ordinal)..];
+    }
+
+    /// <summary>A stylesheet's rules, with its comments taken out.</summary>
+    private static string WithoutComments(string css) =>
+        Regex.Replace(css, @"/\*.*?\*/", " ", RegexOptions.Singleline, TimeSpan.FromSeconds(5));
 
     /// <summary>
     /// The link to <paramref name="href"/> inside <paramref name="html"/>, asserted to carry a glyph
@@ -346,6 +543,24 @@ public class LandingScreenTests
 
         Assert.True(choice.Success, $"No {other} choice in the language menu.");
         Assert.DoesNotContain("aria-current", choice.Value, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The header without the phone's menu, which holds the same ways in: a header-level assertion
+    /// read through this is about the controls drawn in the header row itself, and fails if those go.
+    /// </summary>
+    private static string WithoutPhoneMenu(string header)
+    {
+        var stripped = Regex.Replace(
+            header,
+            @"<div\b[^>]*id=""dt-landing-phone-menu""[^>]*>.*?</div>",
+            string.Empty,
+            RegexOptions.Singleline,
+            TimeSpan.FromSeconds(5));
+
+        Assert.NotEqual(header, stripped);
+
+        return stripped;
     }
 
     /// <summary>The inner markup of the popover carrying <paramref name="id"/>.</summary>

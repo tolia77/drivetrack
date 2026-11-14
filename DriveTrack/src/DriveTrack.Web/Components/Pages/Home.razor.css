@@ -1,11 +1,12 @@
 /*
     The landing page's own layout, and nothing else. Everything it is built from - the card surface,
     the buttons, the type ramps and the muted utility, the shell's brand mark - is the shared
-    vocabulary, so what is left here is how the sections are arranged and the two dark bands; the
-    header's two menus wear the theme's `dt-landing-menu*` rules, because DtLanguageMenu draws one of
-    them and a scoped rule here could not reach it. The pictures - the hero's scene, the feature
-    cards' drawings, the phone, the closing band's route - are components of their own under
-    `Components/Illustrations/`, drawn in the artboard's colours, and none of their paint is here.
+    vocabulary, so what is left here is how the sections are arranged, the header laid over the
+    hero's photograph, and the two dark bands; the header's menus wear the theme's
+    `dt-landing-menu*` rules, because DtLanguageMenu draws one of them and a scoped rule here could
+    not reach it. The pictures - the hero's photograph and scene, the feature cards' drawings, the
+    phone, the closing band's route - are components of their own under `Components/Illustrations/`,
+    drawn in the artboard's colours, and none of their paint is here.
 
     NFR-29: every palette value is a `--dt-*` reference. What is literal is geometry the palette
     does not name - the content width, the glyph tiles, the column counts and the phone breakpoint,
@@ -23,7 +24,9 @@
     elements carry the child's.
 */
 
+/* The header's positioning box while it lies over the hero and scrolls away with it. */
 .dt-landing {
+    position: relative;
     background-color: var(--dt-surface-card);
     color: var(--dt-ink);
 }
@@ -46,12 +49,120 @@
 
 /* ---------------------------------------------------------------- header */
 
+/*
+    The header lies over the hero's photograph, see-through, in the navigation's light inks - and
+    turns back into the white header once the page scrolls (the design's note: "turns white again on
+    scroll"). Every colour that changes between the two is one of the `--landing-head-*` properties
+    below, set here to the photograph's values; the theme reads them too, for the language menu's
+    button, which DtLanguageMenu draws outside this page's scope.
+
+    The design's translucent whites are not palette values, so each is the nearest dark-ground
+    token: the hairline is `nav-divider`, the ghost button's edge `nav-control-border`, the hover
+    `nav-hover-bg`. The ring is `focus-ring-on-dark`, as on every dark ground.
+
+    By default the header is absolute: laid over the top of the page, taking no room, and scrolled
+    away with the hero. That is the whole of it for a browser without scroll-driven animations, so
+    it never floats see-through over the white sections further down. Where the browser has them,
+    the block after this pins it to the top instead - fixed rather than sticky, because a sticky
+    header holds its place in the flow and the hero has to start under it - and recolours it over
+    the first 72px of scroll, the header's own height. No script: the root scroller is the
+    animation's clock.
+*/
 .dt-landing-header {
-    position: sticky;
+    --landing-head-ink: var(--dt-ink-inverse);
+    --landing-head-muted: var(--dt-nav-ink);
+    --landing-head-link-hover: var(--dt-ink-inverse);
+    --landing-head-rule: var(--dt-nav-divider);
+    --landing-head-control: var(--dt-nav-control-border);
+    --landing-head-hover: var(--dt-nav-hover-bg);
+    --landing-head-ring: var(--dt-focus-ring-on-dark);
+
+    position: absolute;
     top: 0;
+    left: 0;
+    right: 0;
     z-index: var(--dt-z-nav);
-    background-color: var(--dt-surface-card);
-    border-bottom: var(--dt-border-width) solid var(--dt-border);
+    background-color: transparent;
+    border-bottom: var(--dt-border-width) solid var(--landing-head-rule);
+}
+
+@supports (animation-timeline: scroll()) {
+    .dt-landing-header {
+        position: fixed;
+        animation: dt-landing-header-to-white linear both;
+        animation-timeline: scroll(root);
+        animation-range: 0 4.5rem;
+    }
+
+    /*
+        Below the pinned header rather than under it: an anchor jump lands the section's heading
+        where it can be read, not behind the bar it was chosen from. Only here, where the header is
+        pinned; where it scrolls away there is nothing to stop short of.
+    */
+    .dt-landing-section {
+        scroll-margin-top: 4.5rem;
+    }
+}
+
+/* Today's white header: the values every `--landing-head-*` property ends the scroll at. */
+@keyframes dt-landing-header-to-white {
+    to {
+        --landing-head-ink: var(--dt-ink);
+        --landing-head-muted: var(--dt-ink-muted);
+        --landing-head-link-hover: var(--dt-brand);
+        --landing-head-rule: var(--dt-border);
+        --landing-head-control: transparent;
+        --landing-head-hover: var(--dt-surface-sunken);
+        --landing-head-ring: var(--dt-focus-ring);
+        background-color: var(--dt-surface-card);
+    }
+}
+
+/*
+    Registered as colours, so the animation blends each one from the photograph's value to the
+    white header's rather than flipping it halfway; a browser that cannot register them still
+    flips, which is the same header a frame sooner or later.
+*/
+@property --landing-head-ink {
+    syntax: "<color>";
+    inherits: true;
+    initial-value: transparent;
+}
+
+@property --landing-head-muted {
+    syntax: "<color>";
+    inherits: true;
+    initial-value: transparent;
+}
+
+@property --landing-head-link-hover {
+    syntax: "<color>";
+    inherits: true;
+    initial-value: transparent;
+}
+
+@property --landing-head-rule {
+    syntax: "<color>";
+    inherits: true;
+    initial-value: transparent;
+}
+
+@property --landing-head-control {
+    syntax: "<color>";
+    inherits: true;
+    initial-value: transparent;
+}
+
+@property --landing-head-hover {
+    syntax: "<color>";
+    inherits: true;
+    initial-value: transparent;
+}
+
+@property --landing-head-ring {
+    syntax: "<color>";
+    inherits: true;
+    initial-value: transparent;
 }
 
 .dt-landing-headrow {
@@ -61,7 +172,7 @@
     min-height: 4.5rem;
 }
 
-/* The shell's lock-up on a white ground: the mark is `dt-nav__mark`, the wordmark the brand's. */
+/* The shell's lock-up: the mark is `dt-nav__mark`, the wordmark the brand's. */
 .dt-landing-brand {
     display: flex;
     align-items: center;
@@ -72,6 +183,10 @@
     text-decoration: none;
 }
 
+.dt-landing-header .dt-landing-brand {
+    color: var(--landing-head-ink);
+}
+
 .dt-landing-sections {
     display: flex;
     flex-grow: 1;
@@ -79,7 +194,7 @@
 }
 
 .dt-landing-section-link {
-    color: var(--dt-ink-muted);
+    color: var(--landing-head-muted);
     font-size: var(--dt-body-font-size);
     line-height: var(--dt-body-line-height);
     font-weight: var(--dt-label-font-weight);
@@ -88,7 +203,7 @@
 
 @media (hover: hover) {
     .dt-landing-section-link:hover {
-        color: var(--dt-brand);
+        color: var(--landing-head-link-hover);
     }
 }
 
@@ -104,7 +219,7 @@
     display: flex;
     align-items: center;
     gap: var(--dt-space-2);
-    color: var(--dt-ink);
+    color: var(--landing-head-ink);
     font-size: var(--dt-label-font-size);
     line-height: var(--dt-label-line-height);
     font-weight: var(--dt-label-font-weight);
@@ -131,25 +246,33 @@
     width: var(--dt-border-width);
     height: 1.5rem;
     margin: 0 var(--dt-space-1);
-    background-color: var(--dt-border);
+    background-color: var(--landing-head-rule);
 }
 
-/* Sign in in the header: borderless, the framework's own button machinery on a transparent face. */
+/*
+    Sign in in the header: the framework's own button machinery on a transparent face - edged in
+    light on the photograph, borderless once the header is white.
+*/
 .dt-landing-ghost {
-    --bs-btn-color: var(--dt-ink);
+    --bs-btn-color: var(--landing-head-ink);
     --bs-btn-bg: transparent;
-    --bs-btn-border-color: transparent;
-    --bs-btn-hover-color: var(--dt-ink);
-    --bs-btn-hover-bg: var(--dt-surface-sunken);
-    --bs-btn-hover-border-color: transparent;
-    --bs-btn-active-color: var(--dt-ink);
-    --bs-btn-active-bg: var(--dt-surface-sunken);
-    --bs-btn-active-border-color: transparent;
+    --bs-btn-border-color: var(--landing-head-control);
+    --bs-btn-hover-color: var(--landing-head-ink);
+    --bs-btn-hover-bg: var(--landing-head-hover);
+    --bs-btn-hover-border-color: var(--landing-head-control);
+    --bs-btn-active-color: var(--landing-head-ink);
+    --bs-btn-active-bg: var(--landing-head-hover);
+    --bs-btn-active-border-color: var(--landing-head-control);
 }
 
-/* The product's ring on the ghost, rather than the browser's default. */
-.dt-landing-ghost:focus-visible {
-    outline: var(--dt-border-width-focus) solid var(--dt-focus-ring);
+/*
+    The ring follows the ground: on the photograph the dark-ground amber, once white the product's
+    teal. `.btn:focus` named as well, because the theme rings a clicked button on `:focus`.
+*/
+.dt-landing-header .btn:focus,
+.dt-landing-header .btn:focus-visible,
+.dt-landing-header a:focus-visible {
+    outline: var(--dt-border-width-focus) solid var(--landing-head-ring);
     outline-offset: var(--dt-border-width-focus);
 }
 
@@ -157,14 +280,10 @@
 
 /*
     The design pads a section by `space-6 + space-4`; NFR-29 reads a sum as a literal, so it is the
-    largest step on its own.
-
-    Below the sticky header rather than under it: an anchor jump lands the section's heading where
-    it can be read, not behind the bar it was chosen from.
+    largest step on its own. Its scroll margin is with the pinned header, above.
 */
 .dt-landing-section {
     padding: var(--dt-space-6) 0;
-    scroll-margin-top: 4.5rem;
 }
 
 .dt-landing-section--tint {
@@ -272,8 +391,25 @@
 
 /* ---------------------------------------------------------------- hero */
 
+/*
+    The hero stands on the design's photograph (LandingHeroPhoto, placed first, which fills the
+    section) under its scrim, with the header laid over its top. What shows while the photograph
+    loads is that component's own slate.
+
+    Its top is kept clear of the header by a spacer rather than by padding: the design's 128px is
+    the header's own 72px and the air under it, which is geometry the header's height already
+    writes as a figure, where a padding is a palette value NFR-29 holds to the spacing steps.
+*/
 .dt-landing-hero-section {
-    padding-top: var(--dt-space-6);
+    position: relative;
+    overflow: hidden;
+    padding-top: 0;
+}
+
+.dt-landing-hero-section::before {
+    content: "";
+    display: block;
+    height: 8rem;
 }
 
 /*
@@ -283,6 +419,7 @@
     pushing it below the fold.
 */
 .dt-landing-hero {
+    position: relative;
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 37.5rem);
     gap: var(--dt-space-6);
@@ -303,11 +440,19 @@
     height follows the font rather than a ramp built for a smaller size.
 */
 .dt-landing-title {
+    color: var(--dt-ink-inverse);
     font-size: xxx-large;
     line-height: normal;
 }
 
-/* One step above body text: the lead is read before the reader has decided to read anything. */
+/*
+    One step above body text: the lead is read before the reader has decided to read anything. In
+    the navigation's light ink on the photograph, over the `dt-muted` it carries.
+*/
+.dt-landing-hero-section .dt-landing-lead {
+    color: var(--dt-nav-ink);
+}
+
 .dt-landing-lead {
     max-width: 32.5rem;
     font-size: var(--dt-h2-font-size);
@@ -320,7 +465,10 @@
     gap: var(--dt-space-3);
 }
 
-/* The three things a client can count on, each ticked in the success colour. */
+/*
+    The three things a client can count on, in the light ink, each ticked in the amber the palette
+    names for the dark ground - the design's tick colour on the photograph.
+*/
 .dt-landing-ticks {
     display: flex;
     flex-wrap: wrap;
@@ -328,7 +476,7 @@
     margin: 0;
     padding: 0;
     list-style: none;
-    color: var(--dt-ink-muted);
+    color: var(--dt-nav-ink);
     font-size: var(--dt-label-font-size);
     line-height: var(--dt-label-line-height);
     font-weight: var(--dt-label-font-weight);
@@ -340,7 +488,7 @@
 }
 
 .dt-landing-ticks ::deep .dt-icon {
-    color: var(--dt-success);
+    color: var(--dt-focus-ring-on-dark);
 }
 
 /* ---------------------------------------------------------------- steps */
@@ -415,7 +563,7 @@
 
 /* ---------------------------------------------------------------- the dark bands */
 
-/* The call to action and the footer stand on the navigation's own ground. */
+/* The call to action and the footer stand on the navigation's own ground; the hero on a dark photograph. */
 .dt-landing-dark {
     background-color: var(--dt-nav-bg);
     color: var(--dt-nav-ink);
@@ -428,7 +576,9 @@
 */
 .dt-landing-dark ::deep :focus-visible,
 .dt-landing-dark ::deep .btn:focus,
-.dt-landing-dark ::deep .dt-lang__select:focus {
+.dt-landing-dark ::deep .dt-lang__select:focus,
+.dt-landing-hero-section ::deep :focus-visible,
+.dt-landing-hero-section ::deep .btn:focus {
     outline: var(--dt-border-width-focus) solid var(--dt-focus-ring-on-dark);
     outline-offset: var(--dt-border-width-focus);
 }
@@ -557,47 +707,54 @@
     }
 
     /*
-        The header wraps to several rows here, taller than any fixed scroll margin, so it stops
-        sticking: an anchor jump then lands its heading at the top of the screen, under nothing.
+        The design's phone header: one 60px row - the brand, the language and the menu button. The
+        section anchors and every way in move behind that button, so the row never has to wrap and
+        the header can stay over the hero and pinned to the top as it does on a wider screen.
     */
-    .dt-landing-header {
-        position: static;
-    }
-
-    .dt-landing-section {
-        scroll-margin-top: 0;
-    }
-
-    /* The section anchors go; the brand and the account controls wrap onto as many rows as they need. */
     .dt-landing-headrow {
-        flex-wrap: wrap;
-        gap: var(--dt-space-3);
-        padding: var(--dt-space-3) var(--dt-space-4);
+        flex-wrap: nowrap;
+        gap: var(--dt-space-2);
+        min-height: 3.75rem;
     }
 
-    .dt-landing-sections {
+    /* The person's menu button and the phone's own are the theme's, with the rest of the menus. */
+    .dt-landing-sections,
+    .dt-landing-divider,
+    .dt-landing-account > .btn {
         display: none;
     }
 
-    /* Wrapped, the hairline would be left at the end or the start of a row, dividing nothing. */
-    .dt-landing-divider {
-        display: none;
+    .dt-landing-account {
+        flex-wrap: nowrap;
     }
 
     .dt-landing-brand {
         flex-grow: 1;
     }
 
+    /* The phone's header is 60px, so it is white once that much has scrolled. */
+    @supports (animation-timeline: scroll()) {
+        .dt-landing-header {
+            animation-range: 0 3.75rem;
+        }
+    }
+
+    /* Under the 60px header: the design's 100px is its height and the air under it. */
+    .dt-landing-hero-section::before {
+        height: 6.25rem;
+    }
+
     .dt-landing-hero,
     .dt-landing-faq-row,
     .dt-landing-grid--3,
-    .dt-landing-grid--4,
-    .dt-landing-foot-grid {
+    .dt-landing-grid--4 {
         grid-template-columns: minmax(0, 1fr);
     }
 
-    .dt-landing-hero {
-        gap: var(--dt-space-5);
+    /* The words alone: the scene is not drawn on a phone, and neither is the phone beside the questions. */
+    .dt-landing-hero ::deep .dt-pic-scene,
+    .dt-landing-faq-row ::deep .dt-pic-phonewrap {
+        display: none;
     }
 
     /* The headline at the type scale's own largest step: the design's size would break every word. */
@@ -606,13 +763,53 @@
         line-height: var(--dt-display-line-height);
     }
 
-    /* Stacked, the steps no longer share a row, so there is no line to join them. */
+    /* The hero's actions and the closing band's, one to a row and the full width. */
+    .dt-landing-actions .btn {
+        flex: 1 1 100%;
+        justify-content: center;
+    }
+
+    /*
+        The steps one under another, each disc beside its title and words, and the dashed line now
+        running down through the discs' centres instead of across them.
+    */
+    .dt-landing-steps {
+        row-gap: var(--dt-space-5);
+    }
+
+    .dt-landing-step {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-content: start;
+        column-gap: var(--dt-space-4);
+        row-gap: var(--dt-space-2);
+    }
+
+    .dt-landing-step-no {
+        grid-row: span 2;
+    }
+
     .dt-landing-steps::before {
-        display: none;
+        left: 1.3125rem;
+        right: auto;
+        top: 1.375rem;
+        bottom: 1.375rem;
+        border-top: 0;
+        border-left: var(--dt-border-width-focus) dashed var(--dt-border-control);
     }
 
     .dt-landing-cta-row {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: stretch;
+    }
+
+    /* The footer's brand and tagline across the top, the two link columns side by side under it. */
+    .dt-landing-foot-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--dt-space-5) var(--dt-space-4);
+    }
+
+    .dt-landing-foot-grid > div:first-child {
+        grid-column: 1 / -1;
     }
 }

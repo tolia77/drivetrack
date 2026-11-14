@@ -35,7 +35,11 @@
    signed-in branch can read the role it needs without a second notion of who the caller is. *@
 
 <div class="dt-landing">
-    <header class="dt-landing-header">
+    @* Laid over the hero's photograph, as the design draws it, and white again once the page
+       scrolls - by the browser alone, on a scroll-driven animation: see Home.razor.css. The
+       `--on-photo` hook is for the theme, which styles the language menu's button: DtLanguageMenu
+       draws it here and in the sign-in frame's white header too. *@
+    <header class="dt-landing-header dt-landing-header--on-photo">
         <div class="dt-landing-wrap dt-landing-wrap--wide dt-landing-headrow">
             @* NFR-25: the shell's own lock-up - the same mark, the same glyph - so the page a visitor
                starts on and the frame they sign in to are recognisably one product. *@
@@ -54,6 +58,46 @@
                    because the sign-in and register frame draws it too. The footer keeps
                    DtLanguageSwitch as it was. *@
                 <DtLanguageMenu ReturnUrl="/" />
+
+                @* On a phone the header is one row - the brand, the language and this - and the
+                   section anchors and the way in move behind it, into a menu like the two beside
+                   it: the same native popover, for the same reasons. Hidden above the phone
+                   breakpoint, where everything in it is in the header itself. The glyph alone, as
+                   the design draws it, named in words for assistive technology. *@
+                <button class="dt-landing-menu-button dt-landing-menu-button--phone dt-icon-only" type="button"
+                        popovertarget="dt-landing-phone-menu"
+                        aria-label="@Localizer["Menu"]">
+                    <Icon Name="IconName.Menu" />
+                </button>
+                <div class="dt-landing-menu dt-landing-menu--phone" id="dt-landing-phone-menu" popover>
+                    @* A jump within the page is not a click outside the popover, so it would stay
+                       open over the section it jumped to; each anchor closes it on the way. *@
+                    <a class="dt-landing-menu-item" href="#features" onclick="this.closest('[popover]').hidePopover()">@Localizer["LandingNavFeatures"]</a>
+                    <a class="dt-landing-menu-item" href="#how" onclick="this.closest('[popover]').hidePopover()">@Localizer["LandingNavHow"]</a>
+                    <a class="dt-landing-menu-item" href="#faq" onclick="this.closest('[popover]').hidePopover()">@Localizer["LandingNavFaq"]</a>
+                    @if (Caller.IsAuthenticated)
+                    {
+                        <a class="dt-landing-menu-item" href="@LandingRoute.For(Caller.Role)">@WayIn</a>
+                        <a class="dt-landing-menu-item" href="/profile">
+                            <Icon Name="IconName.Profile" />@Localizer["LandingMyProfile"]
+                        </a>
+                        <form method="post" action="/sign-out">
+                            <AntiforgeryToken />
+                            <button class="dt-landing-menu-item" type="submit">
+                                <Icon Name="IconName.SignOut" />@Localizer["SignOut"]
+                            </button>
+                        </form>
+                    }
+                    @if (!Caller.IsAuthenticated)
+                    {
+                        <a class="dt-landing-menu-item" href="sign-in">
+                            <Icon Name="IconName.SignIn" />@Localizer["SignIn"]
+                        </a>
+                        <a class="dt-landing-menu-item" href="register">
+                            <Icon Name="IconName.Register" />@Localizer["LandingCreateAccount"]
+                        </a>
+                    }
+                </div>
 
                 <span class="dt-landing-divider" aria-hidden="true"></span>
 
@@ -113,7 +157,11 @@
     </header>
 
     <main>
+        @* The hero stands on the design's photograph, under a scrim - its own component, kept
+           apart from the page because the scrim is paint the palette does not name. First in the
+           section, so everything after it is drawn over it. *@
         <section class="dt-landing-section dt-landing-hero-section" id="top">
+            <LandingHeroPhoto />
             <div class="dt-landing-wrap dt-landing-hero">
                 <div class="dt-landing-pitch">
                     <h1 class="dt-type-display dt-landing-title">@Localizer["LandingHeroTitle"]</h1>
@@ -137,9 +185,9 @@
                         }
                     </div>
 
-                    @* Three things a client can count on, each ticked in the success colour. Words a
-                       reader reads, so a list rather than a picture; the ticks are the glyph's own
-                       `aria-hidden`. *@
+                    @* Three things a client can count on, each ticked in amber on the photograph.
+                       Words a reader reads, so a list rather than a picture; the ticks are the
+                       glyph's own `aria-hidden`. *@
                     <ul class="dt-landing-ticks">
                         <li><Icon Name="IconName.Confirm" />@Localizer["LandingTickEmail"]</li>
                         <li><Icon Name="IconName.Confirm" />@Localizer["LandingTickProof"]</li>

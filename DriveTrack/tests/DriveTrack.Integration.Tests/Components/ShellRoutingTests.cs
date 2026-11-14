@@ -130,26 +130,29 @@ public class ShellRoutingTests
         Assert.Contains("LandingRoute.For(Caller.Role)", home, StringComparison.Ordinal);
         Assert.DoesNotContain(@"href=""profile""", home, StringComparison.Ordinal);
 
-        // The one profile address the page writes itself is the account menu's My profile; every
-        // other way to the profile is LandingRoute's answer.
-        Assert.Equal(1, SharedMarkup.Occurrences(home, "href=\"/profile\""));
+        // The profile addresses the page writes itself are My profile, in the account menu and again
+        // in the phone's menu, which stands in for it on a phone; every other way to the profile is
+        // LandingRoute's answer.
+        Assert.Equal(2, SharedMarkup.Occurrences(home, "href=\"/profile\""));
         Assert.Matches(
             @"id=""dt-landing-account-menu""[^>]*popover[^>]*>\s*<a\b[^>]*href=""/profile""",
             home);
 
         // NFR-24: every glyph on the page is a named one from the shared set, and there are
-        // twenty in the source. The brand mark twice, header and footer. The header's language menu
-        // is DtLanguageMenu's, and what it draws is its own. The account menu: the button's chevron
-        // and its fallback profile glyph, and its two items. The signed-in way in, drawn once as the
-        // dashboard's glyph and once as the profile's, and the visitor's sign in and register in the
-        // header, the hero and the closing band. The hero's three ticks. The three feature-card
-        // titles. The pictures are not counted here: they are components under Illustrations/, and
-        // what they draw is theirs.
+        // twenty-five in the source. The brand mark twice, header and footer. The header's language
+        // menu is DtLanguageMenu's, and what it draws is its own. The account menu: the button's
+        // chevron and its fallback profile glyph, and its two items. The phone's menu: its button's
+        // glyph, and the four ways in it holds - My profile and sign out signed in, sign in and
+        // register signed out; the signed-in way in there is the WayIn fragment, already counted.
+        // The signed-in way in, drawn once as the dashboard's glyph and once as the profile's, and
+        // the visitor's sign in and register in the header, the hero and the closing band. The
+        // hero's three ticks. The three feature-card titles. The pictures are not counted here:
+        // they are components under Illustrations/, and what they draw is theirs.
         //
         // Stated as a count for the reason the navigation's is: an action drawn without a glyph is
         // markup with nothing behind it, so a new one has to be a deliberate edit here rather than
         // an empty box nobody notices.
-        Assert.Equal(20, SharedMarkup.Occurrences(home, "<Icon Name="));
+        Assert.Equal(25, SharedMarkup.Occurrences(home, "<Icon Name="));
 
         // The signed-in branches read the role only behind the authenticated check, because
         // ICurrentUser.Role throws for an anonymous visitor.
