@@ -316,7 +316,7 @@ public class DeliveryManagementTests(PostgresFixture postgres)
     [InlineData("packageWeightKg")]
     [InlineData("packageDetails")]
     [InlineData("windowLatestAt")]
-    [InlineData("pickup")]
+    [InlineData("pickup.latitude")]
     public async Task A_value_the_row_may_not_hold_is_refused_before_any_query_naming_the_field(
         string field)
     {
@@ -357,7 +357,9 @@ public class DeliveryManagementTests(PostgresFixture postgres)
             .Select(property => property.Name)
             .ToArray();
 
-        Assert.Contains(fields, name => name.StartsWith(field, StringComparison.Ordinal));
+        // The exact key, nested path included: a client attaches the message to the input by it, and a
+        // bare "pickup" names no input the form renders.
+        Assert.Contains(field, fields);
 
         await AssertNoDeliveriesAsync(factory, cancellationToken);
     }

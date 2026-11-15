@@ -342,22 +342,25 @@ public class InfrastructureRegistrationTests
                 .Value.MinimumRequestIntervalMilliseconds);
     }
 
-    [Fact]
-    public void Compose_and_env_example_ship_a_pacing_interval_the_check_accepts()
+    [Theory]
+    [InlineData("Geocoder__MinimumRequestIntervalMilliseconds")]
+    [InlineData("Geocoder__TimeoutSeconds")]
+    [InlineData("Jwt__LifetimeMinutes")]
+    [InlineData("Smtp__Port")]
+    [InlineData("Smtp__UseStartTls")]
+    public void Compose_and_env_example_ship_a_value_the_check_accepts(string key)
     {
-        // The check above only ever sees values a test wrote. The two lines that actually reach a
+        // The checks above only ever see values a test wrote. The two lines that actually reach a
         // container are compose.dev.yaml's and .env.example's, and neither is read by anything
         // else in this solution - so editing either to a spelling the check refuses would abort every
         // `docker compose up` with the whole suite green, which is the exact failure the check was
         // brought forward to startup to prevent.
-        const string key = "Geocoder__MinimumRequestIntervalMilliseconds";
-
         Assert.Contains(key, ComposeStack.Dev.EnvironmentKeysOf("app"), StringComparer.Ordinal);
 
-        // Defaulted, not forwarded bare. The two neighbouring Geocoder__Endpoint lines are bare on
-        // purpose, so `${...}` is a shape somebody could copy here in good faith - and it would be
-        // wrong: compose substitutes an unset variable with the empty string, and a blank value is
-        // one this key refuses to start on. Every .env written before this story leaves it unset.
+        // Defaulted, not forwarded bare. Bare neighbours (Geocoder__Endpoint, Smtp__Host) make
+        // `${...}` a shape somebody could copy here in good faith - and it would be wrong: compose
+        // substitutes an unset variable with the empty string, and a blank value is one each of
+        // these keys refuses to start on. Every .env written before the key leaves it unset.
         var forwarded = ComposeStack.Dev.EnvironmentValueOf("app", key);
 
         var prefix = "${" + key + ":-";
@@ -369,25 +372,94 @@ public class InfrastructureRegistrationTests
                 + "empty string, and a blank value is one the app refuses to start on.");
 
         // Both values a deployment can boot with - compose's default when .env says nothing, and
-        // the line .env.example hands every operator who copies it - run through the real check.
+        // the line .env.example hands every operator who copies it - run through the real check,
+        // and through the binder, which is where a value the check missed would still fail.
         foreach (var shipped in new[] { forwarded[prefix.Length..^1], ComposeStack.EnvExample(key) })
         {
-            var services = new ServiceCollection();
-            var configuration = BuildConfiguration(ValidConnectionString);
-            configuration[GeocoderOptions.MinimumRequestIntervalMillisecondsConfigurationKey] =
-                shipped;
+            using var provider = ProviderWith(key, shipped);
 
-            services.AddInfrastructure(configuration, new TestHostEnvironment());
+            _ = provider.GetRequiredService<IOptions<JwtOptions>>().Value;
+            _ = provider.GetRequiredService<IOptions<SmtpOptions>>().Value;
+            _ = provider.GetRequiredService<IOptions<GeocoderOptions>>().Value;
+        }
+    }
 
-            using var provider = services.BuildServiceProvider();
+    [Fact]
+    public void The_shipped_pacing_interval_paces()
+    {
+        // Accepted is not the whole claim for this key: zero is accepted too, and shipping it would
+        // take the gate away from every deployment that follows Nominatim's policy by doing nothing.
+        const string key = "Geocoder__MinimumRequestIntervalMilliseconds";
 
-            // Accepted is not the whole claim: zero is accepted too, and shipping it would take the
-            // gate away from every deployment that follows Nominatim's policy by doing nothing.
+        var forwarded = ComposeStack.Dev.EnvironmentValueOf("app", key);
+        var composeDefault = forwarded[("${" + key + ":-").Length..^1];
+
+        foreach (var shipped in new[] { composeDefault, ComposeStack.EnvExample(key) })
+        {
+            using var provider = ProviderWith(key, shipped);
+
             Assert.True(
                 provider.GetRequiredService<IOptions<GeocoderOptions>>()
                     .Value.MinimumRequestIntervalMilliseconds > 0,
                 $"'{shipped}' is shipped as the pacing interval, which paces nothing.");
         }
+    }
+
+    [Fact]
+    public void Compose_pins_the_app_to_the_Development_environment()
+    {
+        // Pinned rather than forwarded: the dev-only asset headers in Program.cs key on it, and an
+        // .env copied off a server would otherwise switch them off.
+        Assert.Equal(
+            "Development",
+            ComposeStack.Dev.EnvironmentValueOf("app", "ASPNETCORE_ENVIRONMENT"));
+    }
+
+    [Fact]
+    public void Compose_ships_a_mail_catcher_the_env_example_points_at()
+    {
+        // Inside the app container `localhost` is the app, so a template naming it would make every
+        // notification a Failed attempt. The template names the compose service instead.
+        const string service = "mail";
+
+        var image = ComposeStack.Dev.ImageOf(service);
+
+        Assert.StartsWith("axllent/mailpit:v", image, StringComparison.Ordinal);
+        Assert.Matches(@":v\d+\.\d+\.\d+$", image);
+
+        Assert.Equal(service, ComposeStack.EnvExample("Smtp__Host"));
+        Assert.True(
+            ComposeStack.Dev.DependenciesOf("app").ContainsKey(service),
+            $"The app does not depend on '{service}', so it can start before the relay it sends to.");
+
+        // The template's port, compose's default and the port the catcher listens on are one number.
+        var port = ComposeStack.EnvExample("Smtp__Port");
+
+        Assert.Equal(
+            "${Smtp__Port:-" + port + "}",
+            ComposeStack.Dev.EnvironmentValueOf("app", "Smtp__Port"));
+
+        // Published to loopback only: an open relay and its inbox must not face the laptop's network.
+        var ports = ComposeStack.Dev.PortsOf(service);
+
+        Assert.All(ports, mapping => Assert.StartsWith("127.0.0.1:", mapping, StringComparison.Ordinal));
+        Assert.Contains(ports, mapping => mapping.EndsWith(":" + port, StringComparison.Ordinal));
+        Assert.Contains(ports, mapping => mapping.EndsWith(":8025", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// A provider built with one environment key, given in its double-underscore spelling, set to
+    /// <paramref name="value"/>.
+    /// </summary>
+    private static ServiceProvider ProviderWith(string environmentKey, string value)
+    {
+        var services = new ServiceCollection();
+        var configuration = BuildConfiguration(ValidConnectionString);
+        configuration[environmentKey.Replace("__", ":", StringComparison.Ordinal)] = value;
+
+        services.AddInfrastructure(configuration, new TestHostEnvironment());
+
+        return services.BuildServiceProvider();
     }
 
     [Theory]

@@ -132,6 +132,50 @@ public class CultureSwitchTests(PostgresFixture postgres)
         Assert.Equal("en", LanguageOf(await BodyAsync(again, cancellationToken)));
     }
 
+    [Theory]
+    [InlineData("Always", false, true)]
+    [InlineData("None", true, false)]
+    public async Task The_culture_cookie_follows_the_configured_secure_policy(
+        string policy,
+        bool secureRequest,
+        bool expected)
+    {
+        // The two rows the plain-HTTP default cannot show: Always must mark the cookie over http://,
+        // and None must leave it unmarked even over https:// - the pair SameAsRequest would invert.
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await using var factory = await ApiFactory.CreateAsync(
+            postgres.ConnectionString,
+            cancellationToken,
+            settings: new Dictionary<string, string?>(StringComparer.Ordinal)
+            {
+                ["Session:CookieSecurePolicy"] = policy,
+            });
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false,
+            BaseAddress = new Uri(secureRequest ? "https://localhost" : "http://localhost"),
+        });
+
+        using var switched = await SwitchAsync(client, "en-US", StaticPage, cancellationToken);
+
+        Assert.Equal(HttpStatusCode.Redirect, switched.StatusCode);
+
+        var written = SetCultureCookie(switched);
+
+        Assert.NotNull(written);
+
+        // Attribute by attribute, not as a substring: the encoded value could contain "secure".
+        var secure = written
+            .Split(';')
+            .Skip(1)
+            .Any(attribute => string.Equals(attribute.Trim(), "secure", StringComparison.OrdinalIgnoreCase));
+
+        Assert.True(
+            expected == secure,
+            $"With Session:CookieSecurePolicy={policy} over {(secureRequest ? "https" : "http")}, "
+                + $"the culture cookie was written as: {written}");
+    }
+
     [Fact]
     public async Task Switching_back_to_Ukrainian_works_the_same_way()
     {

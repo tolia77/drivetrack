@@ -43,10 +43,9 @@ internal sealed class EnvelopeResultFilter : IAsyncResultFilter
         ObjectResult { StatusCode: int objectStatus } when CannotCarryABody(objectStatus) => result,
         StatusCodeResult { StatusCode: var bodilessStatus } when CannotCarryABody(bodilessStatus) => result,
 
-        ObjectResult objectResult => Envelope(
-            httpContext,
-            objectResult.StatusCode ?? StatusCodes.Status200OK,
-            objectResult.Value),
+        // Mutated in place, not replaced: a derived result keeps its own behaviour, e.g.
+        // CreatedResult / CreatedAtActionResult set the Location header in OnFormatting.
+        ObjectResult objectResult => EnvelopeInPlace(httpContext, objectResult),
 
         // Json(dto) is not an ObjectResult, so without this arm it would fall through unenveloped -
         // the second wire shape NFR-1 exists to close, arriving through the one helper that looks
@@ -81,22 +80,36 @@ internal sealed class EnvelopeResultFilter : IAsyncResultFilter
             or StatusCodes.Status205ResetContent
             or StatusCodes.Status304NotModified;
 
+    /// <summary>Swaps an <see cref="ObjectResult"/>'s value for its envelope, keeping the result itself.</summary>
+    private static ObjectResult EnvelopeInPlace(HttpContext httpContext, ObjectResult objectResult)
+    {
+        var statusCode = objectResult.StatusCode ?? StatusCodes.Status200OK;
+        objectResult.Value = Build(httpContext, statusCode, objectResult.Value);
+        objectResult.StatusCode = statusCode;
+        objectResult.DeclaredType = typeof(ApiResponse);
+
+        // The envelope is JSON whatever the action asked for - a ProblemDetails result arrives
+        // pinned to application/problem+json, which would no longer describe the body.
+        objectResult.ContentTypes.Clear();
+        objectResult.Formatters.Clear();
+        return objectResult;
+    }
+
     /// <summary>
     /// The envelope for one status and one action value. Below 400 the value is the payload; at 400
     /// and above the value is dropped and the message comes from the localized catalogue for the
     /// code the status implies - a <c>ProblemDetails</c> or a diagnostic string an action passed
     /// alongside a 4xx is untranslated by construction and must not reach a client (NFR-3, NFR-14).
     /// </summary>
-    private static ObjectResult Envelope(HttpContext httpContext, int statusCode, object? value)
-    {
-        var envelope = statusCode >= StatusCodes.Status400BadRequest
-            ? EnvelopeWriter.Build(httpContext, ErrorContract.DefaultCodeFor(statusCode))
-            : ApiResponse.Ok(value);
-
-        return new ObjectResult(envelope)
+    private static ObjectResult Envelope(HttpContext httpContext, int statusCode, object? value) =>
+        new(Build(httpContext, statusCode, value))
         {
             StatusCode = statusCode,
             DeclaredType = typeof(ApiResponse),
         };
-    }
+
+    private static ApiResponse Build(HttpContext httpContext, int statusCode, object? value) =>
+        statusCode >= StatusCodes.Status400BadRequest
+            ? EnvelopeWriter.Build(httpContext, ErrorContract.DefaultCodeFor(statusCode))
+            : ApiResponse.Ok(value);
 }

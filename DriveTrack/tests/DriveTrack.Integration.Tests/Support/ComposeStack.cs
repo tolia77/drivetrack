@@ -165,6 +165,82 @@ internal sealed class ComposeStack
                 + "block, so a container brought up from this file is never given it.");
     }
 
+    /// <summary>The services one service's <c>depends_on:</c> names, with the condition each waits on.</summary>
+    /// <param name="service">The service name, as it appears under <c>services:</c>.</param>
+    /// <exception cref="InvalidOperationException">No such service, or it declares no dependencies.</exception>
+    public IReadOnlyDictionary<string, string> DependenciesOf(string service)
+    {
+        var dependencies = new Dictionary<string, string>(StringComparer.Ordinal);
+        string? current = null;
+
+        foreach (var line in SettingBlock(service, "depends_on"))
+        {
+            var text = line.TrimStart();
+
+            if (IndentOf(line) == SettingIndent + 2)
+            {
+                current = text.TrimEnd(':');
+                dependencies[current] = string.Empty;
+            }
+            else if (current is not null && text.StartsWith("condition:", StringComparison.Ordinal))
+            {
+                dependencies[current] = text["condition:".Length..].Trim();
+            }
+        }
+
+        return dependencies.Count != 0
+            ? dependencies
+            : throw new InvalidOperationException(
+                $"Service '{service}' in '{composeFile}' declares no 'depends_on:'.");
+    }
+
+    /// <summary>The <c>ports:</c> mappings a service publishes, quotes removed.</summary>
+    /// <param name="service">The service name, as it appears under <c>services:</c>.</param>
+    /// <exception cref="InvalidOperationException">No such service, or it publishes no port.</exception>
+    public IReadOnlyList<string> PortsOf(string service)
+    {
+        var ports = SettingBlock(service, "ports")
+            .Select(line => line.TrimStart())
+            .Where(entry => entry.StartsWith("- ", StringComparison.Ordinal))
+            .Select(entry => entry[2..].Trim().Trim('"', '\''))
+            .ToArray();
+
+        return ports.Length != 0
+            ? ports
+            : throw new InvalidOperationException(
+                $"Service '{service}' in '{composeFile}' publishes no 'ports:'.");
+    }
+
+    /// <summary>The non-blank, non-comment lines nested under one setting of one service.</summary>
+    private IEnumerable<string> SettingBlock(string service, string setting)
+    {
+        var inside = false;
+
+        foreach (var line in ServiceBlock(service))
+        {
+            if (line.Trim().Length == 0 || line.TrimStart().StartsWith('#'))
+            {
+                continue;
+            }
+
+            if (IndentOf(line) == SettingIndent)
+            {
+                if (inside)
+                {
+                    yield break;
+                }
+
+                inside = line.TrimStart().StartsWith(setting + ":", StringComparison.Ordinal);
+                continue;
+            }
+
+            if (inside)
+            {
+                yield return line;
+            }
+        }
+    }
+
     /// <summary>The whole <c>environment:</c> block of one service, in declaration order.</summary>
     private IReadOnlyList<KeyValuePair<string, string>> EnvironmentOf(string service)
     {
