@@ -35,7 +35,7 @@ namespace DriveTrack.Web.Api;
 public sealed class ShiftsController(IShiftService shifts) : ControllerBase
 {
     /// <summary>
-    /// One page of shifts, newest first (FR-112, FR-113). Defaults to the first hundred.
+    /// One page of shifts, newest first (FR-112, FR-114). Defaults to the first hundred.
     /// </summary>
     /// <remarks>
     /// The paging parameters are nullable so an omitted one takes the default here rather than
@@ -76,14 +76,14 @@ public sealed class ShiftsController(IShiftService shifts) : ControllerBase
         shifts.GetAsync(id, cancellationToken);
 
     /// <summary>
-    /// Which drivers are on duty right now (FR-116), as row ids. Dispatch's read: the delivery board
+    /// Which drivers are on duty right now (FR-113, FR-116), as row ids. Dispatch's read: the delivery board
     /// marks an off-duty driver with it, and never withholds one.
     /// </summary>
     [HttpGet("on-duty")]
     public Task<IReadOnlyList<DriverId>> ListOnDutyAsync(CancellationToken cancellationToken) =>
         shifts.ListOnDutyDriverIdsAsync(cancellationToken);
 
-    /// <summary>Records a shift that already happened, window and all (FR-113).</summary>
+    /// <summary>Records a shift that already happened, window and all (FR-114).</summary>
     [HttpPost]
     public Task<ShiftSummary> CreateAsync(
         [FromBody] CreateShiftCommand command,

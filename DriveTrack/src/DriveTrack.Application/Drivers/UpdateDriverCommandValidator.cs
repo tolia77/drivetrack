@@ -22,6 +22,10 @@ namespace DriveTrack.Application.Drivers;
 /// rows, answered in the one writer of <c>drivers.vehicle_id</c> (AD-24).
 /// </para>
 /// <para>
+/// Each length is judged on the trimmed text, as <see cref="CreateDriverCommandValidator"/>
+/// explains: the service stores it trimmed.
+/// </para>
+/// <para>
 /// The property name is overridden so a field error names <c>LicenseNumber</c> rather than
 /// <c>LicenseNumber.Value</c>: the adapter turns that name into the one the caller's payload used,
 /// and a form can only attach a message to an input it actually has (NFR-4).
@@ -34,19 +38,25 @@ public sealed class UpdateDriverCommandValidator : AbstractValidator<UpdateDrive
     {
         RuleFor(command => command.FirstName.Value)
             .NotEmpty().WithMessage(nameof(ErrorCode.COMMON_FIELD_REQUIRED))
-            .MaximumLength(RegisterClientCommandValidator.NameMaximumLength)
+            .Must(value => CreateDriverCommandValidator.FitsTrimmed(
+                value,
+                RegisterClientCommandValidator.NameMaximumLength))
                 .WithMessage(nameof(ErrorCode.AUTH_FIRST_NAME_TOO_LONG))
             .OverridePropertyName(nameof(UpdateDriverCommand.FirstName));
 
         RuleFor(command => command.LastName.Value)
             .NotEmpty().WithMessage(nameof(ErrorCode.COMMON_FIELD_REQUIRED))
-            .MaximumLength(RegisterClientCommandValidator.NameMaximumLength)
+            .Must(value => CreateDriverCommandValidator.FitsTrimmed(
+                value,
+                RegisterClientCommandValidator.NameMaximumLength))
                 .WithMessage(nameof(ErrorCode.AUTH_LAST_NAME_TOO_LONG))
             .OverridePropertyName(nameof(UpdateDriverCommand.LastName));
 
         RuleFor(command => command.LicenseNumber.Value)
             .NotEmpty().WithMessage(nameof(ErrorCode.COMMON_FIELD_REQUIRED))
-            .MaximumLength(CreateDriverCommandValidator.LicenseNumberMaximumLength)
+            .Must(value => CreateDriverCommandValidator.FitsTrimmed(
+                value,
+                CreateDriverCommandValidator.LicenseNumberMaximumLength))
                 .WithMessage(nameof(ErrorCode.FLEET_LICENSE_NUMBER_TOO_LONG))
             .OverridePropertyName(nameof(UpdateDriverCommand.LicenseNumber));
     }

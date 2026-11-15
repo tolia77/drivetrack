@@ -10,7 +10,7 @@ namespace DriveTrack.Application.Drivers;
 /// inline in its own body: nothing here is in <see cref="Authorization.PublicEntryPoints"/>.
 /// </para>
 /// <para>
-/// Since story 7.2 a <see cref="DriverSummary"/> also carries FR-98's rating. It is read through
+/// Since story 7.2 a <see cref="DriverSummary"/> also carries FR-118's rating. It is read through
 /// <c>IReviewService</c> rather than computed here, because it is derived from reviews and reviews
 /// belong to another capability (AD-24) — and it is derived on every read rather than stored on the
 /// driver row (DR-18), so a review written, edited or deleted a moment ago is already reflected.
@@ -51,6 +51,8 @@ public interface IDriverService
     /// <summary>
     /// Takes on a driver: the account, the driver row and the assignment, in one transaction (FR-35).
     /// </summary>
+    /// <exception cref="Common.ValidationException">A field is missing or too long.</exception>
+    /// <exception cref="Common.NotFoundException">No vehicle has the named id.</exception>
     /// <exception cref="Common.ConflictException">
     /// The email is already in use, or another driver already holds the named vehicle (FR-44).
     /// Either way nothing is written — an account created beside a refused assignment is exactly the
@@ -58,9 +60,16 @@ public interface IDriverService
     /// </exception>
     Task<DriverSummary> CreateAsync(CreateDriverCommand command, CancellationToken cancellationToken);
 
-    /// <summary>Changes a driver's licence number, their assignment, or both (FR-37, FR-38).</summary>
+    /// <summary>
+    /// Changes a driver's name, licence number, assignment, or any of them (FR-37, FR-38). A rename
+    /// is written to the account, and only when the name actually changed.
+    /// </summary>
     /// <exception cref="Common.NotFoundException">No driver has that id, or no vehicle has the named id.</exception>
+    /// <exception cref="Common.ValidationException">The merged state is one the driver may not hold.</exception>
     /// <exception cref="Common.ConflictException">Another driver already holds the named vehicle (FR-44).</exception>
+    /// <exception cref="Common.DomainRuleException">
+    /// The new vehicle cannot carry a delivery the driver already holds (FR-103).
+    /// </exception>
     Task<DriverSummary> UpdateAsync(
         DriverId id,
         UpdateDriverCommand command,

@@ -4,11 +4,10 @@ namespace DriveTrack.Application.Vehicles;
 /// A vehicle as a caller sees it (FR-40). A DTO, so <c>Vehicle</c> and its EF navigations never
 /// bind to a component parameter or serialize (AD-17).
 /// <para>
-/// <see cref="Mileage"/> and <see cref="NextMaintenanceDate"/> are carried even though no logic in
-/// this milestone reads them. FR-40 and FR-42 make them part of what a dispatcher records, and PRD
-/// section 8 excludes the maintenance <em>alerting</em> feature rather than the fields: they are
-/// "captured and never read", which is only true if a create path can set them. A field no request
-/// can write is not knowingly-dead data, it is a permanently null column.
+/// <see cref="Mileage"/> and <see cref="NextMaintenanceDate"/> are part of what a dispatcher records
+/// (FR-40, FR-42). No alerting acts on them — PRD section 8 excludes the maintenance
+/// <em>alerting</em> feature rather than the fields — but the dashboard's maintenance card reads both
+/// from the vehicle rows to list what is due soonest.
 /// </para>
 /// </summary>
 /// <param name="Id">The vehicle row's id.</param>

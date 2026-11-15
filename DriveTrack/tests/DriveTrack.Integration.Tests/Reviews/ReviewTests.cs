@@ -14,7 +14,7 @@ namespace DriveTrack.Integration.Tests.Reviews;
 
 /// <summary>
 /// Story 7.2's I/O matrix over HTTP, against the real <c>Program.cs</c> pipeline with the real JWT
-/// scheme (FR-62 to FR-67).
+/// scheme (FR-59 to FR-67).
 /// <para>
 /// These claims are only true over the wire and against the schema. "An administrator may moderate
 /// a review and may not write one" is a property of the guard reached through the whole adapter,
@@ -70,7 +70,7 @@ public class ReviewTests(PostgresFixture postgres)
         Assert.Equal("водій був чемний", row.GetProperty("text").GetString());
         Assert.Equal(clock.Now, row.GetProperty("createdAt").GetDateTimeOffset());
 
-        // And it is on the dispatch list too, with both parties named (FR-64).
+        // And it is on the dispatch list too, with both parties named (FR-65).
         var all = await ReviewApi.RowsAsync(
             await ReviewApi.ListAsync(client, dispatcher, cancellationToken),
             cancellationToken);
@@ -84,7 +84,7 @@ public class ReviewTests(PostgresFixture postgres)
     [Fact]
     public async Task A_failed_delivery_can_be_reviewed_too()
     {
-        // FR-62 names two end states, not one. A parcel that never arrived is exactly the delivery
+        // FR-61 names two end states, not one. A parcel that never arrived is exactly the delivery
         // a client has something to say about, so refusing a review here would refuse the case the
         // requirement is most about.
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -168,7 +168,7 @@ public class ReviewTests(PostgresFixture postgres)
     [InlineData(DeliveryStatus.InTransit)]
     public async Task A_delivery_that_has_not_been_carried_cannot_be_reviewed(DeliveryStatus status)
     {
-        // FR-62. A verdict on a journey that has not happened yet, refused with a code of its own
+        // FR-61. A verdict on a journey that has not happened yet, refused with a code of its own
         // rather than a generic one: the caller's next move is to pick a different delivery, and a
         // COMMON_VALIDATION_FAILED naming a field would not say that.
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -306,7 +306,7 @@ public class ReviewTests(PostgresFixture postgres)
     [Fact]
     public async Task A_client_is_refused_the_moderation_list_rather_than_shown_their_own_rows()
     {
-        // FR-64 is a dispatcher's and an administrator's, and the refusal is the half that is easy
+        // FR-65 is a dispatcher's and an administrator's, and the refusal is the half that is easy
         // to get wrong: narrowing /api/reviews to the caller's own rows would look right on a
         // client's screen and would quietly make the route mean two different things. The author's
         // own list is a separate route with a separate type, so this one refuses.
@@ -424,6 +424,31 @@ public class ReviewTests(PostgresFixture postgres)
     }
 
     [Fact]
+    public async Task A_full_length_comment_with_trailing_whitespace_is_accepted_and_stored_trimmed()
+    {
+        // The create path judges the trimmed text, so " \r\n" does not push 2000 characters over.
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
+        using var client = factory.CreateClient();
+
+        var dispatcher = await DeliveryApi.DispatcherAsync(factory, client, cancellationToken);
+        var carried = await ReviewApi.DeliveryAsync(client, dispatcher, cancellationToken);
+
+        var full = new string('я', CreateReviewCommandValidator.TextMaximumLength);
+
+        using var written = await ReviewApi.WriteAsync(
+            client, carried.Client.Token, carried.DeliveryId, 5, full + " \r\n", cancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, written.StatusCode);
+
+        var row = Assert.Single(await ReviewApi.RowsAsync(
+            await ReviewApi.ListMineAsync(client, carried.Client.Token, cancellationToken),
+            cancellationToken));
+
+        Assert.Equal(full, row.GetProperty("text").GetString());
+    }
+
+    [Fact]
     public async Task An_edit_is_judged_by_the_rules_that_judged_the_write()
     {
         // AD-23's merged state has to be judged, not merely built. Without this the state validator
@@ -518,7 +543,7 @@ public class ReviewTests(PostgresFixture postgres)
     [Fact]
     public async Task An_author_edits_and_deletes_their_own_review_and_nobody_elses()
     {
-        // FR-65 and FR-66 from the author's side, and the refusal that pairs with them: a second
+        // FR-63 from the author's side, and the refusal that pairs with them: a second
         // client is not "a client" for this row, which is the distinction RequireReviewOwner makes
         // and RequireRole could not.
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -622,7 +647,7 @@ public class ReviewTests(PostgresFixture postgres)
     [Fact]
     public async Task A_dispatcher_reads_every_review_and_may_change_none_of_them()
     {
-        // FR-64 against FR-65: the one role whose answer differs between reading and writing, which
+        // FR-65 against FR-66: the one role whose answer differs between reading and writing, which
         // is why the collection's guard and the row's guard are different members.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
@@ -700,7 +725,7 @@ public class ReviewTests(PostgresFixture postgres)
     [Fact]
     public async Task An_author_reads_only_the_reviews_they_wrote()
     {
-        // FR-63, and AD-3's reason for narrowing in SQL rather than filtering a page: the scope is a
+        // FR-64, and AD-3's reason for narrowing in SQL rather than filtering a page: the scope is a
         // WHERE, so a second client's rows are not fetched and then removed - they were never in
         // the answer.
         var cancellationToken = TestContext.Current.CancellationToken;
