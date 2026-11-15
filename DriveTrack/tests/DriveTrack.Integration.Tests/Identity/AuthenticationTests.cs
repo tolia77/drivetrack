@@ -70,6 +70,114 @@ public class AuthenticationTests(PostgresFixture postgres)
         Assert.Equal(
             0L,
             await CountAsync(factory, "asp_net_users", $"id = {userId} AND password_hash LIKE '%{Password}%'", cancellationToken));
+
+        // The token carries the client row's own key, which registration only learns from its
+        // commit. Tied to the row rather than merely present, as the sign-in version below is.
+        var token = new JsonWebToken(session.GetProperty("accessToken").GetString());
+        var clientId = token.Claims.FirstOrDefault(claim => claim.Type == DriveTrackClaimTypes.ClientId)?.Value;
+
+        Assert.False(string.IsNullOrEmpty(clientId));
+        Assert.Equal(
+            1L,
+            await CountAsync(factory, "clients", $"user_id = {userId} AND id = {int.Parse(clientId, CultureInfo.InvariantCulture)}", cancellationToken));
+
+        // The security stamp the cookie carries is server-side state and never part of the reply.
+        Assert.False(session.TryGetProperty("securityStamp", out _));
+    }
+
+    [Fact]
+    public async Task A_padded_registration_is_accepted_and_stored_trimmed()
+    {
+        // Trimmed before it is validated: judged raw, the padded phone number fails the E.164 rule
+        // and the whole registration is refused for whitespace the column would never have held.
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await using var factory = await CreateAsync(cancellationToken);
+        using var client = factory.CreateClient();
+
+        var email = UniqueEmail();
+
+        using var response = await client.PostAsJsonAsync(
+            new Uri("/api/auth/register", UriKind.Relative),
+            new
+            {
+                firstName = "  Олена ",
+                lastName = " Петренко  ",
+                email = " " + email + " ",
+                phoneNumber = " +380441234567 ",
+                password = Password,
+                passwordConfirmation = Password,
+            },
+            cancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var userId = (await ReadAsync(response, cancellationToken))
+            .GetProperty("data")
+            .GetProperty("userId")
+            .GetInt32();
+
+        Assert.Equal(
+            1L,
+            await CountAsync(
+                factory,
+                "asp_net_users",
+                $"id = {userId} AND first_name = 'Олена' AND last_name = 'Петренко' AND email = '{email}'",
+                cancellationToken));
+        Assert.Equal(
+            1L,
+            await CountAsync(factory, "clients", $"user_id = {userId} AND phone_number = '+380441234567'", cancellationToken));
+    }
+
+    [Fact]
+    public async Task A_password_longer_than_any_account_can_hold_is_answered_as_invalid_credentials()
+    {
+        // No stored password can exceed the ceiling, so an over-long one is a wrong password - the
+        // same 401 a wrong one gets, refused before the hasher is asked to do anything with it.
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await using var factory = await CreateAsync(cancellationToken);
+        using var client = factory.CreateClient();
+
+        var email = UniqueEmail();
+
+        using (var registration = await Register(client, email, cancellationToken))
+        {
+            Assert.Equal(HttpStatusCode.OK, registration.StatusCode);
+        }
+
+        using var response = await client.PostAsJsonAsync(
+            new Uri("/api/auth/sign-in", UriKind.Relative),
+            new { email, password = new string('p', RegisterClientCommandValidator.PasswordMaximumLength + 1) },
+            cancellationToken);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        await AssertFailure(response, ErrorCode.AUTH_INVALID_CREDENTIALS, cancellationToken);
+    }
+
+    [Fact]
+    public async Task An_issued_token_names_the_configured_issuer_and_audience_and_is_accepted()
+    {
+        // The test host configures two different values, so a token signed with one in the other's
+        // place - or validated against the wrong one - cannot pass by the two being equal.
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await using var factory = await CreateAsync(cancellationToken);
+        using var client = factory.CreateClient();
+
+        Assert.NotEqual(TestConfiguration.JwtIssuer, TestConfiguration.JwtAudience);
+
+        var (userId, accessToken) = await RegisterAndSignIn(client, cancellationToken);
+        var token = new JsonWebToken(accessToken);
+
+        Assert.Equal(TestConfiguration.JwtIssuer, token.Issuer);
+        Assert.Equal([TestConfiguration.JwtAudience], token.Audiences);
+
+        using var request = new HttpRequestMessage(
+            HttpMethod.Get,
+            new Uri($"/api/users/{userId}", UriKind.Relative));
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+        using var response = await client.SendAsync(request, cancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]

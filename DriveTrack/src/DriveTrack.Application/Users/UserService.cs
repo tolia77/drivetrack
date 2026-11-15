@@ -32,17 +32,30 @@ public sealed class UserService(
     {
         ArgumentNullException.ThrowIfNull(command);
 
-        await ValidatorExtensions.ValidateAndThrowAsync(registerValidator, command, cancellationToken);
+        // Trimmed before it is judged, as the profile edit and the dispatcher create are: the
+        // validator has to see the strings that will be stored, or a padded phone number fails the
+        // E.164 rule and a name of exactly the maximum length plus a space is refused for a length
+        // the column never sees. The passwords are left alone - their spaces are part of them.
+        var trimmed = command with
+        {
+            FirstName = Trim(command.FirstName),
+            LastName = Trim(command.LastName),
+            Email = Trim(command.Email),
+            PhoneNumber = Trim(command.PhoneNumber),
+        };
+
+        await ValidatorExtensions.ValidateAndThrowAsync(registerValidator, trimmed, cancellationToken);
 
         // The validator has proved these are present; the nullable annotations exist because the
         // wire can send anything and the command has to be able to carry it as far as here.
-        var email = command.Email!.Trim();
+        var email = trimmed.Email!;
 
         await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
 
-        // The friendly answer. The normalized-email unique index behind it is the race backstop and
-        // surfaces as PERSISTENCE_UNIQUE_VIOLATION, which is also a 409 - so two callers registering
-        // the same address at the same instant get the same status either way (NFR-2).
+        // The friendly answer. The race backstop behind it is user_name_index, unique on the
+        // normalized user name - which is the email, because registration sets UserName = Email. It
+        // surfaces as PERSISTENCE_UNIQUE_VIOLATION, also a 409, so two callers registering the same
+        // address at the same instant get the same status either way (NFR-2).
         if (await unitOfWork.Users.EmailExistsAsync(email, cancellationToken))
         {
             throw new ConflictException(
@@ -51,18 +64,21 @@ public sealed class UserService(
         }
 
         var account = await unitOfWork.Users.CreateAsync(
-            new NewUserAccount(command.FirstName!.Trim(), command.LastName!.Trim(), email),
-            command.Password!,
+            new NewUserAccount(trimmed.FirstName!, trimmed.LastName!, email),
+            trimmed.Password!,
             UserRole.Client,
             cancellationToken);
 
         var client = new Client
         {
             UserId = account.Id,
-            PhoneNumber = command.PhoneNumber!.Trim(),
+            PhoneNumber = trimmed.PhoneNumber!,
         };
 
         unitOfWork.Clients.Add(client);
+
+        // Read inside the transaction: CreateAsync has already flushed the user row it stamped.
+        var securityStamp = await unitOfWork.Users.FindSecurityStampAsync(account.Id, cancellationToken);
 
         // AD-5: the user row, its role row and the client row reach the database here or nowhere.
         await unitOfWork.CommitAsync(cancellationToken);
@@ -70,7 +86,7 @@ public sealed class UserService(
         // The client row's own key is assigned by the commit above, so the token can carry it.
         var registered = account with { ClientId = client.Id };
 
-        return Session(registered);
+        return Session(registered, securityStamp);
     }
 
     /// <inheritdoc />
@@ -85,6 +101,14 @@ public sealed class UserService(
         ArgumentNullException.ThrowIfNull(command);
 
         await ValidatorExtensions.ValidateAndThrowAsync(signInValidator, command, cancellationToken);
+
+        // The length ceiling, answered as the wrong password it is: every path that sets a password
+        // caps it at this length, so no stored hash can match a longer one. Refused before the
+        // lookup and the hasher, because this endpoint is anonymous and the hasher deliberately slow.
+        if (command.Password!.Length > RegisterClientCommandValidator.PasswordMaximumLength)
+        {
+            throw InvalidCredentials();
+        }
 
         await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
 
@@ -102,9 +126,11 @@ public sealed class UserService(
             throw InvalidCredentials();
         }
 
+        var securityStamp = await unitOfWork.Users.FindSecurityStampAsync(account.Id, cancellationToken);
+
         // Nothing was written, so the scope is disposed without a commit and the empty transaction
         // rolls back. That is the ordinary read path, not an omission.
-        return Session(account);
+        return Session(account, securityStamp);
     }
 
     /// <inheritdoc />
@@ -346,7 +372,7 @@ public sealed class UserService(
     private static ForbiddenException InvalidCredentials() =>
         new(ErrorCode.AUTH_INVALID_CREDENTIALS, "Sign-in was refused: unknown email or wrong password.");
 
-    private AuthenticatedSession Session(UserAccount account) =>
+    private AuthenticatedSession Session(UserAccount account, string? securityStamp) =>
         new(
             account.Id,
             account.FirstName,
@@ -355,5 +381,8 @@ public sealed class UserService(
             account.Role,
             accessTokenIssuer.Issue(account),
             account.DriverId,
-            account.ClientId);
+            account.ClientId)
+        {
+            SecurityStamp = securityStamp,
+        };
 }

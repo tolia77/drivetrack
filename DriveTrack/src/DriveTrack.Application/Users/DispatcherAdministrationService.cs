@@ -45,8 +45,9 @@ public sealed class DispatcherAdministrationService(
 
         var email = trimmed.Email!;
 
-        // The friendly answer; the normalized-email unique index behind it is the race backstop and
-        // is also a 409, so two admins creating the same address at once get the same status (NFR-2).
+        // The friendly answer. The race backstop is user_name_index, unique on the normalized user
+        // name - which is the email, since UserName = Email - and it is also a 409, so two admins
+        // creating the same address at once get the same status (NFR-2).
         if (await unitOfWork.Users.EmailExistsAsync(email, cancellationToken))
         {
             throw new ConflictException(

@@ -907,11 +907,12 @@ public sealed class DeliveryService(
     /// declares the foreign keys and no navigations - and a client's name is not on the client row
     /// at all: it lives on the Identity account, reachable only through
     /// <see cref="IUserAccountRepository"/>. So the summary resolves its own parties, and it does
-    /// it with two roster reads instead of two per row.
+    /// it with two keyed reads instead of two per row.
     /// </para>
     /// <para>
-    /// A roster is only read when some row on the page actually names that kind of party, so the
-    /// ordinary create - a delivery with neither - costs no lookup at all.
+    /// Only the accounts the page names are read, so a single-row get, create or update looks up
+    /// one driver and one client rather than both whole rosters - and a delivery naming neither
+    /// costs no lookup at all.
     /// </para>
     /// </summary>
     private static async Task<DeliveryParties> PartiesAsync(
@@ -922,10 +923,18 @@ public sealed class DeliveryService(
         var drivers = new Dictionary<DriverId, string>();
         var clients = new Dictionary<ClientId, string>();
 
-        if (deliveries.Any(delivery => delivery.DriverId is not null))
+        DriverId[] driverIds =
+        [
+            .. deliveries
+                .Select(delivery => delivery.DriverId)
+                .OfType<DriverId>()
+                .Distinct(),
+        ];
+
+        if (driverIds.Length > 0)
         {
-            foreach (var account in await unitOfWork.Users.ListByRoleAsync(
-                         UserRole.Driver,
+            foreach (var account in await unitOfWork.Users.ListByDriverIdsAsync(
+                         driverIds,
                          cancellationToken))
             {
                 if (account.DriverId is { } driverId)
@@ -935,10 +944,18 @@ public sealed class DeliveryService(
             }
         }
 
-        if (deliveries.Any(delivery => delivery.ClientId is not null))
+        ClientId[] clientIds =
+        [
+            .. deliveries
+                .Select(delivery => delivery.ClientId)
+                .OfType<ClientId>()
+                .Distinct(),
+        ];
+
+        if (clientIds.Length > 0)
         {
-            foreach (var account in await unitOfWork.Users.ListByRoleAsync(
-                         UserRole.Client,
+            foreach (var account in await unitOfWork.Users.ListByClientIdsAsync(
+                         clientIds,
                          cancellationToken))
             {
                 if (account.ClientId is { } clientId)

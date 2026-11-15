@@ -26,7 +26,7 @@ namespace DriveTrack.Application.Drivers;
 /// <param name="VehicleModel">Its make and model, or null when the driver holds none.</param>
 /// <param name="VehicleLicensePlate">Its registration plate, or null when the driver holds none.</param>
 /// <param name="Rating">
-/// The mean of every rating clients have given this driver's deliveries (FR-98), or <c>null</c> when
+/// The mean of every rating clients have given this driver's deliveries (FR-118), or <c>null</c> when
 /// nobody has reviewed one. Derived on demand through <c>IReviewService</c> and stored nowhere
 /// (DR-18, AD-24): a column on <c>drivers</c> would be a second answer that goes stale the moment a
 /// review is written, edited or deleted.

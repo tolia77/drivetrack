@@ -24,6 +24,14 @@ internal static class ClaimsFactory
     /// </summary>
     public const string AuthenticationType = "DriveTrack";
 
+    /// <summary>
+    /// The account's security stamp at sign-in. Cookie-only: the bearer token does not carry it,
+    /// which is why the name lives here rather than in <c>DriveTrackClaimTypes</c>.
+    /// <see cref="SessionValidation"/> compares it with the stored stamp to end a session whose
+    /// password has been replaced or whose account has gone.
+    /// </summary>
+    public const string SecurityStampClaimType = "drivetrack/security-stamp";
+
     /// <summary>Builds the principal the cookie scheme signs in.</summary>
     public static ClaimsPrincipal Build(AuthenticatedSession session)
     {
@@ -49,6 +57,11 @@ internal static class ClaimsFactory
             claims.Add(new Claim(
                 DriveTrackClaimTypes.ClientId,
                 clientId.Value.ToString(CultureInfo.InvariantCulture)));
+        }
+
+        if (session.SecurityStamp is { } stamp)
+        {
+            claims.Add(new Claim(SecurityStampClaimType, stamp));
         }
 
         // The name and role claim types are named explicitly so User.Identity.Name and the role
