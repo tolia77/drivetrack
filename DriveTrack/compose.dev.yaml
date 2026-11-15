@@ -210,6 +210,17 @@ services:
         echo "Garage object storage ready."
     restart: "no"
 
+  mail:
+    # Mailpit: a development mail catcher. It accepts anything on SMTP 1025, delivers nothing, and
+    # shows every message the app sent at http://localhost:8025. Pinned to a version, like Garage.
+    image: axllent/mailpit:v1.33.1
+    # Loopback only: the UI and the relay take mail from anyone who can reach them, which must not
+    # be the network the laptop sits on. The app reaches SMTP over the compose network as `mail`.
+    ports:
+      - "127.0.0.1:8025:8025"
+      - "127.0.0.1:1025:1025"
+    restart: unless-stopped
+
   app:
     # Tagged rather than left to compose, which would derive an image name from the project and
     # the service. A name written down is one `docker images` and `docker rmi` can be aimed at
@@ -227,6 +238,10 @@ services:
         condition: service_healthy
       objects-init:
         condition: service_completed_successfully
+      # Started, not healthy: a relay that is not up yet costs one Failed notification attempt,
+      # which FR-28 records, rather than a stack that will not start.
+      mail:
+        condition: service_started
     environment:
       # Pinned rather than forwarded from .env: this stack *is* the development environment, and
       # the dev-only asset headers in Program.cs key on it. A .env carrying Production — which is
@@ -278,7 +293,9 @@ services:
       # default rather than falling back to it. For the port and the TLS switch that is a value the
       # startup check refuses and the container never starts; for the from-address it is an address
       # MailAddress rejects, so every notification fails with a message naming no key at all.
-      Smtp__Port: ${Smtp__Port:-587}
+      # The port defaults to 1025, the `mail` service's, so the default and .env.example agree; a
+      # real relay's submission port (587) is set in .env alongside its host.
+      Smtp__Port: ${Smtp__Port:-1025}
       Smtp__UseStartTls: ${Smtp__UseStartTls:-false}
       Smtp__User: ${Smtp__User}
       Smtp__Password: ${Smtp__Password}
