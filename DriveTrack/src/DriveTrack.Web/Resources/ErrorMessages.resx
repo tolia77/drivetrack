@@ -282,4 +282,11 @@
   <data name="SHIFT_ENDED_BEFORE_STARTED" xml:space="preserve">
     <value>Кінець зміни має бути пізніше за її початок.</value>
   </data>
+  <!-- FR-111. Says why, so a dispatcher rostering ahead knows to give the shift an end. -->
+  <data name="SHIFT_OPEN_START_IN_FUTURE" xml:space="preserve">
+    <value>Відкрита зміна не може починатися в майбутньому. Вкажіть кінець, щоб запланувати зміну наперед.</value>
+  </data>
+  <data name="SHIFT_OVERLAPS_EXISTING" xml:space="preserve">
+    <value>Ця зміна перетинається з іншою зміною цього водія.</value>
+  </data>
 </root>

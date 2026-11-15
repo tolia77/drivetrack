@@ -346,6 +346,20 @@ public enum ErrorCode
     /// </summary>
     SHIFT_ENDED_BEFORE_STARTED,
 
+    /// <summary>
+    /// An open shift would start in the future (FR-111): "on duty from tomorrow" is not a state
+    /// anybody is in. A future start with an end is a shift rostered ahead and stays allowed. 422,
+    /// reported as a field key inside <c>COMMON_VALIDATION_FAILED</c>, like the code above.
+    /// </summary>
+    SHIFT_OPEN_START_IN_FUTURE,
+
+    /// <summary>
+    /// The window would overlap another shift of the same driver (FR-111). 409: the payload is
+    /// well formed and it is the driver's other shifts that refuse it. An open shift occupies time
+    /// up to the present instant only.
+    /// </summary>
+    SHIFT_OVERLAPS_EXISTING,
+
     /// <summary>PostgreSQL SQLSTATE 23505, translated in Infrastructure. 409 (AD-8).</summary>
     PERSISTENCE_UNIQUE_VIOLATION,
 

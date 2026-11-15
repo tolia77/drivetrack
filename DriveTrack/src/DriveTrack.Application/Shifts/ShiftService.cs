@@ -129,10 +129,10 @@ public sealed class ShiftService(
 
         var startedAt = timeProvider.GetUtcNow();
 
-        // An open shift runs to +infinity, so going on duty collides with any recorded window that
-        // has not finished yet - one rostered ahead, say - exactly as an open create would.
+        // Going on duty inside a recorded window that has not finished yet is refused; a window
+        // rostered for later does not collide, because an open shift only occupies time up to now.
         if (await unitOfWork.Shifts.AnyOverlappingAsync(
-                command.DriverId, startedAt, end: null, excludingId: null, cancellationToken))
+                command.DriverId, startedAt, end: null, excludingId: null, startedAt, cancellationToken))
         {
             throw Overlapping(command.DriverId);
         }
@@ -225,7 +225,12 @@ public sealed class ShiftService(
 
         // After the open-shift lookup, so a second open shift keeps its friendlier sentence.
         if (await unitOfWork.Shifts.AnyOverlappingAsync(
-                command.DriverId, state.StartedAt, state.EndedAt, excludingId: null, cancellationToken))
+                command.DriverId,
+                state.StartedAt,
+                state.EndedAt,
+                excludingId: null,
+                timeProvider.GetUtcNow(),
+                cancellationToken))
         {
             throw Overlapping(command.DriverId);
         }
@@ -277,7 +282,12 @@ public sealed class ShiftService(
         // The row itself is excluded, so an edit that leaves the window where it was is not a
         // collision with its own stored copy.
         if (await unitOfWork.Shifts.AnyOverlappingAsync(
-                shift.DriverId, merged.StartedAt, merged.EndedAt, shift.Id, cancellationToken))
+                shift.DriverId,
+                merged.StartedAt,
+                merged.EndedAt,
+                shift.Id,
+                timeProvider.GetUtcNow(),
+                cancellationToken))
         {
             throw Overlapping(shift.DriverId);
         }
@@ -342,15 +352,11 @@ public sealed class ShiftService(
 
     /// <summary>
     /// Two shifts of one driver may not share an instant: each is the half-open window
-    /// <c>[StartedAt, EndedAt ?? +infinity)</c>, so one ending exactly when the next starts is fine.
-    /// <para>
-    /// TODO: <c>COMMON_CONFLICT</c> stands in until a <c>SHIFT_*</c> overlap code exists; its
-    /// sentence ("someone has just changed this") is not the right one for this refusal.
-    /// </para>
+    /// <c>[StartedAt, EndedAt ?? now)</c>, so one ending exactly when the next starts is fine.
     /// </summary>
     private static ConflictException Overlapping(DriverId driverId) =>
         new(
-            ErrorCode.COMMON_CONFLICT,
+            ErrorCode.SHIFT_OVERLAPS_EXISTING,
             "Driver " + driverId.Value.ToString(CultureInfo.InvariantCulture)
                 + " already has a shift overlapping that window.");
 
@@ -358,10 +364,6 @@ public sealed class ShiftService(
     /// An open shift may not start in the future: "on duty from tomorrow" is not a state anybody is
     /// in. A future start with an end is a shift rostered ahead and stays allowed. Here rather than
     /// in <see cref="ShiftStateValidator"/> because it needs the injected clock (AD-13).
-    /// <para>
-    /// TODO: <c>COMMON_VALIDATION_FAILED</c> stands in as the field key until a <c>SHIFT_*</c> code
-    /// for this rule exists.
-    /// </para>
     /// </summary>
     private static void RefuseOpenInFuture(ShiftState state, DateTimeOffset now)
     {
@@ -370,7 +372,7 @@ public sealed class ShiftService(
             throw new Common.ValidationException(
                 ErrorCode.COMMON_VALIDATION_FAILED,
                 "An open shift may not start in the future.",
-                [new FieldError(nameof(ShiftState.StartedAt), nameof(ErrorCode.COMMON_VALIDATION_FAILED))]);
+                [new FieldError(nameof(ShiftState.StartedAt), nameof(ErrorCode.SHIFT_OPEN_START_IN_FUTURE))]);
         }
     }
 

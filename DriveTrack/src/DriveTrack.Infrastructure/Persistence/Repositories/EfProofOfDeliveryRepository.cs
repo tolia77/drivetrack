@@ -92,6 +92,9 @@ internal sealed class EfProofOfDeliveryRepository(AppDbContext context) : IProof
     /// <inheritdoc />
     public void Add(ProofOfDelivery proof) => context.ProofOfDeliveries.Add(proof);
 
+    /// <inheritdoc />
+    public void Remove(ProofOfDelivery proof) => context.ProofOfDeliveries.Remove(proof);
+
     /// <summary>
     /// The deliveries this caller may be shown, as a query the two reads above compose against: a
     /// proof is visible exactly when its delivery is, and an asset exactly when its proof is.

@@ -775,7 +775,7 @@ public class ShiftManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task Overlapping_shifts_for_one_driver_are_refused_and_touching_ones_are_not()
     {
-        // Each shift is the half-open window [StartedAt, EndedAt ?? +infinity), and two of one
+        // Each shift is the half-open window [StartedAt, EndedAt ?? now), and two of one
         // driver's may not share an instant - on create, on edit, and against an open shift.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
@@ -824,7 +824,7 @@ public class ShiftManagementTests(PostgresFixture postgres)
                 client, dispatcher, nextId, cancellationToken, startedAt: start.AddHours(7)),
             cancellationToken);
 
-        // An open shift runs to +infinity, so a later closed window collides with it.
+        // An open shift occupies time up to now, so a closed window inside that stretch collides.
         await ShiftApi.RecordedAsync(
             client, dispatcher, driver.DriverId, start.AddHours(20), endedAt: null, cancellationToken);
 
@@ -842,6 +842,52 @@ public class ShiftManagementTests(PostgresFixture postgres)
             (await ShiftApi.RowsAsync(
                 await ShiftApi.ListAsync(client, dispatcher, cancellationToken, Filter(driver.DriverId)),
                 cancellationToken)).Length);
+    }
+
+    [Fact]
+    public async Task A_window_rostered_ahead_and_the_shift_being_worked_do_not_block_each_other()
+    {
+        // An open shift has claimed time up to now and no further. So a driver on duty today can be
+        // rostered for tomorrow, and a driver rostered for tomorrow can still go on duty today.
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var clock = new FixedTimeProvider(Truncated(DateTimeOffset.UtcNow));
+
+        await using var factory = await FleetApi.CreateAsync(
+            postgres.ConnectionString, cancellationToken, clock: clock);
+        using var client = factory.CreateClient();
+
+        var dispatcher = await DeliveryApi.DispatcherAsync(factory, client, cancellationToken);
+        var working = await DeliveryApi.DriverAsync(client, dispatcher, vehicleId: null, cancellationToken);
+        var rostered = await DeliveryApi.DriverAsync(client, dispatcher, vehicleId: null, cancellationToken);
+
+        await ShiftApi.StartedAsync(client, working.Token, working.DriverId, cancellationToken);
+        await ShiftApi.RecordedAsync(
+            client,
+            dispatcher,
+            working.DriverId,
+            clock.Now.AddDays(1),
+            clock.Now.AddDays(1).AddHours(8),
+            cancellationToken);
+
+        await ShiftApi.RecordedAsync(
+            client,
+            dispatcher,
+            rostered.DriverId,
+            clock.Now.AddDays(1),
+            clock.Now.AddDays(1).AddHours(8),
+            cancellationToken);
+        await ShiftApi.StartedAsync(client, rostered.Token, rostered.DriverId, cancellationToken);
+
+        // A window that has already begun is still refused against the running shift.
+        await AssertOverlapRefusedAsync(
+            ShiftApi.CreateAsync(
+                client,
+                dispatcher,
+                working.DriverId,
+                clock.Now.AddHours(-1),
+                clock.Now.AddMinutes(30),
+                cancellationToken),
+            cancellationToken);
     }
 
     [Fact]
@@ -1256,9 +1302,7 @@ public class ShiftManagementTests(PostgresFixture postgres)
         Assert.Equal([field], fields.EnumerateObject().Select(entry => entry.Name).ToArray());
     }
 
-    /// <summary>
-    /// The overlap refusal: <c>COMMON_CONFLICT</c> until a <c>SHIFT_*</c> overlap code exists.
-    /// </summary>
+    /// <summary>The overlap refusal: a 409 carrying <c>SHIFT_OVERLAPS_EXISTING</c>.</summary>
     private static async Task AssertOverlapRefusedAsync(
         Task<HttpResponseMessage> attempt,
         CancellationToken cancellationToken)
@@ -1266,7 +1310,7 @@ public class ShiftManagementTests(PostgresFixture postgres)
         using var response = await attempt;
 
         await FleetApi.AssertFailureAsync(
-            response, HttpStatusCode.Conflict, ErrorCode.COMMON_CONFLICT, cancellationToken);
+            response, HttpStatusCode.Conflict, ErrorCode.SHIFT_OVERLAPS_EXISTING, cancellationToken);
     }
 
     /// <summary>A <c>?driverId=</c> query string for one driver row.</summary>

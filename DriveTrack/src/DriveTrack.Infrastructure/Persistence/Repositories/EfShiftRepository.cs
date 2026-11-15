@@ -31,24 +31,21 @@ internal sealed class EfShiftRepository(AppDbContext context) : IShiftRepository
         DateTimeOffset start,
         DateTimeOffset? end,
         int? excludingId,
+        DateTimeOffset now,
         CancellationToken cancellationToken)
     {
         // Offset zero, because Npgsql binds a timestamptz parameter at no other (AD-13).
         var from = start.ToUniversalTime();
+        var to = (end ?? now).ToUniversalTime();
+        var present = now.ToUniversalTime();
 
-        // Two half-open windows overlap when each starts before the other ends; a null end is
-        // +infinity on either side, so it drops its half of the comparison.
+        // Two half-open windows overlap when each starts before the other ends. An open shift, on
+        // either side, ends at the present instant: it has not claimed any time beyond it yet.
         var shifts = context.Shifts
             .AsNoTracking()
             .Where(shift => shift.DriverId == driverId
-                && (shift.EndedAt == null || shift.EndedAt > from));
-
-        if (end is { } until)
-        {
-            var to = until.ToUniversalTime();
-
-            shifts = shifts.Where(shift => shift.StartedAt < to);
-        }
+                && shift.StartedAt < to
+                && (shift.EndedAt ?? present) > from);
 
         if (excludingId is { } id)
         {
