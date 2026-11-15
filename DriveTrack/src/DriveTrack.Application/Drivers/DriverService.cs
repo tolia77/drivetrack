@@ -83,7 +83,7 @@ public sealed class DriverService(
                 cancellationToken);
         }
 
-        // FR-98 and FR-116, asked once for the page rather than once per row.
+        // FR-118 and FR-116, asked once for the page rather than once per row.
         var ratings = await RatingsAsync([.. page.Items.Select(row => row.Driver.Id)], cancellationToken);
         var onDuty = await OnDutyAsync(cancellationToken);
 
@@ -106,7 +106,7 @@ public sealed class DriverService(
     {
         accessGuard.RequireRole(UserRole.Dispatcher);
 
-        var rows = new List<(Driver Driver, UserAccount Account)>();
+        List<(Driver Driver, UserAccount Account)> rows;
 
         // An explicit block rather than a method-wide `await using`: the rating below is another
         // capability's answer and opens a scope of its own, so this one is closed first. Nothing
@@ -114,18 +114,27 @@ public sealed class DriverService(
         // the ordinary read path, not an omission.
         await using (var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken))
         {
-            foreach (var driver in await unitOfWork.Drivers.ListAsync(cancellationToken))
-            {
-                // The account is read per driver rather than joined: Domain declares no
-                // relationship between Driver and the Identity user - it cannot, without naming an
-                // Infrastructure type - so the identity fields are only reachable through the
-                // Identity port. The roster is a small, unpaged set by requirement (the original
-                // returned every row), so the cost is a handful of keyed reads rather than a scan.
-                rows.Add((driver, await AccountAsync(unitOfWork, driver, cancellationToken)));
-            }
+            var drivers = await unitOfWork.Drivers.ListAsync(cancellationToken);
+
+            // Two set reads rather than one account read per driver: Domain declares no
+            // relationship between Driver and the Identity user - it cannot, without naming an
+            // Infrastructure type - so the identity fields are only reachable through the Identity
+            // port, and that port answers the whole roster's accounts in one keyed query.
+            var accounts = (await unitOfWork.Users.ListByDriverIdsAsync(
+                    [.. drivers.Select(driver => driver.Id)],
+                    cancellationToken))
+                .ToDictionary(account => account.DriverId!.Value);
+
+            // The driver repository's order (by id), each row paired with its account.
+            rows =
+            [
+                .. drivers.Select(driver => (
+                    driver,
+                    accounts.TryGetValue(driver.Id, out var account) ? account : throw Orphaned(driver))),
+            ];
         }
 
-        // FR-98, batched: one question about every driver on the roster. Asking per row would make
+        // FR-118, batched: one question about every driver on the roster. Asking per row would make
         // a forty driver roster forty queries for a column that is the same one grouped answer.
         var ratings = await RatingsAsync([.. rows.Select(row => row.Driver.Id)], cancellationToken);
 
@@ -186,8 +195,9 @@ public sealed class DriverService(
 
         await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
 
-        // The friendly answer. The normalized-email unique index behind it is the race backstop and
-        // surfaces as PERSISTENCE_UNIQUE_VIOLATION, which is also a 409 (NFR-2).
+        // The friendly answer. The race backstop is user_name_index, unique on the normalized user
+        // name - the email, since UserName = Email - and it surfaces as PERSISTENCE_UNIQUE_VIOLATION,
+        // which is also a 409 (NFR-2).
         if (await unitOfWork.Users.EmailExistsAsync(email, cancellationToken))
         {
             throw new ConflictException(
@@ -220,7 +230,7 @@ public sealed class DriverService(
 
         // No rating, and no lookup for one: a driver taken on a moment ago has carried nothing, so
         // there is no delivery for anybody to have reviewed. Null is the honest answer rather than
-        // a query whose result is known (FR-98). Off duty for the same reason: nobody can have gone
+        // a query whose result is known (FR-118). Off duty for the same reason: nobody can have gone
         // on duty as a driver who did not exist a moment ago (FR-116).
         return Summary(driver, account, rating: null, onDuty: false);
     }
@@ -271,13 +281,20 @@ public sealed class DriverService(
 
             driver.LicenseNumber = merged.LicenseNumber.Value!.Trim();
 
-            // The merged value, so an absent VehicleId re-applies what the driver already holds - a
-            // no-op inside the writer - and a present null clears it (FR-38).
-            await VehicleAssignment.ApplyAsync(
-                unitOfWork,
-                driver,
-                merged.VehicleId.Value,
-                cancellationToken);
+            // Only when the assignment actually changes. The edit form resends the vehicle the driver
+            // already holds on every save, and re-applying it would re-run FR-103's capacity check: a
+            // driver already over capacity - a lighter vehicle's capacity lowered while a heavy
+            // delivery sat Failed, then put back in transit - could then not even be renamed. An
+            // absent VehicleId merges to the current one and is skipped too; a present null on a
+            // driver holding a vehicle clears it (FR-38).
+            if (merged.VehicleId.Value != driver.VehicleId)
+            {
+                await VehicleAssignment.ApplyAsync(
+                    unitOfWork,
+                    driver,
+                    merged.VehicleId.Value,
+                    cancellationToken);
+            }
 
             await unitOfWork.CommitAsync(cancellationToken);
 
@@ -289,7 +306,7 @@ public sealed class DriverService(
 
         // A driver's standing is not touched by an edit to their licence or their vehicle, but the
         // payload still has to carry the one they actually hold: a null here would read as "nobody
-        // has reviewed them", which is a different claim (FR-98).
+        // has reviewed them", which is a different claim (FR-118).
         var ratings = await RatingsAsync([driver.Id], cancellationToken);
 
         // Nor is their duty state touched by an edit to their licence, and the payload still has to
@@ -338,7 +355,7 @@ public sealed class DriverService(
             ?? throw Orphaned(driver);
 
     /// <summary>
-    /// FR-98's aggregate for a set of drivers, asked of the capability that owns reviews (AD-24)
+    /// FR-118's aggregate for a set of drivers, asked of the capability that owns reviews (AD-24)
     /// and keyed so a mapping is a lookup rather than a scan.
     /// </summary>
     private async Task<Dictionary<DriverId, DriverRating>> RatingsAsync(
@@ -395,7 +412,7 @@ public sealed class DriverService(
             driver.Vehicle?.LicensePlate,
 
             // Null and zero together, or neither: an average of nothing is not a number, and the
-            // two fields must never disagree about whether anybody has said anything (FR-98).
+            // two fields must never disagree about whether anybody has said anything (FR-118).
             rating?.Average,
             rating?.ReviewCount ?? 0,
 

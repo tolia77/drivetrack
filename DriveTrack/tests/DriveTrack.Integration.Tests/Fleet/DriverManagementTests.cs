@@ -323,6 +323,7 @@ public class DriverManagementTests(PostgresFixture postgres)
 
         int driverId;
         int userId;
+        string? licenseNumber;
 
         using (var created = await CreateDriverAsync(
                    client, dispatcher, email, vehicleId: null, cancellationToken))
@@ -331,7 +332,10 @@ public class DriverManagementTests(PostgresFixture postgres)
 
             driverId = data.GetProperty("id").GetInt32();
             userId = data.GetProperty("userId").GetInt32();
+            licenseNumber = data.GetProperty("licenseNumber").GetString();
         }
+
+        Assert.False(string.IsNullOrEmpty(licenseNumber));
 
         // The driver's own bearer token, issued before the rename.
         var driverToken = await FleetApi.SignInAsync(client, email, FleetApi.Password, cancellationToken);
@@ -361,6 +365,54 @@ public class DriverManagementTests(PostgresFixture postgres)
         var data2 = await FleetApi.DataAsync(profile, cancellationToken);
 
         Assert.Equal("Леся", data2.GetProperty("firstName").GetString());
+
+        // FR-5: a driver's own profile carries the licence their driver row holds - the one field
+        // the subtype row contributes, and asserted nowhere else on this read.
+        Assert.Equal(licenseNumber, data2.GetProperty("licenseNumber").GetString());
+    }
+
+    [Fact]
+    public async Task A_rename_resending_the_held_vehicle_is_not_refused_for_capacity()
+    {
+        // The edit form resends the vehicle a driver holds on every save. A driver can already be
+        // over capacity - the vehicle's capacity lowered while a heavy delivery sat Failed, then put
+        // back in transit - and re-running the assignment's capacity check on an unchanged vehicle
+        // made such a driver impossible even to rename. The state is set directly here because the
+        // API, rightly, refuses to create it in one step.
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
+        using var client = factory.CreateClient();
+
+        var token = await FleetApi.TokenAsync(factory, client, UserRole.Dispatcher, cancellationToken);
+        var vehicleId = await NewVehicleAsync(client, token, cancellationToken);
+        var driverId = await NewDriverAsync(client, token, vehicleId, cancellationToken);
+
+        await using (var context = await factory.Database.ContextFactory
+                         .CreateDbContextAsync(cancellationToken))
+        {
+            await Seed.DeliveryAsync(
+                context, cancellationToken, clientId: null, driverId: new DriverId(driverId));
+        }
+
+        // The seeded delivery weighs 12.5 kg and is Pending, so this leaves the driver over capacity.
+        await factory.Database.ExecuteAsync(
+            $"UPDATE vehicles SET capacity_kg = 5 WHERE id = {vehicleId}",
+            cancellationToken);
+
+        using var renamed = await FleetApi.SendAsync(
+            client,
+            HttpMethod.Put,
+            $"/api/drivers/{driverId}",
+            token,
+            new { firstName = "Леся", vehicleId },
+            cancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, renamed.StatusCode);
+
+        var data = await FleetApi.DataAsync(renamed, cancellationToken);
+
+        Assert.Equal("Леся", data.GetProperty("firstName").GetString());
+        Assert.Equal(vehicleId, data.GetProperty("vehicleId").GetInt32());
     }
 
     [Fact]

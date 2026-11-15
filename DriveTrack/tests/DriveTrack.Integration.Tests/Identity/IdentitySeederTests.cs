@@ -161,6 +161,40 @@ public class IdentitySeederTests(PostgresFixture postgres)
                 cancellationToken));
     }
 
+    [Theory]
+    [InlineData("", "", "Адміністратор", "Системи")]
+    [InlineData("   ", "  ", "Адміністратор", "Системи")]
+    [InlineData("Ірина", "Коваль", "Ірина", "Коваль")]
+    public async Task A_blank_admin_name_falls_back_and_a_configured_one_is_stored(
+        string firstName,
+        string lastName,
+        string expectedFirstName,
+        string expectedLastName)
+    {
+        // Compose forwards an unset Admin__FirstName as the empty string, and a `??` fallback would
+        // take that as the answer and seed a nameless administrator. A configured name, on the
+        // other hand, has to win over the default.
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await using var database = await TestDatabase.CreateAsync(
+            postgres.ConnectionString,
+            cancellationToken,
+            migrate: true,
+            settings: new Dictionary<string, string?>(StringComparer.Ordinal)
+            {
+                ["Admin:FirstName"] = firstName,
+                ["Admin:LastName"] = lastName,
+            });
+
+        await database.Seeder.SeedAsync(cancellationToken);
+
+        await using var unitOfWork = await database.UnitOfWorkFactory.CreateAsync(cancellationToken);
+        var admin = await unitOfWork.Users.FindByEmailAsync(TestConfiguration.AdminEmail, cancellationToken);
+
+        Assert.NotNull(admin);
+        Assert.Equal(expectedFirstName, admin.FirstName);
+        Assert.Equal(expectedLastName, admin.LastName);
+    }
+
     private static Task<long> AdminCountAsync(TestDatabase database, CancellationToken cancellationToken) =>
         CountAsync(
             database,

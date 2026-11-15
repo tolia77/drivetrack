@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using DriveTrack.Domain.Identity;
 
 namespace DriveTrack.Application.Users;
@@ -29,4 +30,17 @@ public sealed record AuthenticatedSession(
     UserRole Role,
     string AccessToken,
     DriverId? DriverId,
-    ClientId? ClientId);
+    ClientId? ClientId)
+{
+    /// <summary>
+    /// The account's Identity security stamp at the moment the session began, for the cookie the
+    /// Blazor adapter writes: revalidation compares it with the stored one, so a password replaced
+    /// or an account deleted since ends the session.
+    /// <para>
+    /// Never on the wire. It is server-side state - the cookie that carries it is encrypted - and
+    /// the REST response has no use for it, so it is ignored by the serializer.
+    /// </para>
+    /// </summary>
+    [JsonIgnore]
+    public string? SecurityStamp { get; init; }
+}

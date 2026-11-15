@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using DriveTrack.Application;
 using DriveTrack.Application.Authorization;
 using DriveTrack.Application.Deliveries;
+using DriveTrack.Application.Users;
 using DriveTrack.Infrastructure;
 using DriveTrack.Infrastructure.Identity;
 using DriveTrack.Infrastructure.Persistence;
@@ -15,6 +16,7 @@ using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
@@ -221,6 +223,12 @@ builder.Services.AddAuthentication(SelectorScheme)
             MachineSurface.WantsEnvelope(context.Request.Path)
                 ? EnvelopeAuthenticationEvents.WriteForbiddenAsync(context.HttpContext)
                 : Redirect(context);
+
+        // A sliding cookie is never re-checked on its own, so a deleted account's browser or a
+        // session from before a password reset would keep working. The cookie carries the security
+        // stamp; this compares it with the stored one, at most once per interval (SessionValidation).
+        options.Events.OnSigningIn = SessionValidation.OnSigningInAsync;
+        options.Events.OnValidatePrincipal = SessionValidation.OnValidatePrincipalAsync;
     })
     .AddJwtBearer(options =>
     {
@@ -263,6 +271,14 @@ builder.Services.AddAuthorization();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
+
+// The session check the cookie, the circuit and the chat hub all ask. Registered here rather than
+// with the other capabilities in AddInfrastructure because only this adapter holds sessions.
+builder.Services.AddScoped<ISessionService, SessionService>();
+
+// Replaces the framework's circuit provider with one that re-checks the session every interval,
+// so an open tab ends with its account rather than with the next reload.
+builder.Services.AddScoped<AuthenticationStateProvider, RevalidatingSessionStateProvider>();
 
 // NFR-12: an explicit origin list, never a wildcard. An unset list means no cross-origin
 // caller is allowed, which is the safe default rather than an accidental open door.
@@ -401,6 +417,11 @@ app.MapGet(
         // this application's own origin, to whoever may read the proof. The allowlist narrows who
         // can try; this is what makes the attempt worthless.
         context.Response.Headers.XContentTypeOptions = "nosniff";
+
+        // A proof photograph or signature is personal data served behind authorization, so no
+        // shared cache may keep it and the browser may not either: a signed-out or shared machine
+        // must not be able to replay it from disk.
+        context.Response.Headers.CacheControl = "private, no-store";
 
         // The content type stored beside the bytes, so nothing guesses. The framework disposes the
         // stream once the response has been written.
@@ -546,6 +567,9 @@ app.MapPost("/set-culture", async (HttpContext context, IAntiforgery antiforgery
 //
 // No RequireAuthorization here: the attribute on the hub carries the schemes, and which conversation
 // a caller may reach is IAccessGuard's decision inside IChatService (FR-12, AD-2).
+//
+// A connection outlives the handshake that authenticated it, so revocation is the hub's own
+// per-call session check (ChatHub), not anything configured here.
 app.MapHub<ChatHub>("/hubs/chat");
 
 // Development only, and the reason it exists is worth stating plainly.
@@ -570,7 +594,15 @@ if (app.Environment.IsDevelopment())
 
         context.Response.OnStarting(() =>
         {
-            context.Response.Headers.CacheControl = "no-store";
+            // A response that already forbids storing - the proof asset route's `private,
+            // no-store` - keeps its own value, so Development serves the header production does.
+            var current = context.Response.Headers.CacheControl.ToString();
+
+            if (!current.Contains("no-store", StringComparison.OrdinalIgnoreCase))
+            {
+                context.Response.Headers.CacheControl = "no-store";
+            }
+
             return Task.CompletedTask;
         });
 

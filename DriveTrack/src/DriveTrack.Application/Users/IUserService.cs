@@ -58,8 +58,9 @@ public interface IUserService
     /// that user, or hold <see cref="UserRole.Admin"/>.
     /// <para>
     /// Nothing is returned: a password has no readable form (FR-8), so there is no state to hand
-    /// back. Existing sessions are deliberately left alone — revoking them is DW-11's, and nothing
-    /// here should pretend to close it.
+    /// back. The change rolls the account's security stamp, so every cookie session issued before
+    /// it - the caller's own included - is refused at its next revalidation and has to sign in with
+    /// the new password. A bearer token carries no stamp and runs to its own expiry.
     /// </para>
     /// </summary>
     /// <exception cref="Common.NotFoundException">No account has that id.</exception>
