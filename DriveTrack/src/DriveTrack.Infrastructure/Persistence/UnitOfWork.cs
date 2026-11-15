@@ -97,6 +97,9 @@ public sealed class UnitOfWork : IUnitOfWork
             // current state of a row somebody else changed first. Two administrators editing or
             // deleting the same account is the ordinary way to reach it, and the caller's next move
             // is to re-read and try again - which is what a conflict means and what a 500 does not.
+            // A delivery reaches it too, through its xmin token: two status changes read from the
+            // same row (a driver's double-submit included) leave one winner and one 409, rather than
+            // two timeline entries naming the same previous status and two emails.
             throw new ConflictException(
                 ErrorCode.COMMON_CONFLICT,
                 "The row was changed or removed by another caller since it was read.",

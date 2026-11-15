@@ -127,8 +127,8 @@ public static class DependencyInjection
     {
         services.AddIdentityCore<ApplicationUser>(options =>
             {
-                // AD-4 / FR-1: one account per address, checked by Identity and backed by the
-                // normalized-email unique index in the schema.
+                // AD-4 / FR-1: one account per address, checked by Identity. The schema's backstop
+                // is the unique user_name_index (UserName is the email); email_index is not unique.
                 options.User.RequireUniqueEmail = true;
 
                 // FR-8's policy, stated rather than inherited, because a validator message keyed
@@ -312,6 +312,21 @@ public static class DependencyInjection
         RequirePositiveInteger(configuration, SmtpOptions.PortConfigurationKey, "port number");
         RequireBoolean(configuration, SmtpOptions.UseStartTlsConfigurationKey);
 
+        // Blank is allowed and means "geocoding off" (the compose file forwards these bare). Anything
+        // else must parse: a malformed URL would otherwise fail every lookup inside the adapter's
+        // catch, where the only trace is a warning per delivery.
+        foreach (var key in new[]
+                 {
+                     GeocoderOptions.EndpointConfigurationKey,
+                     GeocoderOptions.SearchEndpointConfigurationKey,
+                 })
+        {
+            if (!string.IsNullOrWhiteSpace(configuration[key]))
+            {
+                RequireAbsoluteUrl(configuration, key, "geocoding");
+            }
+        }
+
         services.Configure<GeocoderOptions>(configuration.GetSection(GeocoderOptions.SectionName));
         services.Configure<SmtpOptions>(configuration.GetSection(SmtpOptions.SectionName));
 
@@ -349,6 +364,8 @@ public static class DependencyInjection
         services.AddSingleton<IDeliverySideEffects>(provider =>
             provider.GetRequiredService<DeliverySideEffectQueue>());
 
+        // Its defaults, unbound: the type is there so a test can shorten the per-job deadline.
+        services.AddOptions<DeliverySideEffectWorkerOptions>();
         services.AddHostedService<DeliverySideEffectWorker>();
     }
 
@@ -436,7 +453,13 @@ public static class DependencyInjection
     }
 
     /// <inheritdoc cref="RequirePositiveInteger" />
-    private static void RequireAbsoluteUrl(IConfiguration configuration, string key)
+    /// <param name="configuration">The configuration to read.</param>
+    /// <param name="key">The key, in the colon form.</param>
+    /// <param name="unconfigured">What removing the key leaves unconfigured, for the message.</param>
+    private static void RequireAbsoluteUrl(
+        IConfiguration configuration,
+        string key,
+        string unconfigured = "the object store")
     {
         var value = configuration[key];
 
@@ -451,7 +474,7 @@ public static class DependencyInjection
             throw new InvalidOperationException(
                 $"Configuration value '{key}' is '{value}', which is not an absolute http or https "
                     + $"URL. Set the '{EnvironmentSpelling(key)}' environment variable "
-                    + "(see .env.example), or remove it to leave the object store unconfigured.");
+                    + $"(see .env.example), or remove it to leave {unconfigured} unconfigured.");
         }
     }
 

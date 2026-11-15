@@ -91,7 +91,19 @@ public class GeocoderAdapterTests : IDisposable
 
         var geocoder = Resolve(server);
 
-        await geocoder.DescribeAsync(50.4501, 30.5234, cancellationToken);
+        // Under the culture the application runs in, or the invariant assertions below would pass
+        // on a machine whose own culture already writes a dot.
+        var previousCulture = CultureInfo.CurrentCulture;
+        CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("uk-UA");
+
+        try
+        {
+            await geocoder.DescribeAsync(50.4501, 30.5234, cancellationToken);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = previousCulture;
+        }
 
         var request = Assert.Single(server.Requests);
 
@@ -159,7 +171,20 @@ public class GeocoderAdapterTests : IDisposable
             ]
             """));
 
-        var places = await Resolve(server).SearchAsync("Хрещатик", cancellationToken);
+        // uk-UA for the reason the reverse lookup above pins it: the strings must parse invariantly.
+        var previousCulture = CultureInfo.CurrentCulture;
+        CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("uk-UA");
+
+        IReadOnlyList<GeocodedPlace> places;
+
+        try
+        {
+            places = await Resolve(server).SearchAsync("Хрещатик", cancellationToken);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = previousCulture;
+        }
 
         Assert.Equal(2, places.Count);
         Assert.Equal("Хрещатик, 1, Київ", places[0].Address);
@@ -519,6 +544,111 @@ public class GeocoderAdapterTests : IDisposable
             warning,
             StringComparison.Ordinal);
         Assert.Contains("reverse lookup", warning, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_lookup_that_fails_before_an_answer_is_read_says_so_in_the_log()
+    {
+        // The catch-all still answers null (DR-11), but a body that is not JSON - or a timeout, or a
+        // host that will not resolve - must leave a trace, or it reads as an absent address forever.
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        await using var server = LoopbackHttpServer.Start(
+            _ => new LoopbackHttpServer.CannedResponse(200, "<html>not json</html>"));
+
+        Assert.Null(await Resolve(server).DescribeAsync(50.4501, 30.5234, cancellationToken));
+
+        var warning = Assert.Single(_logs.Messages(LogLevel.Warning, GeocoderCategory));
+
+        Assert.Contains("reverse lookup", warning, StringComparison.Ordinal);
+        Assert.Contains("failed", warning, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_lookup_its_own_caller_cancels_on_the_wire_logs_no_failure()
+    {
+        // The caller giving up is not the provider failing, and a warning per abandoned request
+        // would teach an operator to ignore the one that matters.
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        using var release = new ManualResetEventSlim(false);
+
+        await using var server = LoopbackHttpServer.Start(_ =>
+        {
+            release.Wait(TimeSpan.FromSeconds(10));
+
+            return new LoopbackHttpServer.CannedResponse(200, """{"display_name":"Хрещатик, 1"}""");
+        });
+
+        var geocoder = Resolve(server);
+
+        using var giveUp = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        giveUp.CancelAfter(TimeSpan.FromMilliseconds(200));
+
+        Assert.Null(await geocoder.DescribeAsync(50.4501, 30.5234, giveUp.Token));
+
+        release.Set();
+
+        // It did reach the wire, so this is the wire-side cancellation and not the gate's.
+        Assert.Single(server.Requests);
+        Assert.Empty(_logs.Messages(LogLevel.Warning, GeocoderCategory));
+    }
+
+    [Theory]
+    [InlineData(GeocoderOptions.EndpointConfigurationKey, "nominatim.example/reverse")]
+    [InlineData(GeocoderOptions.EndpointConfigurationKey, "not a url")]
+    [InlineData(GeocoderOptions.SearchEndpointConfigurationKey, "ftp://nominatim.example/search")]
+    public void A_malformed_geocoder_endpoint_refuses_to_start_naming_the_variable(string key, string value)
+    {
+        var values = BaseConfiguration();
+        values[key] = value;
+
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            new ServiceCollection().AddInfrastructure(
+                new ConfigurationBuilder().AddInMemoryCollection(values).Build(),
+                new TestHostEnvironment()));
+
+        Assert.Contains(key, exception.Message, StringComparison.Ordinal);
+        Assert.Contains(key.Replace(":", "__", StringComparison.Ordinal), exception.Message, StringComparison.Ordinal);
+        Assert.Contains("geocoding", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task A_blank_geocoder_endpoint_starts_with_geocoding_turned_off(string blank)
+    {
+        // The compose file forwards both keys bare, so blank is the ordinary "no geocoder" shape and
+        // must keep starting.
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var values = BaseConfiguration();
+        values[GeocoderOptions.EndpointConfigurationKey] = blank;
+        values[GeocoderOptions.SearchEndpointConfigurationKey] = blank;
+
+        var services = new ServiceCollection();
+        services.AddLogging(builder => builder.AddProvider(_logs));
+        services.AddInfrastructure(
+            new ConfigurationBuilder().AddInMemoryCollection(values).Build(),
+            new TestHostEnvironment());
+
+        var provider = services.BuildServiceProvider();
+        _providers.Add(provider);
+
+        var geocoder = provider.GetRequiredService<IGeocoder>();
+
+        Assert.Null(await geocoder.DescribeAsync(50.4501, 30.5234, cancellationToken));
+        Assert.Empty(await geocoder.SearchAsync("Хрещатик", cancellationToken));
+        Assert.Empty(_logs.Messages(LogLevel.Warning, GeocoderCategory));
+    }
+
+    /// <summary>The configuration every container here starts from, before a test's own keys.</summary>
+    private static Dictionary<string, string?> BaseConfiguration()
+    {
+        var values = TestConfiguration.Defaults();
+        values["ConnectionStrings:Default"] = ValidConnectionString;
+
+        return values;
     }
 
     /// <summary>

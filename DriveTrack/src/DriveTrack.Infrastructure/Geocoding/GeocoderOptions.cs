@@ -34,6 +34,12 @@ public sealed class GeocoderOptions
     public const string MinimumRequestIntervalMillisecondsConfigurationKey =
         "Geocoder:MinimumRequestIntervalMilliseconds";
 
+    /// <summary>Configuration key of <see cref="Endpoint"/>, in the colon form.</summary>
+    public const string EndpointConfigurationKey = "Geocoder:Endpoint";
+
+    /// <summary>Configuration key of <see cref="SearchEndpoint"/>, in the colon form.</summary>
+    public const string SearchEndpointConfigurationKey = "Geocoder:SearchEndpoint";
+
     /// <summary>The reverse endpoint: coordinates in, an address out (FR-94). Blank disables it.</summary>
     public string Endpoint { get; set; } = string.Empty;
 
