@@ -200,7 +200,8 @@ internal sealed class NominatimGeocoder(
     /// promises that a geocoder is never the reason an operation fails, and the failures reachable
     /// here — a socket that would not open, a name that would not resolve, a request the timeout
     /// abandoned, a body that is not JSON — are each the same answer as far as the caller is
-    /// concerned. That answer is "no address", and DR-11 has already decided what it means.
+    /// concerned. That answer is "no address", and DR-11 has already decided what it means. Each
+    /// is logged at Warning all the same, except a cancellation the caller asked for.
     /// </remarks>
     private async Task<JsonDocument?> ReadAsync(
         string url,
@@ -268,8 +269,21 @@ internal sealed class NominatimGeocoder(
 
             return JsonDocument.Parse(body);
         }
-        catch (Exception)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
+            // The caller gave up, which is not the provider failing: nothing to log.
+            return null;
+        }
+        catch (Exception exception)
+        {
+            // Still null for the caller, but logged: otherwise a geocoder that never answers - a
+            // timeout, an unresolvable host, a body that is not JSON - is indistinguishable from
+            // DR-11's legitimate absent address.
+            logger.LogWarning(
+                exception,
+                "Geocoder {Operation} failed before an answer could be read. The address is absent.",
+                operation);
+
             return null;
         }
     }

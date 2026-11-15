@@ -91,6 +91,54 @@ public class ProofOfDeliveryTests(PostgresFixture postgres)
     }
 
     [Fact]
+    public async Task A_shouted_content_type_is_kept_in_its_one_lower_case_spelling()
+    {
+        // MIME types are case-insensitive, so IMAGE/JPEG is accepted - and then normalised once, so
+        // the view, the column and the stored object all carry the same spelling.
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var store = new FakeAssetStore();
+
+        await using var factory = await FleetApi.CreateAsync(
+            postgres.ConnectionString, cancellationToken, OutboundPorts.Replace(store));
+        using var client = factory.CreateClient();
+
+        var (token, deliveryId) = await AssignedAsync(factory, client, cancellationToken);
+
+        using (var captured = await ProofApi.CaptureAsync(
+                   client,
+                   token,
+                   deliveryId,
+                   cancellationToken,
+                   signature: ProofApi.Png,
+                   photoContentType: "IMAGE/JPEG"))
+        {
+            Assert.Equal(HttpStatusCode.OK, captured.StatusCode);
+
+            var view = await FleetApi.DataAsync(captured, cancellationToken);
+
+            var photo = view.GetProperty("assets").EnumerateArray()
+                .Single(asset => asset.GetProperty("kind").GetString() == nameof(ProofAssetKind.Photo));
+
+            Assert.Equal("image/jpeg", photo.GetProperty("contentType").GetString());
+        }
+
+        await using var context = await factory.Database.ContextFactory
+            .CreateDbContextAsync(cancellationToken);
+
+        var stored = await context.ProofOfDeliveries
+            .AsNoTracking()
+            .Include(proof => proof.Assets)
+            .SingleAsync(proof => proof.DeliveryId == deliveryId, cancellationToken);
+
+        var storedPhoto = Assert.Single(stored.Assets, asset => asset.Kind == ProofAssetKind.Photo);
+
+        Assert.Equal("image/jpeg", storedPhoto.ContentType);
+        Assert.Equal(
+            "image/jpeg",
+            Assert.Single(store.Saved, saved => saved.Key == storedPhoto.StorageKey).ContentType);
+    }
+
+    [Fact]
     public async Task Every_committed_storage_key_resolves_in_the_store()
     {
         // The ordering's guarantee, read off both sides at once: the keys the database holds are
