@@ -26,6 +26,39 @@ internal sealed class EfShiftRepository(AppDbContext context) : IShiftRepository
             cancellationToken);
 
     /// <inheritdoc />
+    public Task<bool> AnyOverlappingAsync(
+        DriverId driverId,
+        DateTimeOffset start,
+        DateTimeOffset? end,
+        int? excludingId,
+        CancellationToken cancellationToken)
+    {
+        // Offset zero, because Npgsql binds a timestamptz parameter at no other (AD-13).
+        var from = start.ToUniversalTime();
+
+        // Two half-open windows overlap when each starts before the other ends; a null end is
+        // +infinity on either side, so it drops its half of the comparison.
+        var shifts = context.Shifts
+            .AsNoTracking()
+            .Where(shift => shift.DriverId == driverId
+                && (shift.EndedAt == null || shift.EndedAt > from));
+
+        if (end is { } until)
+        {
+            var to = until.ToUniversalTime();
+
+            shifts = shifts.Where(shift => shift.StartedAt < to);
+        }
+
+        if (excludingId is { } id)
+        {
+            shifts = shifts.Where(shift => shift.Id != id);
+        }
+
+        return shifts.AnyAsync(cancellationToken);
+    }
+
+    /// <inheritdoc />
     public async Task<Paged<ShiftRow>> ListAsync(
         DriverId? driverId,
         ListShiftsQuery query,

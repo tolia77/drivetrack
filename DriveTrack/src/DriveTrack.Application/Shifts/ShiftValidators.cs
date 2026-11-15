@@ -18,8 +18,9 @@ namespace DriveTrack.Application.Shifts;
 /// <para>
 /// There is nothing here about the driver or about a start in the future. The driver is a
 /// <c>DriverId</c>, so the adapter refuses anything that is not a number at the model binder, and
-/// the service refuses a driver no row holds; a start in the future is a shift somebody rostered
-/// ahead, which the requirements neither forbid nor ask about.
+/// the service refuses a driver no row holds. A future start with an end is a shift rostered ahead
+/// and is allowed; a future start with no end is refused by <c>ShiftService</c>, which holds the
+/// injected clock this validator does not.
 /// </para>
 /// <para>
 /// Discovered by <c>AddValidatorsFromAssembly</c>, so there is no registration to add.

@@ -127,13 +127,23 @@ public sealed class ShiftService(
             throw AlreadyOpen(command.DriverId);
         }
 
+        var startedAt = timeProvider.GetUtcNow();
+
+        // An open shift runs to +infinity, so going on duty collides with any recorded window that
+        // has not finished yet - one rostered ahead, say - exactly as an open create would.
+        if (await unitOfWork.Shifts.AnyOverlappingAsync(
+                command.DriverId, startedAt, end: null, excludingId: null, cancellationToken))
+        {
+            throw Overlapping(command.DriverId);
+        }
+
         var shift = new Shift
         {
             DriverId = command.DriverId,
 
             // AD-13: the injected clock, at offset zero. DateTimeOffset.UtcNow here would fail
             // PersistenceContractTests and, more to the point, let a caller backdate going on duty.
-            StartedAt = timeProvider.GetUtcNow(),
+            StartedAt = startedAt,
         };
 
         unitOfWork.Shifts.Add(shift);
@@ -166,11 +176,9 @@ public sealed class ShiftService(
 
         var endedAt = timeProvider.GetUtcNow();
 
-        // FR-111 on the one write path whose instant nobody typed. An open shift may be dated in the
-        // future - CreateShiftCommandValidator has nothing to compare a null end against - so a
-        // dispatcher can record a shift starting tomorrow and the driver can press off duty today,
-        // which is exactly the backwards window the rule forbids. The same validator the edit path
-        // uses judges it, so the refusal is one sentence rather than two.
+        // FR-111 on the one write path whose instant nobody typed. Create and edit now refuse an open
+        // shift dated in the future, so this is the backstop for a row written before that rule or
+        // a clock that stepped backwards: either would otherwise close a window that runs backwards.
         await ValidatorExtensions.ValidateAndThrowAsync(
             stateValidator,
             new ShiftState(shift.StartedAt, endedAt),
@@ -196,6 +204,12 @@ public sealed class ShiftService(
 
         await ValidatorExtensions.ValidateAndThrowAsync(createValidator, command, cancellationToken);
 
+        // AD-13: the screens send local instants (+02:00/+03:00), and Npgsql writes timestamptz only
+        // at offset zero - so normalize before the value reaches a query or the row.
+        var state = new ShiftState(command.StartedAt.ToUniversalTime(), command.EndedAt?.ToUniversalTime());
+
+        RefuseOpenInFuture(state, timeProvider.GetUtcNow());
+
         await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
 
         var name = await RequireDriverNameAsync(unitOfWork, command.DriverId, cancellationToken);
@@ -209,11 +223,18 @@ public sealed class ShiftService(
             throw AlreadyOpen(command.DriverId);
         }
 
+        // After the open-shift lookup, so a second open shift keeps its friendlier sentence.
+        if (await unitOfWork.Shifts.AnyOverlappingAsync(
+                command.DriverId, state.StartedAt, state.EndedAt, excludingId: null, cancellationToken))
+        {
+            throw Overlapping(command.DriverId);
+        }
+
         var shift = new Shift
         {
             DriverId = command.DriverId,
-            StartedAt = command.StartedAt,
-            EndedAt = command.EndedAt,
+            StartedAt = state.StartedAt,
+            EndedAt = state.EndedAt,
         };
 
         unitOfWork.Shifts.Add(shift);
@@ -247,6 +268,19 @@ public sealed class ShiftService(
         var merged = command.MergedOnto(shift);
 
         await ValidatorExtensions.ValidateAndThrowAsync(stateValidator, merged, cancellationToken);
+
+        // AD-13, as on the create path: offset zero before the instant reaches a query or the row.
+        merged = new ShiftState(merged.StartedAt.ToUniversalTime(), merged.EndedAt?.ToUniversalTime());
+
+        RefuseOpenInFuture(merged, timeProvider.GetUtcNow());
+
+        // The row itself is excluded, so an edit that leaves the window where it was is not a
+        // collision with its own stored copy.
+        if (await unitOfWork.Shifts.AnyOverlappingAsync(
+                shift.DriverId, merged.StartedAt, merged.EndedAt, shift.Id, cancellationToken))
+        {
+            throw Overlapping(shift.DriverId);
+        }
 
         shift.StartedAt = merged.StartedAt;
 
@@ -305,6 +339,40 @@ public sealed class ShiftService(
             ErrorCode.SHIFT_ALREADY_OPEN,
             "Driver " + driverId.Value.ToString(CultureInfo.InvariantCulture)
                 + " already has an open shift.");
+
+    /// <summary>
+    /// Two shifts of one driver may not share an instant: each is the half-open window
+    /// <c>[StartedAt, EndedAt ?? +infinity)</c>, so one ending exactly when the next starts is fine.
+    /// <para>
+    /// TODO: <c>COMMON_CONFLICT</c> stands in until a <c>SHIFT_*</c> overlap code exists; its
+    /// sentence ("someone has just changed this") is not the right one for this refusal.
+    /// </para>
+    /// </summary>
+    private static ConflictException Overlapping(DriverId driverId) =>
+        new(
+            ErrorCode.COMMON_CONFLICT,
+            "Driver " + driverId.Value.ToString(CultureInfo.InvariantCulture)
+                + " already has a shift overlapping that window.");
+
+    /// <summary>
+    /// An open shift may not start in the future: "on duty from tomorrow" is not a state anybody is
+    /// in. A future start with an end is a shift rostered ahead and stays allowed. Here rather than
+    /// in <see cref="ShiftStateValidator"/> because it needs the injected clock (AD-13).
+    /// <para>
+    /// TODO: <c>COMMON_VALIDATION_FAILED</c> stands in as the field key until a <c>SHIFT_*</c> code
+    /// for this rule exists.
+    /// </para>
+    /// </summary>
+    private static void RefuseOpenInFuture(ShiftState state, DateTimeOffset now)
+    {
+        if (state.EndedAt is null && state.StartedAt > now)
+        {
+            throw new Common.ValidationException(
+                ErrorCode.COMMON_VALIDATION_FAILED,
+                "An open shift may not start in the future.",
+                [new FieldError(nameof(ShiftState.StartedAt), nameof(ErrorCode.COMMON_VALIDATION_FAILED))]);
+        }
+    }
 
     /// <summary>
     /// Every driver's name, keyed by the driver row id a shift refers to them by.

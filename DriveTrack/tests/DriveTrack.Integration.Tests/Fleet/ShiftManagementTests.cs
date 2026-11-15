@@ -7,6 +7,7 @@ using DriveTrack.Infrastructure.Persistence;
 using DriveTrack.Integration.Tests.Deliveries;
 using DriveTrack.Integration.Tests.Persistence;
 using DriveTrack.Integration.Tests.Support;
+using Microsoft.EntityFrameworkCore;
 
 namespace DriveTrack.Integration.Tests.Fleet;
 
@@ -604,26 +605,29 @@ public class ShiftManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task Going_off_duty_before_the_shift_started_is_refused()
     {
-        // The one write path whose instant nobody typed, and the reason it validates at all. An open
-        // shift may be dated in the future - a create carrying no end has nothing to compare its
-        // start against - so a dispatcher records tomorrow's shift, the driver presses off duty
-        // today, and the row would end before it began. The refusal is FR-111's rather than a
-        // silently stored backwards window.
+        // The one write path whose instant nobody typed. Create and edit refuse an open shift dated
+        // in the future, so the backwards window this guards against now needs a clock that stepped
+        // back after the shift opened - and the refusal is FR-111's rather than a stored backwards
+        // window. Tokens are validated against the real clock, so moving the host's back is safe.
         var cancellationToken = TestContext.Current.CancellationToken;
-        await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
+        var clock = new FixedTimeProvider(Truncated(DateTimeOffset.UtcNow));
+
+        await using var factory = await FleetApi.CreateAsync(
+            postgres.ConnectionString, cancellationToken, clock: clock);
         using var client = factory.CreateClient();
 
         var dispatcher = await DeliveryApi.DispatcherAsync(factory, client, cancellationToken);
         var driver = await DeliveryApi.DriverAsync(client, dispatcher, vehicleId: null, cancellationToken);
 
-        // Far enough ahead that the host's real clock cannot overtake it while the test runs.
         var shiftId = await ShiftApi.RecordedAsync(
             client,
             dispatcher,
             driver.DriverId,
-            DateTimeOffset.UtcNow.AddYears(1),
+            clock.Now.AddMinutes(-1),
             endedAt: null,
             cancellationToken);
+
+        clock.Now = clock.Now.AddHours(-2);
 
         using (var response = await ShiftApi.EndAsync(
                    client, driver.Token, driver.DriverId, cancellationToken))
@@ -635,11 +639,299 @@ public class ShiftManagementTests(PostgresFixture postgres)
                 cancellationToken);
         }
 
-        // And nothing was written: the shift is still open, so the driver can go off duty once it
-        // has actually started.
+        // And nothing was written: the shift is still open.
         using var read = await ShiftApi.GetAsync(client, dispatcher, shiftId, cancellationToken);
 
         Assert.True((await FleetApi.DataAsync(read, cancellationToken)).GetProperty("isOpen").GetBoolean());
+    }
+
+    [Fact]
+    public async Task Shift_instants_sent_with_a_local_offset_are_stored_at_offset_zero()
+    {
+        // AD-13. The screens send ToLocalTime() values - +02:00 or +03:00 under TZ=Europe/Kyiv - and
+        // Npgsql refuses to write a timestamptz at any offset but zero, so without the service's
+        // normalization every add and edit from the UI failed at the commit.
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
+        using var client = factory.CreateClient();
+
+        var dispatcher = await DeliveryApi.DispatcherAsync(factory, client, cancellationToken);
+        var driver = await DeliveryApi.DriverAsync(client, dispatcher, vehicleId: null, cancellationToken);
+
+        var kyiv = TimeSpan.FromHours(2);
+        var start = new DateTimeOffset(2026, 3, 10, 9, 0, 0, kyiv);
+        int shiftId;
+
+        using (var created = await ShiftApi.CreateAsync(
+                   client, dispatcher, driver.DriverId, start, start.AddHours(8), cancellationToken))
+        {
+            Assert.Equal(HttpStatusCode.OK, created.StatusCode);
+
+            var shift = await FleetApi.DataAsync(created, cancellationToken);
+            var startedAt = shift.GetProperty("startedAt").GetDateTimeOffset();
+
+            shiftId = shift.GetProperty("id").GetInt32();
+
+            Assert.Equal(start, startedAt);
+            Assert.Equal(TimeSpan.Zero, startedAt.Offset);
+        }
+
+        var moved = new DateTimeOffset(2026, 3, 10, 7, 30, 0, kyiv);
+
+        using (var edited = await ShiftApi.EditAsync(
+                   client,
+                   dispatcher,
+                   shiftId,
+                   cancellationToken,
+                   startedAt: moved,
+                   endedAt: moved.AddHours(9)))
+        {
+            Assert.Equal(HttpStatusCode.OK, edited.StatusCode);
+        }
+
+        // An open shift takes the same path, and is the one the driver's own screen records.
+        var openStart = Truncated(DateTimeOffset.UtcNow.AddHours(-1)).ToOffset(kyiv);
+
+        var openId = await ShiftApi.RecordedAsync(
+            client, dispatcher, driver.DriverId, openStart, endedAt: null, cancellationToken);
+
+        await using var context = await factory.Database.ContextFactory
+            .CreateDbContextAsync(cancellationToken);
+
+        var stored = await context.Shifts.AsNoTracking().SingleAsync(
+            shift => shift.Id == shiftId, cancellationToken);
+
+        Assert.Equal(moved, stored.StartedAt);
+        Assert.Equal(TimeSpan.Zero, stored.StartedAt.Offset);
+        Assert.Equal(moved.AddHours(9), stored.EndedAt);
+        Assert.Equal(TimeSpan.Zero, stored.EndedAt!.Value.Offset);
+
+        var open = await context.Shifts.AsNoTracking().SingleAsync(
+            shift => shift.Id == openId, cancellationToken);
+
+        Assert.Equal(openStart, open.StartedAt);
+        Assert.Null(open.EndedAt);
+    }
+
+    [Fact]
+    public async Task An_open_shift_may_not_start_in_the_future_but_a_rostered_one_may()
+    {
+        // "On duty from tomorrow" is not a state anybody is in, so an open shift with a future start
+        // is refused on both write paths, naming the start. A future window with an end is a shift
+        // rostered ahead and is written.
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var clock = new FixedTimeProvider(Truncated(DateTimeOffset.UtcNow));
+
+        await using var factory = await FleetApi.CreateAsync(
+            postgres.ConnectionString, cancellationToken, clock: clock);
+        using var client = factory.CreateClient();
+
+        var dispatcher = await DeliveryApi.DispatcherAsync(factory, client, cancellationToken);
+        var rostered = await DeliveryApi.DriverAsync(client, dispatcher, vehicleId: null, cancellationToken);
+        var working = await DeliveryApi.DriverAsync(client, dispatcher, vehicleId: null, cancellationToken);
+
+        using (var refused = await ShiftApi.CreateAsync(
+                   client,
+                   dispatcher,
+                   rostered.DriverId,
+                   clock.Now.AddHours(1),
+                   endedAt: null,
+                   cancellationToken))
+        {
+            await AssertRefusedNamingAsync(refused, "startedAt", cancellationToken);
+        }
+
+        await ShiftApi.RecordedAsync(
+            client,
+            dispatcher,
+            rostered.DriverId,
+            clock.Now.AddDays(1),
+            clock.Now.AddDays(1).AddHours(8),
+            cancellationToken);
+
+        // The edit path: an open shift that has started may not be moved to start later than now.
+        var openId = await ShiftApi.RecordedAsync(
+            client, dispatcher, working.DriverId, clock.Now.AddHours(-1), endedAt: null, cancellationToken);
+
+        using (var refused = await ShiftApi.EditAsync(
+                   client, dispatcher, openId, cancellationToken, startedAt: clock.Now.AddHours(2)))
+        {
+            await AssertRefusedNamingAsync(refused, "startedAt", cancellationToken);
+        }
+
+        // Only the rostered window and the started open shift were written, the latter unmoved.
+        var rows = await ShiftApi.RowsAsync(
+            await ShiftApi.ListAsync(client, dispatcher, cancellationToken),
+            cancellationToken);
+
+        Assert.Equal(2, rows.Length);
+        Assert.Equal(
+            clock.Now.AddHours(-1),
+            rows.Single(row => row.GetProperty("id").GetInt32() == openId)
+                .GetProperty("startedAt")
+                .GetDateTimeOffset());
+    }
+
+    [Fact]
+    public async Task Overlapping_shifts_for_one_driver_are_refused_and_touching_ones_are_not()
+    {
+        // Each shift is the half-open window [StartedAt, EndedAt ?? +infinity), and two of one
+        // driver's may not share an instant - on create, on edit, and against an open shift.
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
+        using var client = factory.CreateClient();
+
+        var dispatcher = await DeliveryApi.DispatcherAsync(factory, client, cancellationToken);
+        var driver = await DeliveryApi.DriverAsync(client, dispatcher, vehicleId: null, cancellationToken);
+        var other = await DeliveryApi.DriverAsync(client, dispatcher, vehicleId: null, cancellationToken);
+
+        var start = DateTimeOffset.UnixEpoch.AddYears(56);
+
+        var firstId = await ShiftApi.RecordedAsync(
+            client, dispatcher, driver.DriverId, start, start.AddHours(8), cancellationToken);
+
+        // Overlapping its end, and overlapping its start.
+        await AssertOverlapRefusedAsync(
+            ShiftApi.CreateAsync(
+                client, dispatcher, driver.DriverId, start.AddHours(4), start.AddHours(12), cancellationToken),
+            cancellationToken);
+        await AssertOverlapRefusedAsync(
+            ShiftApi.CreateAsync(
+                client, dispatcher, driver.DriverId, start.AddHours(-2), start.AddHours(1), cancellationToken),
+            cancellationToken);
+
+        // Touching is not overlapping: one ends exactly when the next starts.
+        var nextId = await ShiftApi.RecordedAsync(
+            client, dispatcher, driver.DriverId, start.AddHours(8), start.AddHours(16), cancellationToken);
+
+        // An edit that leaves the window where it is does not collide with its own stored copy, and
+        // one that moves it inside its old bounds does not either.
+        using (var unchanged = await ShiftApi.EditAsync(
+                   client, dispatcher, firstId, cancellationToken, startedAt: start, endedAt: start.AddHours(8)))
+        {
+            Assert.Equal(HttpStatusCode.OK, unchanged.StatusCode);
+        }
+
+        using (var shrunk = await ShiftApi.EditAsync(
+                   client, dispatcher, firstId, cancellationToken, startedAt: start.AddMinutes(10)))
+        {
+            Assert.Equal(HttpStatusCode.OK, shrunk.StatusCode);
+        }
+
+        // An edit that moves one window into its neighbour is refused.
+        await AssertOverlapRefusedAsync(
+            ShiftApi.EditAsync(
+                client, dispatcher, nextId, cancellationToken, startedAt: start.AddHours(7)),
+            cancellationToken);
+
+        // An open shift runs to +infinity, so a later closed window collides with it.
+        await ShiftApi.RecordedAsync(
+            client, dispatcher, driver.DriverId, start.AddHours(20), endedAt: null, cancellationToken);
+
+        await AssertOverlapRefusedAsync(
+            ShiftApi.CreateAsync(
+                client, dispatcher, driver.DriverId, start.AddHours(30), start.AddHours(31), cancellationToken),
+            cancellationToken);
+
+        // The rule is per driver: somebody else may work the very window refused above.
+        await ShiftApi.RecordedAsync(
+            client, dispatcher, other.DriverId, start.AddHours(4), start.AddHours(12), cancellationToken);
+
+        Assert.Equal(
+            3,
+            (await ShiftApi.RowsAsync(
+                await ShiftApi.ListAsync(client, dispatcher, cancellationToken, Filter(driver.DriverId)),
+                cancellationToken)).Length);
+    }
+
+    [Fact]
+    public async Task Going_on_duty_inside_a_recorded_window_is_refused()
+    {
+        // The clock start is an open shift stamped by the server, so it keeps the same overlap rule:
+        // a driver whose recorded window has not finished yet is already accounted for.
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var clock = new FixedTimeProvider(Truncated(DateTimeOffset.UtcNow));
+
+        await using var factory = await FleetApi.CreateAsync(
+            postgres.ConnectionString, cancellationToken, clock: clock);
+        using var client = factory.CreateClient();
+
+        var dispatcher = await DeliveryApi.DispatcherAsync(factory, client, cancellationToken);
+        var driver = await DeliveryApi.DriverAsync(client, dispatcher, vehicleId: null, cancellationToken);
+
+        await ShiftApi.RecordedAsync(
+            client,
+            dispatcher,
+            driver.DriverId,
+            clock.Now.AddHours(-1),
+            clock.Now.AddHours(1),
+            cancellationToken);
+
+        await AssertOverlapRefusedAsync(
+            ShiftApi.StartAsync(client, driver.Token, driver.DriverId, cancellationToken),
+            cancellationToken);
+
+        // Once that window has finished, going on duty is the ordinary press again.
+        clock.Now = clock.Now.AddHours(1);
+
+        await ShiftApi.StartedAsync(client, driver.Token, driver.DriverId, cancellationToken);
+    }
+
+    [Fact]
+    public async Task The_open_only_list_answers_the_running_shift_and_nothing_else()
+    {
+        // ListShiftsQuery.OpenOnly against the real repository - the query MyShifts.razor asks to
+        // find the shift it offers to end. The newest row is a closed one rostered ahead, so a filter
+        // that was ignored would answer it on a page of one instead of the open shift.
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
+        using var client = factory.CreateClient();
+
+        var dispatcher = await DeliveryApi.DispatcherAsync(factory, client, cancellationToken);
+        var working = await DeliveryApi.DriverAsync(client, dispatcher, vehicleId: null, cancellationToken);
+        var resting = await DeliveryApi.DriverAsync(client, dispatcher, vehicleId: null, cancellationToken);
+
+        await using (var context = await factory.Database.ContextFactory
+                         .CreateDbContextAsync(cancellationToken))
+        {
+            await SeedShiftsAsync(context, new DriverId(working.DriverId), 2, cancellationToken);
+            await SeedShiftsAsync(context, new DriverId(resting.DriverId), 2, cancellationToken);
+        }
+
+        var openId = await ShiftApi.StartedAsync(
+            client, working.Token, working.DriverId, cancellationToken);
+
+        var ahead = Truncated(DateTimeOffset.UtcNow.AddYears(1));
+
+        await ShiftApi.RecordedAsync(
+            client, dispatcher, resting.DriverId, ahead, ahead.AddHours(8), cancellationToken);
+
+        // The page MyShifts.razor asks for: ListShiftsQuery(0, 1, null, OpenOnly: true).
+        const string openOnly = "?offset=0&limit=1&open=true";
+
+        // Without the filter the rostered window is the newest row, which is what makes the
+        // assertions below about the filter.
+        Assert.False((await ShiftApi.RowsAsync(
+            await ShiftApi.ListAsync(client, dispatcher, cancellationToken, "?offset=0&limit=1"),
+            cancellationToken)).Single().GetProperty("isOpen").GetBoolean());
+
+        var everybody = await ShiftApi.RowsAsync(
+            await ShiftApi.ListAsync(client, dispatcher, cancellationToken, openOnly),
+            cancellationToken);
+
+        Assert.Equal([openId], everybody.Select(row => row.GetProperty("id").GetInt32()).ToArray());
+        Assert.True(everybody[0].GetProperty("isOpen").GetBoolean());
+
+        var mine = await ShiftApi.RowsAsync(
+            await ShiftApi.ListAsync(client, working.Token, cancellationToken, openOnly),
+            cancellationToken);
+
+        Assert.Equal([openId], mine.Select(row => row.GetProperty("id").GetInt32()).ToArray());
+
+        // A driver with only closed shifts gets an empty page, not their newest closed row.
+        Assert.Empty(await ShiftApi.RowsAsync(
+            await ShiftApi.ListAsync(client, resting.Token, cancellationToken, openOnly),
+            cancellationToken));
     }
 
     [Fact]
@@ -939,6 +1231,42 @@ public class ShiftManagementTests(PostgresFixture postgres)
 
         await FleetApi.AssertFailureAsync(
             response, HttpStatusCode.Forbidden, ErrorCode.AUTH_FORBIDDEN, cancellationToken);
+    }
+
+    /// <summary>An instant truncated to the microsecond PostgreSQL stores.</summary>
+    private static DateTimeOffset Truncated(DateTimeOffset instant) =>
+        new(instant.Ticks - (instant.Ticks % 10), instant.Offset);
+
+    /// <summary>A 422 whose only field is <paramref name="field"/>.</summary>
+    private static async Task AssertRefusedNamingAsync(
+        HttpResponseMessage response,
+        string field,
+        CancellationToken cancellationToken)
+    {
+        await FleetApi.AssertFailureAsync(
+            response,
+            HttpStatusCode.UnprocessableContent,
+            ErrorCode.COMMON_VALIDATION_FAILED,
+            cancellationToken);
+
+        var fields = (await FleetApi.ReadAsync(response, cancellationToken))
+            .GetProperty("error")
+            .GetProperty("fields");
+
+        Assert.Equal([field], fields.EnumerateObject().Select(entry => entry.Name).ToArray());
+    }
+
+    /// <summary>
+    /// The overlap refusal: <c>COMMON_CONFLICT</c> until a <c>SHIFT_*</c> overlap code exists.
+    /// </summary>
+    private static async Task AssertOverlapRefusedAsync(
+        Task<HttpResponseMessage> attempt,
+        CancellationToken cancellationToken)
+    {
+        using var response = await attempt;
+
+        await FleetApi.AssertFailureAsync(
+            response, HttpStatusCode.Conflict, ErrorCode.COMMON_CONFLICT, cancellationToken);
     }
 
     /// <summary>A <c>?driverId=</c> query string for one driver row.</summary>
