@@ -128,10 +128,11 @@ public class RegistrationValidationTests
     }
 
     [Fact]
-    public async Task Sign_in_bounds_the_email_and_the_password_too()
+    public async Task Sign_in_bounds_the_email_but_leaves_the_password_ceiling_to_the_service()
     {
-        // The same reasoning, on the other anonymous endpoint: it verifies a hash, so it does the
-        // same slow work for a caller who has presented nothing.
+        // The email is bounded here. An over-long password is not a validation failure on sign-in:
+        // no stored password can be that long, so UserService answers it as invalid credentials
+        // before the hasher runs - a policy code here would be advice on choosing a password.
         var failure = await Assert.ThrowsAsync<ValidationException>(() =>
             ValidatorExtensions.ValidateAndThrowAsync(
                 SignIn,
@@ -141,7 +142,23 @@ public class RegistrationValidationTests
                 TestContext.Current.CancellationToken));
 
         AssertField(failure, "Email", nameof(ErrorCode.AUTH_EMAIL_INVALID));
-        AssertField(failure, "Password", nameof(ErrorCode.AUTH_PASSWORD_TOO_LONG));
+        Assert.DoesNotContain(failure.FieldErrors, field => field.Field == "Password");
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public async Task Sign_in_refuses_a_missing_password_as_a_required_field(string? password)
+    {
+        // An empty box is the shared required-field sentence, not the strength policy: the policy
+        // is about choosing a password, and this caller is entering one.
+        var failure = await Assert.ThrowsAsync<ValidationException>(() =>
+            ValidatorExtensions.ValidateAndThrowAsync(
+                SignIn,
+                new SignInCommand("olena@drivetrack.test", password),
+                TestContext.Current.CancellationToken));
+
+        AssertField(failure, "Password", nameof(ErrorCode.COMMON_FIELD_REQUIRED));
     }
 
     [Fact]

@@ -862,6 +862,38 @@ public class SelfServiceAccountTests(PostgresFixture postgres)
             client, replacement, AdministrationApi.Password, cancellationToken));
     }
 
+    [Fact]
+    public async Task A_padded_profile_edit_is_stored_trimmed()
+    {
+        // UpdateProfileAsync trims as it merges, before the validator runs, so the padded phone
+        // number is judged as the E.164 string it becomes rather than refused for its spaces - and
+        // what reaches the columns is the trimmed value, not the padding.
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await using var factory = await AdministrationApi.CreateHostAsync(postgres.ConnectionString, cancellationToken);
+        using var client = factory.CreateClient();
+
+        var subject = await AdministrationApi.RegisterClientAsync(client, cancellationToken);
+        var token = await AdministrationApi.SignInAsync(
+            client, subject.Email, AdministrationApi.Password, cancellationToken);
+
+        using (var response = await AdministrationApi.SendAsync(
+            client,
+            HttpMethod.Patch,
+            Route(subject.UserId),
+            token,
+            new { firstName = "  Оксана  ", lastName = " Яремчук ", phoneNumber = " +380671112233 " },
+            cancellationToken))
+        {
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        var stored = await GetAsync(client, token, subject.UserId, cancellationToken);
+
+        Assert.Equal("Оксана", stored.GetProperty("firstName").GetString());
+        Assert.Equal("Яремчук", stored.GetProperty("lastName").GetString());
+        Assert.Equal("+380671112233", stored.GetProperty("phoneNumber").GetString());
+    }
+
     private static string Route(int userId) =>
         "/api/users/" + userId.ToString(CultureInfo.InvariantCulture);
 

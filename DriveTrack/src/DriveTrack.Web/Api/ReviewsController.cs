@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace DriveTrack.Web.Api;
 
 /// <summary>
-/// Reviews over REST (FR-62 to FR-67).
+/// Reviews over REST (FR-59 to FR-67).
 /// <para>
 /// <c>[Authorize]</c> carries no roles, and that is the point. Who may write a review, read the
 /// whole collection, or edit and delete one is decided by <c>IAccessGuard</c> inside
@@ -33,7 +33,7 @@ namespace DriveTrack.Web.Api;
 [Authorize]
 public sealed class ReviewsController(IReviewService reviews) : ControllerBase
 {
-    /// <summary>One page of every review, with both parties named (FR-64). Defaults to the first hundred.</summary>
+    /// <summary>One page of every review, with both parties named (FR-65). Defaults to the first hundred.</summary>
     /// <remarks>
     /// The paging parameters are nullable so an omitted one takes the default here rather than
     /// binding to zero — a limit of zero is a refusal, and "I did not say" must not mean "give me
@@ -56,7 +56,7 @@ public sealed class ReviewsController(IReviewService reviews) : ControllerBase
             cancellationToken);
 
     /// <summary>
-    /// One page of the reviews the caller wrote (FR-63). The payload carries no party identity,
+    /// One page of the reviews the caller wrote (FR-64). The payload carries no party identity,
     /// because the type it is built from has no field for one.
     /// </summary>
     [HttpGet("mine")]
@@ -74,7 +74,7 @@ public sealed class ReviewsController(IReviewService reviews) : ControllerBase
                 desc ?? false),
             cancellationToken);
 
-    /// <summary>Writes a review of one of the caller's own finished deliveries (FR-62, FR-67).</summary>
+    /// <summary>Writes a review of one of the caller's own finished deliveries (FR-59 to FR-62, FR-67).</summary>
     [HttpPost]
     public Task<AuthoredReviewSummary> CreateAsync(
         [FromBody] CreateReviewCommand command,
@@ -82,7 +82,7 @@ public sealed class ReviewsController(IReviewService reviews) : ControllerBase
         reviews.CreateAsync(command, cancellationToken);
 
     /// <summary>
-    /// Edits a review (FR-65). Every field the body omits is left alone (AD-23).
+    /// Edits a review (FR-63, FR-66). Every field the body omits is left alone (AD-23).
     /// </summary>
     [HttpPut("{id:int}")]
     public Task<AuthoredReviewSummary> UpdateAsync(
@@ -91,7 +91,7 @@ public sealed class ReviewsController(IReviewService reviews) : ControllerBase
         CancellationToken cancellationToken) =>
         reviews.UpdateAsync(id, command, cancellationToken);
 
-    /// <summary>Deletes a review (FR-66). 204, with no body.</summary>
+    /// <summary>Deletes a review (FR-63, FR-66). 204, with no body.</summary>
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteAsync(int id, CancellationToken cancellationToken)
     {

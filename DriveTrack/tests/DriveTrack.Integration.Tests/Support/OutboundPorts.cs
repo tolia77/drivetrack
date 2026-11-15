@@ -252,8 +252,8 @@ internal sealed class FakeAssetStore : IAssetStore
     /// The "store unconfigured" row of the matrix. <see cref="NewKey"/> has a failure of its own in
     /// the port's contract — a deployment with no endpoint refuses there — and it is a different
     /// claim from <see cref="Failure"/>'s: minting runs before the writing transaction is opened, so
-    /// a refusal here must leave no proof row at all, where a refusal in <see cref="SaveAsync"/>
-    /// deliberately leaves one. Separate knobs, because a single one could not tell the two apart.
+    /// a refusal here never writes a proof row, where a refusal in <see cref="SaveAsync"/> writes one
+    /// and removes it again. Separate knobs, because a single one could not tell the two apart.
     /// </remarks>
     public Exception? MintingFailure { get; set; }
 

@@ -17,8 +17,11 @@ internal static class TestConfiguration
     /// <summary>The issuer the test host signs and validates with.</summary>
     public const string JwtIssuer = "DriveTrack.Tests";
 
-    /// <summary>The audience the test host signs and validates with.</summary>
-    public const string JwtAudience = "DriveTrack.Tests";
+    /// <summary>
+    /// The audience the test host signs and validates with. Deliberately not the issuer: equal
+    /// values would let a token validated against the wrong one of the two pass unnoticed.
+    /// </summary>
+    public const string JwtAudience = "DriveTrack.Tests.Api";
 
     /// <summary>The seeded administrator's email in a test host.</summary>
     public const string AdminEmail = "admin@drivetrack.test";

@@ -221,27 +221,150 @@ internal sealed class EfUserAccountRepository(AppDbContext context, ScopedIdenti
     {
         var roleName = role.ToString();
 
-        // Joined through the role rows rather than filtered in memory: "every client" is a question
-        // about the join, and answering it by loading every user and discarding most of them would
-        // get slower with every account the system ever opens.
-        var users = await (
-            from user in context.Users
+        // One untracked read for the whole roster. Joined through the role rows rather than
+        // filtered in memory, and the subtype ids are left-joined in the same statement rather than
+        // read per user: the role is the WHERE clause's own answer, so MapAsync's per-row role and
+        // subtype reads would only ask again what this query already established. DR-3 gives a user
+        // at most one driver row and one client row, so neither join multiplies a row.
+        var rows = await (
+            from user in context.Users.AsNoTracking()
             join userRole in context.UserRoles on user.Id equals userRole.UserId
             join declared in context.Roles on userRole.RoleId equals declared.Id
+            join driverRow in context.Drivers on user.Id equals (int)(object)driverRow.UserId into drivers
+            from driver in drivers.DefaultIfEmpty()
+            join clientRow in context.Clients on user.Id equals (int)(object)clientRow.UserId into clients
+            from client in clients.DefaultIfEmpty()
             where declared.Name == roleName
             orderby user.LastName, user.FirstName, user.Id
-            select user).ToListAsync(cancellationToken);
+            select new
+            {
+                user.Id,
+                user.FirstName,
+                user.LastName,
+                user.Email,
+                Driver = driver,
+                Client = client,
+            }).ToListAsync(cancellationToken);
 
-        var accounts = new List<UserAccount>(users.Count);
+        // The subtype id only for the role that has one, exactly as MapAsync reads it, so a list row
+        // and a detail read of the same account can never disagree about it.
+        return
+        [
+            .. rows.Select(row => new UserAccount(
+                new UserId(row.Id),
+                row.FirstName,
+                row.LastName,
+                row.Email!,
+                role,
+                role == UserRole.Driver ? row.Driver?.Id : null,
+                role == UserRole.Client ? row.Client?.Id : null)),
+        ];
+    }
 
-        foreach (var user in users)
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<UserAccount>> ListByDriverIdsAsync(
+        IReadOnlyCollection<DriverId> driverIds,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(driverIds);
+
+        if (driverIds.Count == 0)
         {
-            // Through the same mapper as every single-account read, so a list row and a detail read
-            // of the same account can never disagree about its role or its subtype id.
-            accounts.Add(await MapAsync(user, cancellationToken));
+            return [];
         }
 
-        return accounts;
+        var keys = driverIds.Distinct().ToArray();
+
+        var rows = await context.Drivers
+            .AsNoTracking()
+            .Where(driver => keys.Contains(driver.Id))
+            .Join(
+                context.Users,
+                driver => (int)(object)driver.UserId,
+                user => user.Id,
+                (driver, user) => new
+                {
+                    DriverId = driver.Id,
+                    user.Id,
+                    user.FirstName,
+                    user.LastName,
+                    user.Email,
+                })
+            .ToListAsync(cancellationToken);
+
+        // The role is the driver row's own answer: DR-3 gives a driver row only to a Driver
+        // account, so a role read here would only confirm what the join already established.
+        return
+        [
+            .. rows.Select(row => new UserAccount(
+                new UserId(row.Id),
+                row.FirstName,
+                row.LastName,
+                row.Email!,
+                UserRole.Driver,
+                row.DriverId,
+                ClientId: null)),
+        ];
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<UserAccount>> ListByClientIdsAsync(
+        IReadOnlyCollection<ClientId> clientIds,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(clientIds);
+
+        if (clientIds.Count == 0)
+        {
+            return [];
+        }
+
+        var keys = clientIds.Distinct().ToArray();
+
+        var rows = await context.Clients
+            .AsNoTracking()
+            .Where(client => keys.Contains(client.Id))
+            .Join(
+                context.Users,
+                client => (int)(object)client.UserId,
+                user => user.Id,
+                (client, user) => new
+                {
+                    ClientId = client.Id,
+                    user.Id,
+                    user.FirstName,
+                    user.LastName,
+                    user.Email,
+                })
+            .ToListAsync(cancellationToken);
+
+        // As ListByDriverIdsAsync: a client row belongs only to a Client account (DR-3).
+        return
+        [
+            .. rows.Select(row => new UserAccount(
+                new UserId(row.Id),
+                row.FirstName,
+                row.LastName,
+                row.Email!,
+                UserRole.Client,
+                DriverId: null,
+                row.ClientId)),
+        ];
+    }
+
+    /// <inheritdoc />
+    public async Task<string?> FindSecurityStampAsync(UserId userId, CancellationToken cancellationToken)
+    {
+        // Projected into a row so "no account" and "an account with no stamp" stay distinct: the
+        // first is null, the second the empty string. Untracked, because nothing read on the
+        // session-revalidation path is ever written back.
+        var row = await context.Users
+            .AsNoTracking()
+            .Where(candidate => candidate.Id == userId.Value)
+            .Select(candidate => new { candidate.SecurityStamp })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return row is null ? null : row.SecurityStamp ?? string.Empty;
     }
 
     /// <inheritdoc />
@@ -330,11 +453,9 @@ internal sealed class EfUserAccountRepository(AppDbContext context, ScopedIdenti
         // IPasswordHasher, so a weak password is refused by the same rule and reported with the same
         // code as at registration (FR-8), and only the hash is ever stored.
         //
-        // It also rolls the security stamp, which changes nothing today and is worth saying plainly:
-        // nothing in this system validates that stamp. There is no SecurityStampValidator, no
-        // OnValidatePrincipal hook, and JwtAccessTokenIssuer puts no stamp claim in the token - so a
-        // bearer token issued before the change keeps working until it expires on its own. Revoking
-        // live sessions on a password change is a capability this story does not ship.
+        // It also rolls the security stamp, and that is what ends the account's cookie sessions: the
+        // cookie carries the stamp it was issued with, and the Web adapter's revalidation refuses
+        // one that no longer matches. A bearer token carries no stamp and runs to its own expiry.
         //
         // AddPasswordAsync refuses a user who already has a password, so the stored hash is cleared
         // first - by assignment rather than by RemovePasswordAsync. That is not a shortcut:
@@ -402,8 +523,8 @@ internal sealed class EfUserAccountRepository(AppDbContext context, ScopedIdenti
 
     /// <summary>
     /// Saves the staged changes inside the unit of work's transaction, translating a constraint
-    /// refusal exactly as <c>UnitOfWork.CommitAsync</c> does, so the normalized-email unique index
-    /// surfaces as a 409 whether it is hit here or at the commit.
+    /// refusal exactly as <c>UnitOfWork.CommitAsync</c> does, so <c>user_name_index</c> - unique on
+    /// the normalized user name, which is the email - surfaces as a 409 here or at the commit.
     /// </summary>
     private async Task FlushAsync(CancellationToken cancellationToken)
     {

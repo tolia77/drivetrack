@@ -1,11 +1,16 @@
 using System.Globalization;
 using System.Net;
 using System.Text.Json;
+using DriveTrack.Application.Abstractions;
+using DriveTrack.Application.Authorization;
 using DriveTrack.Application.Common;
+using DriveTrack.Application.Users;
 using DriveTrack.Domain.Identity;
 using DriveTrack.Domain.Reviews;
 using DriveTrack.Integration.Tests.Persistence;
 using DriveTrack.Integration.Tests.Support;
+using FluentValidation;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace DriveTrack.Integration.Tests.Identity;
 
@@ -98,10 +103,11 @@ public class ClientAdministrationTests(PostgresFixture postgres)
     [Fact]
     public async Task The_roster_is_ordered_by_surname_rather_than_by_insertion()
     {
-        // ListByRoleAsync documents `ORDER BY last_name, first_name, id`, and every other assertion
-        // in this file finds its row by id - so the ordering was asserted nowhere and dropping the
-        // clause would have changed nothing anybody could see. The two surnames sort opposite to the
-        // order the accounts are opened in, so insertion order cannot pass by coincidence.
+        // GET /api/clients is the client repository's ListPageAsync, whose default order is surname,
+        // then given name, then client row id - and every other assertion in this file finds its row by id, so
+        // without this the default sort could be dropped with nothing anybody could see. The two
+        // surnames sort opposite to the order the accounts are opened in, so insertion order cannot
+        // pass by coincidence.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await AdministrationApi.CreateHostAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -521,8 +527,70 @@ public class ClientAdministrationTests(PostgresFixture postgres)
             factory, "asp_net_users", $"id = {adminUserId}", cancellationToken));
     }
 
+    [Fact]
+    public async Task The_unpaged_roster_for_the_delivery_picker_carries_every_client_against_postgres()
+    {
+        // ListAllAsync has no REST route - its one caller is the delivery form's client picker - so
+        // it is driven through the service itself, under a dispatcher, against the real schema. It
+        // is the reader of ListByRoleAsync's single joined query and the client rows beside it.
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await using var factory = await AdministrationApi.CreateHostAsync(postgres.ConnectionString, cancellationToken);
+        using var client = factory.CreateClient();
+
+        var first = await AdministrationApi.RegisterClientAsync(
+            client, cancellationToken, firstName: "Олена", phoneNumber: "+380441234567");
+        var second = await AdministrationApi.RegisterClientAsync(
+            client, cancellationToken, firstName: "Марія", phoneNumber: "+380509876543");
+
+        await using var scope = factory.Services.CreateAsyncScope();
+        var services = scope.ServiceProvider;
+        var dispatcher = new DispatcherCaller();
+
+        var roster = new ClientAdministrationService(
+            services.GetRequiredService<IUnitOfWorkFactory>(),
+            new AccessGuard(dispatcher),
+            services.GetRequiredService<IValidator<ClientAccountState>>(),
+            services.GetRequiredService<IValidator<ListClientsQuery>>());
+
+        var rows = await roster.ListAllAsync(cancellationToken);
+
+        var one = Assert.Single(rows, row => row.UserId == new UserId(first.UserId));
+        var two = Assert.Single(rows, row => row.UserId == new UserId(second.UserId));
+
+        Assert.Equal(first.Email, one.Email);
+        Assert.Equal("Олена", one.FirstName);
+        Assert.Equal("+380441234567", one.PhoneNumber);
+        Assert.Equal("+380509876543", two.PhoneNumber);
+
+        // Each row carries its own client row's key, tied to the row rather than merely present.
+        foreach (var (row, userId) in new[] { (one, first.UserId), (two, second.UserId) })
+        {
+            Assert.Equal(
+                1L,
+                await AdministrationApi.CountAsync(
+                    factory,
+                    "clients",
+                    $"user_id = {userId} AND id = {row.ClientId.Value.ToString(CultureInfo.InvariantCulture)}",
+                    cancellationToken));
+        }
+    }
+
     private static string Route(int userId) =>
         "/api/clients/" + userId.ToString(CultureInfo.InvariantCulture);
+
+    /// <summary>A dispatcher, which is the least the client roster is guarded for (FR-48).</summary>
+    private sealed class DispatcherCaller : ICurrentUser
+    {
+        public bool IsAuthenticated => true;
+
+        public UserId UserId => new(int.MaxValue);
+
+        public UserRole Role => UserRole.Dispatcher;
+
+        public DriverId? DriverId => null;
+
+        public ClientId? ClientId => null;
+    }
 
     /// <summary>
     /// A body written out by hand, because an anonymous object cannot express "this property is

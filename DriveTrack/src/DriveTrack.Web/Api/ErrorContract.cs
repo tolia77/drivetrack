@@ -175,6 +175,8 @@ internal static class ErrorContract
         // validator's own code carries is the one that reaches a caller - this arm exists because
         // AD-7's map is total, and because a future path throwing it directly must not answer 500.
         ErrorCode.SHIFT_ENDED_BEFORE_STARTED => StatusCodes.Status422UnprocessableEntity,
+        ErrorCode.SHIFT_OPEN_START_IN_FUTURE => StatusCodes.Status422UnprocessableEntity,
+        ErrorCode.SHIFT_OVERLAPS_EXISTING => StatusCodes.Status409Conflict,
 
         // AD-8 splits the two constraint kinds where AD-7 folds them together, and AD-8 is the more
         // specific rule: a unique violation is a genuine conflict with another row, a check

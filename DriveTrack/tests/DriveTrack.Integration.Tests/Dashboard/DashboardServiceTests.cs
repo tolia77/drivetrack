@@ -276,6 +276,26 @@ public class DashboardServiceTests(PostgresFixture postgres)
     }
 
     [Fact]
+    public async Task Drivers_are_named_in_ukrainian_alphabetical_order_rather_than_code_point_order()
+    {
+        // Є and І sit before А in code-point order. Taken on in reverse, so id order cannot pass.
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await using var world = await World.CreateAsync(postgres.ConnectionString, cancellationToken);
+
+        var dispatcher = await world.AccountAsync("Ірина", "Бондар", UserRole.Dispatcher, cancellationToken);
+
+        await world.DriverAsync("Ірина", "Коваль", vehicleId: null, cancellationToken);
+        await world.DriverAsync("Євген", "Коваль", vehicleId: null, cancellationToken);
+        await world.DriverAsync("Андрій", "Коваль", vehicleId: null, cancellationToken);
+
+        var view = await world.ReadAsync(dispatcher, UserRole.Dispatcher, cancellationToken);
+
+        Assert.Equal(
+            ["Андрій Коваль", "Євген Коваль", "Ірина Коваль"],
+            view.Drivers.Select(driver => driver.Name));
+    }
+
+    [Fact]
     public async Task Vehicles_are_listed_by_their_next_service_with_the_undated_last()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -349,6 +369,11 @@ public class DashboardServiceTests(PostgresFixture postgres)
         Assert.Equal(5, review.Rating);
         Assert.Equal("Андрій Шевчук", review.ClientName);
         Assert.Equal("Олена Коваленко", review.DriverName);
+
+        // The roster card carries the standing that review gives her (FR-118).
+        var rated = Assert.Single(view.Drivers, driver => driver.Id == olena.DriverId);
+        Assert.Equal(5.0, rated.Rating);
+        Assert.Equal(1, rated.ReviewCount);
 
         // One line per driver - the newest - and the most recently spoken conversation first.
         var conversations = Assert.IsAssignableFrom<IReadOnlyList<DashboardConversation>>(view.Conversations);

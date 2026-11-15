@@ -3,6 +3,7 @@ using System.Text.Json;
 using DriveTrack.Application.Deliveries;
 using DriveTrack.Application.Notifications;
 using DriveTrack.Domain.Deliveries;
+using DriveTrack.Infrastructure.SideEffects;
 using DriveTrack.Integration.Tests.Fleet;
 using DriveTrack.Integration.Tests.Persistence;
 using DriveTrack.Integration.Tests.Support;
@@ -171,6 +172,66 @@ public class DeliverySideEffectTests(PostgresFixture postgres)
         Assert.Null(Address(delivery, "dropoff"));
 
         // It was asked, which is what separates this from a delivery nothing ever looked at.
+        Assert.Equal(new[] { Pickup, Dropoff }, geocoder.Described);
+    }
+
+    [Fact]
+    public async Task An_address_longer_than_the_column_is_stored_truncated_rather_than_lost()
+    {
+        // The address columns hold 500 characters. An untruncated reply would fail the commit, and
+        // the job would lose the whole address rather than its tail.
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var reply = new string('я', 600);
+        var geocoder = new FakeGeocoder { Address = reply };
+        var sender = new FakeEmailSender();
+
+        await using var factory = await FleetApi.CreateAsync(
+            postgres.ConnectionString, cancellationToken, OutboundPorts.Replace(geocoder, sender));
+
+        using var client = factory.CreateClient();
+
+        var dispatcher = await DeliveryApi.DispatcherAsync(factory, client, cancellationToken);
+
+        var deliveryId = await DeliveryApi.PostAsync(
+            client, dispatcher, DeliveryApi.NewDelivery(), cancellationToken);
+
+        await OutboundPorts.DrainAsync(factory, cancellationToken);
+
+        var stored = await StoredAsync(factory, deliveryId, cancellationToken);
+
+        Assert.NotNull(stored.PickupLocation.Address);
+        Assert.Equal(500, stored.PickupLocation.Address.Length);
+        Assert.StartsWith(stored.PickupLocation.Address, reply, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_whitespace_only_reply_leaves_the_address_null()
+    {
+        // Blank is "the provider had nothing", not an address of three spaces.
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var geocoder = new FakeGeocoder { Address = "   " };
+        var sender = new FakeEmailSender();
+
+        await using var factory = await FleetApi.CreateAsync(
+            postgres.ConnectionString, cancellationToken, OutboundPorts.Replace(geocoder, sender));
+
+        using var client = factory.CreateClient();
+
+        var dispatcher = await DeliveryApi.DispatcherAsync(factory, client, cancellationToken);
+
+        var deliveryId = await DeliveryApi.PostAsync(
+            client, dispatcher, DeliveryApi.NewDelivery(), cancellationToken);
+
+        await OutboundPorts.DrainAsync(factory, cancellationToken);
+
+        var stored = await StoredAsync(factory, deliveryId, cancellationToken);
+
+        Assert.Null(stored.PickupLocation.Address);
+        Assert.Null(stored.PickupLocation.AddressResolvedAt);
+        Assert.Null(stored.DropoffLocation.Address);
+
         Assert.Equal(new[] { Pickup, Dropoff }, geocoder.Described);
     }
 
@@ -426,6 +487,92 @@ public class DeliverySideEffectTests(PostgresFixture postgres)
             }
 
             return _inner!.RunAsync(job, cancellationToken);
+        }
+    }
+
+    [Fact]
+    public async Task A_job_that_hangs_is_abandoned_at_its_deadline_and_the_next_one_runs()
+    {
+        // The worker's per-job deadline: one job that never answers - an SMTP relay that accepts and
+        // goes silent is the real case - must not hold the single reader for the life of the process.
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var geocoder = new FakeGeocoder { Address = "Київ, Хрещатик, 1" };
+        var sender = new FakeEmailSender();
+        var runner = new HangFirstRunner();
+
+        await using var factory = await FleetApi.CreateAsync(
+            postgres.ConnectionString,
+            cancellationToken,
+            services =>
+            {
+                OutboundPorts.Replace(geocoder, sender)(services);
+
+                services.AddSingleton<IDeliverySideEffectRunner>(provider =>
+                    runner.Wrapping(ActivatorUtilities.CreateInstance<DeliverySideEffectRunner>(provider)));
+
+                services.Configure<DeliverySideEffectWorkerOptions>(
+                    options => options.JobTimeout = TimeSpan.FromMilliseconds(500));
+            });
+
+        using var client = factory.CreateClient();
+
+        var dispatcher = await DeliveryApi.DispatcherAsync(factory, client, cancellationToken);
+
+        // Both queued before anything drains, so the second really is waiting behind the hung one.
+        await DeliveryApi.PostAsync(client, dispatcher, DeliveryApi.NewDelivery(), cancellationToken);
+
+        var second = await DeliveryApi.PostAsync(
+            client, dispatcher, DeliveryApi.NewDelivery(), cancellationToken);
+
+        await OutboundPorts.DrainAsync(factory, cancellationToken);
+
+        // The hung job was released by the deadline, not by the host stopping.
+        Assert.True(runner.Abandoned);
+
+        var delivery = await ReadAsync(client, dispatcher, second, cancellationToken);
+
+        Assert.Equal("Київ, Хрещатик, 1", Address(delivery, "pickup"));
+    }
+
+    /// <summary>
+    /// A runner that hangs on the first job until its token is cancelled, and delegates every one
+    /// after it.
+    /// </summary>
+    private sealed class HangFirstRunner : IDeliverySideEffectRunner
+    {
+        private IDeliverySideEffectRunner? _inner;
+        private int _started;
+        private int _abandoned;
+
+        /// <summary>Whether the hung job's token was cancelled.</summary>
+        public bool Abandoned => Volatile.Read(ref _abandoned) == 1;
+
+        /// <summary>Takes the real runner to delegate to, and answers itself.</summary>
+        /// <param name="inner">The production runner.</param>
+        public IDeliverySideEffectRunner Wrapping(IDeliverySideEffectRunner inner)
+        {
+            _inner = inner;
+
+            return this;
+        }
+
+        /// <inheritdoc />
+        public async Task RunAsync(DeliverySideEffectJob job, CancellationToken cancellationToken)
+        {
+            if (Interlocked.CompareExchange(ref _started, 1, 0) == 0)
+            {
+                try
+                {
+                    await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+                }
+                finally
+                {
+                    Volatile.Write(ref _abandoned, cancellationToken.IsCancellationRequested ? 1 : 0);
+                }
+            }
+
+            await _inner!.RunAsync(job, cancellationToken);
         }
     }
 

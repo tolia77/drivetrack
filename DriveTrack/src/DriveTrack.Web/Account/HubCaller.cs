@@ -20,6 +20,11 @@ namespace DriveTrack.Web.Account;
 /// that were always there.
 /// </para>
 /// <para>
+/// One other caller sets it: <c>RevalidatingSessionStateProvider</c>, which checks a live circuit's
+/// session from a scope of its own that has neither a request nor a circuit - the same situation a
+/// hub invocation is in, answered the same way.
+/// </para>
+/// <para>
 /// Public rather than internal, unlike its neighbours in this folder: it is a constructor parameter
 /// of <c>ChatHub</c>, which SignalR reflects over and builds executors for, and a public hub with an
 /// internal dependency does not compile.

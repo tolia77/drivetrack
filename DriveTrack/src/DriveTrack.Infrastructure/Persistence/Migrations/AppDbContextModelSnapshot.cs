@@ -133,6 +133,12 @@ namespace DriveTrack.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(32)")
                         .HasColumnName("status");
 
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.Property<DateTimeOffset?>("WindowEarliestAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("window_earliest_at");

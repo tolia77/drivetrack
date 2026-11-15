@@ -91,6 +91,54 @@ public class ProofOfDeliveryTests(PostgresFixture postgres)
     }
 
     [Fact]
+    public async Task A_shouted_content_type_is_kept_in_its_one_lower_case_spelling()
+    {
+        // MIME types are case-insensitive, so IMAGE/JPEG is accepted - and then normalised once, so
+        // the view, the column and the stored object all carry the same spelling.
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var store = new FakeAssetStore();
+
+        await using var factory = await FleetApi.CreateAsync(
+            postgres.ConnectionString, cancellationToken, OutboundPorts.Replace(store));
+        using var client = factory.CreateClient();
+
+        var (token, deliveryId) = await AssignedAsync(factory, client, cancellationToken);
+
+        using (var captured = await ProofApi.CaptureAsync(
+                   client,
+                   token,
+                   deliveryId,
+                   cancellationToken,
+                   signature: ProofApi.Png,
+                   photoContentType: "IMAGE/JPEG"))
+        {
+            Assert.Equal(HttpStatusCode.OK, captured.StatusCode);
+
+            var view = await FleetApi.DataAsync(captured, cancellationToken);
+
+            var photo = view.GetProperty("assets").EnumerateArray()
+                .Single(asset => asset.GetProperty("kind").GetString() == nameof(ProofAssetKind.Photo));
+
+            Assert.Equal("image/jpeg", photo.GetProperty("contentType").GetString());
+        }
+
+        await using var context = await factory.Database.ContextFactory
+            .CreateDbContextAsync(cancellationToken);
+
+        var stored = await context.ProofOfDeliveries
+            .AsNoTracking()
+            .Include(proof => proof.Assets)
+            .SingleAsync(proof => proof.DeliveryId == deliveryId, cancellationToken);
+
+        var storedPhoto = Assert.Single(stored.Assets, asset => asset.Kind == ProofAssetKind.Photo);
+
+        Assert.Equal("image/jpeg", storedPhoto.ContentType);
+        Assert.Equal(
+            "image/jpeg",
+            Assert.Single(store.Saved, saved => saved.Key == storedPhoto.StorageKey).ContentType);
+    }
+
+    [Fact]
     public async Task Every_committed_storage_key_resolves_in_the_store()
     {
         // The ordering's guarantee, read off both sides at once: the keys the database holds are
@@ -596,15 +644,12 @@ public class ProofOfDeliveryTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task A_store_that_will_not_write_keeps_the_proof_and_leaves_nothing_in_the_bucket()
+    public async Task A_store_that_will_not_write_takes_the_proof_back_so_it_can_be_captured_again()
     {
-        // The last row of the matrix, and the one this ordering deliberately inverts. The port's
-        // contract is that a failed save throws, so the capture is still a 500 - a 200 whose assets
-        // do not resolve would be the system asserting evidence it does not hold. What changes is
-        // what survives: the row is already committed and is kept, because it is what names whatever
-        // objects did land before the failure, and a row whose object is absent is a state the
-        // system already answers. The old ordering's residue - objects in a bucket that no row will
-        // ever name and nothing can delete - was neither findable nor answerable.
+        // The port's contract is that a failed save throws, so the capture is still a 500 - a 200
+        // whose assets do not resolve would be the system asserting evidence it does not hold. The
+        // proof row was already committed, and it is removed again: kept, FR-123 would refuse every
+        // recapture and FR-120 would accept evidence that is not there.
         var cancellationToken = TestContext.Current.CancellationToken;
         var store = new FakeAssetStore
         {
@@ -634,36 +679,26 @@ public class ProofOfDeliveryTests(PostgresFixture postgres)
                 cancellationToken);
         }
 
-        // Nothing reached the store, so nothing unreferenced was left there. Minting a key is not
-        // writing an object, which is the whole reason the keys could be committed first.
         Assert.Empty(store.Saved);
 
         await using (var context = await factory.Database.ContextFactory
                          .CreateDbContextAsync(cancellationToken))
         {
-            Assert.True(await context.ProofOfDeliveries
+            Assert.False(await context.ProofOfDeliveries
                 .AsNoTracking()
                 .AnyAsync(proof => proof.DeliveryId == deliveryId, cancellationToken));
+            Assert.False(await context.Set<ProofAsset>().AsNoTracking().AnyAsync(cancellationToken));
         }
 
-        // And the residue is the answered state rather than a crash: the proof reads back, and the
-        // asset route says there is no such image - the same 404 a bucket emptied out of band gets.
+        // Once the store is back, the driver captures again and it is the one proof the delivery has.
+        store.Failure = null;
+
+        await ProofApi.CaptureOkAsync(client, driver.Token, deliveryId, cancellationToken);
+
         var proof = await ProofAsync(client, dispatcher, deliveryId, cancellationToken);
-        var assets = proof.GetProperty("assets").EnumerateArray().ToArray();
 
-        Assert.Equal(2, assets.Length);
-
-        foreach (var asset in assets)
-        {
-            using var bytes = await ProofApi.AssetAsync(
-                client, asset.GetProperty("id").GetInt32(), cancellationToken, dispatcher);
-
-            await FleetApi.AssertFailureAsync(
-                bytes,
-                HttpStatusCode.NotFound,
-                ErrorCode.COMMON_NOT_FOUND,
-                cancellationToken);
-        }
+        Assert.Equal(2, proof.GetProperty("assets").GetArrayLength());
+        Assert.Equal(2, store.Saved.Count);
     }
 
     [Fact]

@@ -71,7 +71,7 @@ public sealed class ReviewService(
 
         if (delivery.Status is not (DeliveryStatus.Delivered or DeliveryStatus.Failed))
         {
-            // FR-62: a verdict on a journey that has not happened yet. Refused before validation,
+            // FR-61: a verdict on a journey that has not happened yet. Refused before validation,
             // because it is a refusal about the delivery the payload named rather than about the
             // rating or the text - and telling an author their text is fine when the whole request
             // is not would be the wrong first answer.
@@ -82,8 +82,9 @@ public sealed class ReviewService(
         }
 
         // Trimmed as it is validated, not afterwards: the validator has to judge the string that
-        // will actually be stored, or three spaces pass as content and land as nothing. The trim
-        // belongs to the contract rather than to this line, so the edit path applies the same one.
+        // will actually be stored, or a full-length comment with a trailing newline is refused.
+        // The trim belongs to the contract rather than to this line, so the edit path applies the
+        // same one.
         var trimmed = command.Trimmed();
 
         await ValidatorExtensions.ValidateAndThrowAsync(createValidator, trimmed, cancellationToken);

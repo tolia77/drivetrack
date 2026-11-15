@@ -12,6 +12,12 @@ namespace DriveTrack.Application.Drivers;
 /// than restated: the same columns are being written, and two copies of a length would be two
 /// answers to one question.
 /// </para>
+/// <para>
+/// The stored text fields are judged trimmed, because <c>DriverService</c> trims them before it
+/// writes: a name of exactly the column's width with a trailing space fits once trimmed and must not
+/// be refused. <c>NotEmpty</c> already refuses whitespace-only text, so only the length rules need
+/// the trim. The password is judged as sent, because it is passed on as sent.
+/// </para>
 /// </summary>
 public sealed class CreateDriverCommandValidator : AbstractValidator<CreateDriverCommand>
 {
@@ -23,17 +29,17 @@ public sealed class CreateDriverCommandValidator : AbstractValidator<CreateDrive
     {
         RuleFor(command => command.FirstName)
             .NotEmpty().WithMessage(nameof(ErrorCode.COMMON_FIELD_REQUIRED))
-            .MaximumLength(RegisterClientCommandValidator.NameMaximumLength)
+            .Must(value => FitsTrimmed(value, RegisterClientCommandValidator.NameMaximumLength))
                 .WithMessage(nameof(ErrorCode.AUTH_FIRST_NAME_TOO_LONG));
 
         RuleFor(command => command.LastName)
             .NotEmpty().WithMessage(nameof(ErrorCode.COMMON_FIELD_REQUIRED))
-            .MaximumLength(RegisterClientCommandValidator.NameMaximumLength)
+            .Must(value => FitsTrimmed(value, RegisterClientCommandValidator.NameMaximumLength))
                 .WithMessage(nameof(ErrorCode.AUTH_LAST_NAME_TOO_LONG));
 
         RuleFor(command => command.Email)
             .NotEmpty().WithMessage(nameof(ErrorCode.AUTH_EMAIL_INVALID))
-            .MaximumLength(RegisterClientCommandValidator.EmailMaximumLength)
+            .Must(value => FitsTrimmed(value, RegisterClientCommandValidator.EmailMaximumLength))
                 .WithMessage(nameof(ErrorCode.AUTH_EMAIL_INVALID))
             .EmailAddress().WithMessage(nameof(ErrorCode.AUTH_EMAIL_INVALID));
 
@@ -47,10 +53,14 @@ public sealed class CreateDriverCommandValidator : AbstractValidator<CreateDrive
 
         RuleFor(command => command.LicenseNumber)
             .NotEmpty().WithMessage(nameof(ErrorCode.COMMON_FIELD_REQUIRED))
-            .MaximumLength(LicenseNumberMaximumLength)
+            .Must(value => FitsTrimmed(value, LicenseNumberMaximumLength))
                 .WithMessage(nameof(ErrorCode.FLEET_LICENSE_NUMBER_TOO_LONG));
 
         // Nothing about VehicleId: whether that vehicle exists and whether it is free are questions
         // about other rows, and AD-24 answers them in the one writer of drivers.vehicle_id.
     }
+
+    /// <summary>Whether the value, trimmed as the service will store it, fits within the bound.</summary>
+    internal static bool FitsTrimmed(string? value, int maximumLength) =>
+        value is null || value.Trim().Length <= maximumLength;
 }

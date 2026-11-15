@@ -1,6 +1,7 @@
 using DriveTrack.Application.Deliveries;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace DriveTrack.Infrastructure.SideEffects;
 
@@ -29,10 +30,12 @@ namespace DriveTrack.Infrastructure.SideEffects;
 public sealed class DeliverySideEffectWorker(
     DeliverySideEffectQueue queue,
     IDeliverySideEffectRunner runner,
+    IOptions<DeliverySideEffectWorkerOptions> options,
     ILogger<DeliverySideEffectWorker> logger) : BackgroundService
 {
     /// <summary>
-    /// The longest a single job may take before it is abandoned.
+    /// The longest a single job may take before it is abandoned
+    /// (<see cref="DeliverySideEffectWorkerOptions.JobTimeout"/>).
     /// <para>
     /// Without it the loop has no deadline of its own, and one job can hold it for the life of the
     /// process. That is not hypothetical: <c>SmtpClient.Timeout</c> does not apply to
@@ -45,7 +48,7 @@ public sealed class DeliverySideEffectWorker(
     /// service-level target. A geocoder has its own, shorter timeout.
     /// </para>
     /// </summary>
-    private static readonly TimeSpan JobTimeout = TimeSpan.FromMinutes(2);
+    private readonly TimeSpan _jobTimeout = options.Value.JobTimeout;
 
     /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -58,7 +61,7 @@ public sealed class DeliverySideEffectWorker(
                 // the job running out of time. Its own source per job, because a deadline shared
                 // across jobs is a deadline that has already expired by the second one.
                 using var deadline = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
-                deadline.CancelAfter(JobTimeout);
+                deadline.CancelAfter(_jobTimeout);
 
                 try
                 {

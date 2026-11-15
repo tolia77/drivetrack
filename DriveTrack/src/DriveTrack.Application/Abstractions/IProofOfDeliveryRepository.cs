@@ -4,8 +4,8 @@ using DriveTrack.Domain.Deliveries;
 namespace DriveTrack.Application.Abstractions;
 
 /// <summary>
-/// Persistence for <see cref="ProofOfDelivery"/>. No <c>Remove</c>: a proof is removed only by
-/// the cascade from its delivery (DR-9).
+/// Persistence for <see cref="ProofOfDelivery"/>. A proof is removed by the cascade from its
+/// delivery (DR-9), or by <see cref="Remove"/> when its capture failed to store its evidence.
 /// <para>
 /// No <c>Update</c> either, and for a different reason: FR-123 makes a proof immutable, so the
 /// absence of the method is the rule. A path that does not exist cannot be taken by mistake.
@@ -63,4 +63,10 @@ public interface IProofOfDeliveryRepository
 
     /// <summary>Stages a new proof for the next commit.</summary>
     void Add(ProofOfDelivery proof);
+
+    /// <summary>
+    /// Stages the removal of a proof, and of its assets by cascade. Only for a capture whose
+    /// evidence did not reach the store: a stored proof is immutable (FR-123).
+    /// </summary>
+    void Remove(ProofOfDelivery proof);
 }

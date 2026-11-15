@@ -320,7 +320,7 @@ public class ChatAssetTests
             Path.Combine(RepositoryLayout.ProjectDirectory("DriveTrack.Web"), "Program.cs"));
 
         Assert.Contains(@"const hubUrl = ""/hubs/chat"";", module, StringComparison.Ordinal);
-        Assert.Contains(@"MapHub<ChatHub>(""/hubs/chat"")", program, StringComparison.Ordinal);
+        Assert.Contains(@"MapHub<ChatHub>(""/hubs/chat""", program, StringComparison.Ordinal);
 
         // Outside /api, which is what lets a browser's cookie authenticate the handshake: AD-22
         // makes /api bearer-only and the circuit holds no token.

@@ -129,11 +129,43 @@ public interface IUserAccountRepository
     /// <summary>
     /// Every account holding <paramref name="role"/>, ordered by name (FR-46, FR-49).
     /// <para>
-    /// Unpaginated on purpose: the original's two administration lists are unpaginated and NFR-27
-    /// preserves the paging that already existed rather than inventing more.
+    /// Unpaged, for the readers that need the whole set: a picker that must offer every client, or
+    /// a lookup of names across a whole roster. The paged administration tables read through
+    /// <see cref="ListDispatchersAsync"/> and the client repository's page instead.
     /// </para>
     /// </summary>
     Task<IReadOnlyList<UserAccount>> ListByRoleAsync(UserRole role, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The accounts behind the named driver rows, in no particular order. An id no driver holds is
+    /// simply absent from the answer.
+    /// <para>
+    /// The keyed counterpart of <see cref="ListByRoleAsync"/>: a caller naming a handful of drivers
+    /// - one delivery's, or one page's - reads those accounts rather than the whole roster.
+    /// </para>
+    /// </summary>
+    Task<IReadOnlyList<UserAccount>> ListByDriverIdsAsync(
+        IReadOnlyCollection<DriverId> driverIds,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The accounts behind the named client rows, in no particular order. An id no client holds is
+    /// simply absent from the answer.
+    /// </summary>
+    Task<IReadOnlyList<UserAccount>> ListByClientIdsAsync(
+        IReadOnlyCollection<ClientId> clientIds,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The account's current Identity security stamp, or null when no account has that id.
+    /// <para>
+    /// Opaque, and read only to be compared: a session carries the stamp it was issued with, and a
+    /// stamp that has since rolled - a password replaced - or an account that has gone means the
+    /// session is no longer the account's. A stored null is answered as the empty string, so null
+    /// keeps meaning "no account" and nothing else.
+    /// </para>
+    /// </summary>
+    Task<string?> FindSecurityStampAsync(UserId userId, CancellationToken cancellationToken);
 
     /// <summary>
     /// One page of the dispatcher accounts, sorted in SQL over every one of them, and how many there
@@ -163,6 +195,10 @@ public interface IUserAccountRepository
     /// Replaces the stored password (FR-8, FR-46, FR-50). The plaintext reaches storage only
     /// through Identity's hasher, and Identity's own strength policy runs here, so a weak password
     /// is refused by the same rule and reported with the same code as at registration.
+    /// <para>
+    /// It also rolls the security stamp, so every cookie session issued before the change is refused
+    /// at its next revalidation (see <see cref="FindSecurityStampAsync"/>).
+    /// </para>
     /// </summary>
     /// <exception cref="Common.NotFoundException">No account has that id.</exception>
     /// <exception cref="Common.ValidationException">Identity's own policy refused the password.</exception>

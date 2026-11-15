@@ -17,9 +17,11 @@ namespace DriveTrack.Integration.Tests.Support;
 /// reads the envelope the product actually sends.
 /// </para>
 /// <para>
-/// The dialogue is the minimum <c>SmtpClient</c> needs: a greeting, a capability list with no
-/// extensions worth negotiating, then an acknowledgement per command. No TLS and no authentication —
-/// a test that needed either would be testing the BCL rather than this adapter.
+/// The dialogue is the minimum <c>SmtpClient</c> needs: a greeting, a capability list, then an
+/// acknowledgement per command. By default the capability list offers nothing, so no AUTH is ever
+/// attempted; <see cref="Start(bool)"/> with <c>advertiseAuth</c> offers <c>AUTH PLAIN LOGIN</c>
+/// and records what the client presented, because <c>SmtpClient</c> silently skips credentials a
+/// relay does not ask for. No TLS: STARTTLS would need a certificate the suite does not carry.
 /// </para>
 /// </summary>
 internal sealed class LoopbackSmtpServer : IAsyncDisposable
@@ -29,12 +31,21 @@ internal sealed class LoopbackSmtpServer : IAsyncDisposable
     private readonly Task _accepting;
     private readonly Lock _gate = new();
     private readonly List<RecordedMessage> _messages = [];
+    private readonly List<RecordedCredential> _credentials = [];
+    private readonly bool _advertiseAuth;
 
-    private LoopbackSmtpServer(TcpListener listener)
+    private LoopbackSmtpServer(TcpListener listener, bool advertiseAuth)
     {
         _listener = listener;
+        _advertiseAuth = advertiseAuth;
         _accepting = Task.Run(AcceptAsync);
     }
+
+    /// <summary>One successful AUTH exchange, as the relay decoded it.</summary>
+    /// <param name="Mechanism">The SASL mechanism the client chose, upper-cased.</param>
+    /// <param name="User">The user name presented.</param>
+    /// <param name="Password">The password presented.</param>
+    internal sealed record RecordedCredential(string Mechanism, string User, string Password);
 
     /// <summary>One message as the relay received it.</summary>
     /// <param name="From">The envelope sender, as <c>MAIL FROM</c> gave it.</param>
@@ -85,12 +96,13 @@ internal sealed class LoopbackSmtpServer : IAsyncDisposable
     }
 
     /// <summary>Starts a relay on a free loopback port.</summary>
-    public static LoopbackSmtpServer Start()
+    /// <param name="advertiseAuth">Offer <c>AUTH PLAIN LOGIN</c> in the EHLO reply and accept any credentials.</param>
+    public static LoopbackSmtpServer Start(bool advertiseAuth = false)
     {
         var listener = new TcpListener(IPAddress.Loopback, 0);
         listener.Start();
 
-        return new LoopbackSmtpServer(listener);
+        return new LoopbackSmtpServer(listener, advertiseAuth);
     }
 
     /// <summary>The port the relay is listening on.</summary>
@@ -104,6 +116,18 @@ internal sealed class LoopbackSmtpServer : IAsyncDisposable
             lock (_gate)
             {
                 return [.. _messages];
+            }
+        }
+    }
+
+    /// <summary>Every AUTH exchange the relay has accepted, in order.</summary>
+    public IReadOnlyList<RecordedCredential> Credentials
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return [.. _credentials];
             }
         }
     }
@@ -157,9 +181,34 @@ internal sealed class LoopbackSmtpServer : IAsyncDisposable
         {
             if (line.StartsWith("EHLO", StringComparison.OrdinalIgnoreCase))
             {
-                // No extensions offered, so the client sends the message as-is: no SIZE to negotiate,
-                // no AUTH to attempt, no 8BITMIME to switch on. The envelope is what is under test.
-                await writer.WriteLineAsync("250 loopback.drivetrack.test");
+                // No other extension offered, so the client sends the message as-is: no SIZE to
+                // negotiate, no 8BITMIME to switch on. The envelope is what is under test.
+                if (_advertiseAuth)
+                {
+                    await writer.WriteLineAsync("250-loopback.drivetrack.test");
+                    await writer.WriteLineAsync("250 AUTH PLAIN LOGIN");
+                }
+                else
+                {
+                    await writer.WriteLineAsync("250 loopback.drivetrack.test");
+                }
+            }
+            else if (_advertiseAuth && line.StartsWith("AUTH ", StringComparison.OrdinalIgnoreCase))
+            {
+                var credential = await AuthenticateAsync(line, reader, writer);
+
+                if (credential is null)
+                {
+                    await writer.WriteLineAsync("504 5.5.4 Unrecognized authentication type");
+                    continue;
+                }
+
+                lock (_gate)
+                {
+                    _credentials.Add(credential);
+                }
+
+                await writer.WriteLineAsync("235 2.7.0 Authentication successful");
             }
             else if (line.StartsWith("HELO", StringComparison.OrdinalIgnoreCase))
             {
@@ -204,6 +253,55 @@ internal sealed class LoopbackSmtpServer : IAsyncDisposable
             }
         }
     }
+
+    /// <summary>
+    /// Runs one PLAIN or LOGIN exchange, with or without an initial response, and decodes what the
+    /// client presented. Null for any other mechanism.
+    /// </summary>
+    private async Task<RecordedCredential?> AuthenticateAsync(
+        string line,
+        StreamReader reader,
+        StreamWriter writer)
+    {
+        var parts = line.Split(' ', 3, StringSplitOptions.RemoveEmptyEntries);
+        var mechanism = parts[1].ToUpperInvariant();
+        var initial = parts.Length > 2 ? parts[2] : null;
+
+        switch (mechanism)
+        {
+            case "PLAIN":
+            {
+                // authzid NUL authcid NUL passwd (RFC 4616).
+                var response = initial ?? await ChallengeAsync(string.Empty, reader, writer);
+                var fields = Decode(response).Split('\0');
+
+                return new RecordedCredential(mechanism, fields[^2], fields[^1]);
+            }
+
+            case "LOGIN":
+            {
+                var user = initial ?? await ChallengeAsync("Username:", reader, writer);
+                var password = await ChallengeAsync("Password:", reader, writer);
+
+                return new RecordedCredential(mechanism, Decode(user), Decode(password));
+            }
+
+            default:
+                return null;
+        }
+    }
+
+    /// <summary>Sends a 334 continuation carrying <paramref name="prompt"/> and returns the reply line.</summary>
+    private async Task<string> ChallengeAsync(string prompt, StreamReader reader, StreamWriter writer)
+    {
+        await writer.WriteLineAsync(
+            "334 " + Convert.ToBase64String(Encoding.UTF8.GetBytes(prompt)));
+
+        return await reader.ReadLineAsync(_stopping.Token) ?? string.Empty;
+    }
+
+    private static string Decode(string base64) =>
+        Encoding.UTF8.GetString(Convert.FromBase64String(base64.Trim()));
 
     /// <summary>The body up to the lone dot that ends it, with dot-stuffing undone.</summary>
     private async Task<string> DataAsync(StreamReader reader)

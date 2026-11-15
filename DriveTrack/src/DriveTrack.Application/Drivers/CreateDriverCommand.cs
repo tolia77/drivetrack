@@ -5,8 +5,10 @@ namespace DriveTrack.Application.Drivers;
 /// number, and optionally the vehicle they start out holding.
 /// <para>
 /// The account fields are here because FR-35 creates the account as part of taking on the driver.
-/// AD-24 keeps that narrow — <c>DriverService</c> reaches the Identity port for exactly two calls,
-/// this one and FR-39's delete — and the alternative costs the single transaction AD-5 requires.
+/// AD-24 keeps that narrow — <c>DriverService</c> writes through the Identity port only for this
+/// create (after an email-in-use check), FR-37's rename and FR-39's delete, and otherwise only
+/// reads the account behind a driver — and the alternative costs the single transaction AD-5
+/// requires.
 /// </para>
 /// </summary>
 /// <param name="FirstName">Given name.</param>

@@ -15,6 +15,9 @@ docker compose -f compose.dev.yaml up
 
 The app is served on <http://localhost:8080>.
 
+Mail the app sends goes to Mailpit, a mail catcher started with the stack; read it at
+<http://localhost:8025>. Nothing is delivered to a real mailbox.
+
 The first start creates the database volume, brings PostgreSQL and Garage up, applies the
 Garage cluster layout once, and applies every EF Core migration before the app accepts a
 request. Later starts reuse the volumes and apply nothing.

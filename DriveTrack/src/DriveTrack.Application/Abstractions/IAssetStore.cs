@@ -37,9 +37,8 @@ namespace DriveTrack.Application.Abstractions;
 /// that cannot answer returns null, because an address is a cache DR-11 makes optional. A store that
 /// cannot write <em>throws</em>, because a capture is only as good as its evidence and a 200 whose
 /// assets do not resolve would be the system asserting evidence it does not hold. The exception
-/// propagates, and the row committed a moment earlier is deliberately kept: it is what names the
-/// bytes that <em>were</em> written before the failure, and it turns the residue of a half-written
-/// capture into a state the system already models. A row whose object is absent is not a crash —
+/// propagates, and the caller removes the row it committed a moment earlier so the capture can be
+/// made again. A row whose object is absent - a bucket emptied out of band - is still not a crash:
 /// <see cref="OpenAsync"/> answers null for it, and the asset route turns that into a 404.
 /// </para>
 /// </summary>

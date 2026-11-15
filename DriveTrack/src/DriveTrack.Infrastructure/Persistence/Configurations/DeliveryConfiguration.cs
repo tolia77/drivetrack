@@ -28,6 +28,12 @@ internal sealed class DeliveryConfiguration : IEntityTypeConfiguration<Delivery>
 
         builder.HasKey(delivery => delivery.Id);
 
+        // Optimistic concurrency on PostgreSQL's xmin system column, so no real column is added.
+        // Without it two status changes read from the same row both commit, each writing a timeline
+        // entry and queuing an email; with it the loser's UPDATE matches no row and UnitOfWork turns
+        // that into a 409 COMMON_CONFLICT. A shadow property: nothing in the domain reads it.
+        builder.Property<uint>("Version").IsRowVersion();
+
         builder.Property(delivery => delivery.PackageDetails).HasMaxLength(1000).IsRequired();
         builder.Property(delivery => delivery.DeliveryNotes).HasMaxLength(1000);
         builder.Property(delivery => delivery.PackageWeightKg).HasPrecision(10, 3);

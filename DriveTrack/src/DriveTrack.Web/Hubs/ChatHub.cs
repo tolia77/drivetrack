@@ -1,6 +1,7 @@
 using System.Globalization;
 using DriveTrack.Application.Chat;
 using DriveTrack.Application.Common;
+using DriveTrack.Application.Users;
 using DriveTrack.Domain.Identity;
 using DriveTrack.Web.Account;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -34,7 +35,7 @@ namespace DriveTrack.Web.Hubs;
 /// </para>
 /// </summary>
 [Authorize(AuthenticationSchemes = AuthenticationSchemes.Cookie + "," + JwtBearerDefaults.AuthenticationScheme)]
-public sealed class ChatHub(IChatService chat, HubCaller caller) : Hub
+public sealed class ChatHub(IChatService chat, ISessionService sessions, HubCaller caller) : Hub
 {
     /// <summary>The client method a broadcast message arrives on.</summary>
     public const string ReceiveMessageMethod = "ReceiveMessage";
@@ -51,6 +52,7 @@ public sealed class ChatHub(IChatService chat, HubCaller caller) : Hub
     public async Task<IReadOnlyList<ChatThreadSummary>> ListThreads()
     {
         Adopt();
+        await RequireCurrentSessionAsync();
 
         try
         {
@@ -70,6 +72,7 @@ public sealed class ChatHub(IChatService chat, HubCaller caller) : Hub
     public async Task<ChatThread> JoinThread(int driverId)
     {
         Adopt();
+        await RequireCurrentSessionAsync();
 
         var thread = new DriverId(driverId);
 
@@ -125,6 +128,7 @@ public sealed class ChatHub(IChatService chat, HubCaller caller) : Hub
     public async Task Send(int driverId, string? text)
     {
         Adopt();
+        await RequireCurrentSessionAsync();
 
         var thread = new DriverId(driverId);
 
@@ -161,6 +165,34 @@ public sealed class ChatHub(IChatService chat, HubCaller caller) : Hub
     /// </para>
     /// </summary>
     private void Adopt() => caller.Principal = Context.User;
+
+    /// <summary>
+    /// Refuses a connection whose session has ended since it opened. Called straight after
+    /// <see cref="Adopt"/>, because the service's guard reads the adopted caller.
+    /// <para>
+    /// A connection keeps the principal its handshake established for as long as it stays open, so
+    /// the cookie handler's revalidation never sees it again. Every method that reads or writes a
+    /// conversation therefore asks the same question that revalidation asks - one keyed read per
+    /// call - and a deleted account, or a cookie from before a password reset, is answered
+    /// <c>AUTH_UNAUTHENTICATED</c> and the connection is closed. <c>LeaveThread</c> does not ask:
+    /// giving up a subscription discloses nothing.
+    /// </para>
+    /// </summary>
+    private async Task RequireCurrentSessionAsync()
+    {
+        var principal = Context.User ?? new System.Security.Claims.ClaimsPrincipal();
+
+        if (await SessionValidation.IsCurrentAsync(principal, sessions, Context.ConnectionAborted))
+        {
+            return;
+        }
+
+        Context.Abort();
+
+        throw Translate(new ForbiddenException(
+            ErrorCode.AUTH_UNAUTHENTICATED,
+            "The hub connection's session no longer belongs to its account."));
+    }
 
     /// <summary>
     /// Turns one of AD-8's typed failures into the only shape SignalR can carry back to a caller.

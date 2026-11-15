@@ -34,6 +34,31 @@ public interface IShiftRepository
     Task<Shift?> FindOpenAsync(DriverId driverId, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Whether any other shift of the driver overlaps the half-open window
+    /// <c>[start, end ?? now)</c>. An open shift - the candidate or a stored one - occupies time up
+    /// to <paramref name="now"/> and no further, so a window rostered ahead does not collide with
+    /// the shift a driver is on today, and going on duty does not collide with tomorrow's roster.
+    /// Touching windows - one ending exactly when the other starts - do not overlap.
+    /// <para>
+    /// A lookup, so like <see cref="FindOpenAsync"/> it is the friendly answer rather than a rule
+    /// two racing requests cannot both pass.
+    /// </para>
+    /// </summary>
+    /// <param name="driverId">The driver whose shifts are compared.</param>
+    /// <param name="start">The window's start.</param>
+    /// <param name="end">The window's end, or null for an open shift.</param>
+    /// <param name="excludingId">The shift being edited, which is never compared with itself; null on a create.</param>
+    /// <param name="now">The instant an open shift is taken to run until.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task<bool> AnyOverlappingAsync(
+        DriverId driverId,
+        DateTimeOffset start,
+        DateTimeOffset? end,
+        int? excludingId,
+        DateTimeOffset now,
+        CancellationToken cancellationToken);
+
+    /// <summary>
     /// One page of shifts with each one's driver named, searched and sorted in SQL, and the size of
     /// the whole narrowed set (FR-112, FR-113). Newest first when no column is named.
     /// <para>

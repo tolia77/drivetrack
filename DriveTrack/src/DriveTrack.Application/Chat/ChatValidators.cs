@@ -8,9 +8,9 @@ namespace DriveTrack.Application.Chat;
 /// <para>
 /// Both are judged over the <em>trimmed</em> text, because trimming is what the service stores: a
 /// message of exactly 2000 characters with a trailing newline would otherwise be refused for being
-/// one character too long when the string that reaches the column fits, and <c>"   "</c> would be
-/// accepted as content when what lands is empty. The service trims before it validates, so this
-/// class states the rules and the caller states which string they are about.
+/// one character too long when the string that reaches the column fits. (<c>NotEmpty</c> refuses
+/// whitespace-only text either way.) The service trims before it validates, so this class states
+/// the rules and the caller states which string they are about.
 /// </para>
 /// <para>
 /// <c>MaximumLength</c> restates <c>MessageConfiguration</c>'s 2000. The column is the authority;

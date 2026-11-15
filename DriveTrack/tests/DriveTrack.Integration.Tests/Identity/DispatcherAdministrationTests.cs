@@ -55,6 +55,12 @@ public class DispatcherAdministrationTests(PostgresFixture postgres)
 
             userId = account.GetProperty("userId").GetInt32();
 
+            // 201 names the new resource: the envelope filter must not drop CreatedResult's Location.
+            Assert.NotNull(response.Headers.Location);
+            Assert.Equal(
+                "/api/dispatchers/" + userId.ToString(CultureInfo.InvariantCulture),
+                response.Headers.Location.OriginalString);
+
             Assert.Equal("Ігор", account.GetProperty("firstName").GetString());
             Assert.Equal(email, account.GetProperty("email").GetString());
         }

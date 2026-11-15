@@ -49,7 +49,7 @@ public enum DriverSort
     Vehicle,
 
     /// <summary>
-    /// The average review score (FR-98). Drivers nobody has reviewed sort to the far end in both
+    /// The average review score (FR-118). Drivers nobody has reviewed sort to the far end in both
     /// directions: no verdict is neither the best rating nor the worst.
     /// </summary>
     Rating,

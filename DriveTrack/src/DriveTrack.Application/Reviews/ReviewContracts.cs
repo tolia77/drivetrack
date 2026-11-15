@@ -6,7 +6,7 @@ using DriveTrack.Domain.Reviews;
 namespace DriveTrack.Application.Reviews;
 
 /// <summary>
-/// What a client sends to write a review (FR-62, FR-67).
+/// What a client sends to write a review (FR-59 to FR-62, FR-67).
 /// <para>
 /// The author is not a field, and never can be: it is <c>IAccessGuard.RequireReviewAuthor</c>'s
 /// answer. An author the caller could name is an author the caller could forge.
@@ -25,18 +25,17 @@ public sealed record CreateReviewCommand(int DeliveryId, int Rating, string? Tex
     /// The command as it will actually be stored: the comment with the caller's stray whitespace
     /// taken off.
     /// <para>
-    /// The validator has to judge this rather than the payload, or <c>"   "</c> passes as content
-    /// and lands as nothing, and a comment of exactly the column's width with a trailing newline is
-    /// refused for being one character too long when the string that reaches the column fits. It is
-    /// a method here rather than a line in the service so that the edit path can apply the same one
-    /// — the two paths judging the same content differently is the defect this exists to prevent.
+    /// The validator has to judge this rather than the payload, or a comment of exactly the
+    /// column's width with a trailing newline is refused for being one character too long when the
+    /// string that reaches the column fits. It is a method here rather than a line in the service
+    /// so that the edit path can apply the same one — the two paths judging the same content differently is the defect this exists to prevent.
     /// </para>
     /// </summary>
     internal CreateReviewCommand Trimmed() => this with { Text = Text?.Trim() };
 }
 
 /// <summary>
-/// What an author or a moderator sends to change a review (FR-65).
+/// What an author or a moderator sends to change a review (FR-63, FR-66).
 /// <para>
 /// AD-23: both fields are <see cref="Optional{T}"/>, so an edit that only changes the rating leaves
 /// the text alone rather than clearing it. Neither field is clearable — a review with no text and a
@@ -127,7 +126,7 @@ public enum ReviewSort
 }
 
 /// <summary>
-/// A review as dispatch and moderation read one (FR-64, FR-65): the row, the judgement it carries,
+/// A review as dispatch and moderation read one (FR-65, FR-66): the row, the judgement it carries,
 /// and both parties to the delivery it is about.
 /// <para>
 /// AD-17: a distinct type from <see cref="AuthoredReviewSummary"/> rather than the same type with
@@ -158,7 +157,7 @@ public sealed record ReviewSummary(
     DeliveryParty? Driver);
 
 /// <summary>
-/// A review as the person who wrote it reads one (FR-63), and as a moderator gets it back after an
+/// A review as the person who wrote it reads one (FR-64), and as a moderator gets it back after an
 /// edit: everything <see cref="ReviewSummary"/> carries, minus both parties.
 /// <para>
 /// AD-17 again, and this is the type the rule is actually about. There is no field here a driver's
@@ -185,7 +184,7 @@ public sealed record AuthoredReviewSummary(
 
 /// <summary>
 /// One driver's standing, derived on demand from the reviews of the deliveries they carried
-/// (FR-98, DR-18).
+/// (FR-118, DR-18).
 /// <para>
 /// Never a column on <c>drivers</c>. A stored average is a second answer that goes stale the moment
 /// a review is written, edited or deleted, and the original system's named defect is precisely that

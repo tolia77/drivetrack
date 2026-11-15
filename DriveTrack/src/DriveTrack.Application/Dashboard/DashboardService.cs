@@ -1,3 +1,4 @@
+using System.Globalization;
 using DriveTrack.Application.Abstractions;
 using DriveTrack.Application.Authorization;
 using DriveTrack.Application.Common;
@@ -29,6 +30,10 @@ public sealed class DashboardService(
     ICurrentUser currentUser,
     TimeProvider timeProvider) : IDashboardService
 {
+    /// <summary>Ukrainian alphabetical order for driver names (Є after Е, І after И).</summary>
+    private static readonly StringComparer UkrainianOrder =
+        StringComparer.Create(CultureInfo.GetCultureInfo("uk-UA"), ignoreCase: false);
+
     /// <summary>How many of today's deliveries the card lists.</summary>
     public const int TodayLimit = 5;
 
@@ -179,10 +184,10 @@ public sealed class DashboardService(
                             onDuty.Contains(driver.Id));
                     })
                     // On duty first - they are who a dispatcher can hand work to now - then by
-                    // name, ordinally so the order is the same on every machine, then by id so two
-                    // drivers sharing a name do not swap places between reads.
+                    // name in Ukrainian collation (ordinal would put Є, І and Ї before А), then by
+                    // id so two drivers sharing a name do not swap places between reads.
                     .OrderByDescending(driver => driver.OnDuty)
-                    .ThenBy(driver => driver.Name, StringComparer.Ordinal)
+                    .ThenBy(driver => driver.Name, UkrainianOrder)
                     .ThenBy(driver => driver.Id.Value)
                     .Take(DriverLimit),
             ],

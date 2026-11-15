@@ -44,7 +44,7 @@ public sealed record ChatThread(
 /// preview — this story ships no unread counts.
 /// <para>
 /// The three facts beside the name cost nothing. <c>ListThreadsAsync</c> already reads the roster
-/// through <c>IDriverService.ListAsync</c> and is handed a <c>DriverSummary</c> carrying the
+/// through <c>IDriverService.ListAllAsync</c> and is handed a <c>DriverSummary</c> carrying the
 /// vehicle, its plate and whether the driver is on duty; carrying only the name meant discarding
 /// them and leaving a dispatcher to tell two people apart by a name they may share. No extra query,
 /// no extra round trip — the same rows, read rather than thrown away.
@@ -57,7 +57,7 @@ public sealed record ChatThread(
 /// "no vehicle assigned" is a fact about the driver, and a blank line in the roster is not one.
 /// </param>
 /// <param name="VehicleLicensePlate">That vehicle's plate, or null for the same reason.</param>
-/// <param name="OnDuty">Whether a shift of theirs is open right now (FR-117).</param>
+/// <param name="OnDuty">Whether a shift of theirs is open right now (FR-116).</param>
 public sealed record ChatThreadSummary(
     DriverId DriverId,
     string DriverName,

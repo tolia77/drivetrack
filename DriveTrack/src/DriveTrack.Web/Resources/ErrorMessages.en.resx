@@ -260,4 +260,10 @@
   <data name="SHIFT_ENDED_BEFORE_STARTED" xml:space="preserve">
     <value>The end of the shift must be later than its start.</value>
   </data>
+  <data name="SHIFT_OPEN_START_IN_FUTURE" xml:space="preserve">
+    <value>An open shift cannot start in the future. Give it an end to roster it ahead.</value>
+  </data>
+  <data name="SHIFT_OVERLAPS_EXISTING" xml:space="preserve">
+    <value>This shift overlaps another shift of the same driver.</value>
+  </data>
 </root>

@@ -49,6 +49,12 @@ public class ProofAssetRouteTests(PostgresFixture postgres)
         // application's own origin.
         Assert.Equal(["nosniff"], response.Headers.GetValues("X-Content-Type-Options"));
 
+        // A proof photograph is personal data behind authorization: no shared cache may keep it and
+        // the browser may not store it either, or a shared machine could replay it after sign-out.
+        Assert.NotNull(response.Headers.CacheControl);
+        Assert.True(response.Headers.CacheControl.Private);
+        Assert.True(response.Headers.CacheControl.NoStore);
+
         // The bytes that were uploaded, not a re-encoding of them and not an envelope wrapped round
         // them: the route is a minimal-API endpoint, so no MVC filter ever sees the result.
         Assert.Equal(ProofApi.Png, await response.Content.ReadAsByteArrayAsync(cancellationToken));

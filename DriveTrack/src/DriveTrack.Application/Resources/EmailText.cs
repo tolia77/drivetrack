@@ -18,10 +18,13 @@ internal static class EmailText
     private static readonly ResourceManager Resources =
         new("DriveTrack.Application.Resources.EmailText", typeof(EmailText).Assembly);
 
-    /// <summary>The subject of a status-change notice. Takes the delivery's number.</summary>
+    /// <summary>The subject of a status-change notice. Takes the new status's label.</summary>
     public static string StatusChangeSubject => Value(nameof(StatusChangeSubject));
 
-    /// <summary>The body of one. Takes the number, the previous state and the new one.</summary>
+    /// <summary>
+    /// The body of one. Takes the dropoff address (or its coordinates), the previous status's label
+    /// and the new one's.
+    /// </summary>
     public static string StatusChangeBody => Value(nameof(StatusChangeBody));
 
     /// <summary>

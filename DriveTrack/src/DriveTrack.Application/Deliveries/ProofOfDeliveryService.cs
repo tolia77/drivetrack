@@ -33,11 +33,11 @@ namespace DriveTrack.Application.Deliveries;
 /// bytes into the bucket before being refused.
 /// </para>
 /// <para>
-/// The trade, stated rather than hidden: a store that refuses the final write leaves a committed
-/// proof naming an object that is not there. That is the state <see cref="OpenAssetAsync"/> already
-/// answers — 404, as for a bucket emptied out of band — while an unreferenced object is permanent,
-/// invisible and unanswerable. The row is kept precisely because it is what names whatever bytes
-/// <em>did</em> land before the failure.
+/// When the store refuses a write after the commit, the proof is removed again in a fresh scope and
+/// the failure propagates. Keeping it would leave evidence that does not resolve, which FR-123 then
+/// makes permanent (a second capture is refused) and FR-120 would accept as proof for Delivered.
+/// Removing it lets the driver capture again. Any bytes that did land before the failure stay in
+/// the bucket unreferenced, because <see cref="IAssetStore"/> has no delete.
 /// </para>
 /// <para>
 /// <c>ValidatorExtensions.ValidateAndThrowAsync</c> is called in static form, for the reason
@@ -188,11 +188,8 @@ public sealed class ProofOfDeliveryService(
         // as well, which is safe because nothing on it is lazily loaded: every asset on it was put
         // there above.
         //
-        // A failure throws and the exception propagates, leaving a committed proof naming an object
-        // the store does not hold. That is deliberate: it is the state the asset route already
-        // answers 404 for, and it is what names the assets that did land before the failure. The
-        // alternative - keeping the old order - buries an unreferenced object in the bucket for
-        // every refusal instead, and nothing in the system can ever find one again.
+        // A failure removes the proof again (see RemoveUnstoredAsync) and then propagates, so the
+        // request still fails and the driver can capture again.
         //
         // CancellationToken.None, and the only place in this capability that refuses the caller's
         // token. Everything above it is cancellable because cancelling it abandons a request that
@@ -203,12 +200,50 @@ public sealed class ProofOfDeliveryService(
         // dialog and a hung-up client, which cancel a token while the connection carrying the bytes
         // stays up; it cannot hold for a circuit that dies outright, because the panel's photographs
         // are read over that circuit and no token choice makes a dead one readable.
-        foreach (var asset in pending)
+        try
         {
-            await assetStore.SaveAsync(asset.Key, asset.Content, asset.ContentType, CancellationToken.None);
+            foreach (var asset in pending)
+            {
+                await assetStore.SaveAsync(asset.Key, asset.Content, asset.ContentType, CancellationToken.None);
+            }
+        }
+        catch (Exception failure)
+        {
+            await RemoveUnstoredAsync(proof.Id, failure);
+            throw;
         }
 
         return View(proof, capturedBy);
+    }
+
+    /// <summary>
+    /// Takes back a proof whose evidence did not reach the store, so FR-123 does not lock the
+    /// delivery to evidence that does not resolve. The asset rows go with it by cascade.
+    /// <para>
+    /// <see cref="CancellationToken.None"/> for the reason the upload loop uses it: the request is
+    /// already failing, and abandoning this step would leave the very row it exists to remove. If
+    /// the removal itself fails, both failures are reported together rather than one hiding the other.
+    /// </para>
+    /// </summary>
+    private async Task RemoveUnstoredAsync(int proofId, Exception failure)
+    {
+        try
+        {
+            await using var cleanup = await unitOfWorkFactory.CreateAsync(CancellationToken.None);
+
+            if (await cleanup.ProofOfDeliveries.GetByIdAsync(proofId, CancellationToken.None) is { } stale)
+            {
+                cleanup.ProofOfDeliveries.Remove(stale);
+                await cleanup.CommitAsync(CancellationToken.None);
+            }
+        }
+        catch (Exception removal)
+        {
+            throw new AggregateException(
+                "A proof whose evidence was not stored could not be removed again.",
+                failure,
+                removal);
+        }
     }
 
     /// <inheritdoc />
