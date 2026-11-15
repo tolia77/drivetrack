@@ -5,12 +5,12 @@ using FluentValidation;
 namespace DriveTrack.Application.Reviews;
 
 /// <summary>
-/// FR-67's scale and FR-62's text, over a review being written.
+/// FR-67's scale and FR-59's text, over a review being written.
 /// <para>
 /// Both rules are judged over the <em>trimmed</em> text, because trimming is what the service
 /// stores: a comment of exactly 2000 characters with a trailing newline would otherwise be refused
-/// for being one character too long when the string that reaches the column fits, and <c>"   "</c>
-/// would be accepted as content when what lands is empty. The trim belongs to the two contracts —
+/// for being one character too long when the string that reaches the column fits. (<c>NotEmpty</c>
+/// refuses whitespace-only text either way.) The trim belongs to the two contracts —
 /// <see cref="CreateReviewCommand.Trimmed"/> and <see cref="UpdateReviewCommand.MergedOnto"/> — so
 /// both write paths judge the same content the same way; this class states the rules and the caller
 /// states which string they are about.

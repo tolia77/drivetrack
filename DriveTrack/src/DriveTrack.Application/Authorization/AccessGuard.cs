@@ -311,7 +311,7 @@ public sealed class AccessGuard(ICurrentUser currentUser) : IAccessGuard
                 "An anonymous caller attempted to change a review.");
         }
 
-        // AD-4 once more, and still decided in this one file. FR-65 and FR-66 give an administrator
+        // AD-4 once more, and still decided in this one file. FR-66 gives an administrator
         // every review to edit and to delete, which is what moderation is - and it is the half of
         // the review pair the override applies to.
         if (currentUser.Role == UserRole.Admin)
@@ -336,7 +336,7 @@ public sealed class AccessGuard(ICurrentUser currentUser) : IAccessGuard
                     + " holds role Client and did not write that review.");
         }
 
-        // Total over the enum, like the members above. A Dispatcher lands here - FR-64 makes them a
+        // Total over the enum, like the members above. A Dispatcher lands here - FR-65 makes them a
         // reader of reviews and never a writer of one - and so does a Driver, who is the party the
         // review is about.
         throw new ForbiddenException(
@@ -357,7 +357,7 @@ public sealed class AccessGuard(ICurrentUser currentUser) : IAccessGuard
         }
 
         // AD-4 once more, and still decided in this one file. A dispatcher stands beside the admin
-        // because FR-113 gives dispatch the whole roster of shifts.
+        // because FR-114 gives dispatch the whole roster of shifts.
         if (currentUser.Role is UserRole.Admin or UserRole.Dispatcher)
         {
             return null;

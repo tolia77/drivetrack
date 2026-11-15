@@ -3,7 +3,7 @@ using DriveTrack.Domain.Identity;
 namespace DriveTrack.Application.Reviews;
 
 /// <summary>
-/// The Reviews capability (FR-62 to FR-67, FR-98): the only writer of the <c>reviews</c> table, and
+/// The Reviews capability (FR-59 to FR-67, FR-98, FR-118): the only writer of the <c>reviews</c> table, and
 /// the owner of the per-driver rating derived from it.
 /// <para>
 /// AD-24 in both directions, which is the whole of this capability's boundary. It never touches
@@ -27,7 +27,7 @@ namespace DriveTrack.Application.Reviews;
 public interface IReviewService
 {
     /// <summary>
-    /// Writes a client's verdict on one of their own finished deliveries (FR-62, FR-67).
+    /// Writes a client's verdict on one of their own finished deliveries (FR-59 to FR-62, FR-67).
     /// <para>
     /// One review per delivery, and the uniqueness is the database's. There is deliberately no
     /// "does a review already exist" read before the insert: a check that runs before the write is
@@ -63,7 +63,7 @@ public interface IReviewService
         CancellationToken cancellationToken);
 
     /// <summary>
-    /// One page of every review, newest first, with both parties to the delivery named (FR-64).
+    /// One page of every review, newest first, with both parties to the delivery named (FR-65).
     /// Dispatcher or admin; a client reads their own through <see cref="ListMineAsync"/> and a
     /// driver is refused outright.
     /// </summary>
@@ -76,7 +76,7 @@ public interface IReviewService
         CancellationToken cancellationToken);
 
     /// <summary>
-    /// One page of the reviews the caller wrote (FR-63), carrying no party at all. The narrowing
+    /// One page of the reviews the caller wrote (FR-64), carrying no party at all. The narrowing
     /// comes from the guard and reaches the query, so paging stays correct for an author whose rows
     /// are not the first hundred (AD-3).
     /// </summary>
@@ -96,7 +96,7 @@ public interface IReviewService
     Task<IReadOnlyList<AuthoredReviewSummary>> ListAllMineAsync(CancellationToken cancellationToken);
 
     /// <summary>
-    /// Changes a review (FR-65). Absent fields are left alone (AD-23); the rules are judged against
+    /// Changes a review (FR-63, FR-66). Absent fields are left alone (AD-23); the rules are judged against
     /// the merged state.
     /// <para>
     /// Its author, or an administrator moderating. Answers the party-free shape for both, because
@@ -115,13 +115,13 @@ public interface IReviewService
         UpdateReviewCommand command,
         CancellationToken cancellationToken);
 
-    /// <summary>Removes a review (FR-66). Its author, or an administrator moderating.</summary>
+    /// <summary>Removes a review (FR-63, FR-66). Its author, or an administrator moderating.</summary>
     /// <exception cref="Common.ForbiddenException">The caller may not change this review.</exception>
     /// <exception cref="Common.NotFoundException">No review has that id.</exception>
     Task DeleteAsync(int id, CancellationToken cancellationToken);
 
     /// <summary>
-    /// The standing of each of the named drivers (FR-98), derived on demand and stored nowhere
+    /// The standing of each of the named drivers (FR-118), derived on demand and stored nowhere
     /// (DR-18).
     /// <para>
     /// The port AD-24 gives the Drivers capability: it owns the driver, this capability owns the

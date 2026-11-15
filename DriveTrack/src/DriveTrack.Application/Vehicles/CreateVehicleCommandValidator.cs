@@ -10,6 +10,12 @@ namespace DriveTrack.Application.Vehicles;
 /// (<c>model</c> 100, <c>license_plate</c> 20, <c>capacity_kg</c> numeric(10,2)), so a value the
 /// database would refuse is refused here first, with a field name attached (NFR-4).
 /// </para>
+/// <para>
+/// The model and plate are judged trimmed, because <c>VehicleService</c> trims them before it
+/// writes: a plate of exactly 20 characters with a trailing space fits once trimmed and must not be
+/// refused. <c>NotEmpty</c> already refuses whitespace-only text, so only the length rules need the
+/// trim.
+/// </para>
 /// </summary>
 public sealed class CreateVehicleCommandValidator : AbstractValidator<CreateVehicleCommand>
 {
@@ -30,13 +36,14 @@ public sealed class CreateVehicleCommandValidator : AbstractValidator<CreateVehi
     {
         RuleFor(command => command.Model)
             .NotEmpty().WithMessage(nameof(ErrorCode.COMMON_FIELD_REQUIRED))
-            .MaximumLength(ModelMaximumLength).WithMessage(nameof(ErrorCode.FLEET_MODEL_TOO_LONG));
+            .Must(value => FitsTrimmed(value, ModelMaximumLength))
+                .WithMessage(nameof(ErrorCode.FLEET_MODEL_TOO_LONG));
 
         // Bounded and required, and nothing else: a plate format rule is exactly the kind of
         // guess that made the original refuse legitimate plates.
         RuleFor(command => command.LicensePlate)
             .NotEmpty().WithMessage(nameof(ErrorCode.COMMON_FIELD_REQUIRED))
-            .MaximumLength(LicensePlateMaximumLength)
+            .Must(value => FitsTrimmed(value, LicensePlateMaximumLength))
                 .WithMessage(nameof(ErrorCode.FLEET_LICENSE_PLATE_TOO_LONG));
 
         RuleFor(command => command.CapacityKg)
@@ -44,11 +51,16 @@ public sealed class CreateVehicleCommandValidator : AbstractValidator<CreateVehi
             .LessThanOrEqualTo(CapacityMaximum)
                 .WithMessage(nameof(ErrorCode.FLEET_CAPACITY_TOO_LARGE));
 
-        // An odometer does not run backwards. Zero is legal - a vehicle can arrive new.
+        // A reading is never negative. Zero is legal - a vehicle can arrive new. Nothing compares it
+        // with a previous reading: an edit may lower it to correct a typo.
         RuleFor(command => command.Mileage)
             .GreaterThanOrEqualTo(0).WithMessage(nameof(ErrorCode.FLEET_MILEAGE_NEGATIVE));
 
         // Nothing about NextMaintenanceDate beyond its nullability: no requirement constrains when
         // servicing may be due, and a rule invented here would refuse a date a dispatcher meant.
     }
+
+    /// <summary>Whether the value, trimmed as the service will store it, fits within the bound.</summary>
+    internal static bool FitsTrimmed(string? value, int maximumLength) =>
+        value is null || value.Trim().Length <= maximumLength;
 }

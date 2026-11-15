@@ -102,6 +102,20 @@ public class ChatHubTests(PostgresFixture postgres)
         await owner.InvokeAsync("Send", other.DriverId!.Value, "Наживо.", cancellationToken);
 
         Assert.False(await Arrived(received, Silence));
+
+        // AD-3's order: the guard answers before the 404, so a driver probing ids cannot tell a
+        // thread that exists from one that does not.
+        var join = await Assert.ThrowsAsync<HubException>(
+            () => connection.InvokeAsync<ChatThread>("JoinThread", 999_999, cancellationToken));
+
+        AssertRefusal(join, ErrorCode.AUTH_FORBIDDEN);
+        Assert.DoesNotContain(nameof(ErrorCode.CHAT_THREAD_NOT_FOUND), join.Message, StringComparison.Ordinal);
+
+        var send = await Assert.ThrowsAsync<HubException>(
+            () => connection.InvokeAsync("Send", 999_999, "У порожнечу.", cancellationToken));
+
+        AssertRefusal(send, ErrorCode.AUTH_FORBIDDEN);
+        Assert.DoesNotContain(nameof(ErrorCode.CHAT_THREAD_NOT_FOUND), send.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -127,6 +141,7 @@ public class ChatHubTests(PostgresFixture postgres)
 
         Assert.Equal("Забери вантаж.", message.Text);
         Assert.Equal(second.UserId, message.SenderUserId);
+        Assert.Equal("Богдан Кравець", message.SenderName);
 
         // FR-71: the conversation is about the driver, so the header names them rather than
         // whichever dispatcher happens to be reading it.
@@ -157,7 +172,7 @@ public class ChatHubTests(PostgresFixture postgres)
         // FR-68 names the roster by person, so it is ordered by person rather than by the order the
         // drivers were taken on - which is the order the driver capability's own list comes back in.
         Assert.Equal(
-            roster.Select(entry => entry.DriverName).Order(StringComparer.Ordinal).ToArray(),
+            ["Олена Андросова", "Петро Яценко"],
             roster.Select(entry => entry.DriverName).ToArray());
 
         // A driver has one conversation and no roster: the null argument the guard reads as "the
@@ -168,6 +183,31 @@ public class ChatHubTests(PostgresFixture postgres)
             () => cab.InvokeAsync<IReadOnlyList<ChatThreadSummary>>("ListThreads", cancellationToken));
 
         AssertRefusal(failure, ErrorCode.AUTH_FORBIDDEN);
+    }
+
+    [Fact]
+    public async Task The_roster_follows_the_ukrainian_alphabet_rather_than_code_points()
+    {
+        // Є and І sit at U+0404 and U+0406, before А at U+0410, so an ordinal sort would list
+        // Євген and Ірина ahead of Андрій. Taken on in reverse, so id order cannot pass for it.
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await using var world = await ChatWorld.CreateAsync(postgres.ConnectionString, cancellationToken);
+
+        var admin = await world.AdminAsync(cancellationToken);
+        var dispatcher = await world.DispatcherAsync(admin.Token, cancellationToken);
+
+        await world.DriverAsync(cancellationToken, "Ірина", "Коваль");
+        await world.DriverAsync(cancellationToken, "Євген", "Коваль");
+        await world.DriverAsync(cancellationToken, "Андрій", "Коваль");
+
+        var desk = await world.ConnectAsync(dispatcher, cancellationToken);
+
+        var roster = await desk.InvokeAsync<IReadOnlyList<ChatThreadSummary>>(
+            "ListThreads", cancellationToken);
+
+        Assert.Equal(
+            ["Андрій Коваль", "Євген Коваль", "Ірина Коваль"],
+            roster.Select(entry => entry.DriverName).ToArray());
     }
 
     [Fact]
@@ -441,6 +481,7 @@ public class ChatHubTests(PostgresFixture postgres)
         Assert.Equal(driver.DriverId!.Value, delivered.DriverId);
         Assert.Equal("Затримка на годину.", delivered.Message.Text);
         Assert.Equal(driver.UserId, delivered.Message.SenderUserId);
+        Assert.Equal("Петро Шевченко", delivered.Message.SenderName);
 
         // The row the server stored carries the id it was given, which is what makes the broadcast
         // an echo of the database rather than of what was typed (FR-73: no optimistic echo).
@@ -466,6 +507,7 @@ public class ChatHubTests(PostgresFixture postgres)
         // Stored against the driver's thread and against the dispatcher who wrote it: the thread
         // key is the conversation, never the sender (AD-15).
         Assert.Equal(dispatcher.UserId, answered.Message.SenderUserId);
+        Assert.Equal("Ігор Ковальчук", answered.Message.SenderName);
         Assert.True(answered.Message.Id > 0);
     }
 
@@ -639,6 +681,54 @@ public class ChatHubTests(PostgresFixture postgres)
         Assert.Equal(
             1L,
             await AdministrationApi.CountAsync(world.Factory, "messages", "TRUE", cancellationToken));
+    }
+
+    [Fact]
+    public async Task A_message_is_stored_and_broadcast_trimmed()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await using var world = await ChatWorld.CreateAsync(postgres.ConnectionString, cancellationToken);
+
+        var driver = await world.DriverAsync(cancellationToken);
+        var connection = await world.ConnectAsync(driver, cancellationToken);
+
+        await connection.InvokeAsync("JoinThread", driver.DriverId!.Value, cancellationToken);
+
+        var heard = Listen(connection);
+
+        await connection.InvokeAsync("Send", driver.DriverId!.Value, "  привіт \n", cancellationToken);
+
+        Assert.Equal("привіт", (await Wait(heard, Delivery)).Message.Text);
+
+        Assert.Equal(
+            "привіт",
+            await world.Factory.Database.ScalarAsync("SELECT text FROM messages", cancellationToken));
+    }
+
+    [Fact]
+    public async Task A_full_length_message_with_a_trailing_newline_is_accepted_and_stored_trimmed()
+    {
+        // The validator judges the trimmed text, so the newline does not make 2000 characters 2001.
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await using var world = await ChatWorld.CreateAsync(postgres.ConnectionString, cancellationToken);
+
+        var driver = await world.DriverAsync(cancellationToken);
+        var connection = await world.ConnectAsync(driver, cancellationToken);
+
+        await connection.InvokeAsync("JoinThread", driver.DriverId!.Value, cancellationToken);
+
+        await connection.InvokeAsync(
+            "Send",
+            driver.DriverId!.Value,
+            new string('я', SendMessageCommandValidator.TextMaximumLength) + "\n",
+            cancellationToken);
+
+        Assert.Equal(
+            (long)SendMessageCommandValidator.TextMaximumLength,
+            Convert.ToInt64(
+                await world.Factory.Database.ScalarAsync(
+                    "SELECT char_length(text) FROM messages", cancellationToken),
+                CultureInfo.InvariantCulture));
     }
 
     // =====================================================================================

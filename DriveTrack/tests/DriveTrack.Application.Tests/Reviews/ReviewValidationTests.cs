@@ -18,7 +18,7 @@ namespace DriveTrack.Application.Tests.Reviews;
 /// <para>
 /// Every case states the <em>trimmed</em> text, because trimming is what the service does before it
 /// validates: the validator judges the string that will reach the column, and a rule judged against
-/// anything else would accept three spaces as a comment and store nothing.
+/// anything else would refuse a full-length comment for its trailing newline.
 /// </para>
 /// <para>
 /// Both validators are exercised, and that is not duplication for its own sake. They judge

@@ -13,6 +13,10 @@ namespace DriveTrack.Application.Vehicles;
 /// rules below read the value without asking whether the caller sent it.
 /// </para>
 /// <para>
+/// The model and plate lengths are judged on the trimmed text, as the create validator explains:
+/// the service stores them trimmed.
+/// </para>
+/// <para>
 /// Each rule overrides its property name so a field error names <c>LicensePlate</c> rather than
 /// <c>LicensePlate.Value</c>: the adapter turns that name into the one the caller's payload used,
 /// and a form can only attach a message to an input it actually has (NFR-4).
@@ -25,13 +29,17 @@ public sealed class UpdateVehicleCommandValidator : AbstractValidator<UpdateVehi
     {
         RuleFor(command => command.Model.Value)
             .NotEmpty().WithMessage(nameof(ErrorCode.COMMON_FIELD_REQUIRED))
-            .MaximumLength(CreateVehicleCommandValidator.ModelMaximumLength)
+            .Must(value => CreateVehicleCommandValidator.FitsTrimmed(
+                value,
+                CreateVehicleCommandValidator.ModelMaximumLength))
                 .WithMessage(nameof(ErrorCode.FLEET_MODEL_TOO_LONG))
             .OverridePropertyName(nameof(UpdateVehicleCommand.Model));
 
         RuleFor(command => command.LicensePlate.Value)
             .NotEmpty().WithMessage(nameof(ErrorCode.COMMON_FIELD_REQUIRED))
-            .MaximumLength(CreateVehicleCommandValidator.LicensePlateMaximumLength)
+            .Must(value => CreateVehicleCommandValidator.FitsTrimmed(
+                value,
+                CreateVehicleCommandValidator.LicensePlateMaximumLength))
                 .WithMessage(nameof(ErrorCode.FLEET_LICENSE_PLATE_TOO_LONG))
             .OverridePropertyName(nameof(UpdateVehicleCommand.LicensePlate));
 

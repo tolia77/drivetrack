@@ -21,7 +21,7 @@ namespace DriveTrack.Application.Chat;
 /// </para>
 /// <para>
 /// <b>What chat reads that it does not own (AD-16, AD-24).</b> The roster goes through the owning
-/// capability, <see cref="IDriverService.ListAsync"/>, exactly as AD-24 asks. Two reads cannot, and
+/// capability, <see cref="IDriverService.ListAllAsync"/>, exactly as AD-24 asks. Two reads cannot, and
 /// both are identity lookups: whether a conversation exists for a driver opening <em>their own</em>
 /// (<c>IDriverService.GetAsync</c> is dispatcher-guarded and would refuse them), and a display name
 /// per sender (no service exposes another user's name). Both follow
@@ -43,6 +43,10 @@ public sealed class ChatService(
     IValidator<SendMessageCommand> messageValidator,
     TimeProvider timeProvider) : IChatService
 {
+    /// <summary>Ukrainian alphabetical order for driver names (Є after Е, І after И).</summary>
+    private static readonly StringComparer UkrainianOrder =
+        StringComparer.Create(CultureInfo.GetCultureInfo("uk-UA"), ignoreCase: false);
+
     /// <inheritdoc />
     public async Task<IReadOnlyList<ChatThreadSummary>> ListThreadsAsync(CancellationToken cancellationToken)
     {
@@ -73,13 +77,13 @@ public sealed class ChatService(
                 // FR-68 names the roster by person, so it is ordered by person. The driver
                 // capability orders its own list by row id, which is the order they were taken on -
                 // useful for a fleet roster and meaningless in a list somebody scans for a name.
-                // Ordinal rather than a culture comparison because this order has to be the same on
-                // every machine that renders it, and Cyrillic sorts alphabetically by code point.
+                // Ukrainian collation rather than ordinal: code-point order puts Є, І and Ї before
+                // А and Ґ after я. A fixed culture keeps the order the same on every machine.
                 //
                 // The row id breaks a tie, for the reason the thread read's does: two drivers can
                 // share a display name, and without it their order is whatever the database
                 // happened to return - so the roster would reshuffle between calls.
-                .OrderBy(summary => summary.DriverName, StringComparer.Ordinal)
+                .OrderBy(summary => summary.DriverName, UkrainianOrder)
                 .ThenBy(summary => summary.DriverId.Value),
         ];
     }
@@ -121,7 +125,7 @@ public sealed class ChatService(
         RequireThread(driver, command.DriverId);
 
         // Trimmed as it is validated, not afterwards: the validator has to judge the string that
-        // will actually be stored, or three spaces pass as content and land as nothing.
+        // will actually be stored, or a full-length message with a trailing newline is refused.
         var trimmed = new SendMessageCommand(command.DriverId, command.Text?.Trim());
 
         await ValidatorExtensions.ValidateAndThrowAsync(messageValidator, trimmed, cancellationToken);

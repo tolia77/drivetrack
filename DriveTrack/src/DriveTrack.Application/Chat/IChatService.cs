@@ -24,8 +24,8 @@ namespace DriveTrack.Application.Chat;
 public interface IChatService
 {
     /// <summary>
-    /// Every driver's conversation, named and in the order the driver capability lists them
-    /// (FR-68). Dispatchers only — a driver has one conversation and needs no list of them.
+    /// Every driver's conversation, named and ordered alphabetically by driver name, then by driver
+    /// id (FR-68). Dispatchers only — a driver has one conversation and needs no list of them.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <exception cref="Common.ForbiddenException">The caller is not a dispatcher.</exception>
