@@ -568,9 +568,10 @@ app.MapPost("/set-culture", async (HttpContext context, IAntiforgery antiforgery
 // No RequireAuthorization here: the attribute on the hub carries the schemes, and which conversation
 // a caller may reach is IAccessGuard's decision inside IChatService (FR-12, AD-2).
 //
-// A connection outlives the handshake that authenticated it, so revocation is the hub's own
-// per-call session check (ChatHub), not anything configured here.
-app.MapHub<ChatHub>("/hubs/chat");
+// A connection outlives the handshake that authenticated it. Revocation is the hub's own per-call
+// session check (ChatHub); expiry is closed here, so a connection whose sign-in ran out stops
+// receiving broadcasts.
+app.MapHub<ChatHub>("/hubs/chat", options => options.CloseOnAuthenticationExpiration = true);
 
 // Development only, and the reason it exists is worth stating plainly.
 //
