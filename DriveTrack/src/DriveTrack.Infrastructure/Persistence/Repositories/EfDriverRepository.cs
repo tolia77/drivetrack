@@ -122,9 +122,6 @@ internal sealed class EfDriverRepository(AppDbContext context) : IDriverReposito
     /// <inheritdoc />
     public void Add(Driver driver) => context.Drivers.Add(driver);
 
-    /// <inheritdoc />
-    public void Remove(Driver driver) => context.Drivers.Remove(driver);
-
     /// <summary>The shape the roster query is filtered and sorted in: an initializer, so EF can see through it.</summary>
     private sealed class Row
     {

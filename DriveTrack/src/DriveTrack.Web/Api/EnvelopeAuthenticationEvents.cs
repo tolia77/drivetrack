@@ -18,8 +18,8 @@ namespace DriveTrack.Web.Api;
 /// and <c>OnForbidden</c> call these unconditionally, but the cookie handler also serves the Blazor
 /// shell, where a browser navigating to a protected page must still be redirected to sign in.
 /// Its <c>OnRedirectToLogin</c>/<c>OnRedirectToAccessDenied</c> must therefore branch on
-/// <c>context.Request.Path.StartsWithSegments("/api")</c> - envelope on an API path, the default
-/// redirect otherwise - or every protected page answers a browser with JSON.
+/// <c>MachineSurface.WantsEnvelope</c> - envelope on <c>/api</c> and <c>/proof-assets</c>, the
+/// default redirect otherwise - or every protected page answers a browser with JSON.
 /// </para>
 /// </summary>
 internal static class EnvelopeAuthenticationEvents

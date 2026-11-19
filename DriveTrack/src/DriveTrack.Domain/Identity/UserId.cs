@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace DriveTrack.Domain.Identity;
 
 /// <summary>
@@ -11,4 +13,8 @@ namespace DriveTrack.Domain.Identity;
 /// </para>
 /// </summary>
 /// <param name="Value">The underlying surrogate key.</param>
-public readonly record struct UserId(int Value);
+public readonly record struct UserId(int Value)
+{
+    /// <summary>The bare key, so an id reads as a number wherever it is written into text.</summary>
+    public override string ToString() => Value.ToString(CultureInfo.InvariantCulture);
+}

@@ -21,7 +21,8 @@ namespace DriveTrack.Application.Dashboard;
 /// <para>
 /// <b>Chat (AD-16).</b> The conversations card reads the newest message per driver through
 /// <c>IMessageRepository</c>, which makes this file one of chat's named seams in
-/// <c>SeverabilityTests</c>: deleting the chat module means deleting that card's three lines here.
+/// <c>SeverabilityTests</c>: deleting the chat module means deleting that card's dispatcher-only
+/// block here.
 /// </para>
 /// </summary>
 public sealed class DashboardService(
@@ -264,7 +265,7 @@ public sealed class DashboardService(
         {
             if (key(account) is { } id)
             {
-                names[id] = (account.FirstName + " " + account.LastName).Trim();
+                names[id] = account.DisplayName;
             }
         }
 

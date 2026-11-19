@@ -68,7 +68,7 @@ public sealed class DriverService(
         accessGuard.RequireRole(UserRole.Dispatcher);
 
         // NFR-27: refused before any query is built.
-        await ValidatorExtensions.ValidateAndThrowAsync(listValidator, query, cancellationToken);
+        await listValidator.EnsureValidAsync(query, cancellationToken);
 
         Paged<DriverRow> page;
 
@@ -139,9 +139,9 @@ public sealed class DriverService(
         var ratings = await RatingsAsync([.. rows.Select(row => row.Driver.Id)], cancellationToken);
 
         // FR-116, asked the same way and for the same reason: one question about everybody on duty
-        // rather than one per row. The answer is the whole on-duty set rather than a set narrowed to
-        // this page, because "is this driver on duty" is a single indexed predicate and narrowing it
-        // would cost a parameter list to save nothing.
+        // rather than one per row. The answer is the whole on-duty set rather than one narrowed to
+        // these drivers, because "is this driver on duty" is a single indexed predicate and
+        // narrowing it would cost a parameter list to save nothing.
         var onDuty = await OnDutyAsync(cancellationToken);
 
         return
@@ -167,7 +167,7 @@ public sealed class DriverService(
 
             accessGuard.RequireRole(UserRole.Dispatcher);
 
-            driver = found ?? throw NotFound(id);
+            driver = found ?? throw NotFoundException.For("driver", id.Value);
             account = await AccountAsync(unitOfWork, driver, cancellationToken);
         }
 
@@ -187,7 +187,7 @@ public sealed class DriverService(
         // A create loads nothing, so the guard is the first step rather than the second.
         accessGuard.RequireRole(UserRole.Dispatcher);
 
-        await ValidatorExtensions.ValidateAndThrowAsync(createValidator, command, cancellationToken);
+        await createValidator.EnsureValidAsync(command, cancellationToken);
 
         // The validator has proved these are present; the nullable annotations exist because the
         // wire can send anything and the command has to be able to carry it as far as here.
@@ -255,7 +255,7 @@ public sealed class DriverService(
 
             accessGuard.RequireRole(UserRole.Dispatcher);
 
-            driver = found ?? throw NotFound(id);
+            driver = found ?? throw NotFoundException.For("driver", id.Value);
 
             // The account is loaded before the merge rather than only for the summary: FR-37's name
             // lives there, so it is half of the state the validator has to judge.
@@ -265,7 +265,7 @@ public sealed class DriverService(
             // AD-23: the validator reads the state the driver will hold, not the payload.
             var merged = command.MergedOnto(driver, account);
 
-            await ValidatorExtensions.ValidateAndThrowAsync(updateValidator, merged, cancellationToken);
+            await updateValidator.EnsureValidAsync(merged, cancellationToken);
 
             var firstName = merged.FirstName.Value!.Trim();
             var lastName = merged.LastName.Value!.Trim();
@@ -276,7 +276,7 @@ public sealed class DriverService(
             if (!string.Equals(firstName, account.FirstName, StringComparison.Ordinal)
                 || !string.Equals(lastName, account.LastName, StringComparison.Ordinal))
             {
-                await unitOfWork.Users.RenameAsync(driver.UserId, firstName, lastName, cancellationToken);
+                await unitOfWork.Users.UpdateNameAsync(driver.UserId, firstName, lastName, cancellationToken);
             }
 
             driver.LicenseNumber = merged.LicenseNumber.Value!.Trim();
@@ -328,7 +328,7 @@ public sealed class DriverService(
 
         if (driver is null)
         {
-            throw NotFound(id);
+            throw NotFoundException.For("driver", id.Value);
         }
 
         // The account, not only the driver row. Removing the row alone would leave an account
@@ -340,11 +340,6 @@ public sealed class DriverService(
 
         await unitOfWork.CommitAsync(cancellationToken);
     }
-
-    private static NotFoundException NotFound(DriverId id) =>
-        new(
-            ErrorCode.COMMON_NOT_FOUND,
-            "No driver exists with id " + id.Value.ToString(CultureInfo.InvariantCulture) + ".");
 
     /// <summary>The account behind a loaded driver, which is where their identity fields live.</summary>
     private static async Task<UserAccount> AccountAsync(

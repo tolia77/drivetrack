@@ -10,9 +10,6 @@ namespace DriveTrack.Application.Abstractions;
 /// </summary>
 public interface INotificationAttemptRepository
 {
-    /// <summary>Loads an attempt, or null when there is none with that id.</summary>
-    Task<NotificationAttempt?> GetByIdAsync(int id, CancellationToken cancellationToken);
-
     /// <summary>
     /// One page of attempts, newest first (FR-28).
     /// <para>

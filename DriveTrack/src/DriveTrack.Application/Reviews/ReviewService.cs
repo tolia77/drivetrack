@@ -36,12 +36,6 @@ namespace DriveTrack.Application.Reviews;
 /// hundred roster reads. Round trips must not scale with rows - the same rule
 /// <see cref="ListDriverRatingsAsync"/> follows on the way out of this capability.
 /// </para>
-/// <para>
-/// <c>ValidatorExtensions.ValidateAndThrowAsync</c> is called in static form, for the reason
-/// <c>DeliveryService</c> states: a file in this namespace that imported only
-/// <c>FluentValidation</c> would bind to that library's identically named extension, whose
-/// exception carries no <see cref="ErrorCode"/> and leaves as a 500 where 422 was meant.
-/// </para>
 /// </summary>
 public sealed class ReviewService(
     IUnitOfWorkFactory unitOfWorkFactory,
@@ -87,7 +81,7 @@ public sealed class ReviewService(
         // same one.
         var trimmed = command.Trimmed();
 
-        await ValidatorExtensions.ValidateAndThrowAsync(createValidator, trimmed, cancellationToken);
+        await createValidator.EnsureValidAsync(trimmed, cancellationToken);
 
         await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
 
@@ -135,7 +129,7 @@ public sealed class ReviewService(
         // is no second place deciding what it may see.
         var scope = accessGuard.RequireScope();
 
-        await ValidatorExtensions.ValidateAndThrowAsync(listValidator, query, cancellationToken);
+        await listValidator.EnsureValidAsync(query, cancellationToken);
 
         Paged<Review> reviews;
 
@@ -199,7 +193,7 @@ public sealed class ReviewService(
         // "every review ever written" under a heading that says "mine".
         var clientId = accessGuard.RequireReviewAuthor();
 
-        await ValidatorExtensions.ValidateAndThrowAsync(listValidator, query, cancellationToken);
+        await listValidator.EnsureValidAsync(query, cancellationToken);
 
         var sort = ListSort.Parse<ReviewSort>(query.Sort);
 
@@ -264,7 +258,7 @@ public sealed class ReviewService(
 
         if (review is null)
         {
-            throw NotFound(id);
+            throw NotFoundException.For("review", id);
         }
 
         // AD-23: the validator reads the state the review will hold, not the payload - so an edit
@@ -273,7 +267,7 @@ public sealed class ReviewService(
         // content the same way.
         var merged = command.MergedOnto(review);
 
-        await ValidatorExtensions.ValidateAndThrowAsync(stateValidator, merged, cancellationToken);
+        await stateValidator.EnsureValidAsync(merged, cancellationToken);
 
         review.Rating = merged.Rating;
         review.Text = merged.Text!;
@@ -294,7 +288,7 @@ public sealed class ReviewService(
 
         if (review is null)
         {
-            throw NotFound(id);
+            throw NotFoundException.For("review", id);
         }
 
         unitOfWork.Reviews.Remove(review);
@@ -323,11 +317,6 @@ public sealed class ReviewService(
 
         return await unitOfWork.Reviews.ListDriverRatingsAsync(driverIds, cancellationToken);
     }
-
-    private static NotFoundException NotFound(int id) =>
-        new(
-            ErrorCode.COMMON_NOT_FOUND,
-            "No review exists with id " + id.ToString(CultureInfo.InvariantCulture) + ".");
 
     private static AuthoredReviewSummary Authored(Review review) =>
         new(

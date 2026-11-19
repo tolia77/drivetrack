@@ -8,7 +8,8 @@ namespace DriveTrack.Application.Chat;
 /// Every read and every write of a message goes through here, and every method takes its own
 /// authorization decision through <see cref="Authorization.IAccessGuard.RequireChatParticipant"/>.
 /// The hub is a transport: it asks this service whether a caller may join a group and adds them only
-/// if it says yes. Nothing else in the system holds a path to a message.
+/// if it says yes. The one other reader is <c>DashboardService</c>, which shows a dispatcher the
+/// newest message per driver.
 /// </para>
 /// <para>
 /// A conversation is addressed by <see cref="DriverId"/> — the driver row, never a user id (AD-22).

@@ -86,7 +86,7 @@ public sealed class DeliverySideEffectWorker(
                     logger.LogError(
                         exception,
                         "A delivery side effect of kind {Kind} for delivery {DeliveryId} failed.",
-                        job.Kind,
+                        job.GetType().Name,
                         job.DeliveryId);
                 }
                 finally

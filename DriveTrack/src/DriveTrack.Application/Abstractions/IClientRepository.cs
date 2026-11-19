@@ -41,9 +41,6 @@ public interface IClientRepository
 
     /// <summary>Stages a new client for the next commit.</summary>
     void Add(Client client);
-
-    /// <summary>Stages a client for deletion (FR-47).</summary>
-    void Remove(Client client);
 }
 
 /// <summary>A client row and the account fields the roster shows beside it.</summary>

@@ -3,6 +3,7 @@ using DriveTrack.Application.Abstractions;
 using DriveTrack.Application.Authorization;
 using DriveTrack.Application.Common;
 using DriveTrack.Application.Drivers;
+using DriveTrack.Application.Users;
 using DriveTrack.Domain.Chat;
 using DriveTrack.Domain.Drivers;
 using DriveTrack.Domain.Identity;
@@ -27,12 +28,6 @@ namespace DriveTrack.Application.Chat;
 /// per sender (no service exposes another user's name). Both follow
 /// <c>ProofOfDeliveryService</c>'s existing precedent of reading <c>unitOfWork.Users</c> for a name.
 /// Chat writes neither entity.
-/// </para>
-/// <para>
-/// <c>ValidatorExtensions.ValidateAndThrowAsync</c> is called in static form, for the reason
-/// <c>DeliveryService</c> states: a file in this namespace that imported only
-/// <c>FluentValidation</c> would bind to that library's identically named extension, whose exception
-/// carries no <see cref="ErrorCode"/> and leaves as a 500 where 422 was meant.
 /// </para>
 /// </summary>
 public sealed class ChatService(
@@ -70,7 +65,7 @@ public sealed class ChatService(
                 // what lets a dispatcher tell two drivers of the same name apart.
                 .Select(driver => new ChatThreadSummary(
                     driver.Id,
-                    DisplayName(driver.FirstName, driver.LastName),
+                    PersonNames.Display(driver.FirstName, driver.LastName),
                     driver.VehicleModel,
                     driver.VehicleLicensePlate,
                     driver.OnDuty))
@@ -128,7 +123,7 @@ public sealed class ChatService(
         // will actually be stored, or a full-length message with a trailing newline is refused.
         var trimmed = new SendMessageCommand(command.DriverId, command.Text?.Trim());
 
-        await ValidatorExtensions.ValidateAndThrowAsync(messageValidator, trimmed, cancellationToken);
+        await messageValidator.EnsureValidAsync(trimmed, cancellationToken);
 
         // The caller is the sender. Never a parameter: a sender the caller could name is a sender
         // the caller could forge, and the guard above has already established who they are.
@@ -161,7 +156,7 @@ public sealed class ChatService(
         return new ChatMessage(
             message.Id,
             senderUserId.Value,
-            sender is null ? string.Empty : DisplayName(sender.FirstName, sender.LastName),
+            sender?.DisplayName ?? string.Empty,
             message.SentAt,
             message.Text);
     }
@@ -176,17 +171,19 @@ public sealed class ChatService(
         {
             throw new NotFoundException(
                 ErrorCode.CHAT_THREAD_NOT_FOUND,
-                "No driver exists with id "
-                    + driverId.Value.ToString(CultureInfo.InvariantCulture)
-                    + ", so there is no conversation keyed on it.");
+                "No driver exists with id " + driverId + ", so there is no conversation keyed on it.");
         }
     }
 
     /// <summary>
     /// The display name of every account that wrote a line in this conversation.
     /// <para>
-    /// Resolved once per distinct sender rather than once per line: a conversation of two hundred
-    /// messages between two people is two lookups, not two hundred.
+    /// Resolved in one read for every distinct sender rather than once per line or once per sender:
+    /// a conversation of two hundred messages between two people is one lookup, not two hundred.
+    /// </para>
+    /// <para>
+    /// A sender whose account has since been deleted is absent from that read, and is named by the
+    /// empty string.
     /// </para>
     /// </summary>
     private static async Task<Dictionary<UserId, string>> SenderNamesAsync(
@@ -194,18 +191,17 @@ public sealed class ChatService(
         IReadOnlyList<Message> messages,
         CancellationToken cancellationToken)
     {
-        var names = new Dictionary<UserId, string>();
+        var senderUserIds = messages
+            .Select(message => message.SenderUserId)
+            .OfType<UserId>()
+            .Distinct()
+            .ToArray();
 
-        foreach (var senderUserId in messages
-                     .Select(message => message.SenderUserId)
-                     .OfType<UserId>()
-                     .Distinct())
+        var names = senderUserIds.ToDictionary(senderUserId => senderUserId, _ => string.Empty);
+
+        foreach (var account in await unitOfWork.Users.ListByIdsAsync(senderUserIds, cancellationToken))
         {
-            var account = await unitOfWork.Users.GetByIdAsync(senderUserId, cancellationToken);
-
-            names[senderUserId] = account is null
-                ? string.Empty
-                : DisplayName(account.FirstName, account.LastName);
+            names[account.Id] = account.DisplayName;
         }
 
         return names;
@@ -222,11 +218,8 @@ public sealed class ChatService(
     {
         var account = await unitOfWork.Users.GetByIdAsync(driver.UserId, cancellationToken);
 
-        return account is null ? string.Empty : DisplayName(account.FirstName, account.LastName);
+        return account?.DisplayName ?? string.Empty;
     }
-
-    private static string DisplayName(string firstName, string lastName) =>
-        (firstName + " " + lastName).Trim();
 
     private static ChatMessage Map(Message message, IReadOnlyDictionary<UserId, string> senders) =>
         new(

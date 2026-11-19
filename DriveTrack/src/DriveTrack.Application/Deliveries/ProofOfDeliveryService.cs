@@ -39,12 +39,6 @@ namespace DriveTrack.Application.Deliveries;
 /// Removing it lets the driver capture again. Any bytes that did land before the failure stay in
 /// the bucket unreferenced, because <see cref="IAssetStore"/> has no delete.
 /// </para>
-/// <para>
-/// <c>ValidatorExtensions.ValidateAndThrowAsync</c> is called in static form, for the reason
-/// <see cref="DeliveryService"/> states: a file in this namespace that imported only
-/// <c>FluentValidation</c> would bind to that library's identically named extension, whose exception
-/// carries no <see cref="ErrorCode"/> and leaves as a 500 where 422 was meant.
-/// </para>
 /// </summary>
 public sealed class ProofOfDeliveryService(
     IUnitOfWorkFactory unitOfWorkFactory,
@@ -82,10 +76,7 @@ public sealed class ProofOfDeliveryService(
             // NFR-28, and here rather than later: a caller whose upload is refused costs the store
             // no call at all - not even a minted key - so the whole set is judged while the cheapest
             // thing to do about it is nothing.
-            await ValidatorExtensions.ValidateAndThrowAsync(
-                captureValidator,
-                command,
-                cancellationToken);
+            await captureValidator.EnsureValidAsync(command, cancellationToken);
 
             // FR-123: a proof is immutable, so the second capture is refused rather than merged.
             // Asked here so the refusal costs no round trip to the store; asked again inside the
@@ -349,7 +340,7 @@ public sealed class ProofOfDeliveryService(
         // A deleted capturer leaves the set-null AD-20 asks for, and a proof whose capturer's row is
         // gone is still evidence. Null here reads the same as withheld, which is the only reading
         // this shape supports and the correct one either way: there is no name to show.
-        return account is null ? null : (account.FirstName + " " + account.LastName).Trim();
+        return account?.DisplayName;
     }
 
     private static ProofOfDeliveryView View(ProofOfDelivery proof, string? capturedByName) =>

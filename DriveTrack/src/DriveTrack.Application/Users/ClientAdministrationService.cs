@@ -27,7 +27,7 @@ public sealed class ClientAdministrationService(
 
         accessGuard.RequireRole(UserRole.Dispatcher);
 
-        await ValidatorExtensions.ValidateAndThrowAsync(listValidator, query, cancellationToken);
+        await listValidator.EnsureValidAsync(query, cancellationToken);
 
         await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
 
@@ -124,7 +124,7 @@ public sealed class ClientAdministrationService(
 
             Trim(command.Email.Or(account.Email)));
 
-        await ValidatorExtensions.ValidateAndThrowAsync(stateValidator, merged, cancellationToken);
+        await stateValidator.EnsureValidAsync(merged, cancellationToken);
 
         var firstName = merged.FirstName!;
         var lastName = merged.LastName!;
@@ -202,8 +202,7 @@ public sealed class ClientAdministrationService(
         {
             throw new NotFoundException(
                 ErrorCode.COMMON_NOT_FOUND,
-                "No client exists with user id "
-                    + userId.Value.ToString(CultureInfo.InvariantCulture) + ".");
+                "No client exists with user id " + userId + ".");
         }
     }
 

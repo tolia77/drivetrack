@@ -5,7 +5,7 @@ namespace DriveTrack.Application.Tests.Users;
 
 /// <summary>
 /// The 422 rows of story 7.3's I/O matrix (FR-87, FR-88, FR-92), driven through the real
-/// <c>ValidateAndThrowAsync</c> seam (AD-9) so the assertions are about the <see cref="FieldError"/>
+/// <c>EnsureValidAsync</c> seam (AD-9) so the assertions are about the <see cref="FieldError"/>
 /// list the adapter will actually receive.
 /// <para>
 /// None of these needs a database, and that is the point of validating the merged profile rather
@@ -23,8 +23,7 @@ public class SelfServiceValidationTests
     [Fact]
     public async Task A_merged_client_profile_that_changed_nothing_passes()
     {
-        await ValidatorExtensions.ValidateAndThrowAsync(
-            Profile,
+        await Profile.EnsureValidAsync(
             ValidClient(),
             TestContext.Current.CancellationToken);
     }
@@ -34,8 +33,7 @@ public class SelfServiceValidationTests
     {
         // The commonest edit a dispatcher, a driver or an administrator makes: their own name, and
         // no phone number anywhere near it.
-        await ValidatorExtensions.ValidateAndThrowAsync(
-            Profile,
+        await Profile.EnsureValidAsync(
             ValidOther(),
             TestContext.Current.CancellationToken);
     }
@@ -92,8 +90,7 @@ public class SelfServiceValidationTests
     [Fact]
     public async Task A_complete_password_change_passes()
     {
-        await ValidatorExtensions.ValidateAndThrowAsync(
-            Password,
+        await Password.EnsureValidAsync(
             ValidPassword(),
             TestContext.Current.CancellationToken);
     }
@@ -165,8 +162,7 @@ public class SelfServiceValidationTests
     [Fact]
     public async Task A_well_formed_address_passes()
     {
-        await ValidatorExtensions.ValidateAndThrowAsync(
-            Email,
+        await Email.EnsureValidAsync(
             new ChangeEmailCommand("olena@drivetrack.test"),
             TestContext.Current.CancellationToken);
     }
@@ -232,8 +228,7 @@ public class SelfServiceValidationTests
         FluentValidation.IValidator<T> validator,
         T instance) =>
         await Assert.ThrowsAsync<ValidationException>(
-            () => ValidatorExtensions.ValidateAndThrowAsync(
-                validator,
+            () => validator.EnsureValidAsync(
                 instance,
                 TestContext.Current.CancellationToken));
 

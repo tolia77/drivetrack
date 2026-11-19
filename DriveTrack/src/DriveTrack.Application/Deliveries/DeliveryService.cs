@@ -1,4 +1,3 @@
-using System.Globalization;
 using DriveTrack.Application.Abstractions;
 using DriveTrack.Application.Authorization;
 using DriveTrack.Application.Common;
@@ -22,13 +21,6 @@ namespace DriveTrack.Application.Deliveries;
 /// AD-4 makes admin satisfy every check by rule inside the guard. <see cref="DeleteAsync"/> is the
 /// exception and says <c>RequireRole(UserRole.Admin)</c> outright: FR-24 reserves deletion to an
 /// administrator, so a dispatcher is refused there and nowhere else.
-/// </para>
-/// <para>
-/// <c>ValidatorExtensions.ValidateAndThrowAsync</c> is called in static form on purpose. This
-/// namespace is the one <c>ValidatorExtensions</c>' own documentation names: a file here that
-/// imported only <c>FluentValidation</c> would bind the identically-named extension method to
-/// FluentValidation's own, whose exception carries no <see cref="ErrorCode"/> and leaves as a 500
-/// where 422 was meant. The static call cannot bind anywhere else.
 /// </para>
 /// </summary>
 public sealed class DeliveryService(
@@ -63,7 +55,7 @@ public sealed class DeliveryService(
         var scope = accessGuard.RequireScope();
 
         // NFR-27: refused before any query is built.
-        await ValidatorExtensions.ValidateAndThrowAsync(listValidator, query, cancellationToken);
+        await listValidator.EnsureValidAsync(query, cancellationToken);
 
         await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
 
@@ -92,7 +84,7 @@ public sealed class DeliveryService(
         // client's, and why the dispatch list is a separate route.
         var scope = accessGuard.RequireScope();
 
-        await ValidatorExtensions.ValidateAndThrowAsync(listValidator, query, cancellationToken);
+        await listValidator.EnsureValidAsync(query, cancellationToken);
 
         // AD-17: this list carries no counterparty identity, and ordering a caller's rows by the
         // other party's name is a way of reading it. The two name sorts are refused as columns this
@@ -145,7 +137,7 @@ public sealed class DeliveryService(
 
         if (delivery is null)
         {
-            throw NotFound(id);
+            throw NotFoundException.For("delivery", id);
         }
 
         var parties = await PartiesAsync(unitOfWork, [delivery], cancellationToken);
@@ -169,7 +161,7 @@ public sealed class DeliveryService(
 
         if (delivery is null)
         {
-            throw NotFound(id);
+            throw NotFoundException.For("delivery", id);
         }
 
         // No party lookup at all, and nothing to strip: the type has no field a counterparty's name
@@ -221,7 +213,7 @@ public sealed class DeliveryService(
         // A create loads nothing, so the guard is the first step rather than the second.
         accessGuard.RequireRole(UserRole.Dispatcher);
 
-        await ValidatorExtensions.ValidateAndThrowAsync(createValidator, command, cancellationToken);
+        await createValidator.EnsureValidAsync(command, cancellationToken);
 
         await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
 
@@ -306,7 +298,7 @@ public sealed class DeliveryService(
                 "The caller composes deliveries for a client other than themselves and has no "
                     + "client row of their own to attach a request to.");
 
-        await ValidatorExtensions.ValidateAndThrowAsync(requestValidator, command, cancellationToken);
+        await requestValidator.EnsureValidAsync(command, cancellationToken);
 
         await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
 
@@ -375,7 +367,7 @@ public sealed class DeliveryService(
 
         if (delivery is null)
         {
-            throw NotFound(id);
+            throw NotFoundException.For("delivery", id);
         }
 
         // AD-23: the validator reads the state the row will hold, not the payload. An update that
@@ -383,7 +375,7 @@ public sealed class DeliveryService(
         // rule has to see the bound already stored.
         var merged = command.MergedOnto(delivery);
 
-        await ValidatorExtensions.ValidateAndThrowAsync(updateValidator, merged, cancellationToken);
+        await updateValidator.EnsureValidAsync(merged, cancellationToken);
 
         var driverId = await ResolveDriverAsync(unitOfWork, merged.DriverId.Value, cancellationToken);
         var clientId = await ResolveClientAsync(unitOfWork, merged.ClientId.Value, cancellationToken);
@@ -441,7 +433,7 @@ public sealed class DeliveryService(
 
         if (delivery is null)
         {
-            throw NotFound(id);
+            throw NotFoundException.For("delivery", id);
         }
 
         unitOfWork.Deliveries.Remove(delivery);
@@ -470,10 +462,10 @@ public sealed class DeliveryService(
 
         if (delivery is null)
         {
-            throw NotFound(id);
+            throw NotFoundException.For("delivery", id);
         }
 
-        await ValidatorExtensions.ValidateAndThrowAsync(statusValidator, command, cancellationToken);
+        await statusValidator.EnsureValidAsync(command, cancellationToken);
 
         var previous = delivery.Status;
 
@@ -568,7 +560,7 @@ public sealed class DeliveryService(
         // A fifth guard member would be a second way of saying AD-3.
         var scope = accessGuard.RequireScope();
 
-        await ValidatorExtensions.ValidateAndThrowAsync(noteValidator, command, cancellationToken);
+        await noteValidator.EnsureValidAsync(command, cancellationToken);
 
         await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
 
@@ -576,7 +568,7 @@ public sealed class DeliveryService(
         // answer as one asking about a delivery that never existed.
         if (await unitOfWork.Deliveries.FindVisibleAsync(id, scope, cancellationToken) is null)
         {
-            throw NotFound(id);
+            throw NotFoundException.For("delivery", id);
         }
 
         var entry = new TimelineEntry(
@@ -609,7 +601,7 @@ public sealed class DeliveryService(
 
         if (await unitOfWork.Deliveries.FindVisibleAsync(id, scope, cancellationToken) is null)
         {
-            throw NotFound(id);
+            throw NotFoundException.For("delivery", id);
         }
 
         var entries = await unitOfWork.TimelineEntries.ListForDeliveryAsync(id, cancellationToken);
@@ -638,7 +630,7 @@ public sealed class DeliveryService(
 
         // Before the port call, and that is the point of the floor: a keystroke must not become a
         // request to a public geocoding service.
-        await ValidatorExtensions.ValidateAndThrowAsync(searchValidator, query, cancellationToken);
+        await searchValidator.EnsureValidAsync(query, cancellationToken);
 
         // No unit of work: nothing here reads or writes a row. The answer comes from outside the
         // system entirely, which is why the port is the only collaborator.
@@ -743,7 +735,7 @@ public sealed class DeliveryService(
                 "The account behind these credentials no longer exists, so the actor of a timeline "
                     + "entry cannot be recorded.");
 
-        var name = DisplayName(account);
+        var name = account.DisplayName;
 
         // Fitted to the column rather than refused. A first and a last name are bounded at a hundred
         // characters each, so a legal account can produce a hundred and one characters more than the
@@ -796,9 +788,7 @@ public sealed class DeliveryService(
         }
 
         var driver = await unitOfWork.Drivers.GetByIdAsync(new DriverId(id), cancellationToken)
-            ?? throw new NotFoundException(
-                ErrorCode.DELIVERY_DRIVER_NOT_FOUND,
-                "No driver exists with id " + id.ToString(CultureInfo.InvariantCulture) + ".");
+            ?? throw NotFoundException.For(ErrorCode.DELIVERY_DRIVER_NOT_FOUND, "driver", id);
 
         return driver.Id;
     }
@@ -815,17 +805,10 @@ public sealed class DeliveryService(
         }
 
         var client = await unitOfWork.Clients.GetByIdAsync(new ClientId(id), cancellationToken)
-            ?? throw new NotFoundException(
-                ErrorCode.DELIVERY_CLIENT_NOT_FOUND,
-                "No client exists with id " + id.ToString(CultureInfo.InvariantCulture) + ".");
+            ?? throw NotFoundException.For(ErrorCode.DELIVERY_CLIENT_NOT_FOUND, "client", id);
 
         return client.Id;
     }
-
-    private static NotFoundException NotFound(int id) =>
-        new(
-            ErrorCode.COMMON_NOT_FOUND,
-            "No delivery exists with id " + id.ToString(CultureInfo.InvariantCulture) + ".");
 
     /// <summary>A new location at the given coordinates, with no cached address (DR-11).</summary>
     private static Location Point(LocationInput input) =>
@@ -939,7 +922,7 @@ public sealed class DeliveryService(
             {
                 if (account.DriverId is { } driverId)
                 {
-                    drivers[driverId] = DisplayName(account);
+                    drivers[driverId] = account.DisplayName;
                 }
             }
         }
@@ -960,16 +943,13 @@ public sealed class DeliveryService(
             {
                 if (account.ClientId is { } clientId)
                 {
-                    clients[clientId] = DisplayName(account);
+                    clients[clientId] = account.DisplayName;
                 }
             }
         }
 
         return new DeliveryParties(drivers, clients);
     }
-
-    private static string DisplayName(UserAccount account) =>
-        (account.FirstName + " " + account.LastName).Trim();
 
     /// <summary>
     /// The page's parties, keyed by the row id a delivery refers to them by.

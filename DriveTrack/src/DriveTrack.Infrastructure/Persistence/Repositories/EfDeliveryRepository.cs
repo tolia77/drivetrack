@@ -123,7 +123,8 @@ internal sealed class EfDeliveryRepository(AppDbContext context) : IDeliveryRepo
                     context.Users,
                     driver => (int)(object)driver.UserId,
                     user => user.Id,
-                    (driver, user) => (user.FirstName + " " + user.LastName).Trim())
+                    (driver, user) => user)
+                .Select(AccountNames.Display)
                 .FirstOrDefault(),
             ClientName = context.Clients
                 .Where(client => client.Id == delivery.ClientId)
@@ -131,7 +132,8 @@ internal sealed class EfDeliveryRepository(AppDbContext context) : IDeliveryRepo
                     context.Users,
                     client => (int)(object)client.UserId,
                     user => user.Id,
-                    (client, user) => (user.FirstName + " " + user.LastName).Trim())
+                    (client, user) => user)
+                .Select(AccountNames.Display)
                 .FirstOrDefault(),
             Pickup = delivery.PickupLocation.Address == null || delivery.PickupLocation.Address.Trim() == string.Empty
                 ? ((double)Math.Round((decimal)delivery.PickupLocation.Latitude, CoordinateDecimals)).ToString()

@@ -100,8 +100,8 @@ internal sealed class EfProofOfDeliveryRepository(AppDbContext context) : IProof
     /// proof is visible exactly when its delivery is, and an asset exactly when its proof is.
     /// <para>
     /// The pair of predicates is written out again here rather than shared with
-    /// <see cref="EfDeliveryRepository"/>, which carries its own copy in each of its two visibility
-    /// reads. Sharing them would mean a helper both repositories reach — and AD-6 keeps a repository
+    /// <see cref="EfDeliveryRepository"/>, which carries three copies of its own: one in each of its
+    /// two visibility reads and one in its <c>Scoped</c> helper. Sharing them would mean a helper both repositories reach — and AD-6 keeps a repository
     /// a closed unit over one aggregate, so the alternative to this duplication is a third type
     /// whose whole content is two <c>Where</c> clauses. Said once <em>within this file</em> is what
     /// is claimed here, and it is all that is claimed: the day the scope grows a third dimension,

@@ -53,19 +53,19 @@ public sealed class DeliverySideEffectRunner(
     {
         ArgumentNullException.ThrowIfNull(job);
 
-        // Total over the enum, like Delivery.NextStatuses and NavDestinations.For. Two independent
-        // `if` statements would let a third kind queue, drain and mark itself complete having done
+        // Throws for an unknown job type rather than falling through. Two independent `if`
+        // statements would let a third kind queue, drain and mark itself complete having done
         // nothing at all, with no exception and no log to say so - which is the worst shape a
         // background job can fail in.
-        return job.Kind switch
+        return job switch
         {
-            DeliverySideEffectKind.ResolveAddresses =>
-                ResolveAddressesAsync(job.DeliveryId, cancellationToken),
-            DeliverySideEffectKind.StatusChangeEmail =>
-                NotifyStatusChangedAsync(job, cancellationToken),
+            ResolveAddressesJob resolve =>
+                ResolveAddressesAsync(resolve.DeliveryId, cancellationToken),
+            StatusChangedJob statusChanged =>
+                NotifyStatusChangedAsync(statusChanged, cancellationToken),
             _ => throw new ArgumentOutOfRangeException(
                 nameof(job),
-                job.Kind,
+                job.GetType().Name,
                 "No side effect is defined for this kind."),
         };
     }
@@ -220,14 +220,9 @@ public sealed class DeliverySideEffectRunner(
     /// owed" or "it worked" — which is the ambiguity an administrator opens this screen to resolve.
     /// </remarks>
     private async Task NotifyStatusChangedAsync(
-        DeliverySideEffectJob job,
+        StatusChangedJob job,
         CancellationToken cancellationToken)
     {
-        if (job is not { Previous: { } previous, Next: { } next })
-        {
-            return;
-        }
-
         await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
 
         var delivery = await unitOfWork.Deliveries.GetByIdAsync(job.DeliveryId, cancellationToken);
@@ -262,7 +257,7 @@ public sealed class DeliverySideEffectRunner(
         try
         {
             await emailSender.SendAsync(
-                StatusChangeEmail.For(account.Email, delivery.DropoffLocation, previous, next),
+                StatusChangeEmail.For(account.Email, delivery.DropoffLocation, job.Previous, job.Next),
                 cancellationToken);
         }
         catch (Exception exception)

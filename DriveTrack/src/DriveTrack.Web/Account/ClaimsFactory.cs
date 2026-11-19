@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Security.Claims;
 using DriveTrack.Application.Authorization;
 using DriveTrack.Application.Users;
@@ -11,8 +10,8 @@ namespace DriveTrack.Web.Account;
 /// The bearer token is signed in Infrastructure and the cookie is written here, and the two must
 /// carry the same claim names and the same values: a person signed in through the Blazor form and
 /// the same person signed in through <c>/api/auth/sign-in</c> have to come back as the same
-/// <see cref="ICurrentUser"/>. The names live in <c>DriveTrackClaimTypes</c>, in the layer both
-/// sides reference; this file is the cookie half of that agreement.
+/// <see cref="ICurrentUser"/>. The names and the values both come from <see cref="SessionClaims"/>,
+/// in the layer both sides reference; this file is the cookie half of that agreement.
 /// </para>
 /// </summary>
 internal static class ClaimsFactory
@@ -37,27 +36,8 @@ internal static class ClaimsFactory
     {
         ArgumentNullException.ThrowIfNull(session);
 
-        var claims = new List<Claim>
-        {
-            new(DriveTrackClaimTypes.UserId, session.UserId.Value.ToString(CultureInfo.InvariantCulture)),
-            new(DriveTrackClaimTypes.Role, session.Role.ToString()),
-            new(DriveTrackClaimTypes.Name, session.FirstName + " " + session.LastName),
-            new(DriveTrackClaimTypes.Email, session.Email),
-        };
-
-        if (session.DriverId is { } driverId)
-        {
-            claims.Add(new Claim(
-                DriveTrackClaimTypes.DriverId,
-                driverId.Value.ToString(CultureInfo.InvariantCulture)));
-        }
-
-        if (session.ClientId is { } clientId)
-        {
-            claims.Add(new Claim(
-                DriveTrackClaimTypes.ClientId,
-                clientId.Value.ToString(CultureInfo.InvariantCulture)));
-        }
+        // The same list the bearer token is signed with, so the two schemes cannot drift apart.
+        var claims = SessionClaims.For(session).Select(claim => new Claim(claim.Type, claim.Value)).ToList();
 
         if (session.SecurityStamp is { } stamp)
         {

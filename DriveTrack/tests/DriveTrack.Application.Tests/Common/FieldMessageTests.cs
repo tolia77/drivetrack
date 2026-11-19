@@ -363,8 +363,7 @@ public class FieldMessageTests
 
     private static async Task<ValidationException> Refuse<T>(IValidator<T> validator, T instance) =>
         await Assert.ThrowsAsync<ValidationException>(
-            () => ValidatorExtensions.ValidateAndThrowAsync(
-                validator,
+            () => validator.EnsureValidAsync(
                 instance,
                 TestContext.Current.CancellationToken));
 

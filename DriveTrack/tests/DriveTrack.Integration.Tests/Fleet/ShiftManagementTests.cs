@@ -1181,7 +1181,7 @@ public class ShiftManagementTests(PostgresFixture postgres)
     public async Task Paging_outside_the_bounds_is_refused_rather_than_run(string query)
     {
         // NFR-27, and the half a unit test cannot make: that the validator is actually reached from
-        // the route. Deleting the ValidateAndThrowAsync call in ListAsync would leave every
+        // the route. Deleting the EnsureValidAsync call in ListAsync would leave every
         // ShiftValidationTests case green while a limit of two million became a query.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);

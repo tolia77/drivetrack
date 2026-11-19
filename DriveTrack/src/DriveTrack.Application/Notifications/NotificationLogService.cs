@@ -21,13 +21,6 @@ namespace DriveTrack.Application.Notifications;
 /// <c>Dispatcher</c> would admit both. The log is an operations record — it carries the address of
 /// every client the system has written to — and FR-28 addresses it to the administrator.
 /// </para>
-/// <para>
-/// <c>ValidatorExtensions.ValidateAndThrowAsync</c> is called in static form for the reason
-/// <c>DeliveryService</c> gives: this file imports both <c>FluentValidation</c> and
-/// <c>DriveTrack.Application.Common</c>, and the static call cannot bind to FluentValidation's
-/// identically-named method, whose exception carries no <c>ErrorCode</c> and would leave as a 500
-/// where 422 was meant.
-/// </para>
 /// </summary>
 public sealed class NotificationLogService(
     IUnitOfWorkFactory unitOfWorkFactory,
@@ -45,7 +38,7 @@ public sealed class NotificationLogService(
 
         // NFR-27: refused before any query is built. After the guard, so a caller who may not read
         // the log is told that rather than told their paging is wrong.
-        await ValidatorExtensions.ValidateAndThrowAsync(listValidator, query, cancellationToken);
+        await listValidator.EnsureValidAsync(query, cancellationToken);
 
         await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
 

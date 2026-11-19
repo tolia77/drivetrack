@@ -44,7 +44,7 @@ public sealed class UserService(
             PhoneNumber = Trim(command.PhoneNumber),
         };
 
-        await ValidatorExtensions.ValidateAndThrowAsync(registerValidator, trimmed, cancellationToken);
+        await registerValidator.EnsureValidAsync(trimmed, cancellationToken);
 
         // The validator has proved these are present; the nullable annotations exist because the
         // wire can send anything and the command has to be able to carry it as far as here.
@@ -100,7 +100,7 @@ public sealed class UserService(
     {
         ArgumentNullException.ThrowIfNull(command);
 
-        await ValidatorExtensions.ValidateAndThrowAsync(signInValidator, command, cancellationToken);
+        await signInValidator.EnsureValidAsync(command, cancellationToken);
 
         // The length ceiling, answered as the wrong password it is: every path that sets a password
         // caps it at this length, so no stored hash can match a longer one. Refused before the
@@ -146,7 +146,7 @@ public sealed class UserService(
 
         if (account is null)
         {
-            throw Missing(userId);
+            throw NotFoundException.For("user", userId.Value);
         }
 
         // FR-5 and FR-87: the licence number and the phone number are the two fields a subtype row
@@ -182,7 +182,7 @@ public sealed class UserService(
 
         if (account is null)
         {
-            throw Missing(userId);
+            throw NotFoundException.For("user", userId.Value);
         }
 
         var licenseNumber = await LicenseNumberAsync(unitOfWork, account, cancellationToken);
@@ -204,7 +204,7 @@ public sealed class UserService(
             Trim(command.PhoneNumber.Or(client?.PhoneNumber)),
             client is not null);
 
-        await ValidatorExtensions.ValidateAndThrowAsync(profileValidator, merged, cancellationToken);
+        await profileValidator.EnsureValidAsync(merged, cancellationToken);
 
         var firstName = merged.FirstName!;
         var lastName = merged.LastName!;
@@ -245,10 +245,10 @@ public sealed class UserService(
 
         if (account is null)
         {
-            throw Missing(userId);
+            throw NotFoundException.For("user", userId.Value);
         }
 
-        await ValidatorExtensions.ValidateAndThrowAsync(passwordValidator, command, cancellationToken);
+        await passwordValidator.EnsureValidAsync(command, cancellationToken);
 
         // Asked before anything is staged, and never trimmed: leading and trailing space is part of
         // a password somebody chose.
@@ -292,7 +292,7 @@ public sealed class UserService(
 
         if (account is null)
         {
-            throw Missing(userId);
+            throw NotFoundException.For("user", userId.Value);
         }
 
         // Trimmed before it is judged, exactly as the administrator's path trims as it merges: the
@@ -301,7 +301,7 @@ public sealed class UserService(
         // EmailChange exists to prevent, moved one layer up into the validator.
         var requested = command with { Email = Trim(command.Email) };
 
-        await ValidatorExtensions.ValidateAndThrowAsync(emailValidator, requested, cancellationToken);
+        await emailValidator.EnsureValidAsync(requested, cancellationToken);
 
         var licenseNumber = await LicenseNumberAsync(unitOfWork, account, cancellationToken);
         var client = await ClientOrNullAsync(unitOfWork, account, cancellationToken);
@@ -327,13 +327,6 @@ public sealed class UserService(
     /// empty answer it is rather than as an empty string.
     /// </summary>
     private static string? Trim(string? value) => value?.Trim();
-
-    /// <summary>The 404 for an id no account holds.</summary>
-    private static NotFoundException Missing(UserId userId) =>
-        new(
-            ErrorCode.COMMON_NOT_FOUND,
-            "No user exists with id "
-                + userId.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) + ".");
 
     /// <summary>The driving licence number for a driver, and null for every other role (FR-5).</summary>
     private static async Task<string?> LicenseNumberAsync(

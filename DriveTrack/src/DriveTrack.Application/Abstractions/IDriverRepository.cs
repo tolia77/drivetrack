@@ -45,9 +45,6 @@ public interface IDriverRepository
 
     /// <summary>Stages a new driver for the next commit.</summary>
     void Add(Driver driver);
-
-    /// <summary>Stages a driver for deletion (FR-39).</summary>
-    void Remove(Driver driver);
 }
 
 /// <summary>A driver, with the vehicle they hold, and the account fields a roster row shows.</summary>

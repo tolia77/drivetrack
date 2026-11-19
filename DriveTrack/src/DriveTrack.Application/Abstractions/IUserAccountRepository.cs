@@ -23,7 +23,11 @@ public sealed record UserAccount(
     string Email,
     UserRole Role,
     DriverId? DriverId,
-    ClientId? ClientId);
+    ClientId? ClientId)
+{
+    /// <summary>The trimmed <c>"First Last"</c> name the account is shown by (<see cref="PersonNames"/>).</summary>
+    public string DisplayName => PersonNames.Display(FirstName, LastName);
+}
 
 /// <summary>
 /// The identity fields of an account that does not exist yet. The password travels separately and
@@ -65,6 +69,19 @@ public interface IUserAccountRepository
     /// </summary>
     Task<UserAccount?> FindByClientIdAsync(ClientId clientId, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// The accounts holding any of <paramref name="userIds"/>, in one read, in no particular order.
+    /// <para>
+    /// An id no account holds is simply absent from the answer, so a caller naming the authors of a
+    /// conversation learns which of them have since been deleted by what is missing. Asked as one
+    /// question rather than one <see cref="GetByIdAsync"/> per id, so naming every sender costs one
+    /// round trip however many there are.
+    /// </para>
+    /// </summary>
+    Task<IReadOnlyList<UserAccount>> ListByIdsAsync(
+        IReadOnlyCollection<UserId> userIds,
+        CancellationToken cancellationToken);
+
     /// <summary>Whether any account already holds that email, compared as Identity normalizes it.</summary>
     Task<bool> EmailExistsAsync(string email, CancellationToken cancellationToken);
 
@@ -79,25 +96,6 @@ public interface IUserAccountRepository
         NewUserAccount account,
         string password,
         UserRole role,
-        CancellationToken cancellationToken);
-
-    /// <summary>
-    /// Stages a change to the account's name, so it lands with the rest of the operation at
-    /// <see cref="IUnitOfWork.CommitAsync"/> (FR-37).
-    /// <para>
-    /// Deliberately narrow: the two name fields and nothing else. The address and the credentials
-    /// are the account capability's, and a general "update the user" method here would be the seam
-    /// through which a second writer of them appeared.
-    /// </para>
-    /// <para>
-    /// An id no account holds is not an error: the caller has already loaded the row it means to
-    /// rename and answered 404 if there was none.
-    /// </para>
-    /// </summary>
-    Task RenameAsync(
-        UserId userId,
-        string firstName,
-        string lastName,
         CancellationToken cancellationToken);
 
     /// <summary>
@@ -180,9 +178,13 @@ public interface IUserAccountRepository
         CancellationToken cancellationToken);
 
     /// <summary>
-    /// Renames an account, staged for the caller's commit (FR-46, FR-50). Neither the email nor
-    /// the role is touched — email editing is story 7.3, and AD-4 gives an account one role for
-    /// its whole life.
+    /// Renames an account, staged for the caller's commit (FR-37, FR-46, FR-50).
+    /// <para>
+    /// Deliberately narrow: the two name fields and nothing else. The address is
+    /// <see cref="SetEmailAsync"/>'s, the credentials are <see cref="SetPasswordAsync"/>'s, and AD-4
+    /// gives an account one role for its whole life — a general "update the user" method here would
+    /// be the seam through which a second writer of any of them appeared.
+    /// </para>
     /// </summary>
     /// <exception cref="Common.NotFoundException">No account has that id.</exception>
     Task UpdateNameAsync(
@@ -207,7 +209,7 @@ public interface IUserAccountRepository
     /// <summary>
     /// Replaces the address the account signs in with (FR-92), staged for the caller's commit.
     /// <para>
-    /// Deliberately narrow, for the reason <see cref="RenameAsync"/> is: the address, the user name
+    /// Deliberately narrow, for the reason <see cref="UpdateNameAsync"/> is: the address, the user name
     /// that mirrors it, and nothing else. A general "update the user" method here would be the seam
     /// through which a second writer of the address appeared.
     /// </para>

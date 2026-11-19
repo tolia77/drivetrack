@@ -4,7 +4,7 @@ using DriveTrack.Application.Users;
 namespace DriveTrack.Application.Tests.Users;
 
 /// <summary>
-/// The 422 rows of story 7.1's I/O matrix, driven through the real <c>ValidateAndThrowAsync</c>
+/// The 422 rows of story 7.1's I/O matrix, driven through the real <c>EnsureValidAsync</c>
 /// seam (AD-9) so the assertions are about the <see cref="FieldError"/> list the adapter will
 /// actually receive.
 /// <para>
@@ -24,8 +24,7 @@ public class AccountAdministrationValidationTests
     {
         // The commonest edit there is: the caller sent one field, everything else was merged back
         // in from the row, and the result is the row as it already was.
-        await ValidatorExtensions.ValidateAndThrowAsync(
-            ClientState,
+        await ClientState.EnsureValidAsync(
             ValidClient(),
             TestContext.Current.CancellationToken);
     }
@@ -35,8 +34,7 @@ public class AccountAdministrationValidationTests
     {
         // FR-50 / AD-23: null here is the absent case - the caller left the password box empty -
         // and a rule that refused it would make "leave the password alone" impossible to express.
-        await ValidatorExtensions.ValidateAndThrowAsync(
-            ClientState,
+        await ClientState.EnsureValidAsync(
             ValidClient() with { Password = null },
             TestContext.Current.CancellationToken);
     }
@@ -128,8 +126,7 @@ public class AccountAdministrationValidationTests
     [Fact]
     public async Task A_merged_dispatcher_that_changed_nothing_passes()
     {
-        await ValidatorExtensions.ValidateAndThrowAsync(
-            DispatcherState,
+        await DispatcherState.EnsureValidAsync(
             ValidDispatcher(),
             TestContext.Current.CancellationToken);
     }
@@ -139,8 +136,7 @@ public class AccountAdministrationValidationTests
     {
         // The matrix row: "Admin edits a dispatcher, blank password" changes the name and leaves
         // the existing password signing in.
-        await ValidatorExtensions.ValidateAndThrowAsync(
-            DispatcherState,
+        await DispatcherState.EnsureValidAsync(
             ValidDispatcher() with { Password = null },
             TestContext.Current.CancellationToken);
     }
@@ -156,8 +152,7 @@ public class AccountAdministrationValidationTests
     [Fact]
     public async Task A_complete_dispatcher_creation_passes()
     {
-        await ValidatorExtensions.ValidateAndThrowAsync(
-            CreateDispatcher,
+        await CreateDispatcher.EnsureValidAsync(
             ValidCreate(),
             TestContext.Current.CancellationToken);
     }
@@ -229,8 +224,7 @@ public class AccountAdministrationValidationTests
         FluentValidation.IValidator<T> validator,
         T instance) =>
         await Assert.ThrowsAsync<ValidationException>(
-            () => ValidatorExtensions.ValidateAndThrowAsync(
-                validator,
+            () => validator.EnsureValidAsync(
                 instance,
                 TestContext.Current.CancellationToken));
 

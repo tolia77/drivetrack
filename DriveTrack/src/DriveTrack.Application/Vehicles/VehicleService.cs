@@ -39,7 +39,7 @@ public sealed class VehicleService(
         accessGuard.RequireRole(UserRole.Dispatcher);
 
         // NFR-27: refused before any query is built, which is the half the original was missing.
-        await ValidatorExtensions.ValidateAndThrowAsync(listValidator, query, cancellationToken);
+        await listValidator.EnsureValidAsync(query, cancellationToken);
 
         await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
 
@@ -88,7 +88,7 @@ public sealed class VehicleService(
 
         accessGuard.RequireRole(UserRole.Dispatcher);
 
-        return Summary(vehicle ?? throw NotFound(id));
+        return Summary(vehicle ?? throw NotFoundException.For("vehicle", id));
     }
 
     /// <inheritdoc />
@@ -101,7 +101,7 @@ public sealed class VehicleService(
         // A create loads nothing, so the guard is the first step rather than the second.
         accessGuard.RequireRole(UserRole.Dispatcher);
 
-        await ValidatorExtensions.ValidateAndThrowAsync(createValidator, command, cancellationToken);
+        await createValidator.EnsureValidAsync(command, cancellationToken);
 
         var plate = NormalizePlate(command.LicensePlate!);
 
@@ -141,14 +141,14 @@ public sealed class VehicleService(
 
         if (vehicle is null)
         {
-            throw NotFound(id);
+            throw NotFoundException.For("vehicle", id);
         }
 
         // AD-23: the validator reads the state the row will hold, not the payload. An update that
         // mentions only the capacity must not be refused for a model it never sent.
         var merged = command.MergedOnto(vehicle);
 
-        await ValidatorExtensions.ValidateAndThrowAsync(updateValidator, merged, cancellationToken);
+        await updateValidator.EnsureValidAsync(merged, cancellationToken);
 
         var plate = NormalizePlate(merged.LicensePlate.Value!);
 
@@ -196,7 +196,7 @@ public sealed class VehicleService(
 
         if (vehicle is null)
         {
-            throw NotFound(id);
+            throw NotFoundException.For("vehicle", id);
         }
 
         // FR-43. The schema's SetNull would happily strand a driver holding nothing, which is the
@@ -263,11 +263,6 @@ public sealed class VehicleService(
             "Licence plate '" + licensePlate + "' is already carried by vehicle "
                 + holder.Id.ToString(CultureInfo.InvariantCulture) + ".");
     }
-
-    private static NotFoundException NotFound(int id) =>
-        new(
-            ErrorCode.COMMON_NOT_FOUND,
-            "No vehicle exists with id " + id.ToString(CultureInfo.InvariantCulture) + ".");
 
     private static VehicleSummary Summary(Vehicle vehicle) =>
         new(

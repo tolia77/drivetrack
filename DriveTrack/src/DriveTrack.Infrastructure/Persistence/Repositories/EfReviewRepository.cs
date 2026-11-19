@@ -86,7 +86,8 @@ internal sealed class EfReviewRepository(AppDbContext context) : IReviewReposito
                                 context.Users,
                                 client => (int)(object)client.UserId,
                                 user => user.Id,
-                                (client, user) => (user.FirstName + " " + user.LastName).Trim())
+                                (client, user) => user)
+                            .Select(AccountNames.Display)
                             .FirstOrDefault() ?? string.Empty,
                         descending)
                     .ThenSortBy(review => review.Id, descending),
@@ -103,7 +104,8 @@ internal sealed class EfReviewRepository(AppDbContext context) : IReviewReposito
                                 context.Users,
                                 driver => (int)(object)driver.UserId,
                                 user => user.Id,
-                                (driver, user) => (user.FirstName + " " + user.LastName).Trim())
+                                (driver, user) => user)
+                            .Select(AccountNames.Display)
                             .FirstOrDefault() ?? string.Empty,
                         descending)
                     .ThenSortBy(review => review.Id, descending),

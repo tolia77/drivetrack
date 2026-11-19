@@ -11,57 +11,60 @@ namespace DriveTrack.Web.Api;
 /// serializes as its properties — <c>{"value":3}</c>. The wrapper exists to stop two identities
 /// being confused inside the system; there is nothing for a client to do with it, and a nested
 /// object here would be a second wire shape for something that is a number everywhere else
-/// (NFR-1). These converters write the number and read it back.
+/// (NFR-1). This converter writes the number and reads it back.
 /// </para>
 /// <para>
-/// Registered on the one <c>JsonSerializerOptions</c> the whole adapter shares, so the envelope
-/// written by middleware and the payload written through MVC agree, exactly as they do for the
+/// Registered through <see cref="WireJson"/> on both JSON surfaces, so the envelope written by
+/// middleware, the payload written through MVC and a hub message agree, exactly as they do for the
 /// enum-as-name converter (AD-21).
 /// </para>
 /// </summary>
-internal sealed class UserIdJsonConverter : JsonConverter<UserId>
+/// <typeparam name="T">The typed identity.</typeparam>
+/// <param name="wrap">Builds the identity from its number.</param>
+/// <param name="unwrap">Reads the number back out of the identity.</param>
+internal sealed class TypedIdJsonConverter<T>(Func<int, T> wrap, Func<T, int> unwrap) : JsonConverter<T>
+    where T : struct
 {
     /// <inheritdoc />
-    public override UserId Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
-        new(reader.GetInt32());
+    public override T Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        wrap(reader.GetInt32());
 
     /// <inheritdoc />
-    public override void Write(Utf8JsonWriter writer, UserId value, JsonSerializerOptions options)
+    public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
     {
         ArgumentNullException.ThrowIfNull(writer);
 
-        writer.WriteNumberValue(value.Value);
+        writer.WriteNumberValue(unwrap(value));
     }
 }
 
-/// <inheritdoc cref="UserIdJsonConverter" />
-internal sealed class DriverIdJsonConverter : JsonConverter<DriverId>
+/// <summary>
+/// The converters every JSON surface shares: MVC's <c>AddJsonOptions</c> and SignalR's
+/// <c>AddJsonProtocol</c> both call <see cref="Configure"/>, so neither can drift from the other.
+/// </summary>
+internal static class WireJson
 {
-    /// <inheritdoc />
-    public override DriverId Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
-        new(reader.GetInt32());
-
-    /// <inheritdoc />
-    public override void Write(Utf8JsonWriter writer, DriverId value, JsonSerializerOptions options)
+    /// <summary>
+    /// AD-21 (an enum crosses the wire as its member name) and AD-22 (a typed identity crosses it
+    /// as a bare number).
+    /// </summary>
+    /// <param name="options">The serializer options a surface is built from.</param>
+    public static void Configure(JsonSerializerOptions options)
     {
-        ArgumentNullException.ThrowIfNull(writer);
+        ArgumentNullException.ThrowIfNull(options);
 
-        writer.WriteNumberValue(value.Value);
+        options.Converters.Add(new JsonStringEnumConverter());
+        AddTypedIds(options);
     }
-}
 
-/// <inheritdoc cref="UserIdJsonConverter" />
-internal sealed class ClientIdJsonConverter : JsonConverter<ClientId>
-{
-    /// <inheritdoc />
-    public override ClientId Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
-        new(reader.GetInt32());
-
-    /// <inheritdoc />
-    public override void Write(Utf8JsonWriter writer, ClientId value, JsonSerializerOptions options)
+    /// <summary>AD-22 alone: the three typed identities as bare numbers.</summary>
+    /// <param name="options">The serializer options to add the converters to.</param>
+    public static void AddTypedIds(JsonSerializerOptions options)
     {
-        ArgumentNullException.ThrowIfNull(writer);
+        ArgumentNullException.ThrowIfNull(options);
 
-        writer.WriteNumberValue(value.Value);
+        options.Converters.Add(new TypedIdJsonConverter<UserId>(value => new UserId(value), id => id.Value));
+        options.Converters.Add(new TypedIdJsonConverter<DriverId>(value => new DriverId(value), id => id.Value));
+        options.Converters.Add(new TypedIdJsonConverter<ClientId>(value => new ClientId(value), id => id.Value));
     }
 }

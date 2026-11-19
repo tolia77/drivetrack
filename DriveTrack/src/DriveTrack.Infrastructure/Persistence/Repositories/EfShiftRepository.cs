@@ -94,7 +94,8 @@ internal sealed class EfShiftRepository(AppDbContext context) : IShiftRepository
                     context.Users,
                     candidate => (int)(object)candidate.UserId,
                     user => user.Id,
-                    (candidate, user) => (user.FirstName + " " + user.LastName).Trim())
+                    (candidate, user) => user)
+                .Select(AccountNames.Display)
                 .FirstOrDefault(),
         });
 
