@@ -15,6 +15,9 @@ internal static class AuthenticationSchemes
     /// <summary>The policy scheme that forwards by path. Also the application's default scheme.</summary>
     public const string Selector = "DriveTrack";
 
-    /// <summary>The cookie scheme, which serves everything that is not <c>/api</c>.</summary>
+    /// <summary>
+    /// The cookie scheme: everything outside <c>/api</c>, except a <c>/proof-assets</c> request that
+    /// carries a bearer token.
+    /// </summary>
     public const string Cookie = "DriveTrack.Cookie";
 }

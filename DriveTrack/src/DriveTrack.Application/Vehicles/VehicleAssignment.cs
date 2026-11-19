@@ -16,9 +16,8 @@ namespace DriveTrack.Application.Vehicles;
 /// </para>
 /// <para>
 /// Not a service and not an entry point: the calling service has already run AD-3's guard step,
-/// which is why <c>GuardCoverageTests</c> neither sees nor needs a guard call here. The name is
-/// deliberate too — the scan reads a type whose name ends in <c>Service</c>, or which implements
-/// an Application interface whose name does, and this is neither.
+/// so no guard call is needed here. <c>GuardCoverageTests</c> skips it because it is a static class
+/// (its filter drops abstract types, and a static class is one), whatever it is named.
 /// </para>
 /// </summary>
 internal static class VehicleAssignment

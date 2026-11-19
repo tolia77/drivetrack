@@ -25,8 +25,8 @@ namespace DriveTrack.Web.Api;
 /// </para>
 /// <para>
 /// Thin by construction (NFR-7): bind, call, return. The envelope comes from the global result
-/// filter and every failure from the branch middleware, so there is no status code and no
-/// <c>try</c> in this file.
+/// filter and every failure from the branch middleware, so there is no error status code and no
+/// <c>try</c> in this file — only the delete's 204.
 /// </para>
 /// </summary>
 [ApiController]

@@ -5,9 +5,9 @@ namespace DriveTrack.Web.Account;
 /// <summary>
 /// FR-7: where a role lands after signing in, decided in one place.
 /// <para>
-/// Today every role lands on <c>/profile</c>, because it is the only signed-in screen that exists —
-/// the dashboards belong to later epics. Writing the switch out in full anyway is what makes those
-/// epics a one-line change here instead of a search for redirect literals.
+/// Admin and Dispatcher land on <c>/dashboard</c>; Driver and Client land on <c>/profile</c> until
+/// they have a dashboard of their own. Writing the switch out in full is what makes that a one-line
+/// change here instead of a search for redirect literals.
 /// </para>
 /// </summary>
 internal static class LandingRoute

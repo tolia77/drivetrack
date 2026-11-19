@@ -239,9 +239,7 @@ public class HubBoundaryTests(PostgresFixture postgres)
             {
                 // The adapter's own converters, exactly as the server's protocol takes them: a
                 // DriverId arrives as the number it is and would not read back without them.
-                options.PayloadSerializerOptions.Converters.Add(new UserIdJsonConverter());
-                options.PayloadSerializerOptions.Converters.Add(new DriverIdJsonConverter());
-                options.PayloadSerializerOptions.Converters.Add(new ClientIdJsonConverter());
+                WireJson.AddTypedIds(options.PayloadSerializerOptions);
             })
             .Build();
 }

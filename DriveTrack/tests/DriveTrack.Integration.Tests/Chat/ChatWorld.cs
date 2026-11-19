@@ -319,9 +319,7 @@ internal sealed class ChatWorld : IAsyncDisposable
             })
             .AddJsonProtocol(options =>
             {
-                options.PayloadSerializerOptions.Converters.Add(new UserIdJsonConverter());
-                options.PayloadSerializerOptions.Converters.Add(new DriverIdJsonConverter());
-                options.PayloadSerializerOptions.Converters.Add(new ClientIdJsonConverter());
+                WireJson.AddTypedIds(options.PayloadSerializerOptions);
             })
             .Build();
 

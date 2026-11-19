@@ -28,7 +28,7 @@ public sealed record ClientAccount(
 /// <param name="UserId">The account.</param>
 /// <param name="FirstName">Given name.</param>
 /// <param name="LastName">Family name.</param>
-/// <param name="Email">The address the account signs in with; set at creation only.</param>
+/// <param name="Email">The address the account signs in with; changed through <c>IUserService.ChangeEmailAsync</c>.</param>
 public sealed record DispatcherAccount(UserId UserId, string FirstName, string LastName, string Email);
 
 /// <summary>
@@ -72,8 +72,8 @@ public sealed record CreateDispatcherCommand(
     string? Password);
 
 /// <summary>
-/// A partial edit of a dispatcher (FR-50). No email and no role: the first is story 7.3's, the
-/// second is fixed for the life of an account (AD-4).
+/// A partial edit of a dispatcher (FR-50). No email and no role: the first changes through
+/// <c>IUserService.ChangeEmailAsync</c>, the second is fixed for the life of an account (AD-4).
 /// </summary>
 /// <param name="FirstName">Given name, or absent.</param>
 /// <param name="LastName">Family name, or absent.</param>

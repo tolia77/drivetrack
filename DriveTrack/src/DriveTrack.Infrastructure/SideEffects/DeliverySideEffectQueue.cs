@@ -47,19 +47,11 @@ public sealed class DeliverySideEffectQueue : IDeliverySideEffects
 
     /// <inheritdoc />
     public void ResolveAddresses(int deliveryId) =>
-        Enqueue(new DeliverySideEffectJob(
-            DeliverySideEffectKind.ResolveAddresses,
-            deliveryId,
-            Previous: null,
-            Next: null));
+        Enqueue(new ResolveAddressesJob(deliveryId));
 
     /// <inheritdoc />
     public void NotifyStatusChanged(int deliveryId, DeliveryStatus previous, DeliveryStatus next) =>
-        Enqueue(new DeliverySideEffectJob(
-            DeliverySideEffectKind.StatusChangeEmail,
-            deliveryId,
-            previous,
-            next));
+        Enqueue(new StatusChangedJob(deliveryId, previous, next));
 
     /// <summary>
     /// Records that a job has finished, however it finished. Called by the worker in a

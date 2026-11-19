@@ -139,9 +139,9 @@ public sealed class DriverService(
         var ratings = await RatingsAsync([.. rows.Select(row => row.Driver.Id)], cancellationToken);
 
         // FR-116, asked the same way and for the same reason: one question about everybody on duty
-        // rather than one per row. The answer is the whole on-duty set rather than a set narrowed to
-        // this page, because "is this driver on duty" is a single indexed predicate and narrowing it
-        // would cost a parameter list to save nothing.
+        // rather than one per row. The answer is the whole on-duty set rather than one narrowed to
+        // these drivers, because "is this driver on duty" is a single indexed predicate and
+        // narrowing it would cost a parameter list to save nothing.
         var onDuty = await OnDutyAsync(cancellationToken);
 
         return

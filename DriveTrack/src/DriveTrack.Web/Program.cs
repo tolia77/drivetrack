@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.Text;
-using System.Text.Json.Serialization;
 using DriveTrack.Application;
 using DriveTrack.Application.Authorization;
 using DriveTrack.Application.Deliveries;
@@ -115,13 +114,9 @@ builder.Services.AddControllers(options =>
     {
         // AD-21: an enum crosses the wire as its member name. An ordinal is a number whose meaning
         // changes the day someone reorders the enum, and every client would silently follow.
-        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-
         // AD-22: the typed identities are a compile-time device, not a wire shape. Without these a
         // user id would leave as {"value":3}.
-        options.JsonSerializerOptions.Converters.Add(new UserIdJsonConverter());
-        options.JsonSerializerOptions.Converters.Add(new DriverIdJsonConverter());
-        options.JsonSerializerOptions.Converters.Add(new ClientIdJsonConverter());
+        WireJson.Configure(options.JsonSerializerOptions);
 
         // AD-23: a partial update has to be able to say "I did not send this field" and "I sent
         // this field empty" differently. Without this factory a PATCH-shaped body cannot.
@@ -135,13 +130,9 @@ builder.Services.AddControllers(options =>
 builder.Services.AddSignalR()
     .AddJsonProtocol(options =>
     {
-        // AD-21 and AD-22, exactly as the controllers state them. Written out rather than shared
-        // with AddJsonOptions above because the two serializers are configured through different
-        // option types, and a helper that hid that would hide which surface it had been applied to.
-        options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-        options.PayloadSerializerOptions.Converters.Add(new UserIdJsonConverter());
-        options.PayloadSerializerOptions.Converters.Add(new DriverIdJsonConverter());
-        options.PayloadSerializerOptions.Converters.Add(new ClientIdJsonConverter());
+        // AD-21 and AD-22, the same call the controllers make. AD-23's Optional<T> factory is left
+        // out: it exists for PATCH-shaped bodies, and no hub payload carries an Optional<T>.
+        WireJson.Configure(options.PayloadSerializerOptions);
     });
 
 // AD-22's third caller source. A hub invocation has no HttpContext and no circuit, so the hub hands
@@ -336,7 +327,7 @@ if (!app.Environment.IsDevelopment())
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 
 // No UseHttpsRedirection: the compose topology terminates plain HTTP on the app container
-// and TLS is not in scope for this story.
+// and TLS is not configured here.
 
 // NFR-14: the product is read in Ukrainian or in English, and which one is a decision the user
 // makes rather than one their browser makes for them. Ukrainian stays the default and the baseline:
@@ -553,7 +544,7 @@ app.MapPost("/set-culture", async (HttpContext context, IAntiforgery antiforgery
     return Results.Redirect(local ? returnUrl : "/");
 });
 
-// FR-70 and FR-75: the chat hub, and the one endpoint this story adds.
+// FR-70 and FR-75: the chat hub's endpoint.
 //
 // Outside /api on purpose, for the reason the asset route is: AD-22 makes /api/* bearer-only and a
 // browser holds a cookie rather than a token, so a hub under /api could never be reached from the

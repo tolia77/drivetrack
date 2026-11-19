@@ -201,8 +201,8 @@ public static class DependencyInjection
         // the guard - each reads the caller of the request or circuit it is serving.
         services.AddScoped<IClientAdministrationService, ClientAdministrationService>();
         services.AddScoped<IDispatcherAdministrationService, DispatcherAdministrationService>();
-        // The fleet capabilities. Infrastructure is the one composition surface AD-1 permits, so a
-        // capability that lives in Application is still registered here.
+        // The fleet capabilities. Registered here with every other Application capability;
+        // AddApplication registers only the validators.
         services.AddScoped<IVehicleService, VehicleService>();
         services.AddScoped<IDriverService, DriverService>();
 
@@ -220,14 +220,13 @@ public static class DependencyInjection
         services.AddScoped<IProofOfDeliveryService, ProofOfDeliveryService>();
 
         // FR-68 to FR-76. Scoped like every other capability - it reads the caller of the request,
-        // the circuit or the hub invocation it is serving - and registered here because AD-1 makes
-        // Infrastructure the one composition surface, even for a capability that lives in
-        // Application.
+        // the circuit or the hub invocation it is serving - and registered here with every other
+        // Application capability.
         services.AddScoped<IChatService, ChatService>();
 
         // FR-62 to FR-67 and FR-98. Scoped like every other capability - it reads the caller of the
-        // request or circuit it is serving - and registered here because AD-1 makes Infrastructure
-        // the one composition surface, even for a capability that lives in Application.
+        // request or circuit it is serving - and registered here with every other Application
+        // capability.
         //
         // AD-24 shows up as a shape in the container: this one takes IDeliveryService and the
         // driver capability takes this one, so the two directions are declared rather than
