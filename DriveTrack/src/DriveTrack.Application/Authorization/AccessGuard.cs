@@ -7,226 +7,117 @@ namespace DriveTrack.Application.Authorization;
 /// AD-2's guard over AD-22's caller. The whole authorization vocabulary of this story is these few
 /// lines, which is the point: one implementation, one admin override, one place to read when
 /// asking who may do what.
+/// <para>
+/// Three rules hold for every member, so they are stated once here rather than in each.
+/// An anonymous caller is answered 401, not 403: FR-13's session-expiry flow branches on that single
+/// code, and an expired cookie on a live circuit is a caller with no credentials left, not one who
+/// lacks permission. AD-4's admin override - admin passes by rule, never by holding a second role
+/// row - is written only in this file, so no capability has to remember
+/// <c>RequireRole(Dispatcher) || RequireRole(Admin)</c>; the two members it deliberately does not
+/// apply to say so. And every member is total over <see cref="UserRole"/>: a role without an arm,
+/// including a fifth one added without a decision, is refused rather than silently let through.
+/// </para>
 /// </summary>
 public sealed class AccessGuard(ICurrentUser currentUser) : IAccessGuard
 {
     /// <inheritdoc />
     public void RequireSelf(UserId userId)
     {
-        if (!currentUser.IsAuthenticated)
-        {
-            // 401, not 403: FR-13's session-expiry flow branches on this single code, and an
-            // expired cookie on a live circuit reaches exactly here.
-            throw new ForbiddenException(
-                ErrorCode.AUTH_UNAUTHENTICATED,
-                "An anonymous caller attempted an operation reserved to user "
-                    + userId.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) + ".");
-        }
+        RequireAuthenticated("attempted an operation reserved to user " + userId);
 
-        // AD-4: admin passes by rule, never by holding a second role row. This is the only place in
-        // the system that says so.
-        if (currentUser.Role == UserRole.Admin)
+        if (currentUser.Role == UserRole.Admin || currentUser.UserId == userId)
         {
             return;
         }
 
-        if (currentUser.UserId == userId)
-        {
-            return;
-        }
-
-        throw new ForbiddenException(
-            ErrorCode.AUTH_FORBIDDEN,
-            "User "
-                + currentUser.UserId.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)
-                + " attempted an operation reserved to user "
-                + userId.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) + ".");
+        throw Forbidden(Caller + " attempted an operation reserved to user " + userId + ".");
     }
 
     /// <inheritdoc />
     public void RequireRole(UserRole role)
     {
-        if (!currentUser.IsAuthenticated)
-        {
-            // 401 for the same reason RequireSelf answers 401: an expired cookie on a live circuit
-            // is not a caller who lacks permission, it is a caller who has none left.
-            throw new ForbiddenException(
-                ErrorCode.AUTH_UNAUTHENTICATED,
-                "An anonymous caller attempted an operation reserved to role " + role + ".");
-        }
+        RequireAuthenticated("attempted an operation reserved to role " + role);
 
-        // AD-4 again, and still the only place: admin passes by rule, so no capability has to
-        // remember to write `RequireRole(Dispatcher) || RequireRole(Admin)`.
-        if (currentUser.Role == UserRole.Admin)
+        if (currentUser.Role == UserRole.Admin || currentUser.Role == role)
         {
             return;
         }
 
-        if (currentUser.Role == role)
-        {
-            return;
-        }
-
-        throw new ForbiddenException(
-            ErrorCode.AUTH_FORBIDDEN,
-            "User "
-                + currentUser.UserId.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)
-                + " holds role " + currentUser.Role
+        throw Forbidden(
+            Caller + " holds role " + currentUser.Role
                 + " and attempted an operation reserved to role " + role + ".");
     }
 
     /// <inheritdoc />
     public AccessScope RequireScope()
     {
-        if (!currentUser.IsAuthenticated)
-        {
-            // 401 for the same reason the other two members answer 401: an expired cookie on a
-            // live circuit is a caller who has no credentials left, not one who lacks permission.
-            throw new ForbiddenException(
-                ErrorCode.AUTH_UNAUTHENTICATED,
-                "An anonymous caller asked for the rows they are allowed to see.");
-        }
+        RequireAuthenticated("asked for the rows they are allowed to see");
 
-        // AD-4 once more, and still the only place it is written: an admin is unrestricted by rule.
         // A dispatcher is unrestricted because dispatch is the role the collection exists for.
-        if (currentUser.Role is UserRole.Admin or UserRole.Dispatcher)
+        if (IsDispatchOrAdmin)
         {
             return new AccessScope(null, null);
         }
 
+        // A driver or client whose claims carry no row id is refused rather than widened: it cannot
+        // be narrowed to its own rows, and the only other answer available - unrestricted - would
+        // hand it the whole collection on the strength of a missing claim. The members below that
+        // narrow by a claim refuse the same way, for the same reason.
         if (currentUser.Role == UserRole.Driver)
         {
-            // Refused rather than widened. A driver whose claims carry no driver row id cannot be
-            // narrowed to their own rows, and the only other answer available - unrestricted -
-            // would hand them the whole collection on the strength of a missing claim.
             return currentUser.DriverId is { } driverId
                 ? new AccessScope(driverId, null)
-                : throw new ForbiddenException(
-                    ErrorCode.AUTH_FORBIDDEN,
-                    "User "
-                        + currentUser.UserId.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)
-                        + " holds role Driver and carries no driver row id, so the rows they may "
-                        + "see cannot be determined.");
+                : throw Undeterminable("driver", "rows they may see");
         }
 
         if (currentUser.Role == UserRole.Client)
         {
             return currentUser.ClientId is { } clientId
                 ? new AccessScope(null, clientId)
-                : throw new ForbiddenException(
-                    ErrorCode.AUTH_FORBIDDEN,
-                    "User "
-                        + currentUser.UserId.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)
-                        + " holds role Client and carries no client row id, so the rows they may "
-                        + "see cannot be determined.");
+                : throw Undeterminable("client", "rows they may see");
         }
 
-        // Total over the enum, like the navigation table: a fifth role added without a scope
-        // decision is refused here rather than silently reading as unrestricted.
-        throw new ForbiddenException(
-            ErrorCode.AUTH_FORBIDDEN,
-            "No row scope is defined for role " + currentUser.Role + ".");
+        throw Forbidden("No row scope is defined for role " + currentUser.Role + ".");
     }
 
     /// <inheritdoc />
-    public void RequireAssignedDriver(DriverId? assignedDriverId)
-    {
-        if (!currentUser.IsAuthenticated)
-        {
-            // 401 for the reason every other member answers 401: an expired cookie on a live
-            // circuit is a caller with no credentials left, and FR-13 branches on this one code.
-            throw new ForbiddenException(
-                ErrorCode.AUTH_UNAUTHENTICATED,
-                "An anonymous caller attempted to act on a delivery's lifecycle.");
-        }
-
-        // AD-4 once more, in the one place it is ever written. A dispatcher stands beside the admin
-        // here because FR-34 gives dispatch the lifecycle as much as it gives it the board.
-        if (currentUser.Role is UserRole.Admin or UserRole.Dispatcher)
-        {
-            return;
-        }
-
-        if (currentUser.Role == UserRole.Driver)
-        {
-            // Both halves have to be present and equal. A null assignment never matches, so an
-            // unassigned parcel - and a delivery that does not exist at all, which reaches here as
-            // the same null - is refused rather than handed to whichever driver asked first.
-            if (assignedDriverId is { } assigned && currentUser.DriverId == assigned)
-            {
-                return;
-            }
-
-            throw new ForbiddenException(
-                ErrorCode.AUTH_FORBIDDEN,
-                "User "
-                    + currentUser.UserId.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)
-                    + " holds role Driver and is not the driver this delivery is assigned to.");
-        }
-
-        // Total over the enum, like RequireScope: a Client lands here, and so would a fifth role
-        // added without a decision about its part in the lifecycle. FR-90 is this line - a client
-        // may add a note and read the timeline, and may never change a status.
-        throw new ForbiddenException(
-            ErrorCode.AUTH_FORBIDDEN,
-            "Role " + currentUser.Role + " has no part in a delivery's status lifecycle.");
-    }
+    public void RequireAssignedDriver(DriverId? assignedDriverId) =>
+        // FR-34 gives dispatch the lifecycle as much as it gives it the board. A Client is refused:
+        // FR-90 lets them add a note and read the timeline, and never change a status.
+        RequireOwningDriverOrDispatch(
+            assignedDriverId,
+            "attempted to act on a delivery's lifecycle",
+            "is not the driver this delivery is assigned to",
+            "has no part in a delivery's status lifecycle");
 
     /// <inheritdoc />
     public ClientId? RequireDeliveryComposer()
     {
-        if (!currentUser.IsAuthenticated)
-        {
-            // 401 for the reason every other member answers 401: an expired cookie on a live
-            // circuit is a caller with no credentials left, and FR-13 branches on this one code.
-            throw new ForbiddenException(
-                ErrorCode.AUTH_UNAUTHENTICATED,
-                "An anonymous caller attempted to compose a delivery.");
-        }
+        RequireAuthenticated("attempted to compose a delivery");
 
-        // AD-4 once more, and still decided in this one file. A dispatcher stands beside the admin
-        // because composing a delivery is what FR-14 gives dispatch. Null is the honest answer to
-        // "which client row": they compose for somebody else, and the client is a field of the
-        // command they send rather than a property of who they are.
-        if (currentUser.Role is UserRole.Admin or UserRole.Dispatcher)
+        // Composing a delivery is what FR-14 gives dispatch. Null is the honest answer to "which
+        // client row": they compose for somebody else, and the client is a field of the command
+        // they send rather than a property of who they are.
+        if (IsDispatchOrAdmin)
         {
             return null;
         }
 
         if (currentUser.Role == UserRole.Client)
         {
-            // Refused rather than widened, exactly as RequireScope refuses a claimless caller. The
-            // only other answer available here is null, which is dispatch's answer - so widening
-            // would let an account with a broken claim compose a delivery attached to nobody.
             return currentUser.ClientId is { } clientId
                 ? clientId
-                : throw new ForbiddenException(
-                    ErrorCode.AUTH_FORBIDDEN,
-                    "User "
-                        + currentUser.UserId.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)
-                        + " holds role Client and carries no client row id, so the row a request "
-                        + "would be attached to cannot be determined.");
+                : throw Undeterminable("client", "row a request would be attached to");
         }
 
-        // Total over the enum, like RequireScope and RequireAssignedDriver. A Driver lands here -
-        // FR-25 makes them a reader of deliveries and never an author of one - and so would a fifth
-        // role added without a decision about whether it composes anything.
-        throw new ForbiddenException(
-            ErrorCode.AUTH_FORBIDDEN,
-            "Role " + currentUser.Role + " does not compose deliveries.");
+        // A Driver lands here: FR-25 makes them a reader of deliveries and never an author of one.
+        throw RoleRefused("does not compose deliveries");
     }
 
     /// <inheritdoc />
     public void RequireChatParticipant(DriverId? thread)
     {
-        if (!currentUser.IsAuthenticated)
-        {
-            // 401 for the reason every other member answers 401: an expired cookie on a live
-            // circuit is a caller with no credentials left, and FR-13 branches on this one code.
-            throw new ForbiddenException(
-                ErrorCode.AUTH_UNAUTHENTICATED,
-                "An anonymous caller attempted to reach a driver's conversation.");
-        }
+        RequireAuthenticated("attempted to reach a driver's conversation");
 
         // FR-68 and FR-71: dispatch runs every conversation, so a dispatcher passes for the roster
         // (a null thread) and for each thread alike.
@@ -237,83 +128,49 @@ public sealed class AccessGuard(ICurrentUser currentUser) : IAccessGuard
 
         if (currentUser.Role == UserRole.Driver)
         {
-            // DriverId? against DriverId?, and both halves have to be present and equal. A null
-            // thread is the roster, which a driver has no use for and is not offered; a driver
-            // whose claims carry no driver row id matches no thread and is refused rather than
-            // widened, exactly as RequireScope refuses them.
-            if (thread is { } requested && currentUser.DriverId == requested)
+            // A null thread is the roster, which a driver has no use for and is not offered.
+            if (IsOwnDriver(thread))
             {
                 return;
             }
 
-            throw new ForbiddenException(
-                ErrorCode.AUTH_FORBIDDEN,
-                "User "
-                    + currentUser.UserId.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)
-                    + " holds role Driver and is not a participant in that conversation.");
+            throw Forbidden(Caller + " holds role Driver and is not a participant in that conversation.");
         }
 
-        // Total over the enum, and the one place AD-4's admin override deliberately does not apply.
-        // A Client lands here because chat has two participants and a client is not one of them; an
-        // Admin lands here because the PRD says so - "admins moderate rather than dispatch" - which
-        // is a product decision rather than a gap, and is why there is no Admin arm above.
-        throw new ForbiddenException(
-            ErrorCode.AUTH_FORBIDDEN,
-            "Role " + currentUser.Role + " is not a participant in chat.");
+        // The first place AD-4's admin override deliberately does not apply. A Client lands here
+        // because chat has two participants and a client is not one of them; an Admin lands here
+        // because the PRD says so - "admins moderate rather than dispatch" - which is a product
+        // decision rather than a gap, and is why there is no Admin arm above.
+        throw RoleRefused("is not a participant in chat");
     }
 
     /// <inheritdoc />
     public ClientId RequireReviewAuthor()
     {
-        if (!currentUser.IsAuthenticated)
-        {
-            // 401 for the reason every other member answers 401: an expired cookie on a live
-            // circuit is a caller with no credentials left, and FR-13 branches on this one code.
-            throw new ForbiddenException(
-                ErrorCode.AUTH_UNAUTHENTICATED,
-                "An anonymous caller attempted to write or read reviews of their own.");
-        }
+        RequireAuthenticated("attempted to write or read reviews of their own");
 
         if (currentUser.Role == UserRole.Client)
         {
-            // Refused rather than widened, exactly as RequireScope refuses a claimless caller.
-            // There is no other answer available: the return type is the client row itself, so a
-            // client with a broken claim has no row to attach a review to.
             return currentUser.ClientId is { } clientId
                 ? clientId
-                : throw new ForbiddenException(
-                    ErrorCode.AUTH_FORBIDDEN,
-                    "User "
-                        + currentUser.UserId.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)
-                        + " holds role Client and carries no client row id, so the row a review "
-                        + "would be attached to cannot be determined.");
+                : throw Undeterminable("client", "row a review would be attached to");
         }
 
-        // Total over the enum, and the second place AD-4's admin override deliberately does not
-        // apply. An Admin lands here because the PRD retired FR-97 - an administrator authoring
-        // customer feedback is manufacturing it rather than moderating it, and moderation is
-        // RequireReviewOwner's, where the override does apply. A Dispatcher lands here because they
-        // run the deliveries being judged, and a Driver because they are the party being judged.
-        throw new ForbiddenException(
-            ErrorCode.AUTH_FORBIDDEN,
-            "Role " + currentUser.Role + " does not author reviews.");
+        // The second place AD-4's admin override deliberately does not apply. An Admin lands here
+        // because the PRD retired FR-97 - an administrator authoring customer feedback is
+        // manufacturing it rather than moderating it, and moderation is RequireReviewOwner's, where
+        // the override does apply. A Dispatcher lands here because they run the deliveries being
+        // judged, and a Driver because they are the party being judged.
+        throw RoleRefused("does not author reviews");
     }
 
     /// <inheritdoc />
     public void RequireReviewOwner(ClientId? ownerId)
     {
-        if (!currentUser.IsAuthenticated)
-        {
-            // 401 for the reason every other member answers 401: an expired cookie on a live
-            // circuit is a caller with no credentials left, and FR-13 branches on this one code.
-            throw new ForbiddenException(
-                ErrorCode.AUTH_UNAUTHENTICATED,
-                "An anonymous caller attempted to change a review.");
-        }
+        RequireAuthenticated("attempted to change a review");
 
-        // AD-4 once more, and still decided in this one file. FR-66 gives an administrator
-        // every review to edit and to delete, which is what moderation is - and it is the half of
-        // the review pair the override applies to.
+        // FR-66 gives an administrator every review to edit and to delete, which is what
+        // moderation is.
         if (currentUser.Role == UserRole.Admin)
         {
             return;
@@ -321,113 +178,121 @@ public sealed class AccessGuard(ICurrentUser currentUser) : IAccessGuard
 
         if (currentUser.Role == UserRole.Client)
         {
-            // Both halves have to be present and equal, exactly as RequireAssignedDriver compares.
-            // A missing review reaches here as a null that never matches, so it is refused before
-            // anyone learns whether it exists; a client with no client claim matches nothing.
+            // Both halves have to be present and equal. A missing review reaches here as a null
+            // that never matches, so it is refused before anyone learns whether it exists; a client
+            // with no client claim matches nothing.
             if (ownerId is { } owner && currentUser.ClientId == owner)
             {
                 return;
             }
 
-            throw new ForbiddenException(
-                ErrorCode.AUTH_FORBIDDEN,
-                "User "
-                    + currentUser.UserId.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)
-                    + " holds role Client and did not write that review.");
+            throw Forbidden(Caller + " holds role Client and did not write that review.");
         }
 
-        // Total over the enum, like the members above. A Dispatcher lands here - FR-65 makes them a
-        // reader of reviews and never a writer of one - and so does a Driver, who is the party the
-        // review is about.
-        throw new ForbiddenException(
-            ErrorCode.AUTH_FORBIDDEN,
-            "Role " + currentUser.Role + " does not moderate reviews.");
+        // A Dispatcher lands here - FR-65 makes them a reader of reviews and never a writer of
+        // one - and so does a Driver, who is the party the review is about.
+        throw RoleRefused("does not moderate reviews");
     }
 
     /// <inheritdoc />
     public DriverId? RequireShiftScope()
     {
-        if (!currentUser.IsAuthenticated)
-        {
-            // 401 for the reason every other member answers 401: an expired cookie on a live
-            // circuit is a caller with no credentials left, and FR-13 branches on this one code.
-            throw new ForbiddenException(
-                ErrorCode.AUTH_UNAUTHENTICATED,
-                "An anonymous caller asked whose shifts they are allowed to see.");
-        }
+        RequireAuthenticated("asked whose shifts they are allowed to see");
 
-        // AD-4 once more, and still decided in this one file. A dispatcher stands beside the admin
-        // because FR-114 gives dispatch the whole roster of shifts.
-        if (currentUser.Role is UserRole.Admin or UserRole.Dispatcher)
+        // FR-114 gives dispatch the whole roster of shifts.
+        if (IsDispatchOrAdmin)
         {
             return null;
         }
 
         if (currentUser.Role == UserRole.Driver)
         {
-            // Refused rather than widened, exactly as RequireScope refuses a claimless caller: the
-            // only other answer available is null, which is dispatch's answer and would hand every
-            // driver's shifts to an account with a broken claim.
             return currentUser.DriverId is { } driverId
                 ? driverId
-                : throw new ForbiddenException(
-                    ErrorCode.AUTH_FORBIDDEN,
-                    "User "
-                        + currentUser.UserId.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)
-                        + " holds role Driver and carries no driver row id, so the shifts they may "
-                        + "see cannot be determined.");
+                : throw Undeterminable("driver", "shifts they may see");
         }
 
-        // Total over the enum, like RequireScope. A Client lands here, and that is FR-115 written
-        // once: a client has no part in shifts, and the narrowing RequireScope would have handed
-        // them - (null, clientId) - has a null driver half that a shift query reads as
-        // "unrestricted by driver", which is every shift in the system.
-        throw new ForbiddenException(
-            ErrorCode.AUTH_FORBIDDEN,
-            "Role " + currentUser.Role + " has no part in driver shifts.");
+        // A Client lands here, and that is FR-115 written once: a client has no part in shifts, and
+        // the narrowing RequireScope would have handed them - (null, clientId) - has a null driver
+        // half that a shift query reads as "unrestricted by driver", which is every shift in the
+        // system.
+        throw RoleRefused("has no part in driver shifts");
     }
 
     /// <inheritdoc />
-    public void RequireShiftOwner(DriverId? ownerDriverId)
-    {
-        if (!currentUser.IsAuthenticated)
-        {
-            // 401 for the reason every other member answers 401: an expired cookie on a live
-            // circuit is a caller with no credentials left, and FR-13 branches on this one code.
-            throw new ForbiddenException(
-                ErrorCode.AUTH_UNAUTHENTICATED,
-                "An anonymous caller attempted to act on a driver's shift.");
-        }
+    public void RequireShiftOwner(DriverId? ownerDriverId) =>
+        // FR-114 gives dispatch every shift to correct; FR-115 gives a Client no part in shifts.
+        RequireOwningDriverOrDispatch(
+            ownerDriverId,
+            "attempted to act on a driver's shift",
+            "is not the driver that shift belongs to",
+            "has no part in driver shifts");
 
-        // AD-4 once more, and still the only place it is written. A dispatcher stands beside the
-        // admin because FR-114 gives dispatch every shift to correct.
-        if (currentUser.Role is UserRole.Admin or UserRole.Dispatcher)
+    /// <summary>"User 7", the caller as a refusal names them.</summary>
+    private string Caller => "User " + currentUser.UserId;
+
+    private bool IsDispatchOrAdmin => currentUser.Role is UserRole.Admin or UserRole.Dispatcher;
+
+    /// <summary>
+    /// Whether the caller is a driver row and <paramref name="subject"/> is that row. Both halves
+    /// have to be present and equal: a null subject - unassigned, or a row that does not exist,
+    /// which reaches here as the same null - never matches, so it is refused before anyone learns
+    /// whether it exists; a driver with no driver claim matches nothing.
+    /// </summary>
+    private bool IsOwnDriver(DriverId? subject) =>
+        subject is { } requested && currentUser.DriverId == requested;
+
+    /// <summary>
+    /// The rule <see cref="RequireAssignedDriver"/> and <see cref="RequireShiftOwner"/> share:
+    /// dispatch and admin pass, a driver passes for their own row only, and every other role is
+    /// refused.
+    /// </summary>
+    private void RequireOwningDriverOrDispatch(
+        DriverId? subject,
+        string attempted,
+        string notTheirs,
+        string noPart)
+    {
+        RequireAuthenticated(attempted);
+
+        if (IsDispatchOrAdmin)
         {
             return;
         }
 
         if (currentUser.Role == UserRole.Driver)
         {
-            // Both halves have to be present and equal, exactly as RequireAssignedDriver compares.
-            // A shift that does not exist reaches here as a null that never matches, so it is
-            // refused before anyone learns whether it exists; a driver with no driver claim matches
-            // nothing.
-            if (ownerDriverId is { } owner && currentUser.DriverId == owner)
+            if (IsOwnDriver(subject))
             {
                 return;
             }
 
-            throw new ForbiddenException(
-                ErrorCode.AUTH_FORBIDDEN,
-                "User "
-                    + currentUser.UserId.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)
-                    + " holds role Driver and is not the driver that shift belongs to.");
+            throw Forbidden(Caller + " holds role Driver and " + notTheirs + ".");
         }
 
-        // Total over the enum, like the members above. A Client lands here: FR-115 gives them no
-        // part in shifts at all, and so would a fifth role added without a decision about theirs.
-        throw new ForbiddenException(
-            ErrorCode.AUTH_FORBIDDEN,
-            "Role " + currentUser.Role + " has no part in driver shifts.");
+        throw RoleRefused(noPart);
     }
+
+    /// <summary>Throws 401 for an anonymous caller, naming what they <paramref name="attempted"/>.</summary>
+    private void RequireAuthenticated(string attempted)
+    {
+        if (!currentUser.IsAuthenticated)
+        {
+            throw new ForbiddenException(
+                ErrorCode.AUTH_UNAUTHENTICATED,
+                "An anonymous caller " + attempted + ".");
+        }
+    }
+
+    private static ForbiddenException Forbidden(string reason) => new(ErrorCode.AUTH_FORBIDDEN, reason);
+
+    /// <summary>The refusal for a role the member has no arm for.</summary>
+    private ForbiddenException RoleRefused(string rule) =>
+        Forbidden("Role " + currentUser.Role + " " + rule + ".");
+
+    /// <summary>The refusal for a driver or client whose claims carry no row id to narrow by.</summary>
+    private ForbiddenException Undeterminable(string rowKind, string subject) =>
+        Forbidden(
+            Caller + " holds role " + currentUser.Role + " and carries no " + rowKind
+                + " row id, so the " + subject + " cannot be determined.");
 }

@@ -34,12 +34,6 @@ namespace DriveTrack.Application.Shifts;
 /// <c>PERSISTENCE_UNIQUE_VIOLATION</c> — the same 409, through the one translation point in
 /// Infrastructure (AD-20, NFR-2).
 /// </para>
-/// <para>
-/// <c>ValidatorExtensions.ValidateAndThrowAsync</c> is called in static form, for the reason
-/// <c>DeliveryService</c> states: a file in this namespace that imported only
-/// <c>FluentValidation</c> would bind to that library's identically named extension, whose
-/// exception carries no <see cref="ErrorCode"/> and leaves as a 500 where 422 was meant.
-/// </para>
 /// </summary>
 public sealed class ShiftService(
     IUnitOfWorkFactory unitOfWorkFactory,
@@ -61,7 +55,7 @@ public sealed class ShiftService(
         // in the query string narrows to the caller rather than widening to the other driver.
         var scope = accessGuard.RequireShiftScope();
 
-        await ValidatorExtensions.ValidateAndThrowAsync(listValidator, query, cancellationToken);
+        await listValidator.EnsureValidAsync(query, cancellationToken);
 
         var driverId = scope ?? (query.DriverId is { } filter ? new DriverId(filter) : null);
 
@@ -94,7 +88,7 @@ public sealed class ShiftService(
 
         if (shift is null)
         {
-            throw NotFound(id);
+            throw NotFoundException.For("shift", id);
         }
 
         var names = await DriverNamesAsync(unitOfWork, cancellationToken);
@@ -179,8 +173,7 @@ public sealed class ShiftService(
         // FR-111 on the one write path whose instant nobody typed. Create and edit now refuse an open
         // shift dated in the future, so this is the backstop for a row written before that rule or
         // a clock that stepped backwards: either would otherwise close a window that runs backwards.
-        await ValidatorExtensions.ValidateAndThrowAsync(
-            stateValidator,
+        await stateValidator.EnsureValidAsync(
             new ShiftState(shift.StartedAt, endedAt),
             cancellationToken);
 
@@ -202,7 +195,7 @@ public sealed class ShiftService(
 
         accessGuard.RequireShiftOwner(command.DriverId);
 
-        await ValidatorExtensions.ValidateAndThrowAsync(createValidator, command, cancellationToken);
+        await createValidator.EnsureValidAsync(command, cancellationToken);
 
         // AD-13: the screens send local instants (+02:00/+03:00), and Npgsql writes timestamptz only
         // at offset zero - so normalize before the value reaches a query or the row.
@@ -265,14 +258,14 @@ public sealed class ShiftService(
 
         if (shift is null)
         {
-            throw NotFound(id);
+            throw NotFoundException.For("shift", id);
         }
 
         // AD-23: the validator reads the state the shift will hold, not the payload - so an edit
         // that moves only the start is judged on the window it actually produces (FR-111).
         var merged = command.MergedOnto(shift);
 
-        await ValidatorExtensions.ValidateAndThrowAsync(stateValidator, merged, cancellationToken);
+        await stateValidator.EnsureValidAsync(merged, cancellationToken);
 
         // AD-13, as on the create path: offset zero before the instant reaches a query or the row.
         merged = new ShiftState(merged.StartedAt.ToUniversalTime(), merged.EndedAt?.ToUniversalTime());
@@ -317,7 +310,7 @@ public sealed class ShiftService(
 
         if (shift is null)
         {
-            throw NotFound(id);
+            throw NotFoundException.For("shift", id);
         }
 
         unitOfWork.Shifts.Remove(shift);
@@ -338,11 +331,6 @@ public sealed class ShiftService(
 
         return await unitOfWork.Shifts.ListOpenDriverIdsAsync(cancellationToken);
     }
-
-    private static NotFoundException NotFound(int id) =>
-        new(
-            ErrorCode.COMMON_NOT_FOUND,
-            "No shift exists with id " + id.ToString(CultureInfo.InvariantCulture) + ".");
 
     private static ConflictException AlreadyOpen(DriverId driverId) =>
         new(
@@ -428,10 +416,7 @@ public sealed class ShiftService(
 
         return names.TryGetValue(driverId, out var name)
             ? name
-            : throw new NotFoundException(
-                ErrorCode.COMMON_NOT_FOUND,
-                "No driver exists with id "
-                    + driverId.Value.ToString(CultureInfo.InvariantCulture) + ".");
+            : throw NotFoundException.For("driver", driverId.Value);
     }
 
     /// <summary>

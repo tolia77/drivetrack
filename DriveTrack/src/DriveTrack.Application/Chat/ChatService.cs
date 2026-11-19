@@ -28,12 +28,6 @@ namespace DriveTrack.Application.Chat;
 /// <c>ProofOfDeliveryService</c>'s existing precedent of reading <c>unitOfWork.Users</c> for a name.
 /// Chat writes neither entity.
 /// </para>
-/// <para>
-/// <c>ValidatorExtensions.ValidateAndThrowAsync</c> is called in static form, for the reason
-/// <c>DeliveryService</c> states: a file in this namespace that imported only
-/// <c>FluentValidation</c> would bind to that library's identically named extension, whose exception
-/// carries no <see cref="ErrorCode"/> and leaves as a 500 where 422 was meant.
-/// </para>
 /// </summary>
 public sealed class ChatService(
     IUnitOfWorkFactory unitOfWorkFactory,
@@ -128,7 +122,7 @@ public sealed class ChatService(
         // will actually be stored, or a full-length message with a trailing newline is refused.
         var trimmed = new SendMessageCommand(command.DriverId, command.Text?.Trim());
 
-        await ValidatorExtensions.ValidateAndThrowAsync(messageValidator, trimmed, cancellationToken);
+        await messageValidator.EnsureValidAsync(trimmed, cancellationToken);
 
         // The caller is the sender. Never a parameter: a sender the caller could name is a sender
         // the caller could forge, and the guard above has already established who they are.
@@ -176,9 +170,7 @@ public sealed class ChatService(
         {
             throw new NotFoundException(
                 ErrorCode.CHAT_THREAD_NOT_FOUND,
-                "No driver exists with id "
-                    + driverId.Value.ToString(CultureInfo.InvariantCulture)
-                    + ", so there is no conversation keyed on it.");
+                "No driver exists with id " + driverId + ", so there is no conversation keyed on it.");
         }
     }
 

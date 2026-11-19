@@ -66,10 +66,7 @@ internal static class VehicleAssignment
         }
 
         var vehicle = await unitOfWork.Vehicles.GetByIdAsync(vehicleId.Value, cancellationToken)
-            ?? throw new NotFoundException(
-                ErrorCode.COMMON_NOT_FOUND,
-                "No vehicle exists with id "
-                    + vehicleId.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) + ".");
+            ?? throw NotFoundException.For("vehicle", vehicleId.Value);
 
         var holder = await unitOfWork.Vehicles.FindHolderAsync(vehicle.Id, cancellationToken);
 

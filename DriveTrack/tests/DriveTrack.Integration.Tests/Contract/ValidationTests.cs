@@ -20,16 +20,16 @@ namespace DriveTrack.Integration.Tests.Contract;
 public class ValidationTests
 {
     [Fact]
-    public void The_seam_is_called_by_name_because_FluentValidation_declares_the_same_signature()
+    public void The_seam_is_named_apart_from_FluentValidations_ValidateAndThrowAsync()
     {
-        // FluentValidation's own ValidateAndThrowAsync has this exact shape and throws its own
-        // ValidationException - which carries no ErrorCode and so has no status. The collision is a
-        // compile error rather than a silent substitution, but it is why every call in this suite
-        // names ValidatorExtensions explicitly, and why an application service must do the same.
-        var ours = typeof(ValidatorExtensions).GetMethod(nameof(ValidatorExtensions.ValidateAndThrowAsync));
+        // FluentValidation's own ValidateAndThrowAsync throws its own ValidationException - which
+        // carries no ErrorCode and so has no status. Sharing that name is what let a call bind to the
+        // wrong method, so the seam keeps a name of its own.
+        var ours = typeof(ValidatorExtensions).GetMethod(nameof(ValidatorExtensions.EnsureValidAsync));
 
         Assert.NotNull(ours);
         Assert.Equal(typeof(Task), ours.ReturnType);
+        Assert.Null(typeof(ValidatorExtensions).GetMethod("ValidateAndThrowAsync"));
     }
 
     [Fact]
@@ -39,8 +39,7 @@ public class ValidationTests
         var validator = new ProbeCommandValidator();
 
         var failure = await Assert.ThrowsAsync<ValidationException>(
-            () => ValidatorExtensions.ValidateAndThrowAsync(
-                validator,
+            () => validator.EnsureValidAsync(
                 new ProbeCommand(Title: null, Rating: 9),
                 cancellationToken));
 
@@ -59,8 +58,7 @@ public class ValidationTests
         var cancellationToken = TestContext.Current.CancellationToken;
         var validator = new ProbeCommandValidator();
 
-        await ValidatorExtensions.ValidateAndThrowAsync(
-            validator,
+        await validator.EnsureValidAsync(
             new ProbeCommand("Title", Rating: 3),
             cancellationToken);
     }
@@ -74,8 +72,7 @@ public class ValidationTests
         var validator = new ProbeCommandValidator();
 
         var failure = await Assert.ThrowsAsync<ValidationException>(
-            () => ValidatorExtensions.ValidateAndThrowAsync(
-                validator,
+            () => validator.EnsureValidAsync(
                 new ProbeCommand("Title", Rating: 9),
                 cancellationToken));
 

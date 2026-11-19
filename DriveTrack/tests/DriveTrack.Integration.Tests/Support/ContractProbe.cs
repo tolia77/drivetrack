@@ -95,8 +95,7 @@ public sealed class ProbeController : ControllerBase
     [HttpGet("validator")]
     public async Task<ProbePayload> ValidatorFailure(CancellationToken cancellationToken)
     {
-        await ValidatorExtensions.ValidateAndThrowAsync(
-            new ProbeCommandValidator(),
+        await new ProbeCommandValidator().EnsureValidAsync(
             new ProbeCommand(Title: null, Rating: 9),
             cancellationToken);
 
@@ -199,7 +198,7 @@ public sealed class ProbeModel
     public string? Name { get; set; }
 }
 
-/// <summary>A command with one rule, for the <c>ValidateAndThrowAsync</c> rows (AD-9).</summary>
+/// <summary>A command with one rule, for the <c>EnsureValidAsync</c> rows (AD-9).</summary>
 /// <param name="Title">Must be present.</param>
 /// <param name="Rating">Must be 1 to 5.</param>
 public sealed record ProbeCommand(string? Title, int Rating);

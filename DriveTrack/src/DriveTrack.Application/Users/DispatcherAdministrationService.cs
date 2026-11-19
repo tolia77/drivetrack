@@ -1,4 +1,3 @@
-using System.Globalization;
 using DriveTrack.Application.Abstractions;
 using DriveTrack.Application.Authorization;
 using DriveTrack.Application.Common;
@@ -41,7 +40,7 @@ public sealed class DispatcherAdministrationService(
             Email = command.Email?.Trim(),
         };
 
-        await ValidatorExtensions.ValidateAndThrowAsync(createValidator, trimmed, cancellationToken);
+        await createValidator.EnsureValidAsync(trimmed, cancellationToken);
 
         var email = trimmed.Email!;
 
@@ -77,7 +76,7 @@ public sealed class DispatcherAdministrationService(
 
         accessGuard.RequireRole(UserRole.Admin);
 
-        await ValidatorExtensions.ValidateAndThrowAsync(listValidator, query, cancellationToken);
+        await listValidator.EnsureValidAsync(query, cancellationToken);
 
         await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
 
@@ -128,7 +127,7 @@ public sealed class DispatcherAdministrationService(
             command.LastName.Or(account.LastName)?.Trim(),
             command.Password.HasValue ? command.Password.Value : null);
 
-        await ValidatorExtensions.ValidateAndThrowAsync(stateValidator, merged, cancellationToken);
+        await stateValidator.EnsureValidAsync(merged, cancellationToken);
 
         var firstName = merged.FirstName!;
         var lastName = merged.LastName!;
@@ -175,8 +174,7 @@ public sealed class DispatcherAdministrationService(
         {
             throw new NotFoundException(
                 ErrorCode.COMMON_NOT_FOUND,
-                "No dispatcher exists with user id "
-                    + userId.Value.ToString(CultureInfo.InvariantCulture) + ".");
+                "No dispatcher exists with user id " + userId + ".");
         }
     }
 }

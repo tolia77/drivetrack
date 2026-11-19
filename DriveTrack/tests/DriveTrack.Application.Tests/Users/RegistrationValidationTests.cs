@@ -4,7 +4,7 @@ using DriveTrack.Application.Users;
 namespace DriveTrack.Application.Tests.Users;
 
 /// <summary>
-/// FR-3's rules, driven through the real <c>ValidateAndThrowAsync</c> seam (AD-9) so the assertions
+/// FR-3's rules, driven through the real <c>EnsureValidAsync</c> seam (AD-9) so the assertions
 /// are about the <see cref="FieldError"/> list the adapter will actually receive.
 /// <para>
 /// Both halves of each row matter. The field name is what lets a form attach the message to the
@@ -21,7 +21,7 @@ public class RegistrationValidationTests
     [Fact]
     public async Task A_complete_registration_passes()
     {
-        await ValidatorExtensions.ValidateAndThrowAsync(Registration, Valid(), TestContext.Current.CancellationToken);
+        await Registration.EnsureValidAsync(Valid(), TestContext.Current.CancellationToken);
     }
 
     [Theory]
@@ -42,8 +42,7 @@ public class RegistrationValidationTests
     [InlineData("+15551234567")]
     public async Task An_E164_phone_number_is_accepted(string phoneNumber)
     {
-        await ValidatorExtensions.ValidateAndThrowAsync(
-            Registration,
+        await Registration.EnsureValidAsync(
             Valid() with { PhoneNumber = phoneNumber },
             TestContext.Current.CancellationToken);
     }
@@ -134,8 +133,7 @@ public class RegistrationValidationTests
         // no stored password can be that long, so UserService answers it as invalid credentials
         // before the hasher runs - a policy code here would be advice on choosing a password.
         var failure = await Assert.ThrowsAsync<ValidationException>(() =>
-            ValidatorExtensions.ValidateAndThrowAsync(
-                SignIn,
+            SignIn.EnsureValidAsync(
                 new SignInCommand(
                     new string('a', RegisterClientCommandValidator.EmailMaximumLength + 1),
                     new string('p', RegisterClientCommandValidator.PasswordMaximumLength + 1)),
@@ -153,8 +151,7 @@ public class RegistrationValidationTests
         // An empty box is the shared required-field sentence, not the strength policy: the policy
         // is about choosing a password, and this caller is entering one.
         var failure = await Assert.ThrowsAsync<ValidationException>(() =>
-            ValidatorExtensions.ValidateAndThrowAsync(
-                SignIn,
+            SignIn.EnsureValidAsync(
                 new SignInCommand("olena@drivetrack.test", password),
                 TestContext.Current.CancellationToken));
 
@@ -177,8 +174,7 @@ public class RegistrationValidationTests
     public async Task Sign_in_refuses_a_missing_email(string? email, string password)
     {
         var failure = await Assert.ThrowsAsync<ValidationException>(() =>
-            ValidatorExtensions.ValidateAndThrowAsync(
-                SignIn,
+            SignIn.EnsureValidAsync(
                 new SignInCommand(email, password),
                 TestContext.Current.CancellationToken));
 
@@ -190,8 +186,7 @@ public class RegistrationValidationTests
     {
         // Deliberately thin: anything stricter would tell an unauthenticated caller something about
         // the account they named, and unknown email and wrong password must be indistinguishable.
-        await ValidatorExtensions.ValidateAndThrowAsync(
-            SignIn,
+        await SignIn.EnsureValidAsync(
             new SignInCommand("unknown@drivetrack.test", "whatever"),
             TestContext.Current.CancellationToken);
     }
@@ -206,8 +201,7 @@ public class RegistrationValidationTests
 
     private static Task<ValidationException> Refuse(RegisterClientCommand command) =>
         Assert.ThrowsAsync<ValidationException>(() =>
-            ValidatorExtensions.ValidateAndThrowAsync(
-                Registration,
+            Registration.EnsureValidAsync(
                 command,
                 TestContext.Current.CancellationToken));
 

@@ -14,7 +14,7 @@ public static class DependencyInjection
     /// <para>
     /// Discovery is from <see cref="ApplicationAssembly.Assembly"/>, the one assembly handle this
     /// layer exposes. Registration only makes a validator resolvable - it is still an application
-    /// service that calls <c>ValidateAndThrowAsync</c>; nothing here hooks a pipeline.
+    /// service that calls <c>EnsureValidAsync</c>; nothing here hooks a pipeline.
     /// </para>
     /// </summary>
     public static IServiceCollection AddApplication(this IServiceCollection services)

@@ -9,11 +9,10 @@ namespace DriveTrack.Application.Tests.Shifts;
 /// The validation rows of story 4.2's edge-case matrix, asserted against the three validators that
 /// carry them.
 /// <para>
-/// Driven through <c>ValidatorExtensions.ValidateAndThrowAsync</c> rather than through
-/// <c>IValidator.Validate</c>, because the seam is half of what is under test: the static form is
-/// what turns a failure into a <see cref="ValidationException"/> carrying an
-/// <see cref="ErrorCode"/> and a field list, and FluentValidation's identically named extension
-/// would throw a type the adapter answers 500 for (AD-9, NFR-4).
+/// Driven through <c>ValidatorExtensions.EnsureValidAsync</c> rather than through
+/// <c>IValidator.Validate</c>, because the seam is half of what is under test: it is what turns a
+/// failure into a <see cref="ValidationException"/> carrying an <see cref="ErrorCode"/> and a field
+/// list (AD-9, NFR-4).
 /// </para>
 /// <para>
 /// Asserted here rather than over HTTP because that is where the rules live and where it is
@@ -36,8 +35,7 @@ public class ShiftValidationTests
     {
         // The ordinary shift, and the reason the refusals below mean anything: a rule that refused
         // everything would pass every assertion about refusals.
-        await ValidatorExtensions.ValidateAndThrowAsync(
-            new CreateShiftCommandValidator(),
+        await new CreateShiftCommandValidator().EnsureValidAsync(
             Command(Start, Start.AddHours(8)),
             TestContext.Current.CancellationToken);
     }
@@ -47,8 +45,7 @@ public class ShiftValidationTests
     {
         // FR-110's open shift: null is a state the row may hold, not a missing value. A NotNull rule
         // here would make going on duty impossible to express.
-        await ValidatorExtensions.ValidateAndThrowAsync(
-            new CreateShiftCommandValidator(),
+        await new CreateShiftCommandValidator().EnsureValidAsync(
             Command(Start, endedAt: null),
             TestContext.Current.CancellationToken);
     }
@@ -139,8 +136,7 @@ public class ShiftValidationTests
                 Optional<DateTimeOffset>.Absent)
             .MergedOnto(Stored(Start, Start.AddHours(8)));
 
-        await ValidatorExtensions.ValidateAndThrowAsync(
-            new ShiftStateValidator(),
+        await new ShiftStateValidator().EnsureValidAsync(
             merged,
             TestContext.Current.CancellationToken);
     }
@@ -158,8 +154,7 @@ public class ShiftValidationTests
 
         Assert.Null(merged.EndedAt);
 
-        await ValidatorExtensions.ValidateAndThrowAsync(
-            new ShiftStateValidator(),
+        await new ShiftStateValidator().EnsureValidAsync(
             merged,
             TestContext.Current.CancellationToken);
     }
@@ -199,15 +194,13 @@ public class ShiftValidationTests
         var validator = new ListShiftsQueryValidator();
         var cancellationToken = TestContext.Current.CancellationToken;
 
-        await ValidatorExtensions.ValidateAndThrowAsync(
-            validator,
+        await validator.EnsureValidAsync(
             new ListShiftsQuery(0, ListShiftsQueryValidator.MaximumLimit, null),
             cancellationToken);
 
         // A driver filter is a filter and never a bound: dispatch narrows with it, and a driver's
         // own narrowing overrides it in the service. Nothing here refuses one.
-        await ValidatorExtensions.ValidateAndThrowAsync(
-            validator,
+        await validator.EnsureValidAsync(
             new ListShiftsQuery(0, 10, 7),
             cancellationToken);
 
@@ -233,15 +226,13 @@ public class ShiftValidationTests
 
     private static async Task<ValidationException> Refused(CreateShiftCommand command) =>
         await Assert.ThrowsAsync<ValidationException>(
-            () => ValidatorExtensions.ValidateAndThrowAsync(
-                new CreateShiftCommandValidator(),
+            () => new CreateShiftCommandValidator().EnsureValidAsync(
                 command,
                 TestContext.Current.CancellationToken));
 
     private static async Task<ValidationException> Refused(ShiftState state) =>
         await Assert.ThrowsAsync<ValidationException>(
-            () => ValidatorExtensions.ValidateAndThrowAsync(
-                new ShiftStateValidator(),
+            () => new ShiftStateValidator().EnsureValidAsync(
                 state,
                 TestContext.Current.CancellationToken));
 }
