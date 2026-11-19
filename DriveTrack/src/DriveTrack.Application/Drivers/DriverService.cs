@@ -276,7 +276,7 @@ public sealed class DriverService(
             if (!string.Equals(firstName, account.FirstName, StringComparison.Ordinal)
                 || !string.Equals(lastName, account.LastName, StringComparison.Ordinal))
             {
-                await unitOfWork.Users.RenameAsync(driver.UserId, firstName, lastName, cancellationToken);
+                await unitOfWork.Users.UpdateNameAsync(driver.UserId, firstName, lastName, cancellationToken);
             }
 
             driver.LicenseNumber = merged.LicenseNumber.Value!.Trim();

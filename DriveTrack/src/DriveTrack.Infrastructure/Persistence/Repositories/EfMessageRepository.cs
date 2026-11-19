@@ -9,10 +9,6 @@ namespace DriveTrack.Infrastructure.Persistence.Repositories;
 internal sealed class EfMessageRepository(AppDbContext context) : IMessageRepository
 {
     /// <inheritdoc />
-    public Task<Message?> GetByIdAsync(int id, CancellationToken cancellationToken) =>
-        context.Messages.FirstOrDefaultAsync(message => message.Id == id, cancellationToken);
-
-    /// <inheritdoc />
     public async Task<IReadOnlyList<Message>> ListForDriverAsync(
         DriverId driverId,
         CancellationToken cancellationToken) =>

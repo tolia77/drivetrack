@@ -735,7 +735,7 @@ public sealed class DeliveryService(
                 "The account behind these credentials no longer exists, so the actor of a timeline "
                     + "entry cannot be recorded.");
 
-        var name = DisplayName(account);
+        var name = account.DisplayName;
 
         // Fitted to the column rather than refused. A first and a last name are bounded at a hundred
         // characters each, so a legal account can produce a hundred and one characters more than the
@@ -922,7 +922,7 @@ public sealed class DeliveryService(
             {
                 if (account.DriverId is { } driverId)
                 {
-                    drivers[driverId] = DisplayName(account);
+                    drivers[driverId] = account.DisplayName;
                 }
             }
         }
@@ -943,16 +943,13 @@ public sealed class DeliveryService(
             {
                 if (account.ClientId is { } clientId)
                 {
-                    clients[clientId] = DisplayName(account);
+                    clients[clientId] = account.DisplayName;
                 }
             }
         }
 
         return new DeliveryParties(drivers, clients);
     }
-
-    private static string DisplayName(UserAccount account) =>
-        (account.FirstName + " " + account.LastName).Trim();
 
     /// <summary>
     /// The page's parties, keyed by the row id a delivery refers to them by.

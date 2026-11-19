@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Security.Claims;
 using System.Text;
 using DriveTrack.Application.Abstractions;
@@ -12,8 +11,8 @@ namespace DriveTrack.Infrastructure.Identity;
 /// <summary>
 /// Signs the bearer token the REST adapter accepts (FR-4).
 /// <para>
-/// The claim <em>names</em> come from <see cref="DriveTrackClaimTypes"/>, which the cookie scheme
-/// writes too: a caller is the same <c>ICurrentUser</c> whichever credential carried them.
+/// The claims come from <see cref="SessionClaims"/>, which the cookie scheme writes too: a caller is
+/// the same <c>ICurrentUser</c> whichever credential carried them.
 /// </para>
 /// <para>
 /// AD-13: the expiry is read from the injected <see cref="TimeProvider"/>, never from the ambient
@@ -33,29 +32,8 @@ internal sealed class JwtAccessTokenIssuer(IOptions<JwtOptions> options, TimePro
 
         var issuedAt = timeProvider.GetUtcNow();
 
-        var claims = new List<Claim>
-        {
-            new(DriveTrackClaimTypes.UserId, account.Id.Value.ToString(CultureInfo.InvariantCulture)),
-            new(DriveTrackClaimTypes.Role, account.Role.ToString()),
-            new(DriveTrackClaimTypes.Name, account.FirstName + " " + account.LastName),
-            new(DriveTrackClaimTypes.Email, account.Email),
-        };
-
-        // The subtype id travels only when there is one. An empty claim would be a value every
-        // reader has to remember to treat as absent, which is the kind of thing readers forget.
-        if (account.DriverId is { } driverId)
-        {
-            claims.Add(new Claim(
-                DriveTrackClaimTypes.DriverId,
-                driverId.Value.ToString(CultureInfo.InvariantCulture)));
-        }
-
-        if (account.ClientId is { } clientId)
-        {
-            claims.Add(new Claim(
-                DriveTrackClaimTypes.ClientId,
-                clientId.Value.ToString(CultureInfo.InvariantCulture)));
-        }
+        // The same list the cookie is written with, so the two schemes cannot drift apart.
+        var claims = SessionClaims.For(account).Select(claim => new Claim(claim.Type, claim.Value));
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.SigningKey));
 

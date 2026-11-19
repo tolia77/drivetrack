@@ -309,7 +309,7 @@ public class DriverManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task A_token_issued_before_a_rename_still_authenticates_afterwards()
     {
-    // The one property RenameAsync was minted for. It assigns the tracked entity rather than
+    // The one property UpdateNameAsync was written for. It assigns the tracked entity rather than
     // calling UserManager.UpdateAsync, which rolls the security stamp - and a rolled stamp
     // invalidates every token already issued for that account. Nothing else in the suite would
     // notice a refactor back to UpdateAsync: the rename would still land, and only a driver

@@ -84,9 +84,6 @@ internal sealed class EfClientRepository(AppDbContext context) : IClientReposito
     /// <inheritdoc />
     public void Add(Client client) => context.Clients.Add(client);
 
-    /// <inheritdoc />
-    public void Remove(Client client) => context.Clients.Remove(client);
-
     /// <summary>The shape the roster query is sorted in: an initializer, so EF can see through it.</summary>
     private sealed class Row
     {

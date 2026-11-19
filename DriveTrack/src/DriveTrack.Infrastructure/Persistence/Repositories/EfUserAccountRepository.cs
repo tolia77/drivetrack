@@ -70,6 +70,25 @@ internal sealed class EfUserAccountRepository(AppDbContext context, ScopedIdenti
     }
 
     /// <inheritdoc />
+    public async Task<IReadOnlyList<UserAccount>> ListByIdsAsync(
+        IReadOnlyCollection<UserId> userIds,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(userIds);
+
+        if (userIds.Count == 0)
+        {
+            return [];
+        }
+
+        var ids = userIds.Select(id => id.Value).Distinct().ToArray();
+
+        return await ListAccountsAsync(
+            context.Users.Where(user => ids.Contains(user.Id)),
+            cancellationToken);
+    }
+
+    /// <inheritdoc />
     public Task<bool> EmailExistsAsync(string email, CancellationToken cancellationToken)
     {
         // Compared as Identity stores it, not as the caller typed it: two addresses differing only
@@ -131,30 +150,6 @@ internal sealed class EfUserAccountRepository(AppDbContext context, ScopedIdenti
             role,
             DriverId: null,
             ClientId: null);
-    }
-
-    /// <inheritdoc />
-    public async Task RenameAsync(
-        UserId userId,
-        string firstName,
-        string lastName,
-        CancellationToken cancellationToken)
-    {
-        var user = await context.Users
-            .FirstOrDefaultAsync(candidate => candidate.Id == userId.Value, cancellationToken);
-
-        if (user is null)
-        {
-            // The caller loaded the row it means to rename and answered 404 if there was none, so
-            // an id with nothing behind it here is a row that vanished inside one transaction.
-            return;
-        }
-
-        // Assigned on the tracked entity and nothing else: no UserManager.UpdateAsync, which would
-        // roll the security stamp and re-validate the whole user, and no save - the UPDATE goes out
-        // with everything else the operation wrote at IUnitOfWork.CommitAsync (AD-5).
-        user.FirstName = firstName;
-        user.LastName = lastName;
     }
 
     /// <inheritdoc />
@@ -436,7 +431,9 @@ internal sealed class EfUserAccountRepository(AppDbContext context, ScopedIdenti
         // work is the budget, and SetPasswordAsync below spends it.
         //
         // Nothing is lost by staging directly: the commit writes these columns with the loaded stamp
-        // in the WHERE clause, so the optimistic check is still the real one.
+        // in the WHERE clause, so the optimistic check is still the real one. And nothing is
+        // wanted from UpdateAsync either: it would roll the security stamp and re-validate the whole
+        // user for a change to two name columns.
         user.FirstName = firstName;
         user.LastName = lastName;
     }
@@ -545,6 +542,71 @@ internal sealed class EfUserAccountRepository(AppDbContext context, ScopedIdenti
         }
     }
 
+    /// <summary>
+    /// Every account <paramref name="users"/> selects, each with its role and subtype row id, in one
+    /// untracked round trip. The role and the subtype ids are correlated subqueries rather than
+    /// reads per row, and they follow <see cref="MapAsync"/>'s rules exactly - one recognised role,
+    /// and only the subtype id that role has - so a batch read and a single read of the same account
+    /// can never disagree about either.
+    /// </summary>
+    private async Task<IReadOnlyList<UserAccount>> ListAccountsAsync(
+        IQueryable<ApplicationUser> users,
+        CancellationToken cancellationToken)
+    {
+        var rows = await users
+            .AsNoTracking()
+            .Select(user => new AccountRow
+            {
+                Id = user.Id,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Email = user.Email!,
+                RoleName = (
+                    from userRole in context.UserRoles
+                    join declared in context.Roles on userRole.RoleId equals declared.Id
+                    where userRole.UserId == user.Id
+                    select declared.Name).FirstOrDefault(),
+                DriverId = context.Drivers
+                    .Where(driver => (int)(object)driver.UserId == user.Id)
+                    .Select(driver => (DriverId?)driver.Id)
+                    .FirstOrDefault(),
+                ClientId = context.Clients
+                    .Where(client => (int)(object)client.UserId == user.Id)
+                    .Select(client => (ClientId?)client.Id)
+                    .FirstOrDefault(),
+            })
+            .ToListAsync(cancellationToken);
+
+        return
+        [
+            .. rows.Select(row =>
+            {
+                var role = ParseRole(row.Id, row.RoleName);
+
+                return new UserAccount(
+                    new UserId(row.Id),
+                    row.FirstName,
+                    row.LastName,
+                    row.Email,
+                    role,
+                    role == UserRole.Driver ? row.DriverId : null,
+                    role == UserRole.Client ? row.ClientId : null);
+            }),
+        ];
+    }
+
+    /// <summary>
+    /// The role a user's single role row names. AD-4 makes one role, drawn from the four, a
+    /// schema-level invariant. A row that breaks it is a defect, not a caller error, so it leaves as
+    /// the 500 envelope rather than being smoothed over into a plausible-looking profile.
+    /// </summary>
+    private static UserRole ParseRole(int userId, string? roleName) =>
+        roleName is not null && Enum.TryParse<UserRole>(roleName, ignoreCase: false, out var role)
+            ? role
+            : throw new InvalidOperationException(
+                "User " + userId.ToString(CultureInfo.InvariantCulture)
+                    + " holds no recognised role. AD-4 requires exactly one.");
+
     /// <summary>Reads the single role row and the subtype row id for a loaded user.</summary>
     private async Task<UserAccount> MapAsync(ApplicationUser user, CancellationToken cancellationToken)
     {
@@ -554,15 +616,7 @@ internal sealed class EfUserAccountRepository(AppDbContext context, ScopedIdenti
             where userRole.UserId == user.Id
             select declared.Name).FirstOrDefaultAsync(cancellationToken);
 
-        if (roleName is null || !Enum.TryParse<UserRole>(roleName, ignoreCase: false, out var role))
-        {
-            // AD-4 makes one role, drawn from the four, a schema-level invariant. A row that breaks
-            // it is a defect, not a caller error, so it leaves as the 500 envelope rather than being
-            // smoothed over into a plausible-looking profile.
-            throw new InvalidOperationException(
-                "User " + user.Id.ToString(CultureInfo.InvariantCulture)
-                    + " holds no recognised role. AD-4 requires exactly one.");
-        }
+        var role = ParseRole(user.Id, roleName);
 
         var userId = new UserId(user.Id);
         DriverId? driverId = null;
@@ -636,5 +690,23 @@ internal sealed class EfUserAccountRepository(AppDbContext context, ScopedIdenti
         }
 
         throw new ValidationException(ErrorCode.COMMON_VALIDATION_FAILED, detail, []);
+    }
+
+    /// <summary>The shape a batch account read is projected into: an initializer, so EF can see through it.</summary>
+    private sealed class AccountRow
+    {
+        public int Id { get; init; }
+
+        public string FirstName { get; init; } = string.Empty;
+
+        public string LastName { get; init; } = string.Empty;
+
+        public string Email { get; init; } = string.Empty;
+
+        public string? RoleName { get; init; }
+
+        public DriverId? DriverId { get; init; }
+
+        public ClientId? ClientId { get; init; }
     }
 }

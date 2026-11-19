@@ -10,10 +10,6 @@ namespace DriveTrack.Infrastructure.Persistence.Repositories;
 internal sealed class EfNotificationAttemptRepository(AppDbContext context) : INotificationAttemptRepository
 {
     /// <inheritdoc />
-    public Task<NotificationAttempt?> GetByIdAsync(int id, CancellationToken cancellationToken) =>
-        context.NotificationAttempts.FirstOrDefaultAsync(attempt => attempt.Id == id, cancellationToken);
-
-    /// <inheritdoc />
     public Task<Paged<NotificationAttempt>> ListAsync(
         ListNotificationAttemptsQuery query,
         NotificationSort? sort,

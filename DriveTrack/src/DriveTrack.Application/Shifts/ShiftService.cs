@@ -19,7 +19,7 @@ namespace DriveTrack.Application.Shifts;
 /// </para>
 /// <para>
 /// <b>What this capability reads that it does not own (AD-24).</b> Only
-/// <c>unitOfWork.Users.ListByRoleAsync(UserRole.Driver, …)</c>, and only to put a name beside a
+/// <c>unitOfWork.Users.ListByDriverIdsAsync(…)</c>, and only to put a name beside a
 /// driver row id — the same door <c>DeliveryService</c> opens for the parties it names, and the
 /// only place a driver's name lives at all. There is no <c>unitOfWork.Drivers</c> and no
 /// <c>IDriverService</c> anywhere in this file, and there must not be: the Drivers capability
@@ -91,7 +91,7 @@ public sealed class ShiftService(
             throw NotFoundException.For("shift", id);
         }
 
-        var names = await DriverNamesAsync(unitOfWork, cancellationToken);
+        var names = await DriverNamesAsync(unitOfWork, [shift.DriverId], cancellationToken);
 
         // Nothing was written, so the scope is disposed without a commit and the empty transaction
         // rolls back - the ordinary read path, not an omission.
@@ -365,27 +365,31 @@ public sealed class ShiftService(
     }
 
     /// <summary>
-    /// Every driver's name, keyed by the driver row id a shift refers to them by.
+    /// The names of the named drivers, keyed by the driver row id a shift refers to them by.
     /// <para>
     /// AD-24: a driver's name lives on their Identity account and nowhere else, so this is the one
-    /// door the capability opens outside its own table. Read once per call rather than once per
-    /// row - the same rule <c>DeliveryService.PartiesAsync</c> follows, and the reason a page of a
-    /// hundred shifts costs one roster read instead of a hundred.
+    /// door the capability opens outside its own table. Read once per call for exactly the drivers
+    /// asked about - not once per row, and not the whole driver roster to name one of them.
+    /// </para>
+    /// <para>
+    /// A driver id with no account behind it is absent from the answer, which the callers read as
+    /// a missing driver.
     /// </para>
     /// </summary>
     private static async Task<Dictionary<DriverId, string>> DriverNamesAsync(
         IUnitOfWork unitOfWork,
+        IReadOnlyCollection<DriverId> driverIds,
         CancellationToken cancellationToken)
     {
         var names = new Dictionary<DriverId, string>();
 
-        foreach (var account in await unitOfWork.Users.ListByRoleAsync(
-                     UserRole.Driver,
+        foreach (var account in await unitOfWork.Users.ListByDriverIdsAsync(
+                     driverIds,
                      cancellationToken))
         {
             if (account.DriverId is { } driverId)
             {
-                names[driverId] = (account.FirstName + " " + account.LastName).Trim();
+                names[driverId] = account.DisplayName;
             }
         }
 
@@ -396,7 +400,7 @@ public sealed class ShiftService(
     /// The named driver's display name, or a 404 when no driver row holds that id.
     /// <para>
     /// The lookup is not a second authorization decision and is not extra work: every write answers
-    /// a <see cref="ShiftSummary"/>, which carries the driver's name, so the roster has to be read
+    /// a <see cref="ShiftSummary"/>, which carries the driver's name, so the account has to be read
     /// on this path anyway. Answering the miss rather than writing the row is what keeps a
     /// dispatcher's typo a 404 instead of a foreign-key violation surfacing as a 500 — AD-8
     /// deliberately leaves 23503 untranslated, because an unreachable constraint failure is a defect
@@ -412,7 +416,7 @@ public sealed class ShiftService(
         DriverId driverId,
         CancellationToken cancellationToken)
     {
-        var names = await DriverNamesAsync(unitOfWork, cancellationToken);
+        var names = await DriverNamesAsync(unitOfWork, [driverId], cancellationToken);
 
         return names.TryGetValue(driverId, out var name)
             ? name
@@ -420,7 +424,7 @@ public sealed class ShiftService(
     }
 
     /// <summary>
-    /// One driver's name off the page's roster.
+    /// One driver's name off the names just read.
     /// </summary>
     /// <remarks>
     /// A miss yields an empty name rather than a failure, deliberately: the foreign key makes it

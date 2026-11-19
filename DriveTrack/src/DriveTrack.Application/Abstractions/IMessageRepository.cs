@@ -9,9 +9,6 @@ namespace DriveTrack.Application.Abstractions;
 /// </summary>
 public interface IMessageRepository
 {
-    /// <summary>Loads a message, or null when there is none with that id.</summary>
-    Task<Message?> GetByIdAsync(int id, CancellationToken cancellationToken);
-
     /// <summary>
     /// One driver's whole conversation, oldest first (FR-71, FR-72).
     /// <para>

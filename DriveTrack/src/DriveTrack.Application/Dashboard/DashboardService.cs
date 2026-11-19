@@ -265,7 +265,7 @@ public sealed class DashboardService(
         {
             if (key(account) is { } id)
             {
-                names[id] = (account.FirstName + " " + account.LastName).Trim();
+                names[id] = account.DisplayName;
             }
         }
 

@@ -340,7 +340,7 @@ public sealed class ProofOfDeliveryService(
         // A deleted capturer leaves the set-null AD-20 asks for, and a proof whose capturer's row is
         // gone is still evidence. Null here reads the same as withheld, which is the only reading
         // this shape supports and the correct one either way: there is no name to show.
-        return account is null ? null : (account.FirstName + " " + account.LastName).Trim();
+        return account?.DisplayName;
     }
 
     private static ProofOfDeliveryView View(ProofOfDelivery proof, string? capturedByName) =>
