@@ -11,16 +11,16 @@ using FluentValidation;
 namespace DriveTrack.Application.Reviews;
 
 /// <summary>
-/// AD-3's pipeline over a client's verdict on a delivery: load resource → guard → not found →
+/// The fixed operation pipeline over a client's verdict on a delivery: load resource → guard → not found →
 /// validate → act → commit → map.
 /// <para>
-/// AD-2: every method calls <see cref="IAccessGuard"/> through the interface, inline in its own
+/// Every method calls <see cref="IAccessGuard"/> through the interface, inline in its own
 /// body. Folding the two review members into a private helper would read better and would not
 /// count — <c>GuardCoverageTests</c> walks each public method's own IL and does not follow a call
 /// it makes.
 /// </para>
 /// <para>
-/// <b>What this capability reads that it does not own (AD-24).</b> Nothing through another
+/// <b>What this capability reads that it does not own.</b> Nothing through another
 /// capability's repository. The delivery a review is about is read through
 /// <see cref="IDeliveryService.GetMineAsync"/>, and the parties a moderation page names come from
 /// <see cref="IDeliveryService.ListByIdsAsync"/>. There is no <c>unitOfWork.Deliveries</c>,
@@ -58,14 +58,14 @@ public sealed class ReviewService(
         // would be an author the caller could forge.
         var clientId = accessGuard.RequireReviewAuthor();
 
-        // AD-24: the delivery comes from the capability that owns it, through the scoped read. A
+        // The delivery comes from the capability that owns it, through the scoped read. A
         // delivery that is not the caller's is answered as a 404 there, so nothing about somebody
         // else's parcel is disclosed by the attempt to review it.
         var delivery = await deliveries.GetMineAsync(command.DeliveryId, cancellationToken);
 
         if (delivery.Status is not (DeliveryStatus.Delivered or DeliveryStatus.Failed))
         {
-            // FR-61: a verdict on a journey that has not happened yet. Refused before validation,
+            // A verdict on a journey that has not happened yet. Refused before validation,
             // because it is a refusal about the delivery the payload named rather than about the
             // rating or the text - and telling an author their text is fine when the whole request
             // is not would be the wrong first answer.
@@ -95,14 +95,14 @@ public sealed class ReviewService(
             // wire can send anything and the command has to carry it as far as here.
             Text = trimmed.Text!,
 
-            // AD-13: the injected clock, at offset zero. DateTimeOffset.UtcNow here would fail
+            // The injected clock, at offset zero. DateTimeOffset.UtcNow here would fail
             // PersistenceContractTests and, more to the point, make the ordering untestable.
             CreatedAt = timeProvider.GetUtcNow(),
         };
 
         unitOfWork.Reviews.Add(review);
 
-        // No prior "is there already a review" read, and its absence is the point (DR-6, AD-20).
+        // No prior "is there already a review" read, and its absence is the point.
         // Two authors racing both pass such a check; only one passes ix_reviews_delivery_id, and
         // the loser's DbUpdateException leaves here as ConflictException - a 409 - through the one
         // translation point in Infrastructure.
@@ -122,7 +122,7 @@ public sealed class ReviewService(
 
         accessGuard.RequireRole(UserRole.Dispatcher);
 
-        // AD-3's "the predicate comes from the guard", satisfied rather than optimized away. On
+        // "The predicate comes from the guard", satisfied rather than optimized away. On
         // this route it can only ever be unrestricted - the role check above has already narrowed
         // the caller to the two roles the guard answers unrestricted for - but the scope still
         // travels from the guard into the query, so the day a fourth role is given this list there
@@ -146,7 +146,7 @@ public sealed class ReviewService(
                 cancellationToken);
         }
 
-        // AD-24: the parties are the Deliveries capability's answer, not a join this capability
+        // The parties are the Deliveries capability's answer, not a join this capability
         // writes - and they are asked for once for the whole page rather than once per row.
         //
         // The per-row shape is not merely slower, it is a different order of cost: every
@@ -197,7 +197,7 @@ public sealed class ReviewService(
 
         var sort = ListSort.Parse<ReviewSort>(query.Sort);
 
-        // AD-17: this list carries no party, and ordering an author's reviews by the driver's name
+        // This list carries no party, and ordering an author's reviews by the driver's name
         // is a way of reading it. The author is the caller, so ordering by their own name would order
         // nothing. Both are refused as columns this list does not have.
         if (sort is ReviewSort.Client or ReviewSort.Driver)
@@ -210,7 +210,7 @@ public sealed class ReviewService(
 
         await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
 
-        // AD-3: the narrowing reaches the WHERE clause rather than filtering a materialized page.
+        // The narrowing reaches the WHERE clause rather than filtering a materialized page.
         var reviews = await unitOfWork.Reviews.ListPageAsync(
             new AccessScope(null, clientId),
             query,
@@ -218,7 +218,7 @@ public sealed class ReviewService(
             cancellationToken);
 
         // No party lookup at all, and nothing to strip: the type has no field a counterparty's name
-        // could be written into (AD-17).
+        // could be written into.
         return reviews.Map(Authored);
     }
 
@@ -248,7 +248,7 @@ public sealed class ReviewService(
 
         await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
 
-        // AD-3: load, then guard. The row is read before the decision because the decision is about
+        // Load, then guard. The row is read before the decision because the decision is about
         // the row - who wrote it - and nothing about it is disclosed unless the guard passes.
         var review = await unitOfWork.Reviews.GetByIdAsync(id, cancellationToken);
 
@@ -261,7 +261,7 @@ public sealed class ReviewService(
             throw NotFoundException.For("review", id);
         }
 
-        // AD-23: the validator reads the state the review will hold, not the payload - so an edit
+        // The validator reads the state the review will hold, not the payload - so an edit
         // that changes only the rating is not refused for carrying no text. The merge trims, so the
         // string judged here is the string stored below and a create and an edit judge the same
         // content the same way.

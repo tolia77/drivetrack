@@ -5,7 +5,7 @@ using FluentValidation;
 namespace DriveTrack.Application.Reviews;
 
 /// <summary>
-/// FR-67's scale and FR-59's text, over a review being written.
+/// The rating scale and the text rule, over a review being written.
 /// <para>
 /// Both rules are judged over the <em>trimmed</em> text, because trimming is what the service
 /// stores: a comment of exactly 2000 characters with a trailing newline would otherwise be refused
@@ -16,11 +16,10 @@ namespace DriveTrack.Application.Reviews;
 /// states which string they are about.
 /// </para>
 /// <para>
-/// The bounds are <see cref="RatingScale"/>'s rather than two literals, and that is AD-18: the
+/// The bounds are <see cref="RatingScale"/>'s rather than two literals: the
 /// scale is a product rule in Domain, read here and by the band the screen renders. They also
 /// restate <c>CK_Reviews_Rating</c> — the column is the authority and a race cannot slip a 6 past
-/// it, but stating the bound here is what makes the answer a 422 naming the field either way
-/// (NFR-2, NFR-4).
+/// it, but stating the bound here is what makes the answer a 422 naming the field either way.
 /// </para>
 /// <para>
 /// There is no rule about the rating being a whole number, and nothing is missing: it is an
@@ -52,7 +51,7 @@ public sealed class CreateReviewCommandValidator : AbstractValidator<CreateRevie
 /// <summary>
 /// The same two rules, applied to the state the review will hold rather than to the payload.
 /// <para>
-/// AD-23: this validator is only ever handed <c>UpdateReviewCommand.MergedOnto</c>'s result, in
+/// This validator is only ever handed <c>UpdateReviewCommand.MergedOnto</c>'s result, in
 /// which both fields are filled in from the stored row — which is what lets an edit that changes
 /// only the rating pass without carrying the text again.
 /// </para>
@@ -81,7 +80,7 @@ public sealed class ReviewStateValidator : AbstractValidator<ReviewState>
 }
 
 /// <summary>
-/// NFR-27's "validated rather than passed through unchecked", over the review list.
+/// Paging "validated rather than passed through unchecked", over the review list.
 /// <para>
 /// Every message is an <see cref="ErrorCode"/> name applied per rule, for the reason
 /// <c>ListDeliveriesQueryValidator</c> states: a limit of two million is a 422 naming the field

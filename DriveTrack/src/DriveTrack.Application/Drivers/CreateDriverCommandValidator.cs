@@ -5,7 +5,7 @@ using FluentValidation;
 namespace DriveTrack.Application.Drivers;
 
 /// <summary>
-/// FR-35's rules for taking on a driver.
+/// The rules for taking on a driver.
 /// <para>
 /// Every message is an <see cref="ErrorCode"/> name applied per rule, never once at the end of a
 /// chain. The account bounds are shared with <see cref="RegisterClientCommandValidator"/> rather
@@ -57,7 +57,7 @@ public sealed class CreateDriverCommandValidator : AbstractValidator<CreateDrive
                 .WithMessage(nameof(ErrorCode.FLEET_LICENSE_NUMBER_TOO_LONG));
 
         // Nothing about VehicleId: whether that vehicle exists and whether it is free are questions
-        // about other rows, and AD-24 answers them in the one writer of drivers.vehicle_id.
+        // about other rows, and they are answered in the one writer of drivers.vehicle_id.
     }
 
     /// <summary>Whether the value, trimmed as the service will store it, fits within the bound.</summary>

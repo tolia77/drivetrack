@@ -4,12 +4,12 @@ using FluentValidation;
 namespace DriveTrack.Application.Vehicles;
 
 /// <summary>
-/// FR-42's rules, and deliberately the same rules as <see cref="CreateVehicleCommandValidator"/>:
+/// The rules for changing a vehicle, and deliberately the same rules as <see cref="CreateVehicleCommandValidator"/>:
 /// a vehicle that could be created is a vehicle that may exist, so an edit that produces the same
 /// state must be accepted and an edit that produces a state a create would refuse must not be.
 /// <para>
 /// This validator is only ever handed <see cref="UpdateVehicleCommand.MergedOnto"/>'s result, in
-/// which every field is present. That is AD-23's rule about validation, and it is what lets the
+/// which every field is present. That is the absent-versus-null rule about validation, and it is what lets the
 /// rules below read the value without asking whether the caller sent it.
 /// </para>
 /// <para>
@@ -19,7 +19,7 @@ namespace DriveTrack.Application.Vehicles;
 /// <para>
 /// Each rule overrides its property name so a field error names <c>LicensePlate</c> rather than
 /// <c>LicensePlate.Value</c>: the adapter turns that name into the one the caller's payload used,
-/// and a form can only attach a message to an input it actually has (NFR-4).
+/// and a form can only attach a message to an input it actually has.
 /// </para>
 /// </summary>
 public sealed class UpdateVehicleCommandValidator : AbstractValidator<UpdateVehicleCommand>

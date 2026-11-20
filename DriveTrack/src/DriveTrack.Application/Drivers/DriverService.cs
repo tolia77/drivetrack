@@ -12,15 +12,15 @@ using FluentValidation;
 namespace DriveTrack.Application.Drivers;
 
 /// <summary>
-/// AD-3's pipeline over the driver roster: load resource → guard → validate → act → commit → map.
+/// The fixed operation pipeline over the driver roster: load resource → guard → validate → act → commit → map.
 /// <para>
-/// AD-2: every method calls <see cref="IAccessGuard"/> through the interface, inline in its own
-/// body. "Dispatcher or admin" is written <c>RequireRole(UserRole.Dispatcher)</c>, because AD-4
-/// makes admin satisfy every check by rule inside the guard.
+/// Every method calls <see cref="IAccessGuard"/> through the interface, inline in its own
+/// body. "Dispatcher or admin" is written <c>RequireRole(UserRole.Dispatcher)</c>, because the
+/// admin override makes admin satisfy every check by rule inside the guard.
 /// </para>
 /// <para>
-/// AD-24, and the tension worth naming: <c>ApplicationUser</c> belongs to Identity, yet FR-35
-/// creates a driver's account, FR-37 renames it and FR-39 deletes it. This service therefore
+/// The single-owner rule, and the tension worth naming: <c>ApplicationUser</c> belongs to
+/// Identity, yet this capability creates a driver's account, renames it and deletes it. This service therefore
 /// reaches <c>unitOfWork.Users</c> for exactly those three calls, mirroring
 /// <c>UserService.RegisterClientAsync</c>, which creates the Identity-owned <c>Client</c> row the
 /// same way. The boundary is what is <em>not</em> in that list: the address, the password and the
@@ -30,13 +30,13 @@ namespace DriveTrack.Application.Drivers;
 /// one writer of <c>drivers.vehicle_id</c>.
 /// </para>
 /// <para>
-/// AD-24 in the other direction, added by story 7.2: a driver's rating is derived from reviews, and
+/// The same rule in the other direction: a driver's rating is derived from reviews, and
 /// reviews belong to the Reviews capability — so this service asks <see cref="IReviewService"/> for
 /// it and never reads <c>unitOfWork.Reviews</c>. The ask is batched: a roster of forty drivers is
 /// one question about forty driver rows, not forty questions.
 /// </para>
 /// <para>
-/// Story 4.2 adds a second port of the same shape and for the same reason: FR-116's on-duty flag is
+/// A second port has the same shape and the same reason: the on-duty flag is
 /// derived from shifts, so it is <see cref="IShiftService"/>'s answer rather than a read of
 /// <c>unitOfWork.Shifts</c>. That capability answers with driver row ids and asks this one for
 /// nothing in return, which is what keeps the two directions from closing a constructor cycle — it
@@ -67,7 +67,7 @@ public sealed class DriverService(
 
         accessGuard.RequireRole(UserRole.Dispatcher);
 
-        // NFR-27: refused before any query is built.
+        // Refused before any query is built.
         await listValidator.EnsureValidAsync(query, cancellationToken);
 
         Paged<DriverRow> page;
@@ -83,7 +83,7 @@ public sealed class DriverService(
                 cancellationToken);
         }
 
-        // FR-118 and FR-116, asked once for the page rather than once per row.
+        // Ratings and duty state, asked once for the page rather than once per row.
         var ratings = await RatingsAsync([.. page.Items.Select(row => row.Driver.Id)], cancellationToken);
         var onDuty = await OnDutyAsync(cancellationToken);
 
@@ -134,11 +134,11 @@ public sealed class DriverService(
             ];
         }
 
-        // FR-118, batched: one question about every driver on the roster. Asking per row would make
+        // Ratings, batched: one question about every driver on the roster. Asking per row would make
         // a forty driver roster forty queries for a column that is the same one grouped answer.
         var ratings = await RatingsAsync([.. rows.Select(row => row.Driver.Id)], cancellationToken);
 
-        // FR-116, asked the same way and for the same reason: one question about everybody on duty
+        // Duty state, asked the same way and for the same reason: one question about everybody on duty
         // rather than one per row. The answer is the whole on-duty set rather than one narrowed to
         // these drivers, because "is this driver on duty" is a single indexed predicate and
         // narrowing it would cost a parameter list to save nothing.
@@ -162,7 +162,7 @@ public sealed class DriverService(
 
         await using (var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken))
         {
-            // AD-3: load, then guard. Nothing about the row is disclosed unless the guard passes.
+            // Load, then guard. Nothing about the row is disclosed unless the guard passes.
             var found = await unitOfWork.Drivers.GetByIdAsync(id, cancellationToken);
 
             accessGuard.RequireRole(UserRole.Dispatcher);
@@ -197,7 +197,7 @@ public sealed class DriverService(
 
         // The friendly answer. The race backstop is user_name_index, unique on the normalized user
         // name - the email, since UserName = Email - and it surfaces as PERSISTENCE_UNIQUE_VIOLATION,
-        // which is also a 409 (NFR-2).
+        // which is also a 409.
         if (await unitOfWork.Users.EmailExistsAsync(email, cancellationToken))
         {
             throw new ConflictException(
@@ -219,19 +219,19 @@ public sealed class DriverService(
 
         unitOfWork.Drivers.Add(driver);
 
-        // AD-24: the assignment is written here and only here. It runs inside this scope, so a
+        // The assignment is written here and only here. It runs inside this scope, so a
         // vehicle another driver already holds refuses the whole operation and the account created
-        // moments ago is rolled back with it - the half-written state NFR-9 forbids.
+        // moments ago is rolled back with it - no half-written state survives.
         await VehicleAssignment.ApplyAsync(unitOfWork, driver, command.VehicleId, cancellationToken);
 
-        // AD-5: the user row, its role row, the driver row and the assignment reach the database
+        // The user row, its role row, the driver row and the assignment reach the database
         // here or nowhere.
         await unitOfWork.CommitAsync(cancellationToken);
 
         // No rating, and no lookup for one: a driver taken on a moment ago has carried nothing, so
         // there is no delivery for anybody to have reviewed. Null is the honest answer rather than
-        // a query whose result is known (FR-118). Off duty for the same reason: nobody can have gone
-        // on duty as a driver who did not exist a moment ago (FR-116).
+        // a query whose result is known. Off duty for the same reason: nobody can have gone
+        // on duty as a driver who did not exist a moment ago.
         return Summary(driver, account, rating: null, onDuty: false);
     }
 
@@ -257,12 +257,12 @@ public sealed class DriverService(
 
             driver = found ?? throw NotFoundException.For("driver", id.Value);
 
-            // The account is loaded before the merge rather than only for the summary: FR-37's name
-            // lives there, so it is half of the state the validator has to judge.
+            // The account is loaded before the merge rather than only for the summary: the driver's
+            // name lives there, so it is half of the state the validator has to judge.
             var account = await unitOfWork.Users.GetByIdAsync(driver.UserId, cancellationToken)
                 ?? throw Orphaned(driver);
 
-            // AD-23: the validator reads the state the driver will hold, not the payload.
+            // The validator reads the state the driver will hold, not the payload.
             var merged = command.MergedOnto(driver, account);
 
             await updateValidator.EnsureValidAsync(merged, cancellationToken);
@@ -271,8 +271,8 @@ public sealed class DriverService(
             var lastName = merged.LastName.Value!.Trim();
 
             // Only when something actually changed. An edit that leaves the name alone must not
-            // write to the account at all - the narrower the reach into Identity, the easier AD-24
-            // is to read.
+            // write to the account at all - the narrower the reach into Identity, the easier the
+            // single-owner rule is to read.
             if (!string.Equals(firstName, account.FirstName, StringComparison.Ordinal)
                 || !string.Equals(lastName, account.LastName, StringComparison.Ordinal))
             {
@@ -282,11 +282,11 @@ public sealed class DriverService(
             driver.LicenseNumber = merged.LicenseNumber.Value!.Trim();
 
             // Only when the assignment actually changes. The edit form resends the vehicle the driver
-            // already holds on every save, and re-applying it would re-run FR-103's capacity check: a
+            // already holds on every save, and re-applying it would re-run the capacity check: a
             // driver already over capacity - a lighter vehicle's capacity lowered while a heavy
             // delivery sat Failed, then put back in transit - could then not even be renamed. An
             // absent VehicleId merges to the current one and is skipped too; a present null on a
-            // driver holding a vehicle clears it (FR-38).
+            // driver holding a vehicle clears it.
             if (merged.VehicleId.Value != driver.VehicleId)
             {
                 await VehicleAssignment.ApplyAsync(
@@ -306,12 +306,12 @@ public sealed class DriverService(
 
         // A driver's standing is not touched by an edit to their licence or their vehicle, but the
         // payload still has to carry the one they actually hold: a null here would read as "nobody
-        // has reviewed them", which is a different claim (FR-118).
+        // has reviewed them", which is a different claim.
         var ratings = await RatingsAsync([driver.Id], cancellationToken);
 
         // Nor is their duty state touched by an edit to their licence, and the payload still has to
         // carry the one they actually hold: a false here would read as "off duty", which is a claim
-        // about the world rather than about the edit (FR-116).
+        // about the world rather than about the edit.
         var onDuty = await OnDutyAsync(cancellationToken);
 
         return Summary(driver, written, Rating(ratings, driver.Id), onDuty.Contains(driver.Id));
@@ -334,8 +334,8 @@ public sealed class DriverService(
         // The account, not only the driver row. Removing the row alone would leave an account
         // holding role Driver with nothing behind it: signable-in, carrying a null driver claim.
         // The declared cascades do the rest - the driver row, its shifts and its chat messages go
-        // with the account, and its deliveries are left with a null driver, which is FR-39's
-        // "leaves those deliveries unassigned" arm rather than an error.
+        // with the account, and its deliveries are left with a null driver: those deliveries
+        // are left unassigned rather than refused with an error.
         await unitOfWork.Users.DeleteAsync(driver.UserId, cancellationToken);
 
         await unitOfWork.CommitAsync(cancellationToken);
@@ -350,7 +350,7 @@ public sealed class DriverService(
             ?? throw Orphaned(driver);
 
     /// <summary>
-    /// FR-118's aggregate for a set of drivers, asked of the capability that owns reviews (AD-24)
+    /// The rating aggregate for a set of drivers, asked of the capability that owns reviews
     /// and keyed so a mapping is a lookup rather than a scan.
     /// </summary>
     private async Task<Dictionary<DriverId, DriverRating>> RatingsAsync(
@@ -372,7 +372,7 @@ public sealed class DriverService(
         ratings.TryGetValue(driverId, out var rating) ? rating : null;
 
     /// <summary>
-    /// FR-116's on-duty set, asked of the capability that owns shifts (AD-24) and kept as a set so a
+    /// The on-duty set, asked of the capability that owns shifts and kept as a set so a
     /// roster's mapping is a lookup rather than a scan.
     /// </summary>
     private async Task<HashSet<DriverId>> OnDutyAsync(CancellationToken cancellationToken) =>
@@ -407,11 +407,11 @@ public sealed class DriverService(
             driver.Vehicle?.LicensePlate,
 
             // Null and zero together, or neither: an average of nothing is not a number, and the
-            // two fields must never disagree about whether anybody has said anything (FR-118).
+            // two fields must never disagree about whether anybody has said anything.
             rating?.Average,
             rating?.ReviewCount ?? 0,
 
-            // FR-116's flag, and never a filter: the picker on the delivery form reads this to mark
+            // The on-duty flag, and never a filter: the picker on the delivery form reads this to mark
             // an off-duty driver, and still offers them.
             onDuty);
 }

@@ -4,7 +4,7 @@ using FluentValidation;
 namespace DriveTrack.Application.Chat;
 
 /// <summary>
-/// FR-70's two rules over a message being sent.
+/// The two rules over a message being sent.
 /// <para>
 /// Both are judged over the <em>trimmed</em> text, because trimming is what the service stores: a
 /// message of exactly 2000 characters with a trailing newline would otherwise be refused for being
@@ -14,8 +14,8 @@ namespace DriveTrack.Application.Chat;
 /// </para>
 /// <para>
 /// <c>MaximumLength</c> restates <c>MessageConfiguration</c>'s 2000. The column is the authority;
-/// stating it here is what turns a truncation error from PostgreSQL into a 422 naming the field,
-/// which is what NFR-4 asks for.
+/// stating it here is what turns a truncation error from PostgreSQL into a 422 naming the
+/// offending field.
 /// </para>
 /// <para>
 /// Discovered by <c>AddValidatorsFromAssembly</c>, so there is no registration to add.

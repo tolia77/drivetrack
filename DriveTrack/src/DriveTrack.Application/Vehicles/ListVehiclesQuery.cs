@@ -1,7 +1,7 @@
 namespace DriveTrack.Application.Vehicles;
 
 /// <summary>
-/// NFR-27's paging over the fleet list, with the sort and the search the fleet screen offers.
+/// Paging over the fleet list, with the sort and the search the fleet screen offers.
 /// <para>
 /// The original's <c>GET /vehicles</c> paged with <c>skip</c> and <c>limit</c> and defaulted them
 /// to 0 and 100; this keeps exactly that and adds the half the original was missing - the values are

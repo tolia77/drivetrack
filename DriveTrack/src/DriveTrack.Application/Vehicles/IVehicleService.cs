@@ -1,7 +1,7 @@
 namespace DriveTrack.Application.Vehicles;
 
 /// <summary>
-/// The fleet capability (FR-40 to FR-45). It owns <c>Vehicle</c> and, by AD-24, the driver–vehicle
+/// The fleet capability. It owns <c>Vehicle</c> and, by the single-owner rule, the driver–vehicle
 /// assignment — which is why the unassigned list lives here rather than on the driver capability.
 /// <para>
 /// Every method takes an authorization decision through <see cref="Authorization.IAccessGuard"/>,
@@ -13,7 +13,7 @@ public interface IVehicleService
 {
     /// <summary>
     /// One page of the fleet, searched and sorted over every vehicle, with the number the search
-    /// matched (FR-40, NFR-27).
+    /// matched.
     /// </summary>
     /// <exception cref="Common.ValidationException">
     /// The paging arguments are out of range, or the sort names no column the list has.
@@ -29,7 +29,7 @@ public interface IVehicleService
     Task<IReadOnlyList<VehicleSummary>> ListAllAsync(CancellationToken cancellationToken);
 
     /// <summary>
-    /// Every vehicle no driver holds (FR-45). Unpaged: it feeds an assignment control, and a
+    /// Every vehicle no driver holds. Unpaged: it feeds an assignment control, and a
     /// truncated set of choices is a wrong set of choices.
     /// </summary>
     Task<IReadOnlyList<VehicleSummary>> ListUnassignedAsync(CancellationToken cancellationToken);
@@ -38,20 +38,20 @@ public interface IVehicleService
     /// <exception cref="Common.NotFoundException">No vehicle has that id.</exception>
     Task<VehicleSummary> GetAsync(int id, CancellationToken cancellationToken);
 
-    /// <summary>Puts a vehicle on the fleet (FR-40).</summary>
-    /// <exception cref="Common.ConflictException">Another vehicle already carries that plate (FR-41).</exception>
+    /// <summary>Puts a vehicle on the fleet.</summary>
+    /// <exception cref="Common.ConflictException">Another vehicle already carries that plate.</exception>
     Task<VehicleSummary> CreateAsync(CreateVehicleCommand command, CancellationToken cancellationToken);
 
-    /// <summary>Changes a vehicle (FR-42).</summary>
+    /// <summary>Changes a vehicle.</summary>
     /// <exception cref="Common.NotFoundException">No vehicle has that id.</exception>
-    /// <exception cref="Common.ConflictException">Another vehicle already carries that plate (FR-41).</exception>
+    /// <exception cref="Common.ConflictException">Another vehicle already carries that plate.</exception>
     Task<VehicleSummary> UpdateAsync(
         int id,
         UpdateVehicleCommand command,
         CancellationToken cancellationToken);
 
     /// <summary>
-    /// Takes a vehicle off the fleet (FR-43).
+    /// Takes a vehicle off the fleet.
     /// </summary>
     /// <exception cref="Common.NotFoundException">No vehicle has that id.</exception>
     /// <exception cref="Common.ConflictException">

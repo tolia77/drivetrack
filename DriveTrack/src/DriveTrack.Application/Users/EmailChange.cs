@@ -4,7 +4,7 @@ using DriveTrack.Application.Common;
 namespace DriveTrack.Application.Users;
 
 /// <summary>
-/// FR-92's uniqueness rule, asked once.
+/// The email-address uniqueness rule, asked once.
 /// <para>
 /// Two callers change an address: a user changing their own (<see cref="IUserService"/>) and an
 /// administrator editing a client (<see cref="IClientAdministrationService"/>). Written twice, the
@@ -28,8 +28,7 @@ internal static class EmailChange
     /// for the caller's own address, so a form saved without the address box being touched would
     /// otherwise be refused as a conflict with itself.
     /// <para>
-    /// The comparison is ordinal-ignore-case because Application may not reach Identity's normalizer
-    /// (AD-1). Identity's default normalizer is upper-invariant, so the two agree on every case that
+    /// The comparison is ordinal-ignore-case because Application may not reach Identity's normalizer. Identity's default normalizer is upper-invariant, so the two agree on every case that
     /// matters here. Behind both is <c>user_name_index</c>, the unique index on
     /// <c>normalized_user_name</c> that <see cref="IUserAccountRepository.SetEmailAsync"/> writes
     /// into — <c>normalized_email</c> carries an index but not a unique one.
@@ -58,7 +57,7 @@ internal static class EmailChange
         // is only a backstop at all because SetEmailAsync writes the user-name pair alongside the
         // email pair; trim that method to the email columns and two callers claiming one address at
         // the same instant would both be written. It surfaces as PERSISTENCE_UNIQUE_VIOLATION,
-        // which is also a 409, so the race and the friendly answer agree on the status (NFR-2).
+        // which is also a 409, so the race and the friendly answer agree on the status.
         if (await unitOfWork.Users.EmailExistsAsync(requested, cancellationToken))
         {
             throw new ConflictException(

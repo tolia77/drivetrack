@@ -7,7 +7,7 @@ using FluentValidation;
 namespace DriveTrack.Application.Users;
 
 /// <summary>
-/// AD-3's pipeline over dispatcher accounts: open the scope → load → guard → validate → act →
+/// The fixed operation pipeline over dispatcher accounts: open the scope → load → guard → validate → act →
 /// commit → map.
 /// </summary>
 public sealed class DispatcherAdministrationService(
@@ -46,7 +46,7 @@ public sealed class DispatcherAdministrationService(
 
         // The friendly answer. The race backstop is user_name_index, unique on the normalized user
         // name - which is the email, since UserName = Email - and it is also a 409, so two admins
-        // creating the same address at once get the same status (NFR-2).
+        // creating the same address at once get the same status.
         if (await unitOfWork.Users.EmailExistsAsync(email, cancellationToken))
         {
             throw new ConflictException(
@@ -60,8 +60,8 @@ public sealed class DispatcherAdministrationService(
             UserRole.Dispatcher,
             cancellationToken);
 
-        // DR-3: no subtype row. A dispatcher is a user with a role and nothing else, which is why
-        // this story adds no table and no migration.
+        // No subtype row. A dispatcher is a user with a role and nothing else, so there is no
+        // dispatcher table.
         await unitOfWork.CommitAsync(cancellationToken);
 
         return Map(account);
@@ -118,7 +118,7 @@ public sealed class DispatcherAdministrationService(
 
         RequireDispatcher(account, userId);
 
-        // AD-23: absent means unchanged. A blank password box on the edit form is the absent case,
+        // Absent means unchanged. A blank password box on the edit form is the absent case,
         // not an empty string anybody has to remember to filter out.
         //
         // Trimmed as it is merged, so the validator judges the value that will actually be stored.

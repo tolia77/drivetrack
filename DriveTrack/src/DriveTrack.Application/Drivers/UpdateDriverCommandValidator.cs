@@ -5,7 +5,7 @@ using FluentValidation;
 namespace DriveTrack.Application.Drivers;
 
 /// <summary>
-/// FR-37's rules, applied to the state the driver will hold rather than to the payload.
+/// The rules for changing a driver, applied to the state the driver will hold rather than to the payload.
 /// <para>
 /// This validator is only ever handed <see cref="UpdateDriverCommand.MergedOnto"/>'s result, in
 /// which every field is present — which is what lets the rule below read the value without asking
@@ -17,9 +17,9 @@ namespace DriveTrack.Application.Drivers;
 /// one question.
 /// </para>
 /// <para>
-/// There is no rule about <c>VehicleId</c>: a null is FR-38's clear rather than a missing value,
+/// There is no rule about <c>VehicleId</c>: a null is the clear rather than a missing value,
 /// and whether a non-null id names a vehicle that exists and is free is a question about other
-/// rows, answered in the one writer of <c>drivers.vehicle_id</c> (AD-24).
+/// rows, answered in the one writer of <c>drivers.vehicle_id</c>.
 /// </para>
 /// <para>
 /// Each length is judged on the trimmed text, as <see cref="CreateDriverCommandValidator"/>
@@ -28,7 +28,7 @@ namespace DriveTrack.Application.Drivers;
 /// <para>
 /// The property name is overridden so a field error names <c>LicenseNumber</c> rather than
 /// <c>LicenseNumber.Value</c>: the adapter turns that name into the one the caller's payload used,
-/// and a form can only attach a message to an input it actually has (NFR-4).
+/// and a form can only attach a message to an input it actually has.
 /// </para>
 /// </summary>
 public sealed class UpdateDriverCommandValidator : AbstractValidator<UpdateDriverCommand>

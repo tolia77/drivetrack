@@ -1,7 +1,7 @@
 namespace DriveTrack.Application.Authorization;
 
 /// <summary>
-/// AD-2's allowlist: the closed, documented set of Application service methods that reach no
+/// The guard's allowlist: the closed, documented set of Application service methods that reach no
 /// <see cref="IAccessGuard"/> call because they are the operations an anonymous caller performs.
 /// <para>
 /// It is declared here and nowhere else. <c>GuardCoverageTests</c> reads it in both directions: a
@@ -10,7 +10,7 @@ namespace DriveTrack.Application.Authorization;
 /// used to mean something.
 /// </para>
 /// <para>
-/// FR-99's landing page is anonymous as well, and is deliberately absent: it renders static text
+/// The landing page is anonymous as well, and is deliberately absent: it renders static text
 /// and reaches no application service at all, so there is nothing here to allow.
 /// </para>
 /// </summary>
@@ -22,10 +22,10 @@ public static class PublicEntryPoints
     /// </summary>
     public static readonly IReadOnlySet<string> Methods = new HashSet<string>(StringComparer.Ordinal)
     {
-        // FR-1: registration creates the account the caller would otherwise be authorized as.
+        // Registration creates the account the caller would otherwise be authorized as.
         "UserService.RegisterClientAsync",
 
-        // FR-4: sign-in is how credentials are presented in the first place.
+        // Sign-in is how credentials are presented in the first place.
         "UserService.SignInAsync",
     };
 }

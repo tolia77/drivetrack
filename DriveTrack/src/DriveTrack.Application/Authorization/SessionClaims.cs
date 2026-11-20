@@ -21,8 +21,8 @@ public sealed record SessionClaim(string Type, string Value);
 /// </para>
 /// <para>
 /// Pairs of strings rather than <c>System.Security.Claims.Claim</c>, for the reason
-/// <see cref="DriveTrackClaimTypes"/> gives: the caller's adapter shape stays out of this layer
-/// (AD-22), and each scheme turns these into its own claims. Anything only one scheme needs is
+/// <see cref="DriveTrackClaimTypes"/> gives: the caller's adapter shape stays out of this layer,
+/// and each scheme turns these into its own claims. Anything only one scheme needs is
 /// that scheme's to add on top.
 /// </para>
 /// </summary>
