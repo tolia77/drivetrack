@@ -86,16 +86,65 @@
 /*
     A hit area a thumb can find, which is what `touch-target` is declared for. The button carries
     only a glyph, so without a floor it would be as small as the glyph is.
+
+    The floor is taller than the title's line, and left alone it set the height of the whole head:
+    a 2.75rem box plus the padding made a band twice the height of the one line it holds. The
+    negative block margin hands the difference back, so the row is as tall as the title and the
+    hit area overhangs into the head's own padding - still the full target, no longer the thing
+    the head is sized by. The inline-end margin does the same at the edge, putting the glyph on
+    the body's right edge instead of a target's width inside it.
 */
 .dt-dialog-dismiss {
+    position: relative;
     flex: none;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     min-width: var(--dt-touch-target);
     min-height: var(--dt-touch-target);
+    margin-block: calc((var(--dt-h2-line-height) - var(--dt-touch-target)) / 2);
+    margin-inline-end: calc((var(--dt-control-height) - var(--dt-touch-target)) / 2 - var(--dt-space-2));
     padding: 0;
     color: var(--dt-ink-muted);
+}
+
+/*
+    The hover surface, drawn at control height rather than across the whole hit area: a 2.75rem
+    square nearly fills the head and reads as a second band, where a control-height one matches
+    the buttons in the foot. A pseudo-element, so the target stays the size it is.
+*/
+.dt-dialog-dismiss::before {
+    content: "";
+    position: absolute;
+    inset: 50% auto auto 50%;
+    width: var(--dt-control-height);
+    height: var(--dt-control-height);
+    transform: translate(-50%, -50%);
+    border-radius: var(--dt-radius-md);
+    background-color: transparent;
+    transition: background-color 100ms ease-out;
+}
+
+/* The glyph above the surface it now sits on. */
+.dt-dialog-dismiss ::deep .dt-icon {
+    position: relative;
+}
+
+/* Pointer devices only: on a touch screen `:hover` sticks to whatever was last tapped. */
+@media (hover: hover) {
+    .dt-dialog-dismiss:hover {
+        color: var(--dt-ink);
+    }
+
+    .dt-dialog-dismiss:hover::before {
+        background-color: var(--dt-surface-sunken);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dt-dialog-dismiss::before {
+        transition: none;
+    }
 }
 
 .dt-dialog-body {
@@ -120,7 +169,8 @@
     flex-wrap: wrap-reverse;
     justify-content: flex-start;
     gap: var(--dt-space-2);
-    padding: var(--dt-space-4) var(--dt-space-5) var(--dt-space-5);
+    /* Even above and below: the buttons sit centred in the band rather than riding high in it. */
+    padding: var(--dt-space-3) var(--dt-space-5);
     border-top: var(--dt-border-width) solid var(--dt-border);
 }
 
