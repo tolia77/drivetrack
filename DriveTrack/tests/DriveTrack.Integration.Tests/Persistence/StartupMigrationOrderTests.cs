@@ -3,7 +3,7 @@ using DriveTrack.Integration.Tests.Support;
 namespace DriveTrack.Integration.Tests.Persistence;
 
 /// <summary>
-/// AD-20's ordering guarantee: migrations are applied at container start <em>before</em> the
+/// The migration ordering guarantee: migrations are applied at container start <em>before</em> the
 /// web host accepts requests. MigrationPipelineTests proves the migrator works; this proves
 /// the composition root still calls it, and still calls it first. Without this, deleting the
 /// await from Program.cs leaves the rest of the suite green and ships an app that serves
@@ -23,14 +23,14 @@ public class StartupMigrationOrderTests
     [Fact]
     public void Composition_root_never_uses_EnsureCreated()
     {
-        // AD-20: the schema comes only from migrations.
+        // The schema comes only from migrations.
         Assert.DoesNotContain("EnsureCreated", ProgramSource, StringComparison.Ordinal);
     }
 
     [Fact]
     public void No_source_file_under_src_calls_EnsureCreated()
     {
-        // AD-20 says EnsureCreated appears nowhere, not only in the composition root, and
+        // EnsureCreated appears nowhere, not only in the composition root, and
         // Infrastructure is where someone would actually write it. The leading dot is what
         // separates a call from the prose in DatabaseMigrator's documentation.
         var root = RepositoryLayout.Source.FullName;

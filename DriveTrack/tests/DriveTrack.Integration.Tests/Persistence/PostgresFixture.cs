@@ -6,7 +6,7 @@ namespace DriveTrack.Integration.Tests.Persistence;
 
 /// <summary>
 /// A real PostgreSQL 18 container, started once for the whole assembly. The migration
-/// fidelity requirement (AD-20, NFR-18) cannot be verified against an in-memory provider,
+/// fidelity requirement cannot be verified against an in-memory provider,
 /// so the tests never use one.
 /// <para>
 /// Bound as an assembly fixture rather than a collection fixture on purpose. A collection is
@@ -18,7 +18,7 @@ namespace DriveTrack.Integration.Tests.Persistence;
 /// <para>
 /// <b>The container is built and started lazily, on the first request for a connection string,
 /// and that is load-bearing rather than an optimization.</b> An assembly fixture is constructed
-/// for every run of this assembly, including the single filtered run the NFR-29 design-token
+/// for every run of this assembly, including the single filtered run the design-token
 /// gate performs from <c>AfterTargets="Build"</c>. That gate scans files and reads the compiled
 /// theme; it touches no database. Building the container eagerly made <c>dotnet build</c> itself
 /// fail on any machine without Docker — note that <c>PostgreSqlBuilder.Build()</c> validates the

@@ -10,9 +10,9 @@ using Npgsql;
 namespace DriveTrack.Integration.Tests.Configuration;
 
 /// <summary>
-/// DW-6 at both ends: the <c>Secure</c> attribute a running host actually writes onto
-/// <c>drivetrack.session</c>, and the refusal that keeps a value nobody meant from reaching the
-/// cookie handler.
+/// The session cookie's Secure policy at both ends: the <c>Secure</c> attribute a running host
+/// actually writes onto <c>drivetrack.session</c>, and the refusal that keeps a value nobody meant
+/// from reaching the cookie handler.
 /// <para>
 /// The two <c>Set-Cookie</c> cases are what make the knob load-bearing. A suite that only asserted
 /// the start-up check would stay green if the configured value were read, validated and then never
@@ -29,9 +29,9 @@ namespace DriveTrack.Integration.Tests.Configuration;
 public class SessionCookieTests(PostgresFixture postgres)
 {
     /// <summary>
-    /// Syntactically valid and deliberately unreachable, so the cases that get past the check stop at
-    /// AD-20's migrator rather than finding - and migrating - a PostgreSQL instance that happens to
-    /// be running on the machine executing the suite.
+    /// Syntactically valid and deliberately unreachable, so the cases that get past the check stop
+    /// at the startup migrator rather than finding - and migrating - a PostgreSQL instance that
+    /// happens to be running on the machine executing the suite.
     /// </summary>
     private const string UnreachableHost = "127.0.0.1";
 
@@ -83,8 +83,8 @@ public class SessionCookieTests(PostgresFixture postgres)
     [InlineData("always")]
     public async Task With_Always_configured_the_session_cookie_carries_the_secure_attribute(string configured)
     {
-        // The point of the story. The request is plain HTTP exactly as above, so the only thing that
-        // can have changed the header is the configured policy reaching the cookie handler.
+        // The point of the setting. The request is plain HTTP exactly as above, so the only thing
+        // that can have changed the header is the configured policy reaching the cookie handler.
         //
         // The lower-case spelling is here rather than only among the start-up cases below because
         // "accepted at start-up" and "applied to the cookie" are different claims: a match that
@@ -133,7 +133,7 @@ public class SessionCookieTests(PostgresFixture postgres)
         // The null row is the absent-key branch at the same surface, and it is the only place that
         // branch is observable: over plain HTTP a default of None would look exactly like the
         // SameAsRequest the code returns, so the unconfigured case above would pass on a host that
-        // had quietly stopped marking the cookie Secure for every deployment predating this story.
+        // had quietly stopped marking the cookie Secure for every deployment that sets nothing.
         var cancellationToken = TestContext.Current.CancellationToken;
 
         var settings = configured is null ? null : Configured(configured);
@@ -250,7 +250,7 @@ public class SessionCookieTests(PostgresFixture postgres)
 
         // And the default it supplies has to be a value the check accepts, for the reason the
         // .env.example case above exists: this is the value a container actually boots with whenever
-        // the operator's .env says nothing, which is every .env written before this story.
+        // the operator's .env says nothing, which is every .env written before the setting existed.
         var defaulted = forwarded[prefix.Length..^1];
 
         AssertStoppedAtTheDatabase(StartupFailure(defaulted));
@@ -746,7 +746,7 @@ public class SessionCookieTests(PostgresFixture postgres)
     /// <para>
     /// Both halves are load-bearing. Absence alone would pass on a host that failed earlier for some
     /// unrelated reason, or that threw nothing at all; the database failure is positive evidence that
-    /// the host was built and reached AD-20's migrator, which is the first thing after
+    /// the host was built and reached the startup migrator, which is the first thing after
     /// <c>builder.Build()</c> and well past the check under test.
     /// </para>
     /// </summary>

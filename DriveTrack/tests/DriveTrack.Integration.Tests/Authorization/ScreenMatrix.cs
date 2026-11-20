@@ -14,7 +14,7 @@ namespace DriveTrack.Integration.Tests.Authorization;
 internal enum ScreenRefusal
 {
     /// <summary>
-    /// Nobody is refused. FR-99's landing page, the two account forms, and the three dead ends a
+    /// Nobody is refused. The landing page, the two account forms, and the three dead ends a
     /// refused or lost caller is sent to — which must not themselves refuse anyone, or a refusal
     /// becomes a loop.
     /// </summary>
@@ -29,7 +29,7 @@ internal enum ScreenRefusal
     /// <summary>
     /// A bare <c>[Authorize]</c>, on purpose. The page renders for any signed-in caller and the
     /// service it calls is what refuses — pinned by <c>AdministrationScreenTests</c> and deliberately
-    /// not changed here (AD-2). The refusal itself is asserted where the capability is reachable:
+    /// not changed here. The refusal itself is asserted where the capability is reachable:
     /// on the REST route that calls the same service method, in <c>EndpointMatrix</c>, for five of
     /// the six — and over the hub, in <c>HubBoundaryTests</c>, for <c>/chat</c>, whose
     /// <c>ChatService</c> has no REST route at all and therefore no row in that table.
@@ -56,7 +56,7 @@ internal static class ScreenMatrix
     /// <summary>Every routable page, one row each.</summary>
     public static readonly IReadOnlyList<ScreenRow> Rows =
     [
-        // ---- FR-99, FR-1, FR-4, FR-79, FR-80: the pages with no caller to judge. -------------
+        // ---- The pages with no caller to judge. ----------------------------------------------
         Open("/"),
         Open("/sign-in"),
         Open("/register"),
@@ -73,7 +73,7 @@ internal static class ScreenMatrix
         Router("/my-shifts", UserRole.Driver),
         Router("/my-deliveries", UserRole.Driver, UserRole.Client),
 
-        // ---- Bare [Authorize] on purpose: the service is the refusal (AD-2). -----------------
+        // ---- Bare [Authorize] on purpose: the service is the refusal. ------------------------
         // Each row names the capability the first load calls and the guard member inside it that
         // does the refusing, so "the service refuses instead" is a checkable pairing rather than a
         // sentence in a comment.
@@ -139,7 +139,7 @@ internal static class ScreenMatrix
 /// <param name="Allowed">
 /// The roles the page itself admits. Every one of the four for a page whose refusal is service-side:
 /// the screen renders and the capability behind it answers, which is the decision
-/// <c>AdministrationScreenTests</c> pins and this story leaves alone.
+/// <c>AdministrationScreenTests</c> pins and this matrix leaves alone.
 /// </param>
 /// <param name="Service">
 /// <c>Type.Method</c> of the Application method the page's first load calls, for a page whose

@@ -11,7 +11,8 @@ using DriveTrack.Integration.Tests.Support;
 namespace DriveTrack.Integration.Tests.Notifications;
 
 /// <summary>
-/// FR-28's read side over HTTP: the log an administrator opens, and the three roles that cannot.
+/// The status-change email log's read side over HTTP: the log an administrator opens, and the three
+/// roles that cannot.
 /// <para>
 /// The rows are written the way the product writes them — two status changes through the real
 /// endpoint, drained through the real worker — rather than inserted by hand. A hand-written row
@@ -89,7 +90,7 @@ public class NotificationLogTests(PostgresFixture postgres)
             Assert.Equal(deliveryId, row.GetProperty("deliveryId").GetInt32());
             Assert.Equal(customer.Email, row.GetProperty("recipient").GetString());
 
-            // AD-21: both enums cross the wire as their member names.
+            // Both enums cross the wire as their member names.
             Assert.Equal(
                 nameof(NotificationKind.StatusChange),
                 row.GetProperty("kind").GetString());
@@ -105,7 +106,7 @@ public class NotificationLogTests(PostgresFixture postgres)
     [Fact]
     public async Task The_log_answers_one_page_and_the_offset_reaches_the_second()
     {
-        // NFR-27 over the table that most needed it: it grows by a row per status change per
+        // Paging over the table that most needed it: it grows by a row per status change per
         // delivery and nothing prunes it, so an unbounded read is the whole history materialised
         // every time the screen is opened. A hundred and fifty rows is one full page and half of
         // another, which is what makes both halves of the claim assertable.
@@ -143,9 +144,9 @@ public class NotificationLogTests(PostgresFixture postgres)
     [InlineData(-1, null)]
     public async Task A_page_outside_the_bounds_is_refused_before_any_query(int? offset, int? limit)
     {
-        // NFR-27: validated rather than passed through. A limit of zero is a refusal, not "give me
-        // nothing", which is also why the controller's parameters are nullable - and why each case
-        // sends only the parameter it is about, leaving the other one omitted.
+        // Paging is validated rather than passed through. A limit of zero is a refusal, not "give
+        // me nothing", which is also why the controller's parameters are nullable - and why each
+        // case sends only the parameter it is about, leaving the other one omitted.
         //
         // The over-limit case is Maximum + 1 rather than a literal: a hard-coded "101" would quietly
         // become a valid page the day the maximum grew, and this theory would go on passing while
@@ -229,11 +230,11 @@ public class NotificationLogTests(PostgresFixture postgres)
     [Fact]
     public async Task Nobody_but_an_administrator_can_reach_the_log()
     {
-        // FR-12: the navigation hides the link from three roles, and this is the decision the
+        // The navigation hides the link from three roles, and this is the decision the
         // hiding is a convenience for. A dispatcher reaches it by typing the address, and the guard
         // inside the service is what answers - not the missing menu entry.
         //
-        // A dispatcher is the case worth naming: AD-4 makes an admin satisfy every check, so
+        // A dispatcher is the case worth naming: an admin satisfies every role check, so
         // RequireRole(Dispatcher) would have admitted them, and the service says
         // RequireRole(Admin) precisely so it does not.
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -264,7 +265,7 @@ public class NotificationLogTests(PostgresFixture postgres)
     [Fact]
     public async Task An_anonymous_caller_is_told_to_sign_in_rather_than_refused()
     {
-        // FR-13: no session and the wrong session are different failures, and the caller's next move
+        // No session and the wrong session are different failures, and the caller's next move
         // differs with them.
         var cancellationToken = TestContext.Current.CancellationToken;
 
@@ -298,7 +299,7 @@ public class NotificationLogTests(PostgresFixture postgres)
             status,
             cancellationToken,
 
-            // FR-120: Delivered needs a proof or a note, and this suite is about what the notice
+            // Delivered needs a proof or a note, and this suite is about what the notice
             // records rather than about how a delivery is closed. The note is the arm that needs no
             // object store.
             note: status == DeliveryStatus.Delivered ? "Передано отримувачу" : null);

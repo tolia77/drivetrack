@@ -13,14 +13,15 @@ using Microsoft.Extensions.DependencyInjection;
 namespace DriveTrack.Integration.Tests.Reviews;
 
 /// <summary>
-/// Story 7.2's I/O matrix over HTTP, against the real <c>Program.cs</c> pipeline with the real JWT
-/// scheme (FR-59 to FR-67).
+/// The review I/O matrix over HTTP, against the real <c>Program.cs</c> pipeline with the real JWT
+/// scheme.
 /// <para>
 /// These claims are only true over the wire and against the schema. "An administrator may moderate
 /// a review and may not write one" is a property of the guard reached through the whole adapter,
 /// and "two authors racing for one delivery produce exactly one row" is a property of
-/// <c>ix_reviews_delivery_id</c> that nothing in C# can assert — which is the whole point of DR-6:
-/// the original enforced it with an <c>if</c>, and an <c>if</c> is what concurrency defeats.
+/// <c>ix_reviews_delivery_id</c> that nothing in C# can assert — which is the whole point of a
+/// database constraint: the original enforced it with an <c>if</c>, and an <c>if</c> is what
+/// concurrency defeats.
 /// </para>
 /// </summary>
 public class ReviewTests(PostgresFixture postgres)
@@ -30,7 +31,7 @@ public class ReviewTests(PostgresFixture postgres)
     {
         // The first row of the matrix, end to end: the review is persisted with the caller's client
         // id - which is the guard's answer and never a field of the payload - and with the injected
-        // clock's instant (AD-13).
+        // clock's instant.
         var cancellationToken = TestContext.Current.CancellationToken;
 
         // Truncated to the microsecond PostgreSQL actually stores, so the assertion is about the
@@ -55,7 +56,7 @@ public class ReviewTests(PostgresFixture postgres)
         Assert.Equal(carried.DeliveryId, created.GetProperty("deliveryId").GetInt32());
         Assert.Equal(4, created.GetProperty("rating").GetInt32());
 
-        // FR-98: the band travels with the number, decided by RatingScale in Domain rather than by
+        // The band travels with the number, decided by RatingScale in Domain rather than by
         // a class name a screen picked.
         Assert.Equal(nameof(RatingBand.Favourable), created.GetProperty("band").GetString());
 
@@ -70,7 +71,7 @@ public class ReviewTests(PostgresFixture postgres)
         Assert.Equal("водій був чемний", row.GetProperty("text").GetString());
         Assert.Equal(clock.Now, row.GetProperty("createdAt").GetDateTimeOffset());
 
-        // And it is on the dispatch list too, with both parties named (FR-65).
+        // And it is on the dispatch list too, with both parties named.
         var all = await ReviewApi.RowsAsync(
             await ReviewApi.ListAsync(client, dispatcher, cancellationToken),
             cancellationToken);
@@ -84,9 +85,9 @@ public class ReviewTests(PostgresFixture postgres)
     [Fact]
     public async Task A_failed_delivery_can_be_reviewed_too()
     {
-        // FR-61 names two end states, not one. A parcel that never arrived is exactly the delivery
-        // a client has something to say about, so refusing a review here would refuse the case the
-        // requirement is most about.
+        // A review follows either of two end states, not one. A parcel that never arrived is
+        // exactly the delivery a client has something to say about, so refusing a review here would
+        // refuse the case the requirement is most about.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -108,10 +109,10 @@ public class ReviewTests(PostgresFixture postgres)
     [Fact]
     public async Task Two_authors_racing_for_one_delivery_leave_exactly_one_row_and_one_409()
     {
-        // DR-6, AD-20, and the row of the matrix that is the reason the rule is a unique index
-        // rather than a lookup. Both requests are in flight before either has committed, so a
-        // pre-insert "does a review exist" check would pass in both - which is precisely how the
-        // original system ended up with two reviews on one delivery.
+        // One review per delivery, and the row of the matrix that is the reason the rule is a
+        // unique index rather than a lookup. Both requests are in flight before either has
+        // committed, so a pre-insert "does a review exist" check would pass in both - which is
+        // precisely how the original system ended up with two reviews on one delivery.
         //
         // There is no prior concurrency test in this suite to copy, so this is the shape: fire
         // both, sort the answers, and assert the pair rather than which one won. Which request
@@ -136,7 +137,7 @@ public class ReviewTests(PostgresFixture postgres)
 
             Assert.Equal([HttpStatusCode.OK, HttpStatusCode.Conflict], statuses);
 
-            // NFR-3: the loser is told the contract's code, and nothing of the index that produced
+            // The loser is told the contract's code, and nothing of the index that produced
             // it - no SQLSTATE, no constraint name.
             var loser = responses.Single(response => response.StatusCode == HttpStatusCode.Conflict);
 
@@ -168,7 +169,7 @@ public class ReviewTests(PostgresFixture postgres)
     [InlineData(DeliveryStatus.InTransit)]
     public async Task A_delivery_that_has_not_been_carried_cannot_be_reviewed(DeliveryStatus status)
     {
-        // FR-61. A verdict on a journey that has not happened yet, refused with a code of its own
+        // A verdict on a journey that has not happened yet, refused with a code of its own
         // rather than a generic one: the caller's next move is to pick a different delivery, and a
         // COMMON_VALIDATION_FAILED naming a field would not say that.
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -201,7 +202,7 @@ public class ReviewTests(PostgresFixture postgres)
         // 404 and not 403: a client who is told "forbidden" has learned that delivery 7 exists and
         // is somebody's. The scoped read answers the same "not found" for a row that is missing and
         // for one that is merely not theirs, so the non-disclosure falls out of the WHERE clause
-        // rather than having to be remembered here (AD-3, FR-27).
+        // rather than having to be remembered here.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -234,9 +235,9 @@ public class ReviewTests(PostgresFixture postgres)
     [Fact]
     public async Task Neither_an_administrator_nor_a_dispatcher_may_author_a_review()
     {
-        // The PRD retired FR-97, and this is the assertion that says so. It is the second place
-        // AD-4's admin override deliberately stops: an administrator authoring customer feedback is
-        // manufacturing it rather than moderating it - and moderation, which they do have, is
+        // Only a client authors a review, and this is the assertion that says so. It is the second
+        // place the admin override deliberately stops: an administrator authoring customer feedback
+        // is manufacturing it rather than moderating it - and moderation, which they do have, is
         // asserted below.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
@@ -306,10 +307,11 @@ public class ReviewTests(PostgresFixture postgres)
     [Fact]
     public async Task A_client_is_refused_the_moderation_list_rather_than_shown_their_own_rows()
     {
-        // FR-65 is a dispatcher's and an administrator's, and the refusal is the half that is easy
-        // to get wrong: narrowing /api/reviews to the caller's own rows would look right on a
-        // client's screen and would quietly make the route mean two different things. The author's
-        // own list is a separate route with a separate type, so this one refuses.
+        // Reading every review is a dispatcher's and an administrator's, and the refusal is the
+        // half that is easy to get wrong: narrowing /api/reviews to the caller's own rows would
+        // look right on a client's screen and would quietly make the route mean two different
+        // things. The author's own list is a separate route with a separate type, so this one
+        // refuses.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -335,8 +337,8 @@ public class ReviewTests(PostgresFixture postgres)
     [Fact]
     public async Task An_anonymous_caller_is_refused_before_anything_is_read()
     {
-        // 401 and not 403, and FR-13 branches on exactly this code: a caller with no credentials is
-        // not one who lacks permission.
+        // 401 and not 403, and session expiry branches on exactly this code: a caller with no
+        // credentials is not one who lacks permission.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -354,7 +356,7 @@ public class ReviewTests(PostgresFixture postgres)
     [InlineData(6)]
     public async Task A_rating_off_the_scale_is_refused_as_a_field_error(int rating)
     {
-        // NFR-4: the refusal names the field the caller *sent* - camelCase, so a form can attach
+        // The refusal names the field the caller *sent* - camelCase, so a form can attach
         // the message to the control that produced it - and the message is the catalogue's sentence
         // for REVIEW_RATING_OUT_OF_RANGE rather than the generic one, which is what tells "off the
         // scale" from "missing text" on a screen that only ever shows one of them.
@@ -383,7 +385,7 @@ public class ReviewTests(PostgresFixture postgres)
     public async Task An_empty_or_oversized_comment_is_refused_before_the_column_sees_it()
     {
         // The validator's ceiling is the column's, which is what turns a truncation PostgreSQL
-        // would raise into a 422 naming the field (NFR-2, NFR-4).
+        // would raise into a 422 naming the field.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -451,10 +453,11 @@ public class ReviewTests(PostgresFixture postgres)
     [Fact]
     public async Task An_edit_is_judged_by_the_rules_that_judged_the_write()
     {
-        // AD-23's merged state has to be judged, not merely built. Without this the state validator
-        // could be deleted and the suite would stay green while a moderator emptied a review's text
-        // or drove 2001 characters at a column that holds 2000 - which PostgreSQL answers as a 500,
-        // not as the 422 naming the field the create path gives for exactly the same content.
+        // The merged update state has to be judged, not merely built. Without this the state
+        // validator could be deleted and the suite would stay green while a moderator emptied a
+        // review's text or drove 2001 characters at a column that holds 2000 - which PostgreSQL
+        // answers as a 500, not as the 422 naming the field the create path gives for exactly the
+        // same content.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -508,10 +511,10 @@ public class ReviewTests(PostgresFixture postgres)
     [InlineData("?offset=-1")]
     public async Task A_page_outside_the_bounds_is_refused_before_any_query(string query)
     {
-        // NFR-27 on both review routes: validated rather than passed through, so ?limit=2000000 is
-        // a refusal and not an unbounded read. A limit of zero is refused too - it is a malformed
-        // request, not a request for nothing - which is why the controller's parameters are
-        // nullable and only an absent one means "the default page".
+        // Paging on both review routes is validated rather than passed through, so ?limit=2000000
+        // is a refusal and not an unbounded read. A limit of zero is refused too - it is a
+        // malformed request, not a request for nothing - which is why the controller's parameters
+        // are nullable and only an absent one means "the default page".
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -543,9 +546,9 @@ public class ReviewTests(PostgresFixture postgres)
     [Fact]
     public async Task An_author_edits_and_deletes_their_own_review_and_nobody_elses()
     {
-        // FR-63 from the author's side, and the refusal that pairs with them: a second
-        // client is not "a client" for this row, which is the distinction RequireReviewOwner makes
-        // and RequireRole could not.
+        // Editing your own review, from the author's side, and the refusal that pairs with them: a
+        // second client is not "a client" for this row, which is the distinction RequireReviewOwner
+        // makes and RequireRole could not.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -599,8 +602,8 @@ public class ReviewTests(PostgresFixture postgres)
     [Fact]
     public async Task A_review_that_is_not_there_refuses_a_client_before_it_answers_an_administrator()
     {
-        // AD-3's ordering, pinned as the two different answers it produces. UpdateAsync and
-        // DeleteAsync call the guard with the loaded row's owner - a null for a row that is not
+        // Load-then-guard ordering, pinned as the two different answers it produces. UpdateAsync
+        // and DeleteAsync call the guard with the loaded row's owner - a null for a row that is not
         // there - and only then answer 404. Swapping the two statements would ship green against
         // every other test in this class and would let any client walk the id space asking which
         // reviews exist: a 403 where a 404 came back is "somebody else wrote that one".
@@ -628,7 +631,7 @@ public class ReviewTests(PostgresFixture postgres)
                 delete, HttpStatusCode.Forbidden, ErrorCode.AUTH_FORBIDDEN, cancellationToken);
         }
 
-        // An administrator passes the guard by rule (AD-4), so for them the next question really is
+        // An administrator passes the guard by rule, so for them the next question really is
         // whether the row exists - and the honest answer is that it does not.
         using (var edit = await ReviewApi.EditAsync(
                    client, admin, Missing, 5, "нема такого", cancellationToken))
@@ -647,8 +650,8 @@ public class ReviewTests(PostgresFixture postgres)
     [Fact]
     public async Task A_dispatcher_reads_every_review_and_may_change_none_of_them()
     {
-        // FR-65 against FR-66: the one role whose answer differs between reading and writing, which
-        // is why the collection's guard and the row's guard are different members.
+        // Reading against moderating: the one role whose answer differs between reading and
+        // writing, which is why the collection's guard and the row's guard are different members.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -685,9 +688,9 @@ public class ReviewTests(PostgresFixture postgres)
     [Fact]
     public async Task An_administrator_moderates_any_review_they_did_not_write()
     {
-        // AD-4 as it applies to the half of the pair it does apply to. The same caller refused in
-        // Neither_an_administrator_nor_a_dispatcher_may_author_a_review edits and deletes here, and
-        // the two tests together are the whole of the product decision.
+        // The admin override as it applies to the half of the pair it does apply to. The same
+        // caller refused in Neither_an_administrator_nor_a_dispatcher_may_author_a_review edits and
+        // deletes here, and the two tests together are the whole of the product decision.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -725,9 +728,9 @@ public class ReviewTests(PostgresFixture postgres)
     [Fact]
     public async Task An_author_reads_only_the_reviews_they_wrote()
     {
-        // FR-64, and AD-3's reason for narrowing in SQL rather than filtering a page: the scope is a
-        // WHERE, so a second client's rows are not fetched and then removed - they were never in
-        // the answer.
+        // An author's own list, and the reason for narrowing in SQL rather than filtering a page:
+        // the scope is a WHERE, so a second client's rows are not fetched and then removed - they
+        // were never in the answer.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -832,11 +835,11 @@ public class ReviewTests(PostgresFixture postgres)
     [Fact]
     public async Task A_review_written_past_the_first_page_is_still_the_first_row_a_moderator_sees()
     {
-        // DW-46 at the surface that matters. The ordering test above orders three rows, so it would
-        // pass on a list of any size; this one crosses the default page boundary, which is where the
-        // defect actually lived: nobody pages past the first page, so with an ascending order the
-        // newest review sat on a page no moderator would ever ask for. One more than a full page is
-        // the smallest seed that can tell the two orders apart.
+        // Newest-first at the surface that matters. The ordering test above orders three rows, so
+        // it would pass on a list of any size; this one crosses the default page boundary, which is
+        // where the defect actually lived: nobody pages past the first page, so with an ascending
+        // order the newest review sat on a page no moderator would ever ask for. One more than a
+        // full page is the smallest seed that can tell the two orders apart.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -874,7 +877,7 @@ public class ReviewTests(PostgresFixture postgres)
     /// <summary>
     /// The single message the envelope attached to one field. Asserted as a sentence rather than as
     /// a key, because the key is what the validator says and the sentence is what a user reads —
-    /// NFR-3 puts exactly one localized message on the wire and nothing else.
+    /// the envelope puts exactly one localized message on the wire and nothing else.
     /// </summary>
     private static async Task<string> FieldMessageAsync(
         HttpResponseMessage response,

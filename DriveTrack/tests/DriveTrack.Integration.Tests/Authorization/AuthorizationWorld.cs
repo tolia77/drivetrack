@@ -34,7 +34,7 @@ namespace DriveTrack.Integration.Tests.Authorization;
 /// <para>
 /// Built with <c>useProbeAuthentication: false</c>, so the scheme under test is the production
 /// policy scheme — bearer under <c>/api</c>, cookie everywhere else — rather than the probe handler
-/// the Epic 1 envelope suites install.
+/// the envelope suites install.
 /// </para>
 /// </summary>
 internal sealed class AuthorizationWorld : IAsyncDisposable
@@ -54,7 +54,7 @@ internal sealed class AuthorizationWorld : IAsyncDisposable
 
     /// <summary>
     /// The seeded driver's family name: a distinctive string, so <c>DisclosureBoundaryTests</c> can
-    /// look for it in a raw response body rather than argue from the shape of a DTO (AD-17).
+    /// look for it in a raw response body rather than argue from the shape of a DTO.
     /// </summary>
     public const string DriverALastName = "Нездоланний";
 
@@ -66,7 +66,7 @@ internal sealed class AuthorizationWorld : IAsyncDisposable
 
     /// <summary>
     /// The seeded client's telephone number — distinctive for the same reason the driver's family
-    /// name is, and on the other side of the disclosure rule (FR-27).
+    /// name is, and on the other side of the disclosure rule.
     /// </summary>
     public const string ClientAPhone = "+380671112233";
 
@@ -89,7 +89,7 @@ internal sealed class AuthorizationWorld : IAsyncDisposable
     /// <summary>An HTTP client onto that host. Thread-safe, and shared by every suite here.</summary>
     public HttpClient Client { get; }
 
-    /// <summary>The seeded administrator's bearer token (FR-9).</summary>
+    /// <summary>The seeded administrator's bearer token.</summary>
     public string AdminToken { get; private init; } = string.Empty;
 
     /// <summary>A dispatcher's bearer token.</summary>
@@ -112,7 +112,7 @@ internal sealed class AuthorizationWorld : IAsyncDisposable
 
     /// <summary>
     /// Client A's <em>user</em> row id — which is what <c>RequireSelf</c> compares and is a
-    /// different id from the client row one a delivery refers to them by (AD-22).
+    /// different id from the client row one a delivery refers to them by.
     /// </summary>
     public int ClientAUserId { get; private init; }
 
@@ -154,7 +154,7 @@ internal sealed class AuthorizationWorld : IAsyncDisposable
     /// <para>
     /// A static rather than a second assembly fixture injected into the first: xUnit constructs an
     /// assembly fixture for <em>every</em> run of this assembly, including the single filtered run
-    /// the NFR-29 design-token gate performs from <c>AfterTargets="Build"</c>, which touches no
+    /// the design-token gate performs from <c>AfterTargets="Build"</c>, which touches no
     /// database at all. <see cref="AuthorizationWorldFixture"/> is what disposes this, and it is
     /// deliberately inert until something here has actually asked for a world.
     /// </para>
@@ -323,7 +323,7 @@ internal sealed class AuthorizationWorld : IAsyncDisposable
         string connectionString,
         CancellationToken cancellationToken)
     {
-        // AD-12's outbound ports answered inside the process. The geocoder and the mail transport
+        // The outbound ports answered inside the process. The geocoder and the mail transport
         // are reached by the side effects a seeded delivery queues, and the object store by the
         // proof capture below; a sweep that let any of them out would assert against somebody
         // else's uptime.
@@ -496,8 +496,9 @@ internal sealed class AuthorizationWorld : IAsyncDisposable
     }
 
     /// <summary>
-    /// Registers a client through FR-1's public endpoint and reads both of their ids back: the
-    /// client row a delivery refers to them by, and the user row <c>RequireSelf</c> compares.
+    /// Registers a client through the public registration endpoint and reads both of their ids
+    /// back: the client row a delivery refers to them by, and the user row <c>RequireSelf</c>
+    /// compares.
     /// </summary>
     private static async Task<(DeliveryApi.ClientCaller Caller, int UserId)> ClientAsync(
         HttpClient client,
@@ -603,7 +604,7 @@ internal sealed class AuthorizationWorld : IAsyncDisposable
     /// One line already in driver A's conversation, written straight into the table.
     /// <para>
     /// Seeded rather than sent, because sending it would need a dispatcher's hub connection and the
-    /// only claim it supports here is FR-75's: that history is unreachable without credentials.
+    /// only claim it supports here is that history is unreachable without credentials.
     /// </para>
     /// </summary>
     private static async Task<int> SeedMessageAsync(

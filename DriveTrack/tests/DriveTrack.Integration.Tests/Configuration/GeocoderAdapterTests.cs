@@ -15,12 +15,12 @@ namespace DriveTrack.Integration.Tests.Configuration;
 /// pointed at a loopback server serving canned Nominatim JSON.
 /// <para>
 /// Every other suite in this solution replaces this port with a fake, which is right — a test of
-/// FR-95's non-blocking promise has no business depending on somebody else's uptime. But it leaves
-/// the adapter itself unexecuted, and the ways it can be wrong are all silent: swap <c>lat</c> and
-/// <c>lon</c> in the query string, read <c>name</c> instead of <c>display_name</c>, or drop the
-/// <c>User-Agent</c> Nominatim insists on, and the whole solution stays green while a deployment
-/// resolves nothing — indistinguishable, from the outside, from DR-11's perfectly legitimate absent
-/// address. So the bytes the adapter sends and the bytes it reads back are asserted here.
+/// the non-blocking address promise has no business depending on somebody else's uptime. But it
+/// leaves the adapter itself unexecuted, and the ways it can be wrong are all silent: swap
+/// <c>lat</c> and <c>lon</c> in the query string, read <c>name</c> instead of <c>display_name</c>,
+/// or drop the <c>User-Agent</c> Nominatim insists on, and the whole solution stays green while a
+/// deployment resolves nothing — indistinguishable, from the outside, from a perfectly legitimate
+/// absent address. So the bytes the adapter sends and the bytes it reads back are asserted here.
 /// </para>
 /// <para>
 /// No database and no container: <c>AddInfrastructure</c> needs a connection string to be present,
@@ -138,7 +138,7 @@ public class GeocoderAdapterTests : IDisposable
     [Fact]
     public async Task A_refusal_and_a_body_that_is_not_json_both_answer_no_address()
     {
-        // DR-11 has one answer for every way a lookup can fail, and the port promises the adapter
+        // There is one answer for every way a lookup can fail, and the port promises the adapter
         // never throws: nothing above it has a caller left to tell.
         var cancellationToken = TestContext.Current.CancellationToken;
 
@@ -395,7 +395,7 @@ public class GeocoderAdapterTests : IDisposable
     [Fact]
     public async Task A_lookup_cancelled_while_it_waits_for_its_turn_answers_no_address_and_says_so()
     {
-        // DR-11 leaves the caller one answer for every failure, which is right - nothing above the
+        // The caller gets one answer for every failure, which is right - nothing above the
         // port could act on the difference. But an operator can, and "the gate gave up" and "the
         // provider has no address for those coordinates" are different problems with different
         // fixes. The log is the only place they are distinguishable, so it is asserted.
@@ -431,7 +431,7 @@ public class GeocoderAdapterTests : IDisposable
         // The wait is bounded by the lookup's own timeout, and it has to be: a dispatcher's search
         // shares the quota with a queue of reverse lookups, and without a budget it would sit at
         // the gate behind all of them - well past the deadline the deployment already set for one
-        // lookup. Nothing waits for an address (FR-95), so giving up is the correct answer.
+        // lookup. Nothing waits for an address, so giving up is the correct answer.
         var cancellationToken = TestContext.Current.CancellationToken;
 
         await using var server = LoopbackHttpServer.Start(_ => new LoopbackHttpServer.CannedResponse(
@@ -527,7 +527,7 @@ public class GeocoderAdapterTests : IDisposable
     {
         // The three ways Nominatim says the pacing is wrong for it: 429 to a caller asking too
         // often, 403 to one it has decided is abusive, 503 when it is shedding load. Flattened to a
-        // null address each reads exactly like DR-11's legitimate absent one, and a deployment could
+        // null address each reads exactly like a legitimate absent one, and a deployment could
         // be refused every lookup it made without anything, anywhere, saying so.
         var cancellationToken = TestContext.Current.CancellationToken;
 
@@ -549,7 +549,7 @@ public class GeocoderAdapterTests : IDisposable
     [Fact]
     public async Task A_lookup_that_fails_before_an_answer_is_read_says_so_in_the_log()
     {
-        // The catch-all still answers null (DR-11), but a body that is not JSON - or a timeout, or a
+        // The catch-all still answers null, but a body that is not JSON - or a timeout, or a
         // host that will not resolve - must leave a trace, or it reads as an absent address forever.
         var cancellationToken = TestContext.Current.CancellationToken;
 

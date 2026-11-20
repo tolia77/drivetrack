@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore;
 namespace DriveTrack.Integration.Tests.Persistence;
 
 /// <summary>
-/// AD-20's invariants, each proved by attempting the write that must be refused and reading the
-/// SQLSTATE and constraint name the database answers with.
+/// The schema's invariants, each proved by attempting the write that must be refused and reading
+/// the SQLSTATE and constraint name the database answers with.
 /// <para>
 /// Every one of these could have been an <c>if</c> in a service, and in the original several
 /// were — which is precisely why they are here. A check that runs before the insert is defeated
@@ -150,9 +150,9 @@ public class SchemaConstraintTests(PostgresFixture postgres)
 
         var client = await Seed.ClientAsync(context, cancellationToken);
 
-        // One subtype row per user. AD-22's separation only means anything if the mapping from
-        // a user to its client row is a function; two rows would make "the caller's ClientId"
-        // ambiguous at exactly the point an ownership check reads it.
+        // One subtype row per user. The typed-identity separation only means anything if the
+        // mapping from a user to its client row is a function; two rows would make "the caller's
+        // ClientId" ambiguous at exactly the point an ownership check reads it.
         await using var second = await database.CreateContextAsync(cancellationToken);
         second.Clients.Add(new Client { UserId = client.UserId, PhoneNumber = "+380440000000" });
 
@@ -206,7 +206,7 @@ public class SchemaConstraintTests(PostgresFixture postgres)
         await context.SaveChangesAsync(cancellationToken);
 
         // Two different roles, so the composite primary key is satisfied and the only thing that
-        // can refuse the row is AD-4's unique index.
+        // can refuse the row is the one-role-per-user unique index.
         await using var second = await database.CreateContextAsync(cancellationToken);
         second.UserRoles.Add(new IdentityUserRole<int> { UserId = user.Id, RoleId = dispatcherRole.Id });
 
@@ -314,7 +314,7 @@ public class SchemaConstraintTests(PostgresFixture postgres)
 
         await using var context = await database.CreateContextAsync(cancellationToken);
 
-        // FR-100: either bound may stand alone, and both may be absent.
+        // Either bound may stand alone, and both may be absent.
         context.Deliveries.Add(Seed.NewDelivery());
         context.Deliveries.Add(Seed.NewDelivery(windowEarliestAt: Seed.Instant));
         context.Deliveries.Add(Seed.NewDelivery(windowLatestAt: Seed.Instant));

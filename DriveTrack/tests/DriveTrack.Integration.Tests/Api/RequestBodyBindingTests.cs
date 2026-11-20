@@ -17,14 +17,15 @@ using Microsoft.Extensions.Options;
 namespace DriveTrack.Integration.Tests.Api;
 
 /// <summary>
-/// A body that never bound answers 422 and not 500 (DW-9, DW-12, DW-47).
+/// A body that never bound answers 422 and not 500.
 /// <para>
-/// AD-7's first suppression means a failed body binding does not short-circuit: the argument is
-/// omitted, the action runs with a null command, and the <c>ArgumentNullException.ThrowIfNull</c>
-/// opening every Application write method used to surface as an unmodelled 500 - the caller's own
-/// malformed bytes reported as a defect of the server. <c>RequestBodyBindingFilter</c> refuses it
-/// first, and these rows assert the refusal on real routes rather than on a probe, because the
-/// claim is that it holds for every <c>[FromBody]</c> action and not for one contrived one.
+/// The envelope's first suppression means a failed body binding does not short-circuit: the
+/// argument is omitted, the action runs with a null command, and the
+/// <c>ArgumentNullException.ThrowIfNull</c> opening every Application write method used to surface
+/// as an unmodelled 500 - the caller's own malformed bytes reported as a defect of the server.
+/// <c>RequestBodyBindingFilter</c> refuses it first, and these rows assert the refusal on real
+/// routes rather than on a probe, because the claim is that it holds for every <c>[FromBody]</c>
+/// action and not for one contrived one.
 /// </para>
 /// </summary>
 public class RequestBodyBindingTests(PostgresFixture postgres)
@@ -86,7 +87,7 @@ public class RequestBodyBindingTests(PostgresFixture postgres)
 
         // Measured, not assumed: a payload truncated mid-property still carries a JSON path, and
         // the parser records it as `$.email`. So this row does name a field - and the name is one
-        // the caller's own bytes spelled, which is exactly what NFR-4 asks for. The guard here is
+        // the caller's own bytes spelled, which is exactly what a form needs. The guard here is
         // that it is *that* name and nothing invented: a key derived from the CLR type would fail.
         var fields = envelope.GetProperty("error").GetProperty("fields");
 
@@ -100,7 +101,7 @@ public class RequestBodyBindingTests(PostgresFixture postgres)
     {
         // The one shape that binds *successfully* to nothing: `null` is valid JSON, so the argument
         // is present and the value is null. Without the null arm of the filter's test this reaches
-        // the action and becomes the 500 the whole story is about.
+        // the action and becomes the 500 this suite is about.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await ApiFactory.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -137,9 +138,9 @@ public class RequestBodyBindingTests(PostgresFixture postgres)
     [Fact]
     public async Task A_wrong_typed_field_names_the_offending_property()
     {
-        // DW-47's measured case, on an authenticated route - the same answer as the anonymous one
-        // above, which is what makes this a pipeline fix rather than a per-route one. NFR-4: the
-        // key is the name the caller sent, so a form can attach the message to its own input.
+        // The measured case, on an authenticated route - the same answer as the anonymous one
+        // above, which is what makes this a pipeline fix rather than a per-route one. The key is
+        // the name the caller sent, so a form can attach the message to its own input.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -177,10 +178,11 @@ public class RequestBodyBindingTests(PostgresFixture postgres)
     [Fact]
     public async Task A_fractional_value_for_an_integer_field_is_refused()
     {
-        // DW-47's evidence was measured on this exact request, and an earlier review pass refuted
-        // it by reasoning that 3.5 "arrives at the action as the int default 0". It does not: the
-        // deserializer refuses the token, the whole body fails to bind, and before this filter the
-        // action ran with a null command. Kept as a row because the refutation was plausible.
+        // The original evidence was measured on this exact request, and an earlier review pass
+        // refuted it by reasoning that 3.5 "arrives at the action as the int default 0". It does
+        // not: the deserializer refuses the token, the whole body fails to bind, and before this
+        // filter the action ran with a null command. Kept as a row because the refutation was
+        // plausible.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -237,16 +239,16 @@ public class RequestBodyBindingTests(PostgresFixture postgres)
     [Fact]
     public async Task A_wrong_typed_optional_field_is_refused_but_names_nothing()
     {
-        // Measured, and the reason the promise in the intent is worded "where the model state
+        // Measured, and the reason the promise is worded "where the model state
         // carries the JSON path". OptionalJsonConverter reads its value through a nested
         // JsonSerializer.Deserialize, which starts a fresh path: the JsonException comes back with
         // Path `$` rather than `$.mileage`, so the input formatter records a key that carries no
         // property name and the filter has nothing to name. Measured directly: Optional<int> gives
         // `$`, a plain int in the same position gives `$.mileage`.
         //
-        // Every update route is AD-23 Optional-typed, so this is half the write surface answering
-        // 422 without an error.fields key - a real NFR-4 shortfall, carried in the spec's deferred
-        // list rather than patched here, because closing it means changing how the converter reads.
+        // Every update route is Optional-typed, so this is half the write surface answering 422
+        // without an error.fields key - a real shortfall in naming the offending field, left open
+        // rather than patched here, because closing it means changing how the converter reads.
         // Pinned so that closing it turns this row red rather than passing unnoticed.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
@@ -300,9 +302,10 @@ public class RequestBodyBindingTests(PostgresFixture postgres)
     [Fact]
     public async Task An_anonymous_caller_still_meets_401_before_this_refusal()
     {
-        // AD-3's floor, and the reason this is an action filter rather than anything earlier: an
-        // unbindable body on a route requiring authentication must answer 401, not 422. A 422 here
-        // would tell an anonymous caller that /api/vehicles exists and takes a body.
+        // The pipeline's authentication floor, and the reason this is an action filter rather than
+        // anything earlier: an unbindable body on a route requiring authentication must answer 401,
+        // not 422. A 422 here would tell an anonymous caller that /api/vehicles exists and takes a
+        // body.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -326,9 +329,10 @@ public class RequestBodyBindingTests(PostgresFixture postgres)
     {
         // The deliberate half of the precedence, pinned so that moving it is visible. A client may
         // not manage the fleet, and IAccessGuard would answer 403 - but there is no command to hand
-        // the service, so the adapter answers first. What AD-3 protects is an unauthorized caller
-        // learning something about stored state; "your JSON does not parse" is a fact about the
-        // caller's own bytes and discloses nothing. The 401 row above is the line that does not move.
+        // the service, so the adapter answers first. What the pipeline order protects is an
+        // unauthorized caller learning something about stored state; "your JSON does not parse" is
+        // a fact about the caller's own bytes and discloses nothing. The 401 row above is the line
+        // that does not move.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -348,7 +352,7 @@ public class RequestBodyBindingTests(PostgresFixture postgres)
     [Fact]
     public async Task An_unsupported_media_type_is_still_refused_as_415()
     {
-        // The framework's UnsupportedContentTypeFilter short-circuits before this story's filter
+        // The framework's UnsupportedContentTypeFilter short-circuits before the binding filter
         // runs, and must go on doing so: 415 says "send me different bytes", 422 says "send me
         // different values", and a caller acting on the wrong one re-sends the same request.
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -484,9 +488,10 @@ public class RequestBodyBindingTests(PostgresFixture postgres)
     /// Asserts the 422 envelope, and that nothing framework-shaped rode along with it.
     /// </summary>
     /// <remarks>
-    /// NFR-3 and NFR-14 are the point of the negative half: the pipeline knows the parser's
-    /// message, the JSON path and the CLR type of the command, and none of the three may reach a
-    /// client. Asserting only the code and status would leave that free to regress silently.
+    /// No internals and no untranslated text are the point of the negative half: the pipeline knows
+    /// the parser's message, the JSON path and the CLR type of the command, and none of the three
+    /// may reach a client. Asserting only the code and status would leave that free to regress
+    /// silently.
     /// </remarks>
     private static async Task<JsonElement> AssertRefusedAsync(
         HttpResponseMessage response,
@@ -533,9 +538,9 @@ public class RequestBodyBindingTests(PostgresFixture postgres)
     /// Asserts the refusal named no field at all.
     /// </summary>
     /// <remarks>
-    /// A bodiless request carries no JSON path, so the filter has no name for the input and NFR-4
-    /// is better served by silence than by a key invented from the CLR type - a name the caller's
-    /// form does not have. Asserted rather than assumed, because the other rows all read
+    /// A bodiless request carries no JSON path, so the filter has no name for the input and the
+    /// caller is better served by silence than by a key invented from the CLR type - a name the
+    /// caller's form does not have. Asserted rather than assumed, because the other rows all read
     /// <c>error.fields</c> expecting a key, and the invention would otherwise go unnoticed.
     /// </remarks>
     private static void AssertNamesNoField(JsonElement envelope) =>

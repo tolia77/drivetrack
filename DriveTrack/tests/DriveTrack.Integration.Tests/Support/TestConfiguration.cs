@@ -3,8 +3,8 @@ namespace DriveTrack.Integration.Tests.Support;
 /// <summary>
 /// The configuration every test host and every hostless registration test needs.
 /// <para>
-/// <c>AddInfrastructure</c> aborts startup on a missing or short signing key (AD-19), which is the
-/// behaviour the identity story wants and which every existing suite would otherwise trip over.
+/// <c>AddInfrastructure</c> aborts startup on a missing or short signing key, which is the
+/// behaviour production wants and which every existing suite would otherwise trip over.
 /// One constant here is what keeps that failure a real assertion in one test rather than a
 /// coincidence every other test has to work around.
 /// </para>
@@ -30,7 +30,7 @@ internal static class TestConfiguration
     public const string AdminPassword = "Admin-Passw0rd";
 
     /// <summary>
-    /// The one cross-origin caller a test host allows (NFR-12). Configured for every host so the
+    /// The one cross-origin caller a test host allows. Configured for every host so the
     /// CORS policy is exercised as it ships, with an explicit origin rather than an empty list, and
     /// so <c>CorsPolicyTests</c> needs no factory parameter of its own.
     /// </summary>

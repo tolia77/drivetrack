@@ -8,7 +8,8 @@ using DriveTrack.Integration.Tests.Support;
 namespace DriveTrack.Integration.Tests.Identity;
 
 /// <summary>
-/// AD-5's crux, against a real PostgreSQL: Identity is not a second persistence authority.
+/// The unit of work's crux, against a real PostgreSQL: Identity is not a second persistence
+/// authority.
 /// <para>
 /// <c>UserManager.CreateAsync</c> normally saves through its own store, which would commit an
 /// account independently of the <c>clients</c> row that makes it usable and reproduce exactly the
@@ -39,7 +40,7 @@ public class IdentityTransactionTests(PostgresFixture postgres)
                 UserRole.Client,
                 cancellationToken);
 
-            // No CommitAsync. Disposing rolls the transaction back (NFR-9), and the account created
+            // No CommitAsync. Disposing rolls the transaction back, and the account created
             // through Identity is inside it like every other write.
         }
 
@@ -121,7 +122,7 @@ public class IdentityTransactionTests(PostgresFixture postgres)
             await CountAsync(database, "asp_net_user_roles", $"user_id = {Sql(userId)}", cancellationToken));
         Assert.Equal(1L, await CountAsync(database, "clients", $"user_id = {Sql(userId)}", cancellationToken));
 
-        // FR-8: what is stored is a hash, and the password appears nowhere in it.
+        // What is stored is a hash, and the password appears nowhere in it.
         Assert.Equal(
             0L,
             await CountAsync(

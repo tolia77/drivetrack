@@ -11,10 +11,10 @@ using Microsoft.EntityFrameworkCore;
 namespace DriveTrack.Integration.Tests.Deliveries;
 
 /// <summary>
-/// FR-30 to FR-34 and FR-105 to FR-108 over HTTP, against the real <c>Program.cs</c> pipeline and a
-/// real PostgreSQL.
+/// The delivery lifecycle and its timeline over HTTP, against the real <c>Program.cs</c> pipeline
+/// and a real PostgreSQL.
 /// <para>
-/// Two halves of this story can only be asserted here. The first is that a status change and its
+/// Two halves of this can only be asserted here. The first is that a status change and its
 /// timeline entry are one write: a legal move leaves exactly one entry, and a refused one leaves the
 /// stored status and the entry count as they were. Every refusal in <c>ChangeStatusAsync</c> is
 /// raised before the entry is built, so what these tests establish is that the refusals really do
@@ -33,8 +33,7 @@ public class DeliveryStatusTests(PostgresFixture postgres)
     public async Task A_legal_transition_moves_the_delivery_and_writes_one_entry()
     {
         // The first row of the matrix, end to end: the status changes, exactly one entry is
-        // appended, and it carries the actor snapshot AD-20 asks for and the instant AD-13's clock
-        // supplied.
+        // appended, and it carries the actor snapshot and the instant the injected clock supplied.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -51,7 +50,7 @@ public class DeliveryStatusTests(PostgresFixture postgres)
 
             var entry = await FleetApi.DataAsync(response, cancellationToken);
 
-            // AD-21: the member name on the wire, both ends of the move.
+            // The member name on the wire, both ends of the move.
             Assert.Equal(
                 nameof(DeliveryStatus.Pending),
                 entry.GetProperty("previousStatus").GetString());
@@ -74,7 +73,7 @@ public class DeliveryStatusTests(PostgresFixture postgres)
         // was never sent - would satisfy every assertion above.
         Assert.Single(entries);
 
-        // AD-13: the instant is stored and returned at offset zero, which rules out a local-time
+        // The instant is stored and returned at offset zero, which rules out a local-time
         // clock. It does not rule out DateTimeOffset.UtcNow - that also reads offset zero, and it is
         // barred by PersistenceContractTests, which scans src/ for the call rather than looking at
         // any value.
@@ -86,7 +85,7 @@ public class DeliveryStatusTests(PostgresFixture postgres)
     [Fact]
     public async Task A_change_and_its_note_land_on_the_same_entry()
     {
-        // FR-106: "failed, nobody at the address" is one fact. Written as two rows it would have to
+        // "Failed, nobody at the address" is one fact. Written as two rows it would have to
         // be reassembled by a later reader from two timestamps.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
@@ -126,7 +125,7 @@ public class DeliveryStatusTests(PostgresFixture postgres)
     }
 
     [Theory]
-    // FR-32: nothing jumps the lifecycle, and Delivered is terminal.
+    // Nothing jumps the lifecycle, and Delivered is terminal.
     [InlineData(DeliveryStatus.Pending, DeliveryStatus.Delivered)]
     [InlineData(DeliveryStatus.Pending, DeliveryStatus.Failed)]
     [InlineData(DeliveryStatus.InTransit, DeliveryStatus.Pending)]
@@ -140,8 +139,8 @@ public class DeliveryStatusTests(PostgresFixture postgres)
         DeliveryStatus requested)
     {
         // "Refused" and "refused and nothing happened" are different claims, and the second is the
-        // one AD-27 makes: the entry is staged before the commit, so a transition that throws after
-        // an earlier one succeeded must leave neither a status nor a row behind it.
+        // one the timeline makes: the entry is staged before the commit, so a transition that
+        // throws after an earlier one succeeded must leave neither a status nor a row behind it.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -187,9 +186,9 @@ public class DeliveryStatusTests(PostgresFixture postgres)
         // both answers look plausible from the outside and only one of them is useful.
         //
         // DELIVERY_PROOF_REQUIRED would tell the caller to photograph a parcel nobody has collected
-        // yet, and a caller who obliged would be refused a second time - by FR-32, for the reason
-        // that applied from the start. So the lifecycle answers first, and FR-120 only ever speaks
-        // about a move the delivery could actually make.
+        // yet, and a caller who obliged would be refused a second time - by the transition table,
+        // for the reason that applied from the start. So the lifecycle answers first, and the
+        // proof-required gate only ever speaks about a move the delivery could actually make.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -218,7 +217,8 @@ public class DeliveryStatusTests(PostgresFixture postgres)
     [Theory]
     // A body that names no status at all. Without a rule the property would bind to the enum's
     // first member and the caller would be told "Pending cannot move to Pending" - a 409 about a
-    // transition they never asked for, and one no amount of re-reading FR-32 would explain.
+    // transition they never asked for, and one no amount of re-reading the transition table would
+    // explain.
     [InlineData(false)]
     // A number the enum has no member for. The shell registers JsonStringEnumConverter with its
     // default allowIntegerValues, so this deserializes rather than being refused as malformed.
@@ -244,7 +244,7 @@ public class DeliveryStatusTests(PostgresFixture postgres)
                    body,
                    cancellationToken))
         {
-            // 422 and not 409: NFR-2 gives one kind of failure one status, and a payload the system
+            // 422 and not 409: one kind of failure gets one status, and a payload the system
             // cannot read is not a collision with the delivery's current state.
             await FleetApi.AssertFailureAsync(
                 refused,
@@ -372,7 +372,7 @@ public class DeliveryStatusTests(PostgresFixture postgres)
                    client, stale, deliveryId, DeliveryStatus.InTransit, cancellationToken))
         {
             // 401 rather than 403: the credentials are not insufficient, the account behind them is
-            // gone, and FR-13's session-expiry flow branches on this single code.
+            // gone, and the session-expiry flow branches on this single code.
             await FleetApi.AssertFailureAsync(
                 refused,
                 HttpStatusCode.Unauthorized,
@@ -390,8 +390,8 @@ public class DeliveryStatusTests(PostgresFixture postgres)
     [Fact]
     public async Task A_failed_delivery_goes_back_on_the_road()
     {
-        // FR-31's retry, over the wire: the failure is not terminal, and the entry records the move
-        // out of it as an ordinary transition rather than as a special case.
+        // The retry from Failed, over the wire: the failure is not terminal, and the entry records
+        // the move out of it as an ordinary transition rather than as a special case.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -418,8 +418,8 @@ public class DeliveryStatusTests(PostgresFixture postgres)
     [Fact]
     public async Task The_timeline_reads_oldest_first()
     {
-        // FR-108. The order is the repository's, tie-broken by row id, and it is what makes the
-        // history a history rather than a set.
+        // Chronological history. The order is the repository's, tie-broken by row id, and it is
+        // what makes the history a history rather than a set.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -445,8 +445,9 @@ public class DeliveryStatusTests(PostgresFixture postgres)
     [Fact]
     public async Task A_driver_may_advance_their_own_delivery_and_not_another_drivers()
     {
-        // FR-26 and FR-34 as one predicate, asserted on both sides: a driver who is refused
-        // everything proves nothing, and neither does one who is allowed everything.
+        // The assigned driver and the one status path as one predicate, asserted on both sides: a
+        // driver who is refused everything proves nothing, and neither does one who is allowed
+        // everything.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -507,8 +508,9 @@ public class DeliveryStatusTests(PostgresFixture postgres)
     [Fact]
     public async Task A_client_may_never_change_a_status_even_on_their_own_delivery()
     {
-        // FR-90, and the reason the guard grew a member: the client's scope admits this very row,
-        // so a rule written in terms of visibility would have let them move it.
+        // A client cannot move their own delivery, and that is the reason the guard grew a member:
+        // the client's scope admits this very row, so a rule written in terms of visibility would
+        // have let them move it.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -532,7 +534,7 @@ public class DeliveryStatusTests(PostgresFixture postgres)
     [Fact]
     public async Task An_anonymous_caller_is_refused_on_every_route()
     {
-        // 401 rather than 403 on all three: no usable credentials were presented, and FR-13's
+        // 401 rather than 403 on all three: no usable credentials were presented, and the
         // session-expiry flow branches on that single code.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
@@ -595,7 +597,7 @@ public class DeliveryStatusTests(PostgresFixture postgres)
     [Fact]
     public async Task A_client_may_note_their_own_delivery_without_changing_its_status()
     {
-        // FR-107: the entry carries neither status, and the delivery is exactly where it was. That
+        // A note: the entry carries neither status, and the delivery is exactly where it was. That
         // second half is what separates a note from a status change with an empty transition.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
@@ -702,7 +704,7 @@ public class DeliveryStatusTests(PostgresFixture postgres)
                 ErrorCode.COMMON_VALIDATION_FAILED,
                 cancellationToken);
 
-            // NFR-4: the field is named, so a form can attach the refusal to the box that produced
+            // The field is named, so a form can attach the refusal to the box that produced
             // it rather than showing a sentence beside an untouched panel.
             var envelope = await FleetApi.ReadAsync(refused, cancellationToken);
 
@@ -749,10 +751,10 @@ public class DeliveryStatusTests(PostgresFixture postgres)
     [Fact]
     public async Task A_delivery_a_caller_may_not_see_is_not_there_as_far_as_they_are_concerned()
     {
-        // FR-27 through the timeline routes: a client asking about another client's delivery gets
-        // 404, not 403, so the answer discloses nothing about a row they may not see. Both the write
-        // and the read say the same thing, which is the point - one of them answering 403 would be
-        // the leak.
+        // Client visibility through the timeline routes: a client asking about another client's
+        // delivery gets 404, not 403, so the answer discloses nothing about a row they may not see.
+        // Both the write and the read say the same thing, which is the point - one of them
+        // answering 403 would be the leak.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -797,9 +799,9 @@ public class DeliveryStatusTests(PostgresFixture postgres)
     [Fact]
     public async Task Dispatch_is_told_the_actor_and_the_two_narrowed_roles_are_not()
     {
-        // AD-17 and FR-105 together: the same entries reach every viewer, and only the name is
-        // withheld. A null actorName here means "withheld" and nothing else - the column is not
-        // null - which is why this can be one DTO rather than two.
+        // The disclosure rule and the recorded actor together: the same entries reach every viewer,
+        // and only the name is withheld. A null actorName here means "withheld" and nothing else -
+        // the column is not null - which is why this can be one DTO rather than two.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -833,8 +835,8 @@ public class DeliveryStatusTests(PostgresFixture postgres)
 
             var entry = Assert.Single(narrowed);
 
-            // The same entry, minus the one field FR-27 withholds. The role survives, so the driver
-            // and the client can still see that dispatch moved the parcel.
+            // The same entry, minus the one field a client is not told. The role survives, so the
+            // driver and the client can still see that dispatch moved the parcel.
             Assert.Equal(JsonValueKind.Null, entry.GetProperty("actorName").ValueKind);
             Assert.Equal(nameof(UserRole.Dispatcher), entry.GetProperty("actorRole").GetString());
             Assert.Equal(nameof(DeliveryStatus.InTransit), entry.GetProperty("newStatus").GetString());
@@ -844,9 +846,10 @@ public class DeliveryStatusTests(PostgresFixture postgres)
     [Fact]
     public async Task A_deleted_actor_leaves_the_entry_standing()
     {
-        // AD-20's whole reason: a restrict would make every user who has ever acted undeletable -
-        // the "deleting a driver raises a database error" defect this rewrite exists to fix - and a
-        // cascade would erase the history instead. Set-null keeps both.
+        // The actor's set-null delete, and its whole reason: a restrict would make every user who
+        // has ever acted undeletable - the "deleting a driver raises a database error" defect this
+        // rewrite exists to fix - and a cascade would erase the history instead. Set-null keeps
+        // both.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -866,7 +869,7 @@ public class DeliveryStatusTests(PostgresFixture postgres)
             Assert.Equal(HttpStatusCode.OK, moved.StatusCode);
         }
 
-        // Through the fleet capability that ships driver removal (FR-39), not by hand: what is
+        // Through the fleet capability that ships driver removal, not by hand: what is
         // being asserted is that the shipped path leaves the history intact.
         using (var deleted = await FleetApi.SendAsync(
                    client,
@@ -886,7 +889,7 @@ public class DeliveryStatusTests(PostgresFixture postgres)
         Assert.Equal("Тарас Шевченко", entry.GetProperty("actorName").GetString());
         Assert.Equal(nameof(UserRole.Driver), entry.GetProperty("actorRole").GetString());
 
-        // And the reference itself is gone, which is what set-null means (AD-20).
+        // And the reference itself is gone, which is what set-null means.
         await using var context = await factory.Database.ContextFactory
             .CreateDbContextAsync(cancellationToken);
 
@@ -905,9 +908,10 @@ public class DeliveryStatusTests(PostgresFixture postgres)
     [Fact]
     public async Task Nothing_outside_the_status_route_writes_a_timeline_entry()
     {
-        // AD-27's closed set of appending operations, asserted by what does not happen: creating and
-        // editing a delivery are not lifecycle events, and a create that quietly appended an
-        // "opened" entry would make every count in this suite one higher for no requirement.
+        // The timeline's closed set of appending operations, asserted by what does not happen:
+        // creating and editing a delivery are not lifecycle events, and a create that quietly
+        // appended an "opened" entry would make every count in this suite one higher for no
+        // requirement.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -933,7 +937,7 @@ public class DeliveryStatusTests(PostgresFixture postgres)
 
     /// <summary>
     /// Advances a delivery to <paramref name="target"/> through the shipped endpoint, which is the
-    /// only write path there is (AD-10). Every status is two moves or fewer from <c>Pending</c>.
+    /// only write path there is. Every status is two moves or fewer from <c>Pending</c>.
     /// </summary>
     private static async Task WalkAsync(
         HttpClient client,
@@ -969,7 +973,7 @@ public class DeliveryStatusTests(PostgresFixture postgres)
             status,
             cancellationToken,
 
-            // FR-120: Delivered is refused without a proof or a note, and an arrangement walking a
+            // Delivered is refused without a proof or a note, and an arrangement walking a
             // delivery to a status has no proof to offer. The note is the other arm of the same
             // precondition, and it is what dispatch uses when there is nothing to photograph.
             note: status == DeliveryStatus.Delivered ? "Передано отримувачу" : null);

@@ -10,7 +10,7 @@ namespace DriveTrack.Integration.Tests.Authorization;
 /// <summary>
 /// The role half of the sweep: every REST endpoint, every role, and the refusal each one owes.
 /// <para>
-/// Asserted through the AD-7 envelope rather than on the status code alone. A 403 whose body is
+/// Asserted through the response envelope rather than on the status code alone. A 403 whose body is
 /// empty, or an HTML page, or a framework problem-details document is a refusal no client can act
 /// on and no localized catalogue has a message for — and it is exactly what a missing suppression
 /// or a mis-wired authentication event produces, which is a failure the status code cannot see.
@@ -144,10 +144,11 @@ public class EndpointBoundaryTests(PostgresFixture postgres)
     [Fact]
     public async Task The_two_public_routes_answer_an_anonymous_caller_about_what_they_sent()
     {
-        // FR-1 and FR-4 are the operations a caller performs before they have credentials to be
-        // judged on. Neither body is legal, so both answer 422 COMMON_VALIDATION_FAILED - which is
-        // the point, and is why this asserts the code rather than merely "not 401 and not 403": the
-        // refusal they get is about what they sent, never about who they are.
+        // Registering and signing in are the operations a caller performs before they have
+        // credentials to be judged on. Neither body is legal, so both answer 422
+        // COMMON_VALIDATION_FAILED - which is the point, and is why this asserts the code rather
+        // than merely "not 401 and not 403": the refusal they get is about what they sent, never
+        // about who they are.
         var cancellationToken = TestContext.Current.CancellationToken;
         var world = await AuthorizationWorld.InstanceAsync(postgres.ConnectionString, cancellationToken);
 

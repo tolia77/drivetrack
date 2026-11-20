@@ -13,13 +13,13 @@ using Microsoft.Extensions.Options;
 namespace DriveTrack.Integration.Tests.Chat;
 
 /// <summary>
-/// FR-68 to FR-76 driven end to end, against a real PostgreSQL container and a real
+/// Chat driven end to end, against a real PostgreSQL container and a real
 /// <c>HubConnection</c>.
 /// <para>
-/// NFR-17 names messaging as the one feature the original never tested, and the two defects this
+/// Messaging is the one feature the original never tested, and the two defects this
 /// rewrite exists to fix are both invisible to any test that stops short of the wire: a message
 /// stored against a key it could never be read back from, and a history endpoint anyone could walk
-/// by iterating ids. So every row of the story's matrix is asserted through a connection that had to
+/// by iterating ids. So every row of the chat matrix is asserted through a connection that had to
 /// negotiate, authenticate and be added to a group before it heard anything, and the persisted rows
 /// are read back outside EF where it matters.
 /// </para>
@@ -60,7 +60,7 @@ public class ChatHubTests(PostgresFixture postgres)
         var thread = await connection.InvokeAsync<ChatThread>(
             "JoinThread", driver.DriverId!.Value, cancellationToken);
 
-        // The thread key on the way back is the driver row it was keyed on, not a user id (AD-22).
+        // The thread key on the way back is the driver row it was keyed on, not a user id.
         Assert.Equal(driver.DriverId!.Value, thread.DriverId.Value);
         Assert.NotEqual(driver.UserId, thread.DriverId.Value);
 
@@ -103,8 +103,8 @@ public class ChatHubTests(PostgresFixture postgres)
 
         Assert.False(await Arrived(received, Silence));
 
-        // AD-3's order: the guard answers before the 404, so a driver probing ids cannot tell a
-        // thread that exists from one that does not.
+        // The pipeline order: the guard answers before the 404, so a driver probing ids cannot tell
+        // a thread that exists from one that does not.
         var join = await Assert.ThrowsAsync<HubException>(
             () => connection.InvokeAsync<ChatThread>("JoinThread", 999_999, cancellationToken));
 
@@ -143,7 +143,7 @@ public class ChatHubTests(PostgresFixture postgres)
         Assert.Equal(second.UserId, message.SenderUserId);
         Assert.Equal("Богдан Кравець", message.SenderName);
 
-        // FR-71: the conversation is about the driver, so the header names them rather than
+        // The conversation is about the driver, so the header names them rather than
         // whichever dispatcher happens to be reading it.
         Assert.Equal("Петро Шевченко", thread.DriverName);
     }
@@ -169,7 +169,7 @@ public class ChatHubTests(PostgresFixture postgres)
         Assert.Contains(roster, entry => entry.DriverId.Value == yatsenko.DriverId);
         Assert.Contains(roster, entry => entry.DriverId.Value == androsova.DriverId);
 
-        // FR-68 names the roster by person, so it is ordered by person rather than by the order the
+        // The roster is named by person, so it is ordered by person rather than by the order the
         // drivers were taken on - which is the order the driver capability's own list comes back in.
         Assert.Equal(
             ["Олена Андросова", "Петро Яценко"],
@@ -258,9 +258,9 @@ public class ChatHubTests(PostgresFixture postgres)
     [Fact]
     public async Task A_client_and_an_admin_reach_neither_a_thread_nor_the_roster()
     {
-        // The row a reader will assume is a mistake. AD-4 makes an administrator satisfy every other
-        // check by rule; chat is the one capability where the PRD locks them out on purpose, and the
-        // original's defect list records "chat accepts clients and admins" as a fault to fix.
+        // The row a reader will assume is a mistake. An administrator satisfies every other check
+        // by rule; chat is the one capability that locks them out on purpose, and the original's
+        // defect list records "chat accepts clients and admins" as a fault to fix.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var world = await ChatWorld.CreateAsync(postgres.ConnectionString, cancellationToken);
 
@@ -336,9 +336,10 @@ public class ChatHubTests(PostgresFixture postgres)
     public async Task A_caller_holding_only_the_session_cookie_is_accepted_by_the_hub()
     {
         // Every other connection in this suite is bearer-authenticated, and a bearer token is a
-        // credential no browser on this product ever holds: the circuit holds drivetrack.session and
-        // nothing else. The hub is mounted outside /api for exactly that reason - AD-22 makes /api
-        // bearer-only - and its [Authorize] names the cookie scheme first.
+        // credential no browser on this product ever holds: the circuit holds drivetrack.session
+        // and nothing else. The hub is mounted outside /api for exactly that reason -
+        // authentication makes /api bearer-only - and its [Authorize] names the cookie scheme
+        // first.
         //
         // Without this case, removing the cookie scheme from that attribute leaves every other test
         // here green while every real browser is refused at negotiate.
@@ -384,11 +385,11 @@ public class ChatHubTests(PostgresFixture postgres)
     [Fact]
     public async Task A_refusal_carries_its_code_and_the_host_never_turns_on_detailed_errors()
     {
-        // The two halves of NFR-3 for the hub. A HubException's message is the one thing SignalR
-        // sends a client verbatim, and the hub puts exactly one resource key in it - so the screen
-        // can say what went wrong. Everything else stays a generic sentence, and this pins the
-        // switch that would change that: with detailed errors on, every unhandled exception's type
-        // and message would reach the browser.
+        // The two halves of "no internals on the wire" for the hub. A HubException's message is the
+        // one thing SignalR sends a client verbatim, and the hub puts exactly one resource key in
+        // it - so the screen can say what went wrong. Everything else stays a generic sentence, and
+        // this pins the switch that would change that: with detailed errors on, every unhandled
+        // exception's type and message would reach the browser.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var world = await ChatWorld.CreateAsync(postgres.ConnectionString, cancellationToken);
 
@@ -415,7 +416,7 @@ public class ChatHubTests(PostgresFixture postgres)
     [Fact]
     public async Task A_message_a_driver_sends_is_stored_against_the_thread_it_is_read_back_from()
     {
-        // The defect this whole story exists to fix: the original stored a driver's message against
+        // The headline defect: the original stored a driver's message against
         // a recipient nobody, so it could never be retrieved. Written through the hub, read back out
         // of the table by hand, and then read back again through a fresh connection.
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -484,17 +485,17 @@ public class ChatHubTests(PostgresFixture postgres)
         Assert.Equal("Петро Шевченко", delivered.Message.SenderName);
 
         // The row the server stored carries the id it was given, which is what makes the broadcast
-        // an echo of the database rather than of what was typed (FR-73: no optimistic echo).
+        // an echo of the database rather than of what was typed (no optimistic echo).
         Assert.True(delivered.Message.Id > 0);
 
         // And the sender hears their own line back the same way, because that is what puts it on
         // their screen.
         Assert.Equal("Затримка на годину.", (await Wait(inTheCab, Delivery)).Message.Text);
 
-        // The other direction, which is the one FR-70 is mostly about: the desk answering a driver.
-        // It is not the same code path read backwards - the guard passes a dispatcher on a thread
-        // that is not their own, and the stored row carries a sender who has no driver row at all -
-        // so it is asserted rather than assumed.
+        // The other direction, which is the one real-time delivery is mostly about: the desk
+        // answering a driver. It is not the same code path read backwards - the guard passes a
+        // dispatcher on a thread that is not their own, and the stored row carries a sender who has
+        // no driver row at all - so it is asserted rather than assumed.
         var backInTheCab = Listen(cab);
 
         await desk.InvokeAsync("Send", driver.DriverId!.Value, "Прийняв, чекаємо.", cancellationToken);
@@ -505,7 +506,7 @@ public class ChatHubTests(PostgresFixture postgres)
         Assert.Equal("Прийняв, чекаємо.", answered.Message.Text);
 
         // Stored against the driver's thread and against the dispatcher who wrote it: the thread
-        // key is the conversation, never the sender (AD-15).
+        // key is the conversation, never the sender.
         Assert.Equal(dispatcher.UserId, answered.Message.SenderUserId);
         Assert.Equal("Ігор Ковальчук", answered.Message.SenderName);
         Assert.True(answered.Message.Id > 0);
@@ -549,7 +550,7 @@ public class ChatHubTests(PostgresFixture postgres)
     public async Task A_driver_sending_into_another_drivers_thread_is_refused_and_writes_nothing()
     {
         // Send is an independent hub entry point: JoinThread being proved to refuse a foreign driver
-        // says nothing about it. This is the write half of the defect the story exists to fix, and
+        // says nothing about it. This is the write half of the headline defect, and
         // the one a group membership cannot mediate - a caller can invoke Send without ever joining.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var world = await ChatWorld.CreateAsync(postgres.ConnectionString, cancellationToken);
@@ -572,7 +573,7 @@ public class ChatHubTests(PostgresFixture postgres)
     [Fact]
     public async Task A_client_and_an_admin_send_into_no_thread_at_all()
     {
-        // The write half of the admin lockout. AD-4 makes an administrator satisfy every other check
+        // The write half of the admin lockout. An administrator satisfies every other check
         // in the system, so "the join refuses them" is the assertion a reader would assume covers
         // this - and it does not: Send takes its own decision, in its own body.
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -626,8 +627,9 @@ public class ChatHubTests(PostgresFixture postgres)
     [InlineData("")]
     [InlineData("   ")]
     // Null is a designed input, not a hostile one: the screen sends its draft, which is null until
-    // the box has been typed in. The hub's parameter is nullable so this reaches AD-8's validator
-    // rather than the hub binder's own answer, and this row is what proves it survives the wire.
+    // the box has been typed in. The hub's parameter is nullable so this reaches the core's
+    // validator rather than the hub binder's own answer, and this row is what proves it survives
+    // the wire.
     [InlineData(null)]
     public async Task An_empty_message_is_refused_and_nothing_is_written(string? text)
     {
@@ -739,7 +741,7 @@ public class ChatHubTests(PostgresFixture postgres)
     public async Task History_is_chronological_and_ties_are_broken_by_id()
     {
         // Two rows committed in one instant share a SentAt. Without the tie-break they interleave at
-        // the planner's discretion, and FR-72 asks for an order rather than an almost-order.
+        // the planner's discretion, and the history asks for an order rather than an almost-order.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var world = await ChatWorld.CreateAsync(postgres.ConnectionString, cancellationToken);
 
@@ -790,9 +792,10 @@ public class ChatHubTests(PostgresFixture postgres)
     [Fact]
     public async Task A_line_whose_sender_was_deleted_still_reads_back_unattributed()
     {
-        // AD-20's set-null, seen from the screen. Cascade would delete half a conversation to close
-        // one account and restrict would make closing it impossible; the line survives with no
-        // sender, and the name is left empty because the label is a sentence the catalogue owns.
+        // The sender's set-null delete, seen from the screen. Cascade would delete half a
+        // conversation to close one account and restrict would make closing it impossible; the line
+        // survives with no sender, and the name is left empty because the label is a sentence the
+        // catalogue owns.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var world = await ChatWorld.CreateAsync(postgres.ConnectionString, cancellationToken);
 
@@ -828,7 +831,7 @@ public class ChatHubTests(PostgresFixture postgres)
     /// SignalR wraps a <c>HubException</c>'s message in a sentence of its own, which is why this
     /// reads the code out rather than comparing the whole string — and why the test above pins
     /// <c>EnableDetailedErrors</c> off, so what reaches a caller is the code and never a stack
-    /// frame, a SQL fragment or a constraint name (NFR-3).
+    /// frame, a SQL fragment or a constraint name.
     /// </para>
     /// </summary>
     private static void AssertRefusal(HubException failure, ErrorCode expected)

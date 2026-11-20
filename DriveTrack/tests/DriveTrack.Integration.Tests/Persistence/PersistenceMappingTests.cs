@@ -5,9 +5,10 @@ using DriveTrack.Integration.Tests.Support;
 namespace DriveTrack.Integration.Tests.Persistence;
 
 /// <summary>
-/// What the schema actually looks like once the migration has run: the storage rules AD-11,
-/// AD-13, AD-21 and AD-22 fix, read back out of <c>information_schema</c> and out of the raw
-/// column values rather than out of the model that produced them.
+/// What the schema actually looks like once the migration has run: the storage rules for owned
+/// locations, UTC timestamps, enum names and typed identities, read back out of
+/// <c>information_schema</c> and out of the raw column values rather than out of the model that
+/// produced them.
 /// </summary>
 public class PersistenceMappingTests(PostgresFixture postgres)
 {
@@ -30,7 +31,7 @@ public class PersistenceMappingTests(PostgresFixture postgres)
         "vehicles",
     ];
 
-    /// <summary>Tables the model must <em>not</em> produce (AD-11, DR-3).</summary>
+    /// <summary>Tables the model must <em>not</em> produce.</summary>
     private static readonly string[] ForbiddenTables =
     [
         "locations", "location", "admins", "dispatchers", "administrators",
@@ -98,8 +99,8 @@ public class PersistenceMappingTests(PostgresFixture postgres)
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var database = await TestDatabase.CreateAsync(postgres.ConnectionString, cancellationToken);
 
-        // AD-13, and the defect it names: the original mixed naive and aware timestamps, so the
-        // same column meant different things depending on which code path wrote it.
+        // UTC storage, and the defect it fixes: the original mixed naive and aware timestamps, so
+        // the same column meant different things depending on which code path wrote it.
         var naive = await ReadStringsAsync(
             database,
             """
@@ -173,7 +174,7 @@ public class PersistenceMappingTests(PostgresFixture postgres)
             deliveryId = delivery.Id;
         }
 
-        // AD-21: the name, not the ordinal - so reordering DeliveryStatus cannot silently
+        // The name, not the ordinal - so reordering DeliveryStatus cannot silently
         // reinterpret every existing row.
         Assert.Equal(
             "InTransit",
@@ -189,8 +190,8 @@ public class PersistenceMappingTests(PostgresFixture postgres)
     [Fact]
     public async Task Every_other_enum_column_is_stored_as_its_member_name_too()
     {
-        // AD-21 is a rule about every persisted enum, not about deliveries.status. Asserting it
-        // on one column would let the other five revert to ordinals unnoticed - EF round-trips
+        // The enum-name rule is about every persisted enum, not about deliveries.status. Asserting
+        // it on one column would let the other five revert to ordinals unnoticed - EF round-trips
         // identically either way, and HasPendingModelChanges() goes quiet as soon as the
         // accompanying migration is regenerated.
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -288,7 +289,7 @@ public class PersistenceMappingTests(PostgresFixture postgres)
 
         await using var context = await database.CreateContextAsync(cancellationToken);
 
-        // AD-13's storage rule is not advice: Npgsql refuses a non-zero offset against
+        // The UTC storage rule is not advice: Npgsql refuses a non-zero offset against
         // timestamptz outright, which is what makes "convert only at the edge" enforceable
         // rather than a convention people remember to follow.
         var delivery = Seed.NewDelivery();

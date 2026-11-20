@@ -11,13 +11,13 @@ using DriveTrack.Integration.Tests.Support;
 namespace DriveTrack.Integration.Tests.Identity;
 
 /// <summary>
-/// The dispatcher rows of story 7.1's I/O matrix (FR-49, FR-50), over HTTP, against the real
-/// pipeline and the real JWT scheme.
+/// The dispatcher administration rows of the I/O matrix, over HTTP, against the real pipeline and
+/// the real JWT scheme.
 /// <para>
-/// Two of these are the story's headline claims. Creating a dispatcher is the first thing in the
-/// system that can, so "the account signs in and holds role Dispatcher" is the only proof that FR-49
-/// is done; and an edit with no password in the body has to leave the existing one working, which is
-/// what <c>Optional&lt;T&gt;</c> exists for.
+/// Two of these are the headline claims. Creating a dispatcher is the first thing in the system
+/// that can, so "the account signs in and holds role Dispatcher" is the only proof that dispatcher
+/// creation works; and an edit with no password in the body has to leave the existing one working,
+/// which is what <c>Optional&lt;T&gt;</c> exists for.
 /// </para>
 /// </summary>
 public class DispatcherAdministrationTests(PostgresFixture postgres)
@@ -65,7 +65,7 @@ public class DispatcherAdministrationTests(PostgresFixture postgres)
             Assert.Equal(email, account.GetProperty("email").GetString());
         }
 
-        // The account exists, holds exactly one role row (AD-4), and it is the right one.
+        // The account exists, holds exactly one role row, and it is the right one.
         using (var session = await AdministrationApi.SendAsync(
             client,
             HttpMethod.Post,
@@ -76,7 +76,7 @@ public class DispatcherAdministrationTests(PostgresFixture postgres)
         {
             Assert.Equal(HttpStatusCode.OK, session.StatusCode);
 
-            // AD-21: the role crosses the wire as its member name.
+            // The role crosses the wire as its member name.
             Assert.Equal(
                 nameof(UserRole.Dispatcher),
                 (await AdministrationApi.ReadAsync(session, cancellationToken))
@@ -86,13 +86,13 @@ public class DispatcherAdministrationTests(PostgresFixture postgres)
         Assert.Equal(1L, await AdministrationApi.CountAsync(
             factory, "asp_net_user_roles", $"user_id = {userId}", cancellationToken));
 
-        // DR-3: no subtype table, so nothing beyond the user and its role row was written.
+        // No subtype table, so nothing beyond the user and its role row was written.
         Assert.Equal(0L, await AdministrationApi.CountAsync(
             factory, "clients", $"user_id = {userId}", cancellationToken));
         Assert.Equal(0L, await AdministrationApi.CountAsync(
             factory, "drivers", $"user_id = {userId}", cancellationToken));
 
-        // FR-8: only the hash landed.
+        // Only the hash landed.
         Assert.Equal(0L, await AdministrationApi.CountAsync(
             factory,
             "asp_net_users",
@@ -140,8 +140,8 @@ public class DispatcherAdministrationTests(PostgresFixture postgres)
     [Fact]
     public async Task An_edit_that_omits_the_password_leaves_the_existing_one_signing_in()
     {
-        // FR-50 and AD-23, which is the row this whole story turns on: the absent case has to be a
-        // type, because the alternative is a magic empty string every caller has to remember.
+        // The row dispatcher editing turns on: the absent case has to be a type, because the
+        // alternative is a magic empty string every caller has to remember.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await AdministrationApi.CreateHostAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -162,7 +162,7 @@ public class DispatcherAdministrationTests(PostgresFixture postgres)
             Assert.Equal("Богдан", account.GetProperty("firstName").GetString());
             Assert.Equal("Ковальчук", account.GetProperty("lastName").GetString());
 
-            // The address is set at creation only: story 7.3 owns FR-87.
+            // The address is set at creation only: changing it is the self-service route's job.
             Assert.Equal(subject.Email, account.GetProperty("email").GetString());
         }
 
@@ -211,7 +211,7 @@ public class DispatcherAdministrationTests(PostgresFixture postgres)
             Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
         }
 
-        // AD-5: one unit of work, so the name in the same body did not land either.
+        // One unit of work, so the name in the same body did not land either.
         using var read = await AdministrationApi.SendAsync(
             client, HttpMethod.Get, Route(subject.UserId), admin, body: null, cancellationToken);
 
@@ -270,9 +270,9 @@ public class DispatcherAdministrationTests(PostgresFixture postgres)
     [Fact]
     public async Task Deleting_a_dispatcher_leaves_the_history_they_touched_unattributed()
     {
-        // AD-20's actor rule, over the wire: not restrict - which would make anyone who has ever
-        // acted permanently undeletable, the exact defect this rewrite exists to fix - and not
-        // cascade, which would erase the history to close an account.
+        // The actor delete rule (set null), over the wire: not restrict - which would make anyone
+        // who has ever acted permanently undeletable, the exact defect this rewrite exists to fix -
+        // and not cascade, which would erase the history to close an account.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await AdministrationApi.CreateHostAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -542,8 +542,8 @@ public class DispatcherAdministrationTests(PostgresFixture postgres)
         "/api/dispatchers/" + userId.ToString(CultureInfo.InvariantCulture);
 
     /// <summary>
-    /// A driver, written through the real ports because there is no driver endpoint yet - Epic 5
-    /// owns that. The account has to be a genuine one, with a role row, or the not-found assertion
+    /// A driver, written through the real ports rather than through the driver endpoint. The
+    /// account has to be a genuine one, with a role row, or the not-found assertion
     /// above would pass for the wrong reason.
     /// </summary>
     private static async Task<int> CreateDriverAsync(

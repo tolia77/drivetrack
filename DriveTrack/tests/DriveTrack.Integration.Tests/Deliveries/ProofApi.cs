@@ -34,8 +34,8 @@ internal static class ProofApi
     public static readonly byte[] Jpeg = Encoding.UTF8.GetBytes("не справжній знімок, але байти");
 
     /// <summary>
-    /// Posts a capture. The response is handed back rather than asserted, because most of this
-    /// story's matrix is about which refusal a caller gets.
+    /// Posts a capture. The response is handed back rather than asserted, because most of the proof
+    /// matrix is about which refusal a caller gets.
     /// </summary>
     /// <param name="client">The API client.</param>
     /// <param name="token">A bearer token, or null for an anonymous request.</param>
@@ -121,7 +121,7 @@ internal static class ProofApi
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    /// <summary>Reads a delivery's proof (FR-122).</summary>
+    /// <summary>Reads a delivery's proof.</summary>
     public static Task<HttpResponseMessage> ReadAsync(
         HttpClient client,
         string? token,
@@ -243,7 +243,7 @@ internal static class ProofApi
         var part = new ByteArrayContent(bytes);
 
         // Set on the part rather than left to the framework: the declared type is what the validator
-        // judges (NFR-28), so a test about a refused type has to be able to declare one.
+        // judges, so a test about a refused type has to be able to declare one.
         part.Headers.ContentType = new MediaTypeHeaderValue(contentType);
 
         return part;

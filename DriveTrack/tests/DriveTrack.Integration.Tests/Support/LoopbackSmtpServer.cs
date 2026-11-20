@@ -10,11 +10,11 @@ namespace DriveTrack.Integration.Tests.Support;
 /// real socket without reaching a real relay.
 /// <para>
 /// The counterpart of <see cref="LoopbackHttpServer"/>, and it exists for the same reason. Every
-/// suite about FR-28 replaces <c>IEmailSender</c> with a fake, which proves what the system does on
-/// either side of the port and nothing at all about what the transport puts on the wire. Address the
-/// message to the wrong recipient or swap the subject for the body and the whole solution stays
-/// green while the notification log records a confident <c>Sent</c>. This is the only thing that
-/// reads the envelope the product actually sends.
+/// suite about status-change email replaces <c>IEmailSender</c> with a fake, which proves what the
+/// system does on either side of the port and nothing at all about what the transport puts on the
+/// wire. Address the message to the wrong recipient or swap the subject for the body and the whole
+/// solution stays green while the notification log records a confident <c>Sent</c>. This is the
+/// only thing that reads the envelope the product actually sends.
 /// </para>
 /// <para>
 /// The dialogue is the minimum <c>SmtpClient</c> needs: a greeting, a capability list, then an

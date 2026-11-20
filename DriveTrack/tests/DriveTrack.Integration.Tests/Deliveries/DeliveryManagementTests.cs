@@ -12,10 +12,10 @@ using Microsoft.EntityFrameworkCore;
 namespace DriveTrack.Integration.Tests.Deliveries;
 
 /// <summary>
-/// FR-14 to FR-24 and FR-100 to FR-103 over HTTP, against the real <c>Program.cs</c> pipeline.
+/// Delivery management over HTTP, against the real <c>Program.cs</c> pipeline.
 /// <para>
 /// Asserted through the adapter that ships the capability rather than against the service directly,
-/// because half of what the story promises is about the adapter: which status a refusal carries,
+/// because half of what is promised is about the adapter: which status a refusal carries,
 /// which code, and whether anything was written when it was refused. The last of those is asserted
 /// against the database every time — "refused" and "refused and nothing happened" are different
 /// claims, and the second is the one the requirements make.
@@ -30,7 +30,7 @@ public class DeliveryManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task A_delivery_needs_only_two_points_a_description_and_a_weight()
     {
-        // FR-16's minimum: no driver, no client, no notes, no window. Every one of those is
+        // The minimum delivery: no driver, no client, no notes, no window. Every one of those is
         // optional by requirement, and a create path that quietly required one would make the
         // ordinary case impossible.
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -51,20 +51,20 @@ public class DeliveryManagementTests(PostgresFixture postgres)
 
         var data = await FleetApi.DataAsync(created, cancellationToken);
 
-        // FR-30: a delivery is only ever born Pending, and AD-21 puts the member name on the wire.
+        // A delivery is only ever born Pending, and the member name goes on the wire.
         Assert.Equal(nameof(DeliveryStatus.Pending), data.GetProperty("status").GetString());
 
         Assert.Equal(JsonValueKind.Null, data.GetProperty("driver").ValueKind);
         Assert.Equal(JsonValueKind.Null, data.GetProperty("client").ValueKind);
         Assert.False(data.GetProperty("isOverdue").GetBoolean());
 
-        // DR-11 / FR-94: coordinates are the record and the address is a cache nothing has filled
-        // yet - story 5.2 owns the geocoder, and this story has to work while there is none.
+        // Coordinates are the record and the address is a cache nothing has filled yet - the
+        // geocoder fills it after the commit, and a create has to work without it.
         Assert.Equal(50.4501, data.GetProperty("pickup").GetProperty("point").GetProperty("latitude").GetDouble());
         Assert.Equal(JsonValueKind.Null, data.GetProperty("pickup").GetProperty("address").ValueKind);
         Assert.Equal(JsonValueKind.Null, data.GetProperty("dropoff").GetProperty("address").ValueKind);
 
-        // AD-17: only DTOs leave the Application layer, so no EF navigation is serialized back.
+        // Only DTOs leave the Application layer, so no EF navigation is serialized back.
         Assert.False(data.TryGetProperty("proofOfDelivery", out _));
         Assert.False(data.TryGetProperty("review", out _));
     }
@@ -102,9 +102,9 @@ public class DeliveryManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task A_driver_that_does_not_exist_is_refused_by_name_and_nothing_is_written()
     {
-        // FR-29, and a code of the capability's own rather than COMMON_NOT_FOUND: a dispatcher told
-        // "driver not found" knows to pick another driver, where "not found" leaves them wondering
-        // whether the endpoint exists.
+        // A reference to a missing driver, and a code of the capability's own rather than
+        // COMMON_NOT_FOUND: a dispatcher told "driver not found" knows to pick another driver,
+        // where "not found" leaves them wondering whether the endpoint exists.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -159,8 +159,9 @@ public class DeliveryManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task A_parcel_heavier_than_the_assigned_driver_holds_is_refused_and_nothing_is_written()
     {
-        // FR-103's delivery-side arm. The refusal has to leave no row behind, or the invariant it
-        // exists to keep would be broken by the very request that reported keeping it.
+        // The capacity invariant's delivery-side arm. The refusal has to leave no row behind, or
+        // the invariant it exists to keep would be broken by the very request that reported keeping
+        // it.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -216,11 +217,12 @@ public class DeliveryManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task Two_parcels_that_each_fit_are_both_accepted_and_leave_the_fleet_free()
     {
-        // FR-103 is per parcel, not per driver: a vehicle carries one at a time, so two six-hundred
-        // kilogram deliveries on a thousand-kilogram vehicle are two ordinary jobs rather than an
-        // overload. Both halves are asserted, because they are decided by different code - the
-        // creates by the per-delivery comparison, and the reassignment by the aggregate, which is
-        // where a Max read as a Sum would answer 1200 and refuse a change that is perfectly legal.
+        // The capacity invariant is per parcel, not per driver: a vehicle carries one at a time, so
+        // two six-hundred kilogram deliveries on a thousand-kilogram vehicle are two ordinary jobs
+        // rather than an overload. Both halves are asserted, because they are decided by different
+        // code - the creates by the per-delivery comparison, and the reassignment by the aggregate,
+        // which is where a Max read as a Sum would answer 1200 and refuse a change that is
+        // perfectly legal.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -257,7 +259,7 @@ public class DeliveryManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task A_window_bound_sent_at_another_offset_is_stored_as_the_same_instant()
     {
-        // AD-13, and the one line between a correct request and a 500. The column is
+        // UTC storage, and the one line between a correct request and a 500. The column is
         // `timestamp with time zone`, which Npgsql will only write a DateTimeOffset to when its
         // offset is zero - so a browser's local datetime, or a REST client in Kyiv, would otherwise
         // fail at the commit for a payload the caller got right. The offset carries no information
@@ -292,7 +294,7 @@ public class DeliveryManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task A_driver_holding_no_vehicle_takes_no_capacity_check()
     {
-        // FR-38: holding nothing is a legal state, not a check waiting to happen. Without this a
+        // Holding no vehicle is a legal state, not a check waiting to happen. Without this a
         // "capacity must be at least the weight" rule would refuse every unassigned vehicle.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
@@ -320,9 +322,9 @@ public class DeliveryManagementTests(PostgresFixture postgres)
     public async Task A_value_the_row_may_not_hold_is_refused_before_any_query_naming_the_field(
         string field)
     {
-        // NFR-4. The two check constraints behind the first and third of these refuse them too, and
-        // with no field list at all - SQLSTATE 23514 carries a constraint name, not a property - so
-        // the friendly validator is what makes the message attachable to an input.
+        // Naming the field. The two check constraints behind the first and third of these refuse
+        // them too, and with no field list at all - SQLSTATE 23514 carries a constraint name, not a
+        // property - so the friendly validator is what makes the message attachable to an input.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -339,7 +341,7 @@ public class DeliveryManagementTests(PostgresFixture postgres)
 
             // Latitude 91 is the row that would answer 500 if MapLocation were bound directly: its
             // constructor throws, and a throwing constructor during model binding lands in the
-            // suppressed model state (DW-12).
+            // suppressed model state.
             _ => Malformed(latitude: 91),
         };
 
@@ -367,8 +369,9 @@ public class DeliveryManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task A_driver_and_a_client_may_not_open_a_delivery()
     {
-        // FR-14 is a dispatcher's, and the refusal is the guard's rather than an attribute's: the
-        // controller carries [Authorize] with no roles precisely so this is decided in one place.
+        // Creating a delivery is a dispatcher's, and the refusal is the guard's rather than an
+        // attribute's: the controller carries [Authorize] with no roles precisely so this is
+        // decided in one place.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -435,8 +438,8 @@ public class DeliveryManagementTests(PostgresFixture postgres)
     [InlineData("?offset=-1")]
     public async Task A_page_outside_the_bounds_is_refused_before_any_query(string query)
     {
-        // NFR-27: validated rather than passed through. A limit of zero is a refusal, not "give me
-        // nothing", which is also why the controller's parameters are nullable.
+        // Paging is validated rather than passed through. A limit of zero is a refusal, not "give
+        // me nothing", which is also why the controller's parameters are nullable.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -457,7 +460,7 @@ public class DeliveryManagementTests(PostgresFixture postgres)
     public async Task An_admin_reads_one_delivery_and_a_driver_is_refused_the_detail_endpoint()
     {
         // The detail endpoint is dispatch's. A driver reads their own rows through /mine, which
-        // answers a type that has no field a counterparty's name could be written into (AD-17).
+        // answers a type that has no field a counterparty's name could be written into.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -524,9 +527,9 @@ public class DeliveryManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task Overdue_is_derived_from_the_injected_clock_and_stored_nowhere()
     {
-        // FR-19. The clock is moved rather than the row, which is the only thing that can tell a
-        // derived flag from a stored one: nothing writes to the delivery between the two reads, and
-        // the same row answers differently because the time did.
+        // The overdue flag. The clock is moved rather than the row, which is the only thing that
+        // can tell a derived flag from a stored one: nothing writes to the delivery between the two
+        // reads, and the same row answers differently because the time did.
         var cancellationToken = TestContext.Current.CancellationToken;
         var clock = new FixedTimeProvider(DateTimeOffset.UtcNow);
 
@@ -558,7 +561,7 @@ public class DeliveryManagementTests(PostgresFixture postgres)
         // arrived, and when it arrived is the timeline's record rather than a flag's. Walked through
         // the entity's own mutator rather than through the endpoint, because what is under test is
         // the derivation and not how a delivery becomes Delivered - but through TryChangeStatus all
-        // the same, since that is the only assignment to Status the system has (AD-10).
+        // the same, since that is the only assignment to Status the system has.
         await using (var delivered = await factory.Database.ContextFactory
                          .CreateDbContextAsync(cancellationToken))
         {
@@ -592,10 +595,11 @@ public class DeliveryManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task A_driver_and_a_client_may_not_change_a_delivery()
     {
-        // FR-22 is a dispatcher's, and the update verb is where the role check is easiest to lose:
-        // it is the one method whose guard call sits after a load, and GuardCoverageTests only
-        // proves that some guard member is called, so swapping RequireRole for RequireScope here
-        // would leave every other test green while a driver gained the whole board's edit rights.
+        // Editing a delivery is a dispatcher's, and the update verb is where the role check is
+        // easiest to lose: it is the one method whose guard call sits after a load, and
+        // GuardCoverageTests only proves that some guard member is called, so swapping RequireRole
+        // for RequireScope here would leave every other test green while a driver gained the whole
+        // board's edit rights.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -644,7 +648,7 @@ public class DeliveryManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task An_update_naming_one_field_leaves_every_other_column_alone()
     {
-        // AD-23's absent case, asserted across the whole row rather than on one field: an update
+        // The absent case, asserted across the whole row rather than on one field: an update
         // that read the payload instead of the merge would blank the description, the window and
         // both parties, and a test that only checked the weight would not notice.
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -689,8 +693,9 @@ public class DeliveryManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task An_explicit_null_driver_unassigns_and_an_absent_one_leaves_the_assignment_alone()
     {
-        // FR-16 through AD-23, and the whole reason Optional exists: the two requests differ only
-        // in whether the field is present, and they have to mean different things.
+        // Unassigning through absent-versus-null, and the whole reason Optional exists: the two
+        // requests differ only in whether the field is present, and they have to mean different
+        // things.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -784,9 +789,9 @@ public class DeliveryManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task Moving_a_location_updates_the_delivery_row_and_drops_the_address_it_cached()
     {
-        // AD-11: a location is columns of this row, so moving one cannot orphan anything. DR-11:
-        // the address describes where the point used to be, so it goes with the move - leaving a
-        // stale address beside new coordinates is the one thing DR-11 forbids.
+        // A location is columns of this row, so moving one cannot orphan anything. The address
+        // describes where the point used to be, so it goes with the move - leaving a stale address
+        // beside new coordinates is the one thing the address cache forbids.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -796,7 +801,7 @@ public class DeliveryManagementTests(PostgresFixture postgres)
         var deliveryId = await DeliveryApi.PostAsync(
             client, dispatcher, DeliveryApi.NewDelivery(), cancellationToken);
 
-        // Story 5.2's geocoder does not exist yet, so the cache is filled by hand - on both points,
+        // No geocoder runs in this host, so the cache is filled by hand - on both points,
         // because the claim has two halves: the address of the point that moves is discarded, and
         // the address of the point that does not is kept. Seeding only the dropoff would leave a
         // "reset every address on every edit" implementation looking correct.
@@ -838,7 +843,7 @@ public class DeliveryManagementTests(PostgresFixture postgres)
 
             // The pickup was not sent, so the merge filled it in from the row and the coordinates
             // are the ones it already had - which means it did not move, which means its address
-            // still describes it. Discarding that too would throw away work story 5.2 does on
+            // still describes it. Discarding that too would throw away the geocoder's work on
             // every unrelated edit.
             Assert.Equal(
                 "Київ, Хрещатик",
@@ -856,10 +861,10 @@ public class DeliveryManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task Swapping_a_driver_onto_a_smaller_vehicle_is_refused_and_removing_it_is_not()
     {
-        // FR-103's fleet-side arm, which is where the invariant is easiest to lose: the delivery is
-        // untouched and the change is somebody else's, so nothing about the delivery request could
-        // have caught it. Removing the vehicle instead is allowed - a driver holding nothing takes
-        // no check (FR-38).
+        // The capacity invariant's fleet-side arm, which is where the invariant is easiest to lose:
+        // the delivery is untouched and the change is somebody else's, so nothing about the
+        // delivery request could have caught it. Removing the vehicle instead is allowed - a driver
+        // holding nothing takes no check.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -916,10 +921,11 @@ public class DeliveryManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task Lowering_the_capacity_of_a_held_vehicle_below_its_load_is_refused()
     {
-        // FR-103's third mover. Neither the delivery nor the assignment changes here - only the
-        // figure recorded against the vehicle the driver already holds - and it reaches the same
-        // forbidden state the other two arms refuse. Editing a vehicle nobody holds, or raising the
-        // capacity, is untouched by this: the check runs only when the figure actually falls short.
+        // The capacity invariant's third mover. Neither the delivery nor the assignment changes
+        // here - only the figure recorded against the vehicle the driver already holds - and it
+        // reaches the same forbidden state the other two arms refuse. Editing a vehicle nobody
+        // holds, or raising the capacity, is untouched by this: the check runs only when the figure
+        // actually falls short.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -985,9 +991,9 @@ public class DeliveryManagementTests(PostgresFixture postgres)
     {
         // The whole of FindHeaviestActiveWeightForDriverAsync's status set, both halves pinned. A
         // parcel already carried must stop blocking a vehicle change, or a job finished last winter
-        // holds the fleet for good; one still to be carried must keep blocking it, or FR-103 breaks
-        // at the exact moment the parcel is in the van. Asserting only the Delivered half would let
-        // the predicate narrow to Pending alone and stay green.
+        // holds the fleet for good; one still to be carried must keep blocking it, or the invariant
+        // breaks at the exact moment the parcel is in the van. Asserting only the Delivered half
+        // would let the predicate narrow to Pending alone and stay green.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -1005,7 +1011,7 @@ public class DeliveryManagementTests(PostgresFixture postgres)
 
         // Walked to the status rather than posted through the endpoint: what is under test is which
         // rows the invariant counts, not how one reaches a status. It still goes through
-        // TryChangeStatus, which is the only assignment to Status anywhere (AD-10) - so this cannot
+        // TryChangeStatus, which is the only assignment to Status anywhere - so this cannot
         // seed a state the lifecycle forbids.
         await using (var context = await factory.Database.ContextFactory
                          .CreateDbContextAsync(cancellationToken))
@@ -1049,10 +1055,11 @@ public class DeliveryManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task An_admin_deletes_a_delivery_and_all_four_dependents_go_with_it()
     {
-        // FR-24 and DR-9. The delete goes through the endpoint rather than through SQL, which is
-        // what makes this a test of the service's un-included load as well as of the cascade: a
-        // tracked timeline entry would make EF issue its own DELETE at trigger depth 1, where the
-        // append-only guard raises, and the request would answer a 500 instead.
+        // Deleting a delivery takes its dependents. The delete goes through the endpoint rather
+        // than through SQL, which is what makes this a test of the service's un-included load as
+        // well as of the cascade: a tracked timeline entry would make EF issue its own DELETE at
+        // trigger depth 1, where the append-only guard raises, and the request would answer a 500
+        // instead.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -1140,7 +1147,7 @@ public class DeliveryManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task A_dispatcher_may_not_delete_a_delivery_and_the_row_survives()
     {
-        // FR-24 reserves deletion to an administrator. This is the one operation in the capability
+        // Deletion is reserved to an administrator. This is the one operation in the capability
         // where "dispatcher or admin" is not the rule, so it is the one worth pinning.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
@@ -1206,7 +1213,7 @@ public class DeliveryManagementTests(PostgresFixture postgres)
 
     /// <summary>
     /// "Refused" and "refused and nothing happened" are different claims, and every refusal in this
-    /// story makes the second.
+    /// suite makes the second.
     /// </summary>
     private static async Task AssertNoDeliveriesAsync(
         ApiFactory factory,

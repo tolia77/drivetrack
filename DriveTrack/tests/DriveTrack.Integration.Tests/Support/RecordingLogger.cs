@@ -7,7 +7,7 @@ namespace DriveTrack.Integration.Tests.Support;
 /// <para>
 /// Some outcomes are only visible in a log. The geocoder answers a null address whether the
 /// provider had none, whether the request was refused for rate limiting, or whether the pacing gate
-/// gave up before the request was sent — DR-11 gives the caller one answer for all three, and that
+/// gave up before the request was sent — the caller gets one answer for all three, and that
 /// is the contract. The difference matters to the operator reading the log, so the only way to
 /// assert it is to read the log back.
 /// </para>

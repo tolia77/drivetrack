@@ -31,7 +31,7 @@ namespace DriveTrack.Integration.Tests.Configuration;
 /// <para>
 /// <b>Every container is built and started lazily</b>, for the reason
 /// <see cref="Persistence.PostgresFixture"/> is lazy: an assembly fixture is constructed for every
-/// run of this assembly, including the filtered run the NFR-29 design-token gate performs from
+/// run of this assembly, including the filtered run the design-token gate performs from
 /// <c>AfterTargets="Build"</c>. <c>ContainerBuilder.Build()</c> validates the Docker endpoint, so
 /// even building eagerly would fail <c>dotnet build</c> on a machine without Docker.
 /// </para>

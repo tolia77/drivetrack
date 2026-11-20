@@ -7,7 +7,7 @@ using Npgsql;
 namespace DriveTrack.Integration.Tests.Persistence;
 
 /// <summary>
-/// AD-20 / NFR-18 end to end against a real PostgreSQL 18 container: migrations are the only
+/// End to end against a real PostgreSQL 18 container: migrations are the only
 /// schema authority, they are applied deterministically before the app serves, a second run
 /// is a no-op, and an unreachable database fails loudly instead of pretending the schema is
 /// there.

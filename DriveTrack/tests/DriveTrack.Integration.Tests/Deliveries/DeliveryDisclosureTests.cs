@@ -9,8 +9,8 @@ using DriveTrack.Integration.Tests.Support;
 namespace DriveTrack.Integration.Tests.Deliveries;
 
 /// <summary>
-/// FR-25, FR-27, FR-96 and AD-3's anti-post-filtering rule: what a driver and a client are shown,
-/// and what they are not told.
+/// What a driver and a client are shown, and what they are not told — and the rule against
+/// filtering a page after it was fetched.
 /// <para>
 /// Two separate claims, and the second is the one that is easy to lose. "Only their own rows" is
 /// about which rows come back; "no counterparty identity" is about what is in them. A mapping that
@@ -81,9 +81,9 @@ public class DeliveryDisclosureTests(PostgresFixture postgres)
     [Fact]
     public async Task Neither_party_learns_who_the_other_is()
     {
-        // FR-27 and FR-96, asserted against the serialized body rather than against a deserialized
-        // shape: the claim is that the name is not on the wire at all, and a typed read could only
-        // ever look at the fields somebody remembered to check.
+        // The client's view hides the driver, asserted against the serialized body rather than
+        // against a deserialized shape: the claim is that the name is not on the wire at all, and a
+        // typed read could only ever look at the fields somebody remembered to check.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -112,7 +112,7 @@ public class DeliveryDisclosureTests(PostgresFixture postgres)
             Assert.DoesNotContain("Петренко", body, StringComparison.Ordinal);
 
             // And no field for one, which is what makes the claim structural: the type this route
-            // answers has no driver and no client property at all (AD-17).
+            // answers has no driver and no client property at all.
             foreach (var row in JsonDocument.Parse(body).RootElement.GetProperty("data").GetProperty("items").EnumerateArray())
             {
                 Assert.False(row.TryGetProperty("driver", out _));
@@ -126,9 +126,10 @@ public class DeliveryDisclosureTests(PostgresFixture postgres)
     [Fact]
     public async Task A_page_is_scoped_in_the_query_rather_than_filtered_after_it()
     {
-        // AD-3's rule, and the defect it exists to make unrepresentable. Ten deliveries belong to
-        // this driver and the ninety after them to nobody; a page fetched unscoped and filtered
-        // afterwards answers an empty first page, and no amount of paging further finds them.
+        // Narrow in the query, and the defect that rule exists to make unrepresentable. Ten
+        // deliveries belong to this driver and the ninety after them to nobody; a page fetched
+        // unscoped and filtered afterwards answers an empty first page, and no amount of paging
+        // further finds them.
         //
         // The driver's ten are seeded first on purpose. The list reads newest first, so seeding them
         // last would put them on the unscoped first page too and a post-filter would pass - the
@@ -240,8 +241,8 @@ public class DeliveryDisclosureTests(PostgresFixture postgres)
     [Fact]
     public async Task An_anonymous_caller_is_unauthenticated_on_both_routes()
     {
-        // 401 rather than 403: the caller presented no credentials, and FR-13 branches on the
-        // difference.
+        // 401 rather than 403: the caller presented no credentials, and session expiry branches on
+        // the difference.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();

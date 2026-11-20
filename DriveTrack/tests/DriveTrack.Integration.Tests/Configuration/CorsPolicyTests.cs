@@ -7,10 +7,10 @@ using Npgsql;
 namespace DriveTrack.Integration.Tests.Configuration;
 
 /// <summary>
-/// NFR-12 at both ends: the policy the running host applies to a cross-origin request, and the
-/// refusal that keeps a wildcard from ever reaching it.
+/// The known-origins rule at both ends: the policy the running host applies to a cross-origin
+/// request, and the refusal that keeps a wildcard from ever reaching it.
 /// <para>
-/// The policy had no test at all before this suite, which made NFR-12 true by coincidence —
+/// The policy had no test at all before this suite, which made the rule true by coincidence —
 /// replacing <c>WithOrigins(allowedOrigins)</c> with <c>AllowAnyOrigin()</c> would have left the
 /// whole solution green. The two preflight cases below are what make the origin list load-bearing.
 /// </para>
@@ -59,8 +59,8 @@ public class CorsPolicyTests(PostgresFixture postgres)
             "The preflight came back without an Access-Control-Allow-Origin header.");
         Assert.Equal(TestConfiguration.AllowedOrigin, Assert.Single(origins));
 
-        // The other half of what NFR-12 is about: this policy allows credentials, which is exactly
-        // why the origin list may never be a wildcard.
+        // The other half of what the rule is about: this policy allows credentials, which is
+        // exactly why the origin list may never be a wildcard.
         Assert.True(
             response.Headers.TryGetValues("Access-Control-Allow-Credentials", out var credentials),
             "The preflight came back without an Access-Control-Allow-Credentials header.");
@@ -247,7 +247,7 @@ public class CorsPolicyTests(PostgresFixture postgres)
     /// <para>
     /// Both halves are load-bearing. Absence alone would pass on a host that failed earlier for some
     /// unrelated reason, or that threw nothing at all; the database failure is positive evidence that
-    /// the host was built and reached AD-20's migrator, which is the first thing after
+    /// the host was built and reached the startup migrator, which is the first thing after
     /// <c>builder.Build()</c> and well past the check under test.
     /// </para>
     /// </summary>

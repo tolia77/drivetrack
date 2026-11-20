@@ -9,13 +9,13 @@ using Microsoft.Extensions.Options;
 namespace DriveTrack.Integration.Tests.Api;
 
 /// <summary>
-/// AD-7's first two suppressions, asserted twice each: once on the resolved options and once on the
-/// behaviour they govern.
+/// The envelope's first two suppressions, asserted twice each: once on the resolved options and
+/// once on the behaviour they govern.
 /// <para>
 /// Both flags are silent when wrong. <c>SuppressMapClientErrors</c> in particular defaults to
 /// <em>on</em> and quietly rewrites not-found, conflict and unauthorized results into problem
-/// documents at exactly the status codes NFR-1 governs - a regression that shows up as a changed
-/// response body and nothing else. A direct assertion on the flag says which line to fix.
+/// documents at exactly the status codes the envelope governs - a regression that shows up as a
+/// changed response body and nothing else. A direct assertion on the flag says which line to fix.
 /// </para>
 /// </summary>
 public class ApiBehaviorSuppressionTests(PostgresFixture postgres)
@@ -39,8 +39,8 @@ public class ApiBehaviorSuppressionTests(PostgresFixture postgres)
     public async Task An_invalid_model_reaches_the_action_body()
     {
         // The behavioural half of SuppressModelStateInvalidFilter: without it the framework answers
-        // 400 with a ProblemDetails before the action runs, and AD-9's validator - the thing that
-        // actually decides what is valid here - never gets a say.
+        // 400 with a ProblemDetails before the action runs, and the core's validator - the thing
+        // that actually decides what is valid here - never gets a say.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await ApiFactory.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();

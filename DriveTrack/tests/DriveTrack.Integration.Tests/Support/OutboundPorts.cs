@@ -6,11 +6,11 @@ using Microsoft.Extensions.DependencyInjection;
 namespace DriveTrack.Integration.Tests.Support;
 
 /// <summary>
-/// AD-12's two outbound ports, answered inside the process.
+/// The two outbound ports, answered inside the process.
 /// <para>
 /// Every suite that exercises a side effect registers these. The real adapters reach a public
 /// geocoding service and a mail relay, and a test that let them do it would assert against somebody
-/// else's uptime — and would take about as long. What the story actually claims is about
+/// else's uptime — and would take about as long. What these tests actually claim is about
 /// <em>this</em> system: that the work is dispatched after the commit, that it never fails the
 /// write, and that a failed send becomes a row. All three are claims about what happens on either
 /// side of the port, which is exactly what a fake can stand in for.
@@ -73,7 +73,7 @@ internal sealed class FakeGeocoder : IGeocoder
     private readonly List<(double Latitude, double Longitude)> _described = [];
     private readonly List<string> _searched = [];
 
-    /// <summary>What every reverse lookup answers. Null is FR-94's "the provider had nothing".</summary>
+    /// <summary>What every reverse lookup answers. Null is "the provider had nothing".</summary>
     public string? Address { get; set; }
 
     /// <summary>When set, every reverse lookup throws it instead of answering.</summary>
@@ -190,7 +190,7 @@ internal sealed class FakeGeocoder : IGeocoder
 }
 
 /// <summary>
-/// AD-26's object store, answered inside the process: a dictionary of keys to bytes.
+/// The object store, answered inside the process: a dictionary of keys to bytes.
 /// <para>
 /// Garage is a container and an S3 protocol, and a suite that ran one to prove the ordering rule
 /// would be asserting against somebody else's daemon. What the proof capability actually claims is
