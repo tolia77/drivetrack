@@ -222,7 +222,7 @@
     position: sticky;
     /*
         Below the scroll box's padding edge, not on it. `bottom: 0` pins a sticky
-        element to the *padding* box, so the bar came to rest `space-5` above the
+        element to the *padding* box, so the bar came to rest `dialog-padding` above the
         bottom of the dialog's body and the form scrolled through the gap beneath
         it - the signature's clear button sliding out from under a bar that looked
         like it should have covered it. Offset by the padding it has to clear, and
@@ -230,9 +230,9 @@
         edge. `bottom` is a position offset and outside the design-token scan, which is
         what lets it be stated as arithmetic on the token.
     */
-    bottom: calc(-1 * var(--dt-space-5));
+    bottom: calc(-1 * var(--dt-dialog-padding));
     display: flex;
-    padding: var(--dt-space-3) 0 var(--dt-space-5);
+    padding: var(--dt-space-3) 0 var(--dt-dialog-padding);
     border-top: var(--dt-border-width) solid var(--dt-border);
     background-color: var(--dt-surface-card);
 }

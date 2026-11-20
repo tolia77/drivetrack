@@ -70,10 +70,10 @@
     justify-content: space-between;
     gap: var(--dt-space-3);
     /*
-        The body's padding on every side, so the title, the form and the actions share one edge
-        and the panel is inset by the same amount whichever way it is read.
+        `dialog-padding` on every side, as the body and the actions have it: the title, the form and
+        the buttons share one edge, and the head stays one compact line tall.
     */
-    padding: var(--dt-space-5);
+    padding: var(--dt-dialog-padding);
     border-bottom: var(--dt-border-width) solid var(--dt-border);
 }
 
@@ -147,7 +147,7 @@
 
 .dt-dialog-body {
     overflow-y: auto;
-    padding: var(--dt-space-5);
+    padding: var(--dt-dialog-padding);
     color: var(--dt-ink);
 }
 
@@ -168,7 +168,7 @@
     justify-content: flex-start;
     gap: var(--dt-space-2);
     /* The same inset as the head and the body, on every side. */
-    padding: var(--dt-space-5);
+    padding: var(--dt-dialog-padding);
     border-top: var(--dt-border-width) solid var(--dt-border);
 }
 
