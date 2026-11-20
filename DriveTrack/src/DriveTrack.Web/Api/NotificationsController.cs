@@ -6,12 +6,12 @@ using Microsoft.AspNetCore.Mvc;
 namespace DriveTrack.Web.Api;
 
 /// <summary>
-/// The notification log over REST (FR-28).
+/// The notification log over REST.
 /// <para>
 /// <c>[Authorize]</c> carries no roles, like every other controller here. Who may read the log is
 /// decided by <c>IAccessGuard</c> inside <see cref="INotificationLogService"/> — it names
 /// <c>RequireRole(UserRole.Admin)</c> outright — and an attribute restating that would be a second,
-/// differently-worded copy of a rule the service already states precisely (AD-2). The attribute only
+/// differently-worded copy of a rule the service already states precisely. The attribute only
 /// spares an anonymous caller a round trip through the service.
 /// </para>
 /// <para>
@@ -19,7 +19,7 @@ namespace DriveTrack.Web.Api;
 /// written by the background runner and removed only by the cascade from its delivery.
 /// </para>
 /// <para>
-/// Thin, like every controller here (NFR-7): bind, call, return. The envelope comes from the global
+/// Thin, like every controller here: bind, call, return. The envelope comes from the global
 /// result filter and every failure from the branch middleware, so there is no status code and no
 /// <c>try</c> in this file.
 /// </para>
@@ -30,7 +30,7 @@ namespace DriveTrack.Web.Api;
 public sealed class NotificationsController(INotificationLogService notifications) : ControllerBase
 {
     /// <summary>
-    /// One page of notification attempts, newest first (FR-28). Defaults to the first hundred.
+    /// One page of notification attempts, newest first. Defaults to the first hundred.
     /// </summary>
     /// <remarks>
     /// The paging parameters are nullable so an omitted one takes the default here rather than

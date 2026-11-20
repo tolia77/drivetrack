@@ -6,16 +6,16 @@ using Microsoft.AspNetCore.Mvc;
 namespace DriveTrack.Web.Api;
 
 /// <summary>
-/// A user's own account over REST (FR-5, FR-87, FR-88, FR-92).
+/// A user's own account over REST.
 /// <para>
 /// <c>[Authorize]</c> here is a convenience, not the decision: it stops an anonymous request before
 /// it reaches a service, but whether <em>this</em> caller may read <em>that</em> profile is decided
-/// by <c>IAccessGuard.RequireSelf</c> inside the service and nowhere else (AD-2). Deleting the
+/// by <c>IAccessGuard.RequireSelf</c> inside the service and nowhere else. Deleting the
 /// attribute would change the status of an anonymous call and nothing about who is allowed to read
 /// or change what.
 /// </para>
 /// <para>
-/// Thin, like every controller here (NFR-7): bind, call, return. The envelope comes from the global
+/// Thin, like every controller here: bind, call, return. The envelope comes from the global
 /// result filter and every failure from the branch middleware, so there is no status code and no
 /// <c>try</c> in this file.
 /// </para>
@@ -31,8 +31,8 @@ public sealed class UsersController(IUserService users) : ControllerBase
         users.GetProfileAsync(new UserId(id), cancellationToken);
 
     /// <summary>
-    /// Edits a user's own name, and their phone number when they are a client (FR-87). Every field
-    /// the body omits is left alone (AD-23).
+    /// Edits a user's own name, and their phone number when they are a client. Every field
+    /// the body omits is left alone.
     /// </summary>
     [HttpPatch("{id:int}")]
     public Task<UserProfile> UpdateAsync(
@@ -42,7 +42,7 @@ public sealed class UsersController(IUserService users) : ControllerBase
         users.UpdateProfileAsync(new UserId(id), command, cancellationToken);
 
     /// <summary>
-    /// Replaces a user's own password, current password first (FR-88). 204, with no body: a password
+    /// Replaces a user's own password, current password first. 204, with no body: a password
     /// has no readable form, so there is nothing to answer with.
     /// </summary>
     [HttpPost("{id:int}/password")]
@@ -57,7 +57,7 @@ public sealed class UsersController(IUserService users) : ControllerBase
     }
 
     /// <summary>
-    /// Replaces the address a user's account signs in with (FR-92). Answers the profile, so the
+    /// Replaces the address a user's account signs in with. Answers the profile, so the
     /// caller can see the address that was actually stored.
     /// </summary>
     [HttpPost("{id:int}/email")]

@@ -9,13 +9,13 @@ using Microsoft.IdentityModel.Tokens;
 namespace DriveTrack.Infrastructure.Identity;
 
 /// <summary>
-/// Signs the bearer token the REST adapter accepts (FR-4).
+/// Signs the bearer token the REST adapter accepts.
 /// <para>
 /// The claims come from <see cref="SessionClaims"/>, which the cookie scheme writes too: a caller is
 /// the same <c>ICurrentUser</c> whichever credential carried them.
 /// </para>
 /// <para>
-/// AD-13: the expiry is read from the injected <see cref="TimeProvider"/>, never from the ambient
+/// The expiry is read from the injected <see cref="TimeProvider"/>, never from the ambient
 /// clock, so a token-lifetime rule can be tested by moving a fake clock rather than by waiting.
 /// </para>
 /// </summary>

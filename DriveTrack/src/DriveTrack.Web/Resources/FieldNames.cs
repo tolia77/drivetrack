@@ -2,7 +2,7 @@ namespace DriveTrack.Web.Resources;
 
 /// <summary>
 /// Marker type for the field-label catalogue: the name of an input, in Ukrainian, keyed by the CLR
-/// property a validator names when it refuses one (NFR-14).
+/// property a validator names when it refuses one.
 /// <para>
 /// A third catalogue rather than an entry in either existing one, because both are closed in both
 /// directions against something this cannot satisfy. <see cref="UiText"/> is closed against the

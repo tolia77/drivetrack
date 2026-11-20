@@ -1,7 +1,7 @@
 namespace DriveTrack.Web.Account;
 
 /// <summary>
-/// FR-79 / FR-80: where a caller the route view refused is sent.
+/// Where a caller the route view refused is sent.
 /// <para>
 /// The two cases are not the same failure and must not share an answer. An anonymous visitor has
 /// something to do about it — sign in — so they are sent to the sign-in page. A caller who is

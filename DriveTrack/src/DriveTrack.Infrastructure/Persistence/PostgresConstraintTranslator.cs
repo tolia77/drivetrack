@@ -5,9 +5,9 @@ using Npgsql;
 namespace DriveTrack.Infrastructure.Persistence;
 
 /// <summary>
-/// AD-8's single translation point: the one file in the system that knows what a PostgreSQL
+/// The single translation point: the one file in the system that knows what a PostgreSQL
 /// SQLSTATE means. Reached only from <see cref="UnitOfWork.CommitAsync"/>, the single production
-/// commit path, so a constraint the schema enforces (AD-20) surfaces as a typed failure with a
+/// commit path, so a constraint the schema enforces surfaces as a typed failure with a
 /// contract code instead of the raw 500 the original system returned.
 /// <para>
 /// <c>PostgresException</c> is named nowhere else under <c>src/</c>, and a source scan in
@@ -29,7 +29,7 @@ internal static class PostgresConstraintTranslator
     private const string CheckViolation = "23514";
 
     /// <summary>
-    /// The unique index behind FR-123's "one proof per delivery".
+    /// The unique index behind "one proof per delivery".
     /// <para>
     /// Named here because the capability refuses the same thing twice and the two refusals must say
     /// the same sentence. <c>ProofOfDeliveryService.CaptureAsync</c> re-checks inside its writing
@@ -40,7 +40,7 @@ internal static class PostgresConstraintTranslator
     /// </para>
     /// <para>
     /// One name and not a registry. Every other constraint keeps the generic answer, because a code
-    /// per index would make the failure vocabulary a mirror of the schema — and AD-8's point is that
+    /// per index would make the failure vocabulary a mirror of the schema — and the point is that
     /// it is a contract instead.
     /// </para>
     /// </summary>
@@ -69,7 +69,7 @@ internal static class PostgresConstraintTranslator
         }
 
         // The constraint name goes in the exception Message and nowhere else. The wire message is
-        // always the localized string for the code (NFR-3), so this detail reaches the log and
+        // always the localized string for the code, so this detail reaches the log and
         // stops there - which is what makes "ix_reviews_delivery_id" diagnosable without ever
         // telling a client the shape of the schema.
         var constraint = postgres.ConstraintName ?? "(unnamed)";

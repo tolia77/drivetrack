@@ -1,7 +1,7 @@
 namespace DriveTrack.Infrastructure.Identity;
 
 /// <summary>
-/// The bearer-token settings, bound from the <c>Jwt</c> configuration section (AD-19).
+/// The bearer-token settings, bound from the <c>Jwt</c> configuration section.
 /// <para>
 /// Every value arrives as an environment variable in the container — <c>Jwt__SigningKey</c>,
 /// <c>Jwt__Issuer</c>, <c>Jwt__Audience</c>, <c>Jwt__LifetimeMinutes</c> — and appears in

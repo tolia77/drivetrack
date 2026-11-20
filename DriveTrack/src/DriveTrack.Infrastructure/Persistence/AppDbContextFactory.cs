@@ -6,7 +6,7 @@ namespace DriveTrack.Infrastructure.Persistence;
 /// <summary>
 /// Design-time factory used by <c>dotnet ef</c> when scaffolding and scripting migrations.
 /// <para>
-/// AD-20 requires migrations to be generated from the same model the application runs, so
+/// Migrations must be generated from the same model the application runs, so
 /// the tooling builds the context directly here rather than booting the web host — that keeps
 /// migration generation independent of a running database and of the runtime environment.
 /// The connection string is only used to pick the provider; <c>migrations add</c> never

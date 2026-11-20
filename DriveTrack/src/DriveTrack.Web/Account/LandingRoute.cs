@@ -3,7 +3,7 @@ using DriveTrack.Domain.Identity;
 namespace DriveTrack.Web.Account;
 
 /// <summary>
-/// FR-7: where a role lands after signing in, decided in one place.
+/// Where a role lands after signing in, decided in one place.
 /// <para>
 /// Admin and Dispatcher land on <c>/dashboard</c>; Driver and Client land on <c>/profile</c> until
 /// they have a dashboard of their own. Writing the switch out in full is what makes that a one-line

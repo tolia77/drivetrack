@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DriveTrack.Infrastructure.Persistence.Configurations;
 
-/// <summary>Mapping for <see cref="Vehicle"/> (FR-41).</summary>
+/// <summary>Mapping for <see cref="Vehicle"/>.</summary>
 internal sealed class VehicleConfiguration : IEntityTypeConfiguration<Vehicle>
 {
     /// <inheritdoc />
@@ -18,7 +18,7 @@ internal sealed class VehicleConfiguration : IEntityTypeConfiguration<Vehicle>
         builder.Property(vehicle => vehicle.LicensePlate).HasMaxLength(20).IsRequired();
         builder.Property(vehicle => vehicle.CapacityKg).HasPrecision(10, 2);
 
-        // FR-41: one plate, one vehicle - in the schema, because two concurrent creates defeat
+        // One plate, one vehicle - in the schema, because two concurrent creates defeat
         // a "does this plate already exist" query no matter where it is written.
         builder.HasIndex(vehicle => vehicle.LicensePlate).IsUnique();
     }

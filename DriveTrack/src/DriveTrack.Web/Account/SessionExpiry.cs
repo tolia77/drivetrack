@@ -3,7 +3,7 @@ using DriveTrack.Application.Common;
 namespace DriveTrack.Web.Account;
 
 /// <summary>
-/// FR-13's recognition rule, in one place.
+/// The session-expiry recognition rule, in one place.
 /// <para>
 /// It lives in a class rather than in <c>SessionExpiryBoundary.razor</c>'s <c>@code</c> block for one
 /// reason: a rule that decides whether a user is sent back to sign-in is worth asserting directly,
@@ -36,7 +36,7 @@ internal static class SessionExpiry
     /// <para>
     /// The cause chain is walked because a failure raised in a component lifecycle method reaches an
     /// <c>ErrorBoundary</c> wrapped, and a branch that only looked at the outermost exception would
-    /// miss exactly the case FR-13 is about.
+    /// miss exactly the case this rule is about.
     /// </para>
     /// </summary>
     public static bool IsExpired(Exception? failure)

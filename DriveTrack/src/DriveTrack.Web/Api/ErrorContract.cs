@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Http;
 namespace DriveTrack.Web.Api;
 
 /// <summary>
-/// The one status table (AD-7). NFR-2 - equivalent failures return the same status code everywhere -
+/// The one status table. Equivalent failures return the same status code everywhere, which
 /// is only true if there is exactly one place that decides, so every writer in this folder asks
 /// here and nothing maps a status inline.
 /// </summary>
@@ -27,7 +27,7 @@ internal static class ErrorContract
         ErrorCode.COMMON_VALIDATION_FAILED => StatusCodes.Status422UnprocessableEntity,
         ErrorCode.COMMON_CONFLICT => StatusCodes.Status409Conflict,
 
-        // Every refusal a validator states about one field of the request (NFR-4). They travel as
+        // Every refusal a validator states about one field of the request. They travel as
         // field keys inside COMMON_VALIDATION_FAILED, which is itself 422, so the arm and the
         // envelope agree whichever way the failure is reached.
         ErrorCode.COMMON_FIELD_REQUIRED => StatusCodes.Status422UnprocessableEntity,
@@ -46,15 +46,15 @@ internal static class ErrorContract
         // A genuine collision with a row that already exists, like every other 409 here.
         ErrorCode.AUTH_EMAIL_ALREADY_IN_USE => StatusCodes.Status409Conflict,
 
-        // Four refusals on the content of the request (NFR-4).
+        // Four refusals on the content of the request.
         ErrorCode.AUTH_EMAIL_INVALID => StatusCodes.Status422UnprocessableEntity,
         ErrorCode.AUTH_PHONE_NUMBER_INVALID => StatusCodes.Status422UnprocessableEntity,
         ErrorCode.AUTH_PASSWORD_TOO_WEAK => StatusCodes.Status422UnprocessableEntity,
         ErrorCode.AUTH_PASSWORD_CONFIRMATION_MISMATCH => StatusCodes.Status422UnprocessableEntity,
 
-        // FR-88, and 422 rather than 401 for the reason the code itself sets out: the caller is
+        // 422 rather than 401 for the reason the code itself sets out: the caller is
         // signed in and it is one field of their request that was refused. A 401 here would reach
-        // FR-13's boundary as an expired session and send them back to sign-in.
+        // the session-expiry boundary as an expired session and send them back to sign-in.
         ErrorCode.AUTH_CURRENT_PASSWORD_INCORRECT => StatusCodes.Status422UnprocessableEntity,
 
         // Three more refusals on the content, stated per field rather than per request.
@@ -62,7 +62,7 @@ internal static class ErrorContract
         ErrorCode.AUTH_LAST_NAME_TOO_LONG => StatusCodes.Status422UnprocessableEntity,
         ErrorCode.AUTH_PASSWORD_TOO_LONG => StatusCodes.Status422UnprocessableEntity,
 
-        // Three genuine collisions with the current state of another row (FR-41, FR-43, FR-44).
+        // Three genuine collisions with the current state of another row.
         // Each is a refusal the caller can act on - free the vehicle, unassign the driver, choose
         // another plate - which is why they are distinct codes rather than one COMMON_CONFLICT.
         ErrorCode.FLEET_VEHICLE_ALREADY_ASSIGNED => StatusCodes.Status409Conflict,
@@ -77,7 +77,7 @@ internal static class ErrorContract
         ErrorCode.FLEET_MILEAGE_NEGATIVE => StatusCodes.Status422UnprocessableEntity,
         ErrorCode.FLEET_LICENSE_NUMBER_TOO_LONG => StatusCodes.Status422UnprocessableEntity,
 
-        // FR-29: a delivery named a party that is not there. 404 rather than 422, because the
+        // A delivery named a party that is not there. 404 rather than 422, because the
         // failure is a row that does not exist and not a value that is malformed - and distinct
         // from COMMON_NOT_FOUND, because the resource the caller addressed does exist. A dispatcher
         // told "driver not found" knows to pick another driver; one told "not found" does not know
@@ -85,7 +85,7 @@ internal static class ErrorContract
         ErrorCode.DELIVERY_DRIVER_NOT_FOUND => StatusCodes.Status404NotFound,
         ErrorCode.DELIVERY_CLIENT_NOT_FOUND => StatusCodes.Status404NotFound,
 
-        // FR-103, and a 409 for the same reason the three fleet codes are: the request collides
+        // The capacity rule, and a 409 for the same reason the three fleet codes are: the request collides
         // with the current state of another row - the vehicle the driver holds - and the caller's
         // next move is to change one of the two figures.
         ErrorCode.DELIVERY_EXCEEDS_VEHICLE_CAPACITY => StatusCodes.Status409Conflict,
@@ -107,41 +107,41 @@ internal static class ErrorContract
         ErrorCode.DELIVERY_PROOF_TOO_MANY_PHOTOS => StatusCodes.Status422UnprocessableEntity,
         ErrorCode.DELIVERY_PLACE_QUERY_TOO_SHORT => StatusCodes.Status422UnprocessableEntity,
 
-        // FR-32, and AD-10's "never a validation error" written as a status: the request named a
+        // A refused status transition, "never a validation error" written as a status: the request named a
         // status that exists and a delivery that exists, and what refused it is where that delivery
         // currently is. A 422 here would mean the payload was malformed, and a caller acting on
         // that would keep re-sending a correct request with different spelling.
         ErrorCode.DELIVERY_INVALID_STATUS_TRANSITION => StatusCodes.Status409Conflict,
 
-        // FR-120 and FR-123, and 409 for the same reason FR-32's refusal is one: the request was
+        // The proof rules, and 409 for the same reason a refused transition is one: the request was
         // well formed and what refused it is the state of the delivery - it has no proof and no
         // note, or it already has a proof and a proof is never replaced. A 422 would tell a driver
         // to re-spell a payload that was correct.
         ErrorCode.DELIVERY_PROOF_REQUIRED => StatusCodes.Status409Conflict,
         ErrorCode.DELIVERY_PROOF_ALREADY_CAPTURED => StatusCodes.Status409Conflict,
 
-        // NFR-28, and 422 because these two really are about the content of the request: the file
+        // The upload limits, and 422 because these two really are about the content of the request: the file
         // is the wrong sort of file, or it is too big. Both travel as field keys inside
         // COMMON_VALIDATION_FAILED, so the status the validator's own code carries is the one that
-        // reaches the caller - these arms exist because AD-7's map is total, and because a future
+        // reaches the caller - these arms exist because the status map is total, and because a future
         // path that threw one of them directly must not answer 500.
         ErrorCode.DELIVERY_PROOF_ASSET_TYPE_NOT_ALLOWED => StatusCodes.Status422UnprocessableEntity,
         ErrorCode.DELIVERY_PROOF_ASSET_TOO_LARGE => StatusCodes.Status422UnprocessableEntity,
 
-        // FR-71, and 404 for the reason DELIVERY_DRIVER_NOT_FOUND is one: a thread is keyed on a
+        // 404 for the reason DELIVERY_DRIVER_NOT_FOUND is one: a thread is keyed on a
         // driver row, so a driver that does not exist is a conversation that does not exist rather
         // than an empty one. Distinct from COMMON_NOT_FOUND because the missing row is the one the
         // caller named, and a dispatcher told that can pick another driver.
         ErrorCode.CHAT_THREAD_NOT_FOUND => StatusCodes.Status404NotFound,
 
-        // FR-70's two refusals on the content of the message. Both travel as field keys inside
+        // The two refusals on the content of the message. Both travel as field keys inside
         // COMMON_VALIDATION_FAILED, so the status the validator's own code carries is the one that
-        // reaches a caller - these arms exist because AD-7's map is total, and because a future path
+        // reaches a caller - these arms exist because the status map is total, and because a future path
         // that threw one of them directly must not answer 500.
         ErrorCode.CHAT_MESSAGE_TEXT_REQUIRED => StatusCodes.Status422UnprocessableEntity,
         ErrorCode.CHAT_MESSAGE_TEXT_TOO_LONG => StatusCodes.Status422UnprocessableEntity,
 
-        // FR-62 and FR-67's four refusals, all on the content of the request (NFR-4).
+        // The four review refusals, all on the content of the request.
         //
         // The first is the one worth arguing. A review of an unfinished delivery looks like the
         // status refusals above - the row's state is what says no - but it is not the same failure:
@@ -152,43 +152,43 @@ internal static class ErrorContract
         //
         // The other three travel as field keys inside COMMON_VALIDATION_FAILED, so the status the
         // validator's own code carries is the one that reaches a caller - these arms exist because
-        // AD-7's map is total, and because a future path throwing one of them directly must not
+        // the status map is total, and because a future path throwing one of them directly must not
         // answer 500.
         ErrorCode.REVIEW_DELIVERY_NOT_COMPLETED => StatusCodes.Status422UnprocessableEntity,
         ErrorCode.REVIEW_RATING_OUT_OF_RANGE => StatusCodes.Status422UnprocessableEntity,
         ErrorCode.REVIEW_TEXT_REQUIRED => StatusCodes.Status422UnprocessableEntity,
         ErrorCode.REVIEW_TEXT_TOO_LONG => StatusCodes.Status422UnprocessableEntity,
 
-        // FR-110 and FR-111's three refusals.
+        // The three shift refusals.
         //
-        // The first two are 409 for the reason FR-32's refusal is one: the payload named a driver
+        // The first two are 409 for the reason a refused transition is one: the payload named a driver
         // who exists and it is the state of their shifts that refuses the request - they are already
         // on duty, or they are not on duty at all. A 422 would tell a driver to re-spell a request
         // that was correct, when what they should do is press the other button. The first is also
         // the friendly twin of PERSISTENCE_UNIQUE_VIOLATION below: the index raises that one when
-        // two requests race, and NFR-2 is only true because both answer 409.
+        // two requests race, and equivalent failures share a status only because both answer 409.
         ErrorCode.SHIFT_ALREADY_OPEN => StatusCodes.Status409Conflict,
         ErrorCode.SHIFT_NOT_OPEN => StatusCodes.Status409Conflict,
 
         // The third really is about the content: a window that runs backwards is two values the
         // caller sent. It travels as a field key inside COMMON_VALIDATION_FAILED, so the status the
         // validator's own code carries is the one that reaches a caller - this arm exists because
-        // AD-7's map is total, and because a future path throwing it directly must not answer 500.
+        // the status map is total, and because a future path throwing it directly must not answer 500.
         ErrorCode.SHIFT_ENDED_BEFORE_STARTED => StatusCodes.Status422UnprocessableEntity,
         ErrorCode.SHIFT_OPEN_START_IN_FUTURE => StatusCodes.Status422UnprocessableEntity,
         ErrorCode.SHIFT_OVERLAPS_EXISTING => StatusCodes.Status409Conflict,
 
-        // AD-8 splits the two constraint kinds where AD-7 folds them together, and AD-8 is the more
-        // specific rule: a unique violation is a genuine conflict with another row, a check
-        // violation is a value the caller should not have sent. That split is what keeps NFR-2
-        // honest - a rating of 6 is 422 whether the validator or the database catches it.
+        // The persistence translation splits the two constraint kinds where the wire contract folds
+        // them together, and the split is the more specific rule: a unique violation is a genuine conflict with another row, a check
+        // violation is a value the caller should not have sent. That split is what keeps the one-status
+        // rule honest - a rating of 6 is 422 whether the validator or the database catches it.
         ErrorCode.PERSISTENCE_UNIQUE_VIOLATION => StatusCodes.Status409Conflict,
         ErrorCode.PERSISTENCE_CHECK_VIOLATION => StatusCodes.Status422UnprocessableEntity,
 
         _ => throw new ArgumentOutOfRangeException(
             nameof(code),
             code,
-            "No status is mapped for this error code. AD-7's status map is total: add an arm here "
+            "No status is mapped for this error code. The status map is total: add an arm here "
                 + "and a resource key in ErrorMessages.resx when minting a code."),
     };
 

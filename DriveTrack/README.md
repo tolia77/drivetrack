@@ -22,11 +22,10 @@ The first start creates the database volume, brings PostgreSQL and Garage up, ap
 Garage cluster layout once, and applies every EF Core migration before the app accepts a
 request. Later starts reuse the volumes and apply nothing.
 
-Object storage is brought up but not yet provisioned: `objects-init` applies only the Garage
-cluster layout, so no bucket and no S3 access key exist yet and
-`ObjectStore__AccessKey`, `ObjectStore__SecretKey` and `ObjectStore__Bucket` stay at their
-placeholder values. Creating them arrives with the proof-of-delivery story, which is the
-first code that reads or writes an object. Nothing in the app calls S3 before then.
+Object storage is provisioned on the same first start: besides the cluster layout,
+`objects-init` creates the bucket named by `ObjectStore__Bucket` and imports the key pair in
+`ObjectStore__AccessKey` and `ObjectStore__SecretKey`, so the app signs with exactly the key
+`.env` names. Every step is idempotent.
 
 Stop with `docker compose -f compose.dev.yaml down`; add `-v` to discard the database and
 object-store volumes.
@@ -68,10 +67,10 @@ default. The app refuses to start without it rather than failing at the first si
 ## Signing out
 
 `POST /sign-out` clears the browser's session cookie, and that is all it does. There are no
-refresh tokens and no revocation list yet, so a bearer token already issued to that person —
+refresh tokens and no revocation list, so a bearer token already issued to that person —
 by `POST /api/auth/sign-in` or by the same registration — keeps working until it expires on
 its own. `Jwt__LifetimeMinutes` is that window; it defaults to 60. Shorten it if a signed-out
-session must lose its REST access sooner. Token revocation belongs to a later epic.
+session must lose its REST access sooner.
 
 ## Develop against it
 

@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 namespace DriveTrack.Infrastructure.Identity;
 
 /// <summary>
-/// FR-9's documented way to get a first administrator into a fresh database.
+/// The documented way to get a first administrator into a fresh database.
 /// <para>
 /// Runs at startup, right after the migrator, and is idempotent in both halves: the four role rows
 /// are ensured one at a time, and the admin is created only when no account holds

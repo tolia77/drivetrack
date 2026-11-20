@@ -3,12 +3,12 @@ using DriveTrack.Application.Common;
 namespace DriveTrack.Web.Account;
 
 /// <summary>
-/// Turns one of AD-8's typed failures into the resource keys a screen shows.
+/// Turns one of the typed failures into the resource keys a screen shows.
 /// <para>
 /// The REST adapter already does this, in <c>EnvelopeWriter</c>: the code becomes
 /// <c>error.message</c> and each field error becomes an entry in <c>error.fields</c>. The Blazor
 /// forms need the same answer in a different shape, so the rule lives here rather than being
-/// written out twice — a screen that resolved its own message would be the second place NFR-3 is
+/// written out twice — a screen that resolved its own message would be the second place a failure's message is
 /// decided.
 /// </para>
 /// </summary>
@@ -103,8 +103,8 @@ internal static class FailureKeys
     /// The failures no field-level control on the screen has claimed - what the banner still has to
     /// show.
     /// <para>
-    /// FR-83 is the whole point of the subtraction being stated this way round. A screen names the
-    /// fields it renders an input for, and <em>everything else</em> falls through: a failure on a
+    /// Failures are never silent, and that is the whole point of the subtraction being stated this
+    /// way round. A screen names the fields it renders an input for, and <em>everything else</em> falls through: a failure on a
     /// field the open dialog does not show, a 403, a 404, a 409 carrying no field at all. The
     /// alternative - a banner that hides whatever any field might have claimed - would make a
     /// refusal invisible the first time a form dropped an input.

@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 namespace DriveTrack.Web.Account;
 
 /// <summary>
-/// AD-22's adapter half: the one type in the system that reads a <c>ClaimsPrincipal</c> and answers
+/// The adapter half of caller identity: the one type in the system that reads a <c>ClaimsPrincipal</c> and answers
 /// <see cref="ICurrentUser"/>.
 /// <para>
 /// Three sources, in order. A REST request or a statically rendered page has an
@@ -114,7 +114,7 @@ internal sealed class CurrentUser(
     /// circuit was created — so this reads it without blocking. A task that is somehow not complete
     /// is treated as "no caller yet" rather than waited on: blocking a render to answer a property
     /// getter is how a circuit deadlocks, and an anonymous answer here surfaces as the ordinary
-    /// <c>AUTH_UNAUTHENTICATED</c> that FR-13's boundary already handles.
+    /// <c>AUTH_UNAUTHENTICATED</c> that the session-expiry boundary already handles.
     /// </para>
     /// </summary>
     private ClaimsPrincipal? CircuitPrincipal()

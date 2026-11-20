@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DriveTrack.Infrastructure.Persistence.Repositories;
 
-/// <summary>EF Core implementation of <see cref="IDriverRepository"/>. See <see cref="EfClientRepository"/> for the AD-6 rules every repository here follows.</summary>
+/// <summary>EF Core implementation of <see cref="IDriverRepository"/>. See <see cref="EfClientRepository"/> for the materialization rules every repository here follows.</summary>
 internal sealed class EfDriverRepository(AppDbContext context) : IDriverRepository
 {
     /// <inheritdoc />
@@ -38,7 +38,7 @@ internal sealed class EfDriverRepository(AppDbContext context) : IDriverReposito
         // The account fields are joined on rather than read per driver afterwards: the search and
         // three of the sorts are about them. An inner join, because a driver row without its account
         // breaks a foreign key the schema declares; `(int)(object)` is the one translatable spelling
-        // of "the integer behind this typed id" (AD-22).
+        // of "the integer behind this typed id".
         var rows = context.Drivers
             .AsNoTracking()
             .Join(
@@ -88,7 +88,7 @@ internal sealed class EfDriverRepository(AppDbContext context) : IDriverReposito
                     .SortNullsLastBy(row => row.Vehicle == null ? null : row.Vehicle.Model, descending)
                     .ThenSortBy(row => row.Driver.Id, descending),
 
-                // FR-98's average, as an aggregate over the reviews of the driver's deliveries - the
+                // The rating average, as an aggregate over the reviews of the driver's deliveries - the
                 // same join ListDriverRatingsAsync groups. Unreviewed drivers have none, and stay at
                 // the far end in both directions.
                 DriverSort.Rating => filtered

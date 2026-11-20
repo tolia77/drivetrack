@@ -5,11 +5,12 @@ using DriveTrack.Domain.Deliveries;
 namespace DriveTrack.Infrastructure.SideEffects;
 
 /// <summary>
-/// The dispatch half of AD-12: an in-process queue behind <see cref="IDeliverySideEffects"/>.
+/// The dispatch half of the outbound side effects: an in-process queue behind
+/// <see cref="IDeliverySideEffects"/>.
 /// <para>
-/// Unbounded, and the choice is the one FR-95 forces. A bounded channel has to do something when it
-/// is full, and every option is worse than the problem: blocking would make the delivery write wait
-/// on a background queue, and dropping would lose a notification FR-28 requires to be recorded.
+/// Unbounded, and the choice is a forced one: a side effect must never hold up the user. A
+/// bounded channel has to do something when it is full, and every option is worse than the problem: blocking would make the delivery write wait
+/// on a background queue, and dropping would lose a notification that must be recorded.
 /// The queue only ever holds two small records per delivery operation, so the depth an unbounded
 /// channel could reach is the depth the database could be written at.
 /// </para>

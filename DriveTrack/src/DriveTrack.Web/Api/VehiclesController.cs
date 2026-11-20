@@ -6,17 +6,17 @@ using Microsoft.AspNetCore.Mvc;
 namespace DriveTrack.Web.Api;
 
 /// <summary>
-/// The fleet over REST (FR-40 to FR-45).
+/// The fleet over REST.
 /// <para>
 /// <c>[Authorize]</c> here is a convenience, not the decision: it stops an anonymous request before
 /// it reaches a service, but whether <em>this</em> caller may manage the fleet is decided by
-/// <c>IAccessGuard.RequireRole</c> inside <see cref="IVehicleService"/> and nowhere else (AD-2).
+/// <c>IAccessGuard.RequireRole</c> inside <see cref="IVehicleService"/> and nowhere else.
 /// Deleting the attribute would change the status of an anonymous call and nothing about who is
 /// allowed to do what — which is why there is no <c>Roles</c> argument on it either.
 /// </para>
 /// <para>
-/// Thin by construction: no try/catch, no <c>IActionResult</c>, no status set by hand. AD-7 leaves
-/// every status and every message to the envelope, so a refusal thrown three layers down arrives
+/// Thin by construction: no try/catch, no <c>IActionResult</c>, no status set by hand. Every
+/// status and every message is left to the envelope, so a refusal thrown three layers down arrives
 /// with the same shape as one thrown here.
 /// </para>
 /// </summary>
@@ -26,7 +26,7 @@ namespace DriveTrack.Web.Api;
 public sealed class VehiclesController(IVehicleService vehicles) : ControllerBase
 {
     /// <summary>
-    /// One page of the fleet with the number of vehicles that matched (NFR-27), searched and sorted
+    /// One page of the fleet with the number of vehicles that matched, searched and sorted
     /// over every vehicle. Defaults to the first hundred, as the original did.
     /// </summary>
     /// <remarks>
@@ -52,7 +52,7 @@ public sealed class VehiclesController(IVehicleService vehicles) : ControllerBas
                 search),
             cancellationToken);
 
-    /// <summary>Every vehicle no driver holds (FR-45). Unpaged, as the original was.</summary>
+    /// <summary>Every vehicle no driver holds. Unpaged, as the original was.</summary>
     [HttpGet("unassigned")]
     public Task<IReadOnlyList<VehicleSummary>> ListUnassignedAsync(CancellationToken cancellationToken) =>
         vehicles.ListUnassignedAsync(cancellationToken);
@@ -62,14 +62,14 @@ public sealed class VehiclesController(IVehicleService vehicles) : ControllerBas
     public Task<VehicleSummary> GetAsync(int id, CancellationToken cancellationToken) =>
         vehicles.GetAsync(id, cancellationToken);
 
-    /// <summary>Puts a vehicle on the fleet (FR-40).</summary>
+    /// <summary>Puts a vehicle on the fleet.</summary>
     [HttpPost]
     public Task<VehicleSummary> CreateAsync(
         [FromBody] CreateVehicleCommand command,
         CancellationToken cancellationToken) =>
         vehicles.CreateAsync(command, cancellationToken);
 
-    /// <summary>Changes a vehicle (FR-42). Absent fields are left alone (AD-23).</summary>
+    /// <summary>Changes a vehicle. Absent fields are left alone.</summary>
     [HttpPut("{id:int}")]
     public Task<VehicleSummary> UpdateAsync(
         int id,
@@ -77,7 +77,7 @@ public sealed class VehiclesController(IVehicleService vehicles) : ControllerBas
         CancellationToken cancellationToken) =>
         vehicles.UpdateAsync(id, command, cancellationToken);
 
-    /// <summary>Takes a vehicle off the fleet (FR-43).</summary>
+    /// <summary>Takes a vehicle off the fleet.</summary>
     [HttpDelete("{id:int}")]
     public Task DeleteAsync(int id, CancellationToken cancellationToken) =>
         vehicles.DeleteAsync(id, cancellationToken);

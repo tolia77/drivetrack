@@ -12,12 +12,12 @@ namespace DriveTrack.Web.Api;
 /// <para>
 /// A proof carries image bytes, so the request is <c>multipart/form-data</c> rather than JSON — a
 /// base64 photograph in a JSON body is a third larger and has to be held whole in memory twice. That
-/// makes the bound model an ASP.NET shape, and AD-1 keeps ASP.NET shapes out of Application: this
+/// makes the bound model an ASP.NET shape, and ASP.NET shapes stay out of Application: this
 /// type exists so that <see cref="ToCommand"/> is the boundary where an <c>IFormFile</c> becomes a
 /// <see cref="Stream"/> and a content type, and nothing below this folder can name one.
 /// </para>
 /// <para>
-/// Every field is nullable and nothing is validated here. AD-9 puts validation in
+/// Every field is nullable and nothing is validated here. Validation lives in
 /// <c>CaptureProofCommandValidator</c>, called by the capability, so a missing recipient and a
 /// missing signature are refused by the same code path whether they arrived over REST or from the
 /// capture screen — and the two suppressions in <c>Program.cs</c> mean an unbound field reaches the
@@ -33,7 +33,7 @@ public sealed class ProofCaptureForm
     /// <summary>Latitude of the capture point, in decimal degrees.</summary>
     /// <remarks>
     /// Bound as text and parsed invariantly below, which is not fussiness. A form value is bound
-    /// under <see cref="CultureInfo.CurrentCulture"/>, and NFR-15 makes that <c>uk-UA</c> — a
+    /// under <see cref="CultureInfo.CurrentCulture"/>, and that is <c>uk-UA</c> — a
     /// culture whose decimal separator is a comma. Bound as a <c>double?</c> the perfectly ordinary
     /// <c>50.4501</c> every client on earth sends would fail to parse, the suppressed model state
     /// would swallow the failure, and the capture would be refused for a missing coordinate the
@@ -50,11 +50,11 @@ public sealed class ProofCaptureForm
     [FromForm]
     public string? Longitude { get; set; }
 
-    /// <summary>The signature image (FR-119). Exactly one; the validator refuses none and refuses two.</summary>
+    /// <summary>The signature image. Exactly one; the validator refuses none and refuses two.</summary>
     [FromForm]
     public IFormFile? Signature { get; set; }
 
-    /// <summary>The photographs (FR-119). At least one, and at most <c>ProofAssetRules.MaximumPhotos</c>.</summary>
+    /// <summary>The photographs. At least one, and at most <c>ProofAssetRules.MaximumPhotos</c>.</summary>
     [FromForm]
     public IFormFileCollection? Photos { get; set; }
 
@@ -67,7 +67,7 @@ public sealed class ProofCaptureForm
     /// ASP.NET Core has already spooled to disk if it was large — so nothing here loads a photograph
     /// into memory, and the streams stay valid for as long as the request does.
     /// <para>
-    /// The lengths and types are the ones the request declared, not ones measured here. NFR-28's
+    /// The lengths and types are the ones the request declared, not ones measured here. The upload-limit
     /// check has to run before the first byte reaches the store, and measuring a forward-only stream
     /// would consume the bytes the store is about to write.
     /// </para>

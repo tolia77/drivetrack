@@ -23,12 +23,12 @@ using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.IdentityModel.Tokens;
 
-// AD-1: this file is the composition root and the only file in DriveTrack.Web
+// This file is the composition root and the only file in DriveTrack.Web
 // permitted to name a DriveTrack.Infrastructure type. LayeringTests enforces that.
 
 const string CorsPolicyName = "DriveTrackCors";
 
-// DW-6: the session cookie's Secure policy, read from configuration rather than compiled in. The
+// The session cookie's Secure policy, read from configuration rather than compiled in. The
 // compose topology terminates plain HTTP, so the default stays SameAsRequest; a deployment that does
 // terminate TLS sets Session__CookieSecurePolicy=Always and gets the flag without a rebuild.
 const string SessionCookieSecurePolicyKey = "Session:CookieSecurePolicy";
@@ -39,13 +39,13 @@ const string SessionCookieSecurePolicyKey = "Session:CookieSecurePolicy";
 // pins it to a directory backed by a named volume, so the ring outlives the container.
 const string DataProtectionKeysPathKey = "DataProtection:KeysPath";
 
-// NFR-14: the cookie carrying the reader's language. Named rather than left at the framework's
+// The cookie carrying the reader's language. Named rather than left at the framework's
 // .AspNetCore.Culture for the reason the session cookie is named drivetrack.session - every cookie
 // this application sets should be identifiable as this application's in a browser's inspector - and
 // declared once because the provider that reads it and the endpoint that writes it have to agree.
 const string CultureCookieName = "drivetrack.culture";
 
-// AD-3's first step, made concrete. Two schemes, chosen by path: a browser navigating the Blazor
+// The pipeline's first step, made concrete. Two schemes, chosen by path: a browser navigating the Blazor
 // shell carries a cookie, a REST client carries a bearer token, and the policy scheme below is what
 // decides which handler a given request is even offered to.
 const string SelectorScheme = AuthenticationSchemes.Selector;
@@ -57,7 +57,7 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
     .AddHubOptions(options =>
     {
-        // FR-119's signature comes back from the browser as a base64 PNG, which is a single JS
+        // The proof signature comes back from the browser as a base64 PNG, which is a single JS
         // interop return value and therefore a single SignalR message. The default ceiling on one
         // of those is 32 KiB, and a signature drawn on a full-width pad at a phone's device pixel
         // ratio is comfortably larger than that - so without this line the transport closes the
@@ -66,27 +66,27 @@ builder.Services.AddRazorComponents()
         //
         // Sized from ProofAssetRules rather than picked, for the reason the REST adapter's body cap
         // is: the validator decides what a legal asset is, and a transport that refused first would
-        // be a second, stricter definition of one (AD-9). Base64 is four bytes per three, and the
+        // be a second, stricter definition of one. Base64 is four bytes per three, and the
         // slack covers the JSON framing the payload travels inside.
         options.MaximumReceiveMessageSize =
             (ProofAssetRules.MaximumAssetBytes * 4 / 3) + (64 * 1024);
     });
 
-// AD-19: connection string, JWT signing key, diagnostics switches and every other
+// Connection string, JWT signing key, diagnostics switches and every other
 // environment-specific value arrive from configuration, which in the container means environment
 // variables.
 builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
 
-// AD-9: the validators live in Application and are discovered from its assembly. Registering them
+// The validators live in Application and are discovered from its assembly. Registering them
 // only makes them resolvable - an application service still invokes each one explicitly.
 builder.Services.AddApplication();
 
-// NFR-14: every user-facing string comes from a .resx beside its marker type. No ResourcesPath is
+// Every user-facing string comes from a .resx beside its marker type. No ResourcesPath is
 // configured, so IStringLocalizer<T> resolves the file from the type's full name and the folder
 // layout under Resources/ is the whole convention.
 builder.Services.AddLocalization();
 
-// AD-7: the REST adapter. Every controller outcome and every failure leaves in one envelope.
+// The REST adapter. Every controller outcome and every failure leaves in one envelope.
 builder.Services.AddControllers(options =>
     {
         // The other half of Suppression 1 below: with SuppressModelStateInvalidFilter on, a body
@@ -101,41 +101,41 @@ builder.Services.AddControllers(options =>
     .ConfigureApiBehaviorOptions(options =>
     {
         // Suppression 1: no automatic 400 ProblemDetails on invalid model state. Validation is
-        // AD-9's explicit call inside an application service, not something an adapter filter does
+        // an explicit call inside an application service, not something an adapter filter does
         // behind the service's back and in a shape this contract does not define.
         options.SuppressModelStateInvalidFilter = true;
 
         // Suppression 2: this defaults to *on* and silently rewrites NotFound(), Conflict() and
-        // Unauthorized() into framework problem documents - at exactly the status codes NFR-1
+        // Unauthorized() into framework problem documents - at exactly the status codes the envelope
         // governs. Off, those results reach EnvelopeResultFilter with their status intact.
         options.SuppressMapClientErrors = true;
     })
     .AddJsonOptions(options =>
     {
-        // AD-21: an enum crosses the wire as its member name. An ordinal is a number whose meaning
+        // An enum crosses the wire as its member name. An ordinal is a number whose meaning
         // changes the day someone reorders the enum, and every client would silently follow.
-        // AD-22: the typed identities are a compile-time device, not a wire shape. Without these a
+        // The typed identities are a compile-time device, not a wire shape. Without these a
         // user id would leave as {"value":3}.
         WireJson.Configure(options.JsonSerializerOptions);
 
-        // AD-23: a partial update has to be able to say "I did not send this field" and "I sent
+        // A partial update has to be able to say "I did not send this field" and "I sent
         // this field empty" differently. Without this factory a PATCH-shaped body cannot.
         options.JsonSerializerOptions.Converters.Add(new OptionalJsonConverterFactory());
     });
 
-// FR-70, FR-75: the chat hub's own transport. AddRazorComponents already brings SignalR in for the Blazor
+// The chat hub's own transport. AddRazorComponents already brings SignalR in for the Blazor
 // circuit, but the circuit speaks BlazorPack and a browser's HubConnection speaks JSON - so the JSON
-// protocol needs the same converters the REST adapter uses, or AD-22's typed identities leave as
+// protocol needs the same converters the REST adapter uses, or the typed identities leave as
 // {"value":7} and a client reads back an object where a number was meant.
 builder.Services.AddSignalR()
     .AddJsonProtocol(options =>
     {
-        // AD-21 and AD-22, the same call the controllers make. AD-23's Optional<T> factory is left
+        // The same enum and typed-id converters the controllers use. The Optional<T> factory is left
         // out: it exists for PATCH-shaped bodies, and no hub payload carries an Optional<T>.
         WireJson.Configure(options.PayloadSerializerOptions);
     });
 
-// AD-22's third caller source. A hub invocation has no HttpContext and no circuit, so the hub hands
+// The third caller source. A hub invocation has no HttpContext and no circuit, so the hub hands
 // its principal to this holder and CurrentUser reads it there. Scoped, which is what makes it safe:
 // SignalR creates a scope per hub method invocation, so one holder serves one caller.
 builder.Services.AddScoped<HubCaller>();
@@ -184,11 +184,11 @@ builder.Services.AddAuthentication(SelectorScheme)
         options.Cookie.Name = "drivetrack.session";
         options.Cookie.HttpOnly = true;
         options.Cookie.SameSite = SameSiteMode.Lax;
-        // DW-6: whatever the eager check above accepted. SameAsRequest when nothing is configured,
+        // Whatever the eager check above accepted. SameAsRequest when nothing is configured,
         // which is what the plain-HTTP compose stack needs and what every existing deployment gets.
         options.Cookie.SecurePolicy = sessionCookieSecurePolicy;
         options.LoginPath = "/sign-in";
-        // FR-79: forbidden and unauthenticated are different failures. A signed-in caller the
+        // Forbidden and unauthenticated are different failures. A signed-in caller the
         // handler refuses is told they lack access, not told to sign in - which they already have.
         options.AccessDeniedPath = "/access-denied";
         // Seven days, sliding: a dispatcher or driver who uses the system on any day of the week is
@@ -197,7 +197,7 @@ builder.Services.AddAuthentication(SelectorScheme)
         options.ExpireTimeSpan = TimeSpan.FromDays(7);
         options.SlidingExpiration = true;
 
-        // AD-7's third suppression. This handler serves the Blazor shell as well as anything else
+        // The wire contract's third suppression. This handler serves the Blazor shell as well as anything else
         // that is not a machine surface, so it branches: a REST path and the asset route get the
         // envelope, a browser navigating to a protected page still gets the redirect it expects.
         //
@@ -257,7 +257,7 @@ builder.Services.AddAuthentication(SelectorScheme)
 
 builder.Services.AddAuthorization();
 
-// AD-22: the caller, read from whichever source the current adapter has. Scoped, because a caller
+// The caller, read from whichever source the current adapter has. Scoped, because a caller
 // belongs to a request or to a circuit and to nothing longer-lived.
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddCascadingAuthenticationState();
@@ -271,7 +271,7 @@ builder.Services.AddScoped<ISessionService, SessionService>();
 // so an open tab ends with its account rather than with the next reload.
 builder.Services.AddScoped<AuthenticationStateProvider, RevalidatingSessionStateProvider>();
 
-// NFR-12: an explicit origin list, never a wildcard. An unset list means no cross-origin
+// An explicit origin list, never a wildcard. An unset list means no cross-origin
 // caller is allowed, which is the safe default rather than an accidental open door.
 var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins");
 
@@ -308,12 +308,12 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// AD-20: the schema is applied before the host accepts a single request. A failure here
+// The schema is applied before the host accepts a single request. A failure here
 // aborts startup rather than serving against a missing or stale schema.
 await app.Services.GetRequiredService<DatabaseMigrator>()
     .MigrateAsync(app.Lifetime.ApplicationStopping);
 
-// FR-9: immediately after the migration, because the seeder writes rows into the tables it just
+// Immediately after the migration, because the seeder writes rows into the tables it just
 // created. Idempotent, so a restart against the same volume writes nothing.
 await app.Services.GetRequiredService<IdentitySeeder>()
     .SeedAsync(app.Lifetime.ApplicationStopping);
@@ -329,7 +329,7 @@ app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages:
 // No UseHttpsRedirection: the compose topology terminates plain HTTP on the app container
 // and TLS is not configured here.
 
-// NFR-14: the product is read in Ukrainian or in English, and which one is a decision the user
+// The product is read in Ukrainian or in English, and which one is a decision the user
 // makes rather than one their browser makes for them. Ukrainian stays the default and the baseline:
 // it is what the neutral .resx files hold, and it is what a visitor who has never chosen sees.
 //
@@ -345,8 +345,8 @@ CultureInfo[] supportedCultures = [ukrainian, english];
 // UseRequestLocalization sets the culture per request, and the product has work that runs on no
 // request at all: the side-effect worker composes a client's notification from EmailText on its own
 // thread, long after the request that queued it was answered. Without these two the notice would be
-// formatted in whatever culture the machine happens to have, which is the one place NFR-15 would
-// silently not hold. Set before the host serves anything, so every thread it starts inherits them.
+// formatted in whatever culture the machine happens to have, which is the one place locale formatting
+// would silently not hold. Set before the host serves anything, so every thread it starts inherits them.
 //
 // Ukrainian rather than "whatever the request chose" is also what keeps the mail Ukrainian for every
 // recipient: EmailText ships no English satellite at all, so even a thread that did inherit en-US
@@ -364,7 +364,7 @@ app.UseRequestLocalization(new RequestLocalizationOptions
 
 app.UseCors(CorsPolicyName);
 
-// AD-7: branched onto the machine surfaces so the Blazor shell keeps its HTML error and not-found
+// Branched onto the machine surfaces so the Blazor shell keeps its HTML error and not-found
 // pages while every REST path gets the envelope - including an unmatched route, which the
 // status-code-pages middleware above would otherwise answer with HTML.
 //
@@ -385,7 +385,7 @@ app.UseAntiforgery();
 
 app.MapControllers();
 
-// FR-122 / AD-26 / DR-14: the one way a stored proof asset's bytes reach anybody.
+// The one way a stored proof asset's bytes reach anybody.
 //
 // A minimal-API endpoint rather than a controller action, and outside /api rather than inside it,
 // for the two reasons MachineSurface states: no MVC filter sees it, so nothing wraps an image in
@@ -393,7 +393,7 @@ app.MapControllers();
 // the same URL serves a driver's <img> tag and a REST client's bearer token.
 //
 // RequireAuthorization and nothing more: which assets *this* caller may read is IAccessGuard's
-// decision inside IProofOfDeliveryService, narrowed in the query (AD-2, AD-3), so an asset
+// decision inside IProofOfDeliveryService, narrowed in the query, so an asset
 // belonging to another client's delivery is not found rather than refused.
 app.MapGet(
     MachineSurface.ProofAssetPrefix + "/{assetId:int}",
@@ -420,7 +420,7 @@ app.MapGet(
     })
     .RequireAuthorization();
 
-// FR-6: signing out clears the cookie. A POST, so it cannot be triggered by a link or an image,
+// Signing out clears the cookie. A POST, so it cannot be triggered by a link or an image,
 // and on the cookie scheme by name because the selector would otherwise pick the bearer handler
 // for a request that has no bearer token to revoke.
 app.MapPost("/sign-out", async (HttpContext context, IAntiforgery antiforgery) =>
@@ -442,7 +442,7 @@ app.MapPost("/sign-out", async (HttpContext context, IAntiforgery antiforgery) =
     return Results.Redirect("/");
 });
 
-// NFR-14: the one way a user changes language.
+// The one way a user changes language.
 //
 // A full-page POST rather than anything the circuit does, because a Blazor Server component cannot
 // write a cookie: by the time its circuit is live the response that would have carried Set-Cookie
@@ -494,7 +494,7 @@ app.MapPost("/set-culture", async (HttpContext context, IAntiforgery antiforgery
                 // A year, so the choice survives closing the browser: a session cookie would put the
                 // user back into Ukrainian the next morning with nothing on screen explaining why.
                 //
-                // MaxAge rather than Expires, and that is AD-13 rather than taste: an absolute
+                // MaxAge rather than Expires, and that is the injected-clock rule rather than taste: an absolute
                 // expiry would have to be computed from a clock, and the only clock reachable here
                 // is the ambient one this codebase forbids. A relative lifetime needs no clock at
                 // all - the browser subtracts from its own.
@@ -510,7 +510,7 @@ app.MapPost("/set-culture", async (HttpContext context, IAntiforgery antiforgery
                 // CookieRequestCultureProvider before a component renders.
                 HttpOnly = true,
 
-                // DW-6, the same switch the session cookie reads, so one deployment setting governs
+                // The same switch the session cookie reads, so one deployment setting governs
                 // every cookie this application sets rather than one of them. CookieOptions takes a
                 // bool where the authentication handler takes the policy, so SameAsRequest - the
                 // default the plain-HTTP compose stack needs - is spelled out here as what it means.
@@ -544,9 +544,9 @@ app.MapPost("/set-culture", async (HttpContext context, IAntiforgery antiforgery
     return Results.Redirect(local ? returnUrl : "/");
 });
 
-// FR-70 and FR-75: the chat hub's endpoint.
+// The chat hub's endpoint.
 //
-// Outside /api on purpose, for the reason the asset route is: AD-22 makes /api/* bearer-only and a
+// Outside /api on purpose, for the reason the asset route is: /api/* is bearer-only and a
 // browser holds a cookie rather than a token, so a hub under /api could never be reached from the
 // screen that needs it. Here the path selector sends the browser's handshake to the cookie handler
 // with nothing added, and the hub's own [Authorize] additionally names the bearer scheme so the
@@ -557,7 +557,7 @@ app.MapPost("/set-culture", async (HttpContext context, IAntiforgery antiforgery
 // still structured, because the two authentication handlers write the envelope themselves.
 //
 // No RequireAuthorization here: the attribute on the hub carries the schemes, and which conversation
-// a caller may reach is IAccessGuard's decision inside IChatService (FR-12, AD-2).
+// a caller may reach is IAccessGuard's decision inside IChatService.
 //
 // A connection outlives the handshake that authenticated it. Revocation is the hub's own per-call
 // session check (ChatHub); expiry is closed here, so a connection whose sign-in ran out stops
@@ -617,7 +617,7 @@ static Task Redirect(RedirectContext<CookieAuthenticationOptions> context)
     return Task.CompletedTask;
 }
 
-// NFR-12, enforced where the list is read rather than asserted in a comment above it. Each message
+// The explicit-origin rule, enforced where the list is read rather than asserted in a comment above it. Each message
 // follows the house style AddInfrastructure sets for a refused setting: the offending value, the key
 // in the spelling the code uses and the spelling the environment does, and .env.example.
 static void RequireExplicitOrigin(string? origin, string key)
@@ -637,15 +637,15 @@ static void RequireExplicitOrigin(string? origin, string key)
     }
 
     // Every wildcard, including a subdomain one: this policy sends Access-Control-Allow-Credentials,
-    // and a wildcard origin with credentials is precisely what NFR-12 forbids. A subdomain wildcard
+    // and a wildcard origin with credentials is precisely what an explicit list forbids. A subdomain wildcard
     // would additionally need SetIsOriginAllowedToAllowWildcardSubdomains, which this policy
     // deliberately does not call, so the value would silently match nothing anyway.
     if (origin.Contains('*', StringComparison.Ordinal))
     {
         throw new InvalidOperationException(
-            $"Configuration value '{key}' is '{origin}', which is a wildcard. NFR-12 requires an "
-                + "explicit origin list: this policy allows credentials, and a wildcard paired with "
-                + $"credentials is exactly what that forbids. Set the '{variable}' environment "
+            $"Configuration value '{key}' is '{origin}', which is a wildcard. An explicit "
+                + "origin list is required: this policy allows credentials, and a wildcard paired with "
+                + $"credentials is exactly what the list exists to forbid. Set the '{variable}' environment "
                 + "variable (see .env.example) to one concrete origin, and give every further "
                 + "origin its own numbered key here and in compose.dev.yaml.");
     }
@@ -677,7 +677,7 @@ static void RequireExplicitOrigin(string? origin, string key)
     }
 }
 
-// DW-6, enforced where the value is read, with the same message anatomy RequireExplicitOrigin uses:
+// The cookie Secure policy, enforced where the value is read, with the same message anatomy RequireExplicitOrigin uses:
 // the offending value, the key in the spelling the code uses and the spelling the environment does,
 // and .env.example.
 static CookieSecurePolicy RequireCookieSecurePolicy(string? configured, string key)

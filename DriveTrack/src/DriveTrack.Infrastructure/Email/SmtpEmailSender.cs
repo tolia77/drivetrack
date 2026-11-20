@@ -16,7 +16,7 @@ namespace DriveTrack.Infrastructure.Email;
 /// <para>
 /// A failure is thrown rather than reported. Recording the attempt belongs to
 /// <c>DeliverySideEffectRunner</c>, which is the only place that has a unit of work to write the
-/// row into and the only place that knows which delivery the notice was about (FR-28).
+/// row into and the only place that knows which delivery the notice was about.
 /// </para>
 /// </summary>
 internal sealed class SmtpEmailSender(IOptions<SmtpOptions> options) : IEmailSender
@@ -33,7 +33,7 @@ internal sealed class SmtpEmailSender(IOptions<SmtpOptions> options) : IEmailSen
             // Thrown rather than returned quietly, and it is the right answer for the one case it
             // covers: with no relay configured nothing was sent, and a caller that believed
             // otherwise would record a notification as delivered that never left the building. The
-            // runner turns this into a Failed attempt saying exactly that, which is FR-28's point.
+            // runner turns this into a Failed attempt saying exactly that, which is the point of recording attempts.
             throw new InvalidOperationException(
                 $"No mail relay is configured. Set the '{SmtpOptions.SectionName}__Host' "
                     + "environment variable (see .env.example) before expecting a notification to "

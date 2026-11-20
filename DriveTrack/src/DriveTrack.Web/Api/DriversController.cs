@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace DriveTrack.Web.Api;
 
 /// <summary>
-/// The driver roster over REST (FR-35 to FR-39).
+/// The driver roster over REST.
 /// <para>
 /// <c>[Authorize]</c> is the same convenience it is on <see cref="VehiclesController"/>: the
 /// decision is <c>IAccessGuard.RequireRole</c> inside <see cref="IDriverService"/>, which is why a
@@ -20,7 +20,7 @@ namespace DriveTrack.Web.Api;
 public sealed class DriversController(IDriverService drivers) : ControllerBase
 {
     /// <summary>
-    /// One page of the roster, each driver with the vehicle they hold (FR-35), searched (FR-36) and
+    /// One page of the roster, each driver with the vehicle they hold, searched and
     /// sorted over every driver. Defaults to the first hundred.
     /// </summary>
     /// <remarks>
@@ -51,7 +51,7 @@ public sealed class DriversController(IDriverService drivers) : ControllerBase
     public Task<DriverSummary> GetAsync(int id, CancellationToken cancellationToken) =>
         drivers.GetAsync(new DriverId(id), cancellationToken);
 
-    /// <summary>Takes on a driver, their account and their first assignment in one transaction (FR-35).</summary>
+    /// <summary>Takes on a driver, their account and their first assignment in one transaction.</summary>
     [HttpPost]
     public Task<DriverSummary> CreateAsync(
         [FromBody] CreateDriverCommand command,
@@ -59,7 +59,7 @@ public sealed class DriversController(IDriverService drivers) : ControllerBase
         drivers.CreateAsync(command, cancellationToken);
 
     /// <summary>
-    /// Changes a driver (FR-37, FR-38). An absent <c>vehicleId</c> leaves the assignment alone; an
+    /// Changes a driver. An absent <c>vehicleId</c> leaves the assignment alone; an
     /// explicit null releases it.
     /// </summary>
     [HttpPut("{id:int}")]
@@ -69,7 +69,7 @@ public sealed class DriversController(IDriverService drivers) : ControllerBase
         CancellationToken cancellationToken) =>
         drivers.UpdateAsync(new DriverId(id), command, cancellationToken);
 
-    /// <summary>Removes a driver and the account behind them (FR-39).</summary>
+    /// <summary>Removes a driver and the account behind them.</summary>
     [HttpDelete("{id:int}")]
     public Task DeleteAsync(int id, CancellationToken cancellationToken) =>
         drivers.DeleteAsync(new DriverId(id), cancellationToken);

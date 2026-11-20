@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
   <!--
-    NFR-14: the Blazor shell's chrome, in Ukrainian. Every entry here is reached from a .razor file
+    The Blazor shell's chrome, in Ukrainian. Every entry here is reached from a .razor file
     through IStringLocalizer<UiText>; no literal sentence is left in a component.
   -->
   <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
@@ -190,7 +190,7 @@
   <data name="LicenseNumber" xml:space="preserve">
     <value>Номер посвідчення водія</value>
   </data>
-  <!-- Story 7.3: the editable profile - FR-87, FR-88 and FR-92 on one screen, three dialogs. -->
+  <!-- The editable profile - name, password and sign-in address on one screen, three dialogs. -->
   <data name="EditProfileTitle" xml:space="preserve">
     <value>Редагування профілю</value>
   </data>
@@ -233,7 +233,7 @@
   <data name="RememberMe" xml:space="preserve">
     <value>Запам’ятати мене</value>
   </data>
-  <!-- Story 3.2: the shared component vocabulary and the two dead-end surfaces. -->
+  <!-- The shared component vocabulary and the two dead-end surfaces. -->
   <data name="Close" xml:space="preserve">
     <value>Закрити</value>
   </data>
@@ -261,7 +261,7 @@
   <data name="BackToHome" xml:space="preserve">
     <value>Повернутися на головну</value>
   </data>
-  <!-- Story 7.1: the two account-administration screens and their navigation entries. -->
+  <!-- The two account-administration screens and their navigation entries. -->
   <data name="NavClients" xml:space="preserve">
     <value>Клієнти</value>
   </data>
@@ -307,7 +307,7 @@
   <data name="DeleteDispatcherMessage" xml:space="preserve">
     <value>Обліковий запис диспетчера буде видалено назавжди. Продовжити?</value>
   </data>
-  <!-- FR-50 / AD-23: порожнє поле означає «не змінювати», а не «стерти». -->
+  <!-- Порожнє поле означає «не змінювати», а не «стерти». -->
   <data name="PasswordUnchangedHint" xml:space="preserve">
     <value>Залиште поле порожнім, щоб не змінювати пароль.</value>
   </data>
@@ -450,7 +450,7 @@
   <data name="NotificationsCountMany" xml:space="preserve">
     <value>спроб надсилання</value>
   </data>
-  <!-- Story 5.1: the dispatch board, the own-deliveries screen and their navigation entries. -->
+  <!-- The dispatch board, the own-deliveries screen and their navigation entries. -->
   <data name="NavDeliveries" xml:space="preserve">
     <value>Доставки</value>
   </data>
@@ -532,8 +532,8 @@
   <data name="Status" xml:space="preserve">
     <value>Стан</value>
   </data>
-  <!-- FR-30's four statuses. Labels only: the stored and transmitted value is the member name
-       (AD-21), and these never travel anywhere but a screen. -->
+  <!-- The four delivery statuses. Labels only: the stored and transmitted value is the member
+       name, and these never travel anywhere but a screen. -->
   <data name="StatusPending" xml:space="preserve">
     <value>Очікує</value>
   </data>
@@ -555,7 +555,7 @@
   <data name="CreatedTo" xml:space="preserve">
     <value>Створено до</value>
   </data>
-  <!-- FR-19: derived from the window and the current time, never stored as a status. -->
+  <!-- Derived from the window and the current time, never stored as a status. -->
   <data name="Overdue" xml:space="preserve">
     <value>Прострочено</value>
   </data>
@@ -580,12 +580,12 @@
   <data name="DeleteDeliveryMessage" xml:space="preserve">
     <value>Доставку буде видалено разом з її історією, підтвердженням вручення та відгуком. Дію не можна скасувати.</value>
   </data>
-  <!-- FR-103's second figure: the envelope carries one message per code, so the capacity the
+  <!-- The capacity rule's second figure: the envelope carries one message per code, so the capacity the
        dispatcher is about to exceed is shown beside the weight instead. -->
   <data name="VehicleCapacityHint" xml:space="preserve">
     <value>Вантажопідйомність автомобіля обраного водія, кг:</value>
   </data>
-  <!-- FR-105 to FR-108: the append-only history. The row action is short because it sits beside
+  <!-- The append-only history. The row action is short because it sits beside
        two others in the same cell; the dialog says which delivery's history is open. -->
   <data name="Timeline" xml:space="preserve">
     <value>Історія</value>
@@ -620,7 +620,7 @@
   <data name="TimelineSubmit" xml:space="preserve">
     <value>Додати до історії</value>
   </data>
-  <!-- FR-104: the second way to set a point on the delivery form, beside the map. The hint says
+  <!-- The second way to set a point on the delivery form, beside the map. The hint says
        what the floor is, because a search that silently refuses two characters reads as broken. -->
   <data name="AddressSearch" xml:space="preserve">
     <value>Пошук за адресою</value>
@@ -636,7 +636,7 @@
   <data name="AddressSearchEmpty" xml:space="preserve">
     <value>За цим запитом нічого не знайдено.</value>
   </data>
-  <!-- FR-89 to FR-91: the client's own request, offered on /my-deliveries and nowhere else. Three
+  <!-- The client's own request, offered on /my-deliveries and nowhere else. Three
        keys rather than reusing "Create" and "DeliveryForm": those two label dispatch's board, where
        the same words mean a delivery opened on somebody else's behalf with a driver already chosen.
        A client asks for one, which is a different sentence. -->
@@ -649,7 +649,7 @@
   <data name="RequestDeliverySubmit" xml:space="preserve">
     <value>Надіслати замовлення</value>
   </data>
-  <!-- FR-28: the log of outbound notification attempts, which is an administrator's screen. -->
+  <!-- The log of outbound notification attempts, which is an administrator's screen. -->
   <data name="NavNotifications" xml:space="preserve">
     <value>Сповіщення</value>
   </data>
@@ -674,7 +674,7 @@
   <data name="NotificationError" xml:space="preserve">
     <value>Причина помилки</value>
   </data>
-  <!-- AD-18 / FR-16: the outcome is shown as a word a reader knows, never as the enum member the
+  <!-- The outcome is shown as a word a reader knows, never as the enum member the
        database stores. -->
   <data name="NotificationSent" xml:space="preserve">
     <value>Надіслано</value>
@@ -682,7 +682,7 @@
   <data name="NotificationFailed" xml:space="preserve">
     <value>Помилка</value>
   </data>
-  <!-- The only kind the system writes today (FR-28). Named rather than rendered as the enum member
+  <!-- The only kind the system writes today. Named rather than rendered as the enum member
        for the reason the outcome is. -->
   <data name="NotificationKindStatusChange" xml:space="preserve">
     <value>Зміна стану</value>
@@ -690,7 +690,7 @@
   <data name="NotificationKind" xml:space="preserve">
     <value>Подія</value>
   </data>
-  <!-- FR-119 to FR-123: the proof of delivery, captured at the door and read back afterwards.
+  <!-- The proof of delivery, captured at the door and read back afterwards.
        The two dialog headings are separate keys although they say almost the same thing: one names
        an action being performed and the other a record being read, and folding them together would
        tie two unrelated panels to one wording. -->
@@ -753,7 +753,7 @@
   <data name="ProofLocationPending" xml:space="preserve">
     <value>Визначаємо місце…</value>
   </data>
-  <!-- FR-119 records where the hand-over happened, so there is no fallback point to offer: the
+  <!-- Proof records where the hand-over happened, so there is no fallback point to offer: the
        sentence says what to do rather than pretending the capture can go ahead. -->
   <data name="ProofLocationRefused" xml:space="preserve">
     <value>Не вдалося визначити місце. Дозвольте доступ до геоданих і відкрийте вікно ще раз.</value>
@@ -764,7 +764,7 @@
   <data name="ProofCapturedAt" xml:space="preserve">
     <value>Час вручення</value>
   </data>
-  <!-- AD-17: shown only when the capability supplied a name, which it does for dispatch alone. -->
+  <!-- Shown only when the capability supplied a name, which it does for dispatch alone. -->
   <data name="ProofCapturedBy" xml:space="preserve">
     <value>Зафіксував</value>
   </data>
@@ -788,7 +788,7 @@
   <data name="SignatureSigned" xml:space="preserve">
     <value>Підписано</value>
   </data>
-  <!-- Story 8.1: FR-68 to FR-76. The destination, and the screen behind it. -->
+  <!-- Chat: the destination, and the screen behind it. -->
   <data name="NavChat" xml:space="preserve">
     <value>Розмови</value>
   </data>
@@ -813,7 +813,7 @@
   <data name="ChatNoMessages" xml:space="preserve">
     <value>Повідомлень ще немає.</value>
   </data>
-  <!-- AD-20: the account is gone and the line is not, so the line says who it is not from. -->
+  <!-- The account is gone and the line is not, so the line says who it is not from. -->
   <data name="ChatUnknownSender" xml:space="preserve">
     <value>Видалений користувач</value>
   </data>
@@ -837,7 +837,7 @@
   <data name="ChatFindDriver" xml:space="preserve">
     <value>Пошук водія</value>
   </data>
-  <!-- The day separators. Chat keeps its whole history (FR-71), so a conversation is read as a run
+  <!-- The day separators. Chat keeps its whole history, so a conversation is read as a run
        of days; the two nearest ones are named in words because that is how a reader refers to them,
        and everything older is named by its date. -->
   <data name="ChatToday" xml:space="preserve">
@@ -861,7 +861,7 @@
   <data name="ChatNoDriverFound" xml:space="preserve">
     <value>Жодного водія не знайдено.</value>
   </data>
-  <!-- Story 7.2: reviews (FR-62 to FR-67) and the rating derived from them (FR-98). -->
+  <!-- Reviews and the rating derived from them. -->
   <data name="NavReviews" xml:space="preserve">
     <value>Відгуки</value>
   </data>
@@ -885,7 +885,7 @@
   <data name="ReviewDelivery" xml:space="preserve">
     <value>Доставка</value>
   </data>
-  <!-- FR-62's two halves, said once: only a finished delivery, and only one review each. It
+  <!-- The review rule's two halves, said once: only a finished delivery, and only one review each. It
        explains why a client who expected to see a parcel in the picker does not. -->
   <data name="ReviewDeliveryHint" xml:space="preserve">
     <value>У списку лише ваші завершені або невдалі доставки, на які ви ще не залишали відгук.</value>
@@ -902,7 +902,7 @@
   <data name="DeleteReviewMessage" xml:space="preserve">
     <value>Відгук буде видалено остаточно. Продовжити?</value>
   </data>
-  <!-- FR-98's column on the driver roster. Short: it is a table heading beside the vehicle. -->
+  <!-- The rating column on the driver roster. Short: it is a table heading beside the vehicle. -->
   <data name="Rating" xml:space="preserve">
     <value>Рейтинг</value>
   </data>
@@ -911,7 +911,7 @@
   <data name="NoRating" xml:space="preserve">
     <value>Немає оцінок</value>
   </data>
-  <!-- Story 4.2's two navigation entries. Short, because they sit in a column of links: the first
+  <!-- The shifts' two navigation entries. Short, because they sit in a column of links: the first
        is dispatch's roster of everybody's shifts, the second a driver's own. -->
   <data name="NavShifts" xml:space="preserve">
     <value>Зміни</value>
@@ -919,7 +919,7 @@
   <data name="NavMyShifts" xml:space="preserve">
     <value>Мої зміни</value>
   </data>
-  <!-- FR-113 and FR-109: the two screens' headings. The dispatch one names the drivers, because it
+  <!-- The two shift screens' headings. The dispatch one names the drivers, because it
        is the whole roster rather than a personal log. -->
   <data name="ShiftsTitle" xml:space="preserve">
     <value>Зміни водіїв</value>
@@ -940,7 +940,7 @@
   <data name="ShiftState" xml:space="preserve">
     <value>Стан зміни</value>
   </data>
-  <!-- FR-116's marker beside a driver's name in the two pickers. A claim about the person and about
+  <!-- The duty marker beside a driver's name in the two pickers. A claim about the person and about
        the present moment, which is why it is not the badge's wording below: a driver is on duty now
        or they are not. -->
   <data name="ShiftOpen" xml:space="preserve">
@@ -949,7 +949,7 @@
   <data name="ShiftClosed" xml:space="preserve">
     <value>Не на зміні</value>
   </data>
-  <!-- FR-117's two states, and the only two there are: open is ended_at IS NULL and closed is
+  <!-- A shift's two states, and the only two there are: open is ended_at IS NULL and closed is
        everything else. The badge labels a row in a history, so the words are the shift's rather than
        the driver's - last Tuesday's shift is finished, which says nothing about where its driver is
        today. -->
@@ -964,16 +964,16 @@
   <data name="ShiftStillOpen" xml:space="preserve">
     <value>Триває</value>
   </data>
-  <!-- FR-85: one heading for both recording a shift and correcting one. -->
+  <!-- One heading for both recording a shift and correcting one. -->
   <data name="ShiftForm" xml:space="preserve">
     <value>Зміна</value>
   </data>
-  <!-- FR-117 said to a person: an empty end box opens a new shift and leaves a finished one
+  <!-- The open/closed rule said to a person: an empty end box opens a new shift and leaves a finished one
        finished. Clearing an end is not something the contract can express. -->
   <data name="ShiftEndedAtHint" xml:space="preserve">
     <value>Порожнє поле означає, що зміна триває. Завершену зміну відновити не можна.</value>
   </data>
-  <!-- FR-109's one action, in whichever direction the driver's current state allows. -->
+  <!-- The driver's one duty action, in whichever direction the driver's current state allows. -->
   <data name="GoOnDuty" xml:space="preserve">
     <value>Почати зміну</value>
   </data>

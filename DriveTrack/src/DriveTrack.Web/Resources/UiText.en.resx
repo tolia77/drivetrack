@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
   <!--
-    The English satellite of UiText.resx (NFR-14, amended): the same keys, the same order, in
+    The English satellite of UiText.resx: the same keys, the same order, in
     English. The neutral catalogue beside it is Ukrainian and stays the baseline - a key missing
     here falls back to it, which is why CatalogueParityTests asserts the two in both directions
     rather than trusting the fallback to be noticed.

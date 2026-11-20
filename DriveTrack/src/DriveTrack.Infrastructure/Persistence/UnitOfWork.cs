@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 namespace DriveTrack.Infrastructure.Persistence;
 
 /// <summary>
-/// One operation's persistence scope (AD-5): one short-lived context, one transaction, one
+/// One operation's persistence scope: one short-lived context, one transaction, one
 /// commit. Created by <see cref="UnitOfWorkFactory"/> and disposed by the caller.
 /// </summary>
 public sealed class UnitOfWork : IUnitOfWork
@@ -24,7 +24,7 @@ public sealed class UnitOfWork : IUnitOfWork
         _transaction = transaction;
         _identity = identity;
 
-        // AD-5: the Identity managers are built over this same context, so a user, its role row and
+        // The Identity managers are built over this same context, so a user, its role row and
         // its subtype row are staged against one change tracker inside one transaction.
         Users = new EfUserAccountRepository(context, identity);
         Clients = new EfClientRepository(context);
@@ -78,7 +78,7 @@ public sealed class UnitOfWork : IUnitOfWork
         if (_committed)
         {
             throw new InvalidOperationException(
-                "This unit of work has already been committed. AD-5 gives each operation one "
+                "This unit of work has already been committed. Each operation gets one "
                 + "scope and one commit; create a new scope for the next operation.");
         }
 
@@ -107,7 +107,7 @@ public sealed class UnitOfWork : IUnitOfWork
         }
         catch (DbUpdateException exception)
         {
-            // AD-8: a unique or check violation leaves here as a typed failure carrying a contract
+            // A unique or check violation leaves here as a typed failure carrying a contract
             // code; anything else is returned unchanged and surfaces as the 500 envelope. The
             // original is kept as the InnerException either way, so the log still has the SQL detail
             // the wire never sees.
@@ -138,7 +138,7 @@ public sealed class UnitOfWork : IUnitOfWork
         {
             // Disposing an uncommitted transaction rolls it back, which is what makes "dispose
             // without commit" the safe default: a failure part-way through a multi-step write
-            // leaves nothing behind (NFR-9) without every caller remembering to say so.
+            // leaves nothing behind without every caller remembering to say so.
             await _transaction.DisposeAsync();
         }
         finally

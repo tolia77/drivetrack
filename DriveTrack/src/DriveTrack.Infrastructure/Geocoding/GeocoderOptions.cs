@@ -1,7 +1,7 @@
 namespace DriveTrack.Infrastructure.Geocoding;
 
 /// <summary>
-/// The geocoding settings, bound from the <c>Geocoder</c> configuration section (AD-19).
+/// The geocoding settings, bound from the <c>Geocoder</c> configuration section.
 /// <para>
 /// Every value arrives as an environment variable in the container — <c>Geocoder__Endpoint</c>,
 /// <c>Geocoder__SearchEndpoint</c>, <c>Geocoder__UserAgent</c>, <c>Geocoder__TimeoutSeconds</c>,
@@ -12,7 +12,7 @@ namespace DriveTrack.Infrastructure.Geocoding;
 /// Neither endpoint has a default, deliberately. A committed default would make every environment
 /// that never configured one — a test host included — issue live requests to somebody else's public
 /// service the first time a delivery was created. Blank means "no geocoding is configured", which
-/// DR-11 already has an answer for: the address stays absent and the screen shows the coordinates.
+/// already has an answer: the address stays absent and the screen shows the coordinates.
 /// </para>
 /// </summary>
 public sealed class GeocoderOptions
@@ -40,10 +40,10 @@ public sealed class GeocoderOptions
     /// <summary>Configuration key of <see cref="SearchEndpoint"/>, in the colon form.</summary>
     public const string SearchEndpointConfigurationKey = "Geocoder:SearchEndpoint";
 
-    /// <summary>The reverse endpoint: coordinates in, an address out (FR-94). Blank disables it.</summary>
+    /// <summary>The reverse endpoint: coordinates in, an address out. Blank disables it.</summary>
     public string Endpoint { get; set; } = string.Empty;
 
-    /// <summary>The forward endpoint: a typed address in, places out (FR-104). Blank disables it.</summary>
+    /// <summary>The forward endpoint: a typed address in, places out. Blank disables it.</summary>
     public string SearchEndpoint { get; set; } = string.Empty;
 
     /// <summary>
@@ -54,7 +54,7 @@ public sealed class GeocoderOptions
 
     /// <summary>
     /// How long a lookup may take before it is abandoned. Short on purpose: an address is a
-    /// convenience DR-11 makes optional, and nothing waits for it.
+    /// optional convenience, and nothing waits for it.
     /// </summary>
     public int TimeoutSeconds { get; set; } = 10;
 
@@ -63,8 +63,8 @@ public sealed class GeocoderOptions
     /// one second, which is what Nominatim's usage policy asks of every caller of its public
     /// instance — a single delivery create issues two reverse lookups back to back, and a
     /// dispatcher's forward search draws on the same quota, so without a gate a burst gets the
-    /// whole deployment refused. A refusal arrives as a null address, which DR-11 has a perfectly
-    /// ordinary meaning for, so nothing downstream would ever say the policy had been broken.
+    /// whole deployment refused. A refusal arrives as a null address, which has a perfectly
+    /// ordinary meaning, so nothing downstream would ever say the policy had been broken.
     /// <para>
     /// <c>0</c> disables the pacing entirely. That is not a loophole but the point of making this a
     /// setting: a self-hosted Nominatim, or any provider a deployment pays for, carries no such

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DriveTrack.Infrastructure.Persistence.Configurations;
 
-/// <summary>Mapping for <see cref="Delivery"/>, including its two embedded locations (AD-11).</summary>
+/// <summary>Mapping for <see cref="Delivery"/>, including its two embedded locations.</summary>
 internal sealed class DeliveryConfiguration : IEntityTypeConfiguration<Delivery>
 {
     /// <inheritdoc />
@@ -14,11 +14,11 @@ internal sealed class DeliveryConfiguration : IEntityTypeConfiguration<Delivery>
     {
         builder.ToTable("Deliveries", table =>
         {
-            // FR-102. A weight of zero or below is not a validation nicety - it is a row that
+            // A weight of zero or below is not a validation nicety - it is a row that
             // must not exist, so it is refused by the database rather than by a service.
             table.HasCheckConstraint("CK_Deliveries_PackageWeightKg", "package_weight_kg > 0");
 
-            // FR-100: either bound may stand alone, and both may be absent; only an inverted
+            // Either bound may stand alone, and both may be absent; only an inverted
             // pair is rejected.
             table.HasCheckConstraint(
                 "CK_Deliveries_DeliveryWindow",
@@ -38,7 +38,7 @@ internal sealed class DeliveryConfiguration : IEntityTypeConfiguration<Delivery>
         builder.Property(delivery => delivery.DeliveryNotes).HasMaxLength(1000);
         builder.Property(delivery => delivery.PackageWeightKg).HasPrecision(10, 3);
 
-        // AD-21: the stored value is the member name, so reordering the enum cannot remap rows.
+        // The stored value is the member name, so reordering the enum cannot remap rows.
         builder.Property(delivery => delivery.Status)
             .HasConversion<string>()
             .HasMaxLength(32)
@@ -47,13 +47,13 @@ internal sealed class DeliveryConfiguration : IEntityTypeConfiguration<Delivery>
         ConfigureLocation(builder, delivery => delivery.PickupLocation, "Pickup");
         ConfigureLocation(builder, delivery => delivery.DropoffLocation, "Dropoff");
 
-        // FR-47: a deleted client leaves its deliveries standing, unowned.
+        // A deleted client leaves its deliveries standing, unowned.
         builder.HasOne<Client>()
             .WithMany(client => client.Deliveries)
             .HasForeignKey(delivery => delivery.ClientId)
             .OnDelete(DeleteBehavior.SetNull);
 
-        // FR-16, FR-39: an unassigned delivery is legal, so a deleted driver nulls the
+        // An unassigned delivery is legal, so a deleted driver nulls the
         // assignment instead of taking the delivery with it - or, as in the original, raising
         // a database error because the key was never declared at all.
         builder.HasOne<Driver>()
@@ -67,8 +67,8 @@ internal sealed class DeliveryConfiguration : IEntityTypeConfiguration<Delivery>
     }
 
     /// <summary>
-    /// Embeds a <c>Location</c> in the delivery's own row with an explicit column prefix
-    /// (AD-11): there is no <c>locations</c> table, so editing a location is an update of this
+    /// Embeds a <c>Location</c> in the delivery's own row with an explicit column prefix:
+    /// there is no <c>locations</c> table, so editing a location is an update of this
     /// row and cannot orphan anything.
     /// </summary>
     private static void ConfigureLocation(

@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DriveTrack.Infrastructure.Persistence.Configurations;
 
-/// <summary>Mapping for <see cref="Client"/> (DR-3).</summary>
+/// <summary>Mapping for <see cref="Client"/>.</summary>
 internal sealed class ClientConfiguration : IEntityTypeConfiguration<Client>
 {
     /// <inheritdoc />

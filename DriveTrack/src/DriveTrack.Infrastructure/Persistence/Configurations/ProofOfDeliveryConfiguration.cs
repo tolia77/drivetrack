@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DriveTrack.Infrastructure.Persistence.Configurations;
 
-/// <summary>Mapping for <see cref="ProofOfDelivery"/> (FR-119, AD-11).</summary>
+/// <summary>Mapping for <see cref="ProofOfDelivery"/>.</summary>
 internal sealed class ProofOfDeliveryConfiguration : IEntityTypeConfiguration<ProofOfDelivery>
 {
     /// <inheritdoc />
@@ -16,7 +16,7 @@ internal sealed class ProofOfDeliveryConfiguration : IEntityTypeConfiguration<Pr
 
         builder.Property(proof => proof.RecipientName).HasMaxLength(200).IsRequired();
 
-        // AD-11: the capture point is embedded in this row, like the delivery's own two.
+        // The capture point is embedded in this row, like the delivery's own two.
         builder.OwnsOne(proof => proof.CaptureLocation, location =>
         {
             location.Property(value => value.Latitude).HasColumnName("CaptureLatitude");
@@ -30,7 +30,7 @@ internal sealed class ProofOfDeliveryConfiguration : IEntityTypeConfiguration<Pr
 
         builder.Navigation(proof => proof.CaptureLocation).IsRequired();
 
-        // One proof per delivery, and it dies with the delivery (FR-119, DR-9). Declaring the
+        // One proof per delivery, and it dies with the delivery. Declaring the
         // relationship one-to-one is what produces the unique index on delivery_id.
         builder.HasOne<Delivery>()
             .WithOne(delivery => delivery.ProofOfDelivery)

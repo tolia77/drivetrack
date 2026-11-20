@@ -13,12 +13,12 @@ namespace DriveTrack.Infrastructure.Geocoding;
 /// The port promises that a lookup is never the reason an operation fails, so every failure this
 /// adapter can meet — an endpoint that is not configured, a refusal, a timeout, a body that is not
 /// what was expected — answers null or an empty list. The one thing it must not do is throw:
-/// nothing above it has a caller left to tell, and DR-11 already says what an absent address means.
+/// nothing above it has a caller left to tell, and an absent address already has a meaning.
 /// </para>
 /// <para>
 /// The query strings are built with <see cref="CultureInfo.InvariantCulture"/>. A Ukrainian culture
 /// writes 50,4501 for a latitude, and a comma is a value separator to every geocoding service in
-/// existence — so the one place NFR-15's formatting must not reach is the wire.
+/// existence — so the one place locale formatting must not reach is the wire.
 /// </para>
 /// <para>
 /// Outbound requests are paced: no two leave closer together than
@@ -200,7 +200,7 @@ internal sealed class NominatimGeocoder(
     /// promises that a geocoder is never the reason an operation fails, and the failures reachable
     /// here — a socket that would not open, a name that would not resolve, a request the timeout
     /// abandoned, a body that is not JSON — are each the same answer as far as the caller is
-    /// concerned. That answer is "no address", and DR-11 has already decided what it means. Each
+    /// concerned. That answer is "no address", and what that means is already decided. Each
     /// is logged at Warning all the same, except a cancellation the caller asked for.
     /// </remarks>
     private async Task<JsonDocument?> ReadAsync(
@@ -212,7 +212,7 @@ internal sealed class NominatimGeocoder(
         {
             // One deadline for the whole lookup — the wait at the gate and the wire call together —
             // rather than one each. Two would let a lookup cost twice the deadline the deployment
-            // set, and it is on the injected clock (AD-13) so that the budget and the pacing wait
+            // set, and it is on the injected clock so that the budget and the pacing wait
             // cannot disagree with each other about how much time has passed.
             using var deadline = new CancellationTokenSource(
                 TimeSpan.FromSeconds(_options.TimeoutSeconds),
@@ -245,7 +245,7 @@ internal sealed class NominatimGeocoder(
                 // to one it has decided is abusive, and 503 when it is shedding load. Everything
                 // else here is somebody's server having a bad day; these three are the deployment
                 // being told so, and flattened to a null address they are indistinguishable from
-                // DR-11's perfectly legitimate absent one.
+                // a perfectly legitimate absent one.
                 if (response.StatusCode is HttpStatusCode.TooManyRequests
                     or HttpStatusCode.Forbidden
                     or HttpStatusCode.ServiceUnavailable)
@@ -278,7 +278,7 @@ internal sealed class NominatimGeocoder(
         {
             // Still null for the caller, but logged: otherwise a geocoder that never answers - a
             // timeout, an unresolvable host, a body that is not JSON - is indistinguishable from
-            // DR-11's legitimate absent address.
+            // a legitimate absent address.
             logger.LogWarning(
                 exception,
                 "Geocoder {Operation} failed before an answer could be read. The address is absent.",
@@ -336,7 +336,7 @@ internal sealed class NominatimGeocoder(
         catch (OperationCanceledException)
         {
             // A paced skip, which is a distinct outcome from the provider having no address for
-            // those coordinates. Both answer null to the caller — DR-11 leaves them one answer —
+            // those coordinates. Both answer null to the caller — there is only one answer for them —
             // so the log is the only place an operator can tell them apart.
             logger.LogWarning(
                 "Geocoder {Operation} was skipped at the request pacing gate before reaching the "
