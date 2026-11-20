@@ -22,7 +22,7 @@ using Microsoft.Extensions.Options;
 namespace DriveTrack.Integration.Tests.Configuration;
 
 /// <summary>
-/// AD-19 / NFR-10 / NFR-11 at the registration boundary: configuration arrives from the
+/// The registration boundary: configuration arrives from the
 /// environment, a missing connection string aborts startup, and EF diagnostics are on only
 /// in Development. None of these need a database, so they run without a container.
 /// </summary>
@@ -99,7 +99,7 @@ public class InfrastructureRegistrationTests
     [InlineData("too-short")]
     public void Missing_blank_or_short_signing_key_throws_naming_the_variable(string? signingKey)
     {
-        // AD-19: a signing key with a committed fallback is a signing key everyone knows, so the
+        // A signing key with a committed fallback is a signing key everyone knows, so the
         // absence has to abort startup rather than surface at the first sign-in.
         var services = new ServiceCollection();
 
@@ -163,10 +163,11 @@ public class InfrastructureRegistrationTests
     [Fact]
     public void Identity_cannot_be_reached_outside_a_unit_of_work()
     {
-        // AD-5, expressed as an absence. AddEntityFrameworkStores registers stores over a scoped
-        // AppDbContext that AddInfrastructure has already deleted, and a resolvable UserManager
-        // would be a second, non-transactional way to write a user. Removing the registrations turns
-        // "never use UserManager directly" into a rule the container cannot satisfy.
+        // The per-operation unit of work, expressed as an absence. AddEntityFrameworkStores
+        // registers stores over a scoped AppDbContext that AddInfrastructure has already deleted,
+        // and a resolvable UserManager would be a second, non-transactional way to write a user.
+        // Removing the registrations turns "never use UserManager directly" into a rule the
+        // container cannot satisfy.
         var provider = BuildProvider();
 
         Assert.Null(provider.GetService<AppDbContext>());
@@ -202,7 +203,7 @@ public class InfrastructureRegistrationTests
         Assert.NotNull(services.GetService<IdentitySeeder>());
 
         // The guard and the account capability are asserted as registrations rather than resolved:
-        // both need ICurrentUser, which only an adapter can supply (AD-22), so a hostless provider
+        // both need ICurrentUser, which only an adapter can supply, so a hostless provider
         // has nothing to give them.
         var registrations = new ServiceCollection();
         registrations.AddLogging();
@@ -218,11 +219,11 @@ public class InfrastructureRegistrationTests
     [Fact]
     public void The_two_outbound_ports_and_the_queue_that_runs_them_are_registered()
     {
-        // AD-12, as a registration. The seam is only a seam if all four pieces are in the container:
-        // the two ports, the queue a delivery operation writes to, and the hosted loop that drains
-        // it. Three out of four is a system that queues work nothing ever performs, and nothing
-        // fails loudly enough to say so - the delivery write succeeds either way, which is precisely
-        // the guarantee that makes the omission invisible.
+        // The outbound side-effect seam, as a registration. The seam is only a seam if all four
+        // pieces are in the container: the two ports, the queue a delivery operation writes to, and
+        // the hosted loop that drains it. Three out of four is a system that queues work nothing
+        // ever performs, and nothing fails loudly enough to say so - the delivery write succeeds
+        // either way, which is precisely the guarantee that makes the omission invisible.
         var registrations = new ServiceCollection();
         registrations.AddLogging();
         registrations.AddInfrastructure(BuildConfiguration(ValidConnectionString), new TestHostEnvironment());
@@ -503,8 +504,8 @@ public class InfrastructureRegistrationTests
         //
         // The claim is narrow and load-bearing: with no relay configured nothing was sent, and the
         // transport has to say so. Returning quietly would have the runner write Outcome.Sent for a
-        // notice that never left the building, which is worse than the silence FR-28 was written to
-        // end - a record that is confidently wrong.
+        // notice that never left the building, which is worse than the silence status-change email
+        // was written to end - a record that is confidently wrong.
         var cancellationToken = TestContext.Current.CancellationToken;
 
         var sender = BuildProvider().GetRequiredService<IEmailSender>();
@@ -586,10 +587,10 @@ public class InfrastructureRegistrationTests
     [Fact]
     public void The_object_store_port_and_the_proof_capability_are_registered()
     {
-        // AD-26 as a registration. The port is a singleton because the S3 client holds a connection
-        // pool and one per request exhausts sockets under exactly the load a fleet of drivers
-        // uploading photographs produces; the capability is scoped because the guard inside it reads
-        // the caller of the request or circuit it is serving.
+        // The object store as a registration. The port is a singleton because the S3 client holds a
+        // connection pool and one per request exhausts sockets under exactly the load a fleet of
+        // drivers uploading photographs produces; the capability is scoped because the guard inside
+        // it reads the caller of the request or circuit it is serving.
         var registrations = new ServiceCollection();
         registrations.AddLogging();
         registrations.AddInfrastructure(BuildConfiguration(ValidConnectionString), new TestHostEnvironment());
@@ -624,7 +625,7 @@ public class InfrastructureRegistrationTests
         // Neither endpoint has a committed default, and this is the reason: a default would make
         // every environment that never configured one - a test host, a laptop, a marking run -
         // issue live requests to somebody else's public service the first time a delivery was
-        // created. Blank is a state DR-11 already has an answer for.
+        // created. Blank is a state the absent-address rule already answers.
         var provider = BuildProvider();
 
         var options = provider.GetRequiredService<IOptions<GeocoderOptions>>().Value;

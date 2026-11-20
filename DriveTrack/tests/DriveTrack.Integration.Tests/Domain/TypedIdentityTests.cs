@@ -5,7 +5,7 @@ using DriveTrack.Domain.Identity;
 namespace DriveTrack.Integration.Tests.Domain;
 
 /// <summary>
-/// AD-22 at runtime. The decision's real guarantee is a compile-time one — <c>logBreak.DriverId
+/// Typed identities at runtime. The real guarantee is a compile-time one — <c>logBreak.DriverId
 /// == caller.DriverId</c> must not compile when one side resolved a user id — and a test cannot
 /// assert that a program failed to compile. What it can assert is every property the compiler
 /// relies on: three separate value types, no conversion between any pair of them, and value
@@ -49,7 +49,7 @@ public class TypedIdentityTests
     public void Identity_kind_declares_no_conversion_at_all(Type type)
     {
         // Not "no conversion to the other two" but none whatsoever: an implicit conversion to
-        // int would restore exactly the interchangeability AD-22 removes, by way of one hop.
+        // int would restore exactly the interchangeability typed ids remove, by way of one hop.
         var conversions = type
             .GetMethods(BindingFlags.Public | BindingFlags.Static)
             .Where(method => method.Name is "op_Implicit" or "op_Explicit")

@@ -8,7 +8,7 @@ using DriveTrack.Integration.Tests.Persistence;
 namespace DriveTrack.Integration.Tests.Reviews;
 
 /// <summary>
-/// FR-98 and DR-18: the per-driver rating, derived on demand from the reviews and stored nowhere.
+/// The per-driver rating, derived on demand from the reviews and stored nowhere.
 /// <para>
 /// This is the original system's named defect. Ratings existed per review and were aggregated
 /// nowhere, so there was no such thing as a driver's standing — and the fix that first suggests
@@ -19,8 +19,8 @@ namespace DriveTrack.Integration.Tests.Reviews;
 /// </para>
 /// <para>
 /// Asserted over the driver roster because that is where a dispatcher reads it, and because the
-/// roster is the boundary AD-24 draws: the Drivers capability asks the Reviews capability, which is
-/// the only reader of <c>reviews</c>.
+/// roster is the boundary the single-owner rule draws: the Drivers capability asks the Reviews
+/// capability, which is the only reader of <c>reviews</c>.
 /// </para>
 /// </summary>
 public class DriverRatingTests(PostgresFixture postgres)
@@ -48,7 +48,7 @@ public class DriverRatingTests(PostgresFixture postgres)
     public async Task A_mean_that_is_not_a_whole_number_reaches_the_roster_unrounded()
     {
         // Every other arithmetic case here averages to a whole number, so rounding or truncating
-        // the mean in the grouped query would ship green and the story's headline figure would be
+        // the mean in the grouped query would ship green and the headline figure would be
         // pinned by nothing. Five and four is 4.5, and 4.5 is what /api/drivers has to say: the
         // aggregate is a number, and deciding how many of its digits a reader sees is the screen's
         // job rather than the query's.
@@ -73,9 +73,9 @@ public class DriverRatingTests(PostgresFixture postgres)
         // filling the two fields with null and zero - the whole suite would stay green while a
         // dispatcher who opened one driver saw a rated one as unrated.
         //
-        // Story 4.2's on-duty flag is the same shape of claim and is checked alongside: it is
-        // derived per read through another capability (FR-116, AD-24), so hardcoding false in either
-        // of the two methods below would regress two of the three payloads undetected.
+        // The on-duty flag is the same shape of claim and is checked alongside: it is derived per
+        // read through another capability, so hardcoding false in either of the two methods below
+        // would regress two of the three payloads undetected.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -131,7 +131,7 @@ public class DriverRatingTests(PostgresFixture postgres)
             Assert.Equal(3, payload.GetProperty("reviewCount").GetInt32());
 
             // Nor does a licence edit end anybody's shift, so the payload it answers carries the
-            // flag the driver already held (FR-116).
+            // flag the driver already held.
             Assert.True(payload.GetProperty("onDuty").GetBoolean());
         }
     }
@@ -201,9 +201,10 @@ public class DriverRatingTests(PostgresFixture postgres)
     [Fact]
     public async Task The_rating_follows_the_reviews_rather_than_being_stored_beside_them()
     {
-        // DR-18 as a behaviour rather than as a schema claim. The rating moves when a review is
-        // edited and again when it is deleted, and nothing in the product updates a driver row -
-        // which is the difference between "derived on demand" and "cached and hopefully refreshed".
+        // The derived rating as a behaviour rather than as a schema claim. The rating moves when a
+        // review is edited and again when it is deleted, and nothing in the product updates a
+        // driver row - which is the difference between "derived on demand" and "cached and
+        // hopefully refreshed".
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -245,18 +246,18 @@ public class DriverRatingTests(PostgresFixture postgres)
     [Fact]
     public async Task Deleting_a_reviewed_delivery_takes_its_review_out_of_the_drivers_standing()
     {
-        // The one path where the aggregate moves without anybody touching a review: FR-24's delete
-        // cascades from Delivery to Review (DR-9), so the row simply stops existing. A stored
+        // The one path where the aggregate moves without anybody touching a review: deleting a
+        // delivery cascades from Delivery to Review, so the row simply stops existing. A stored
         // average would have gone stale here and nothing in the product would have been asked to
-        // refresh it - which is the whole of DR-18's argument, and the case the two edit-and-delete
-        // assertions above cannot make.
+        // refresh it - which is the whole argument for deriving it, and the case the two
+        // edit-and-delete assertions above cannot make.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
 
         var dispatcher = await DeliveryApi.DispatcherAsync(factory, client, cancellationToken);
 
-        // FR-24 reserves deletion to an administrator, so the delete goes through one.
+        // Deleting a delivery is reserved to an administrator, so the delete goes through one.
         var admin = await FleetApi.TokenAsync(factory, client, UserRole.Admin, cancellationToken);
 
         // One driver carrying two reviewed parcels, so deleting one leaves a standing to compare.
@@ -301,7 +302,7 @@ public class DriverRatingTests(PostgresFixture postgres)
     public async Task Deleting_a_driver_takes_their_reviews_out_of_every_standing()
     {
         // The remaining way the aggregate moves without anybody touching a review, and the one the
-        // delivery-delete twin above cannot make: FR-39 leaves a deleted driver's deliveries
+        // delivery-delete twin above cannot make: deleting a driver leaves their deliveries
         // unassigned rather than deleting them, so the review survives its driver. Delivery's
         // SetNull cascade is therefore the only path where a review that still exists stops
         // counting towards anybody - and a stored average would have been left on a row that no
@@ -368,10 +369,10 @@ public class DriverRatingTests(PostgresFixture postgres)
     /// requested it.
     /// </summary>
     /// <remarks>
-    /// One delivery per review, because DR-6 allows exactly one review per delivery — which is what
-    /// makes "a driver with three reviews" three finished deliveries rather than three rows against
-    /// one. Every delivery goes to the same driver and a different client, since a client may
-    /// request as many deliveries as they like but may review each of them once.
+    /// One delivery per review, because the schema allows exactly one review per delivery — which
+    /// is what makes "a driver with three reviews" three finished deliveries rather than three rows
+    /// against one. Every delivery goes to the same driver and a different client, since a client
+    /// may request as many deliveries as they like but may review each of them once.
     /// </remarks>
     private static async Task<int> ReviewedAsync(
         HttpClient client,
@@ -395,7 +396,7 @@ public class DriverRatingTests(PostgresFixture postgres)
     /// who requested it, answering the delivery's own id.
     /// </summary>
     /// <remarks>
-    /// A fresh client each time, because DR-6 allows one review per delivery and a client may
+    /// A fresh client each time, because the schema allows one review per delivery and a client may
     /// review only their own: one review therefore means one delivery and one requester.
     /// </remarks>
     private static async Task<int> ReviewedDeliveryAsync(

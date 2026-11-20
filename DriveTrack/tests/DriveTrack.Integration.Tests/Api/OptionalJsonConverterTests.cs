@@ -5,12 +5,13 @@ using DriveTrack.Web.Api;
 namespace DriveTrack.Integration.Tests.Api;
 
 /// <summary>
-/// AD-23's three wire cases, asserted on the converter itself rather than through a request.
+/// The three wire cases of an update field (absent, null, value), asserted on the converter
+/// itself rather than through a request.
 /// <para>
 /// The HTTP suites prove the distinction end to end, but they need Postgres and a whole pipeline to
 /// do it, and they only ever send <c>Optional&lt;string?&gt;</c>. The two arms that carry the rule -
 /// <c>HandleNull</c>, without which an explicit null short-circuits into absent, and the absent
-/// write - are cheap to state directly, and stating them here is what stops the next story that
+/// write - are cheap to state directly, and stating them here is what stops the next change that
 /// touches this factory from finding out over a container.
 /// </para>
 /// </summary>

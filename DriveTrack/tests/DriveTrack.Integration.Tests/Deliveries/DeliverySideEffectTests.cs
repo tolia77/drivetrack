@@ -12,7 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace DriveTrack.Integration.Tests.Deliveries;
 
 /// <summary>
-/// AD-12, FR-28, FR-94 and FR-95 end to end: what a delivery operation leaves behind, and what it
+/// Outbound side effects end to end: what a delivery operation leaves behind, and what it
 /// does not make its caller wait for.
 /// <para>
 /// Only here. The claim is not "the runner writes an address" — that would be a claim about a
@@ -36,7 +36,7 @@ public class DeliverySideEffectTests(PostgresFixture postgres)
     private static readonly (double Latitude, double Longitude) Dropoff = (49.8397, 24.0297);
 
     // =====================================================================================
-    // FR-94 / FR-95: the address is filled in later, or left absent
+    // The address is filled in later, or left absent
     // =====================================================================================
 
     [Fact]
@@ -44,7 +44,8 @@ public class DeliverySideEffectTests(PostgresFixture postgres)
     {
         // The first row of the matrix, and the half of it that is easy to lose: the response the
         // dispatcher received names no address at all. An implementation that awaited the geocoder
-        // before returning would satisfy every later assertion here and break FR-95's promise.
+        // before returning would satisfy every later assertion here and break the non-blocking
+        // promise.
         var cancellationToken = TestContext.Current.CancellationToken;
 
         var geocoder = new FakeGeocoder { Address = "Київ, Хрещатик, 1" };
@@ -87,7 +88,7 @@ public class DeliverySideEffectTests(PostgresFixture postgres)
         // The instant the matrix names beside the address, and the half of that row nothing else
         // here would notice the loss of. Read from storage rather than from the response: LocationView
         // carries the address alone, so the column is invisible over HTTP and a runner that stopped
-        // stamping it would look identical from outside. AD-13: the injected clock, at offset zero.
+        // stamping it would look identical from outside. The injected clock, at offset zero.
         var stored = await StoredAsync(factory, deliveryId, cancellationToken);
 
         Assert.NotNull(stored.PickupLocation.AddressResolvedAt);
@@ -132,14 +133,15 @@ public class DeliverySideEffectTests(PostgresFixture postgres)
         Assert.Null(Address(delivery, "pickup"));
         Assert.Null(Address(delivery, "dropoff"));
 
-        // The coordinates are untouched, which is DR-11's actual rule: they are the record, and the
-        // address is a cache that may simply be missing.
+        // The coordinates are untouched, which is the address cache's actual rule: they are the
+        // record, and the address is a cache that may simply be missing.
         Assert.Equal(
             Pickup.Latitude,
             delivery.GetProperty("pickup").GetProperty("point").GetProperty("latitude").GetDouble());
 
-        // FR-28's other half, stated as an absence: a failed geocode is not a notification, so no
-        // attempt row exists to explain it. The address being absent is the whole record of it.
+        // The notification log's other half, stated as an absence: a failed geocode is not a
+        // notification, so no attempt row exists to explain it. The address being absent is the
+        // whole record of it.
         Assert.Empty(await AttemptsAsync(factory, cancellationToken));
     }
 
@@ -238,7 +240,7 @@ public class DeliverySideEffectTests(PostgresFixture postgres)
     [Fact]
     public async Task An_edit_re_requests_the_point_that_moved_and_only_that_one()
     {
-        // The fourth row, and the one that pays for DR-11's "compare rather than always reset".
+        // The fourth row, and the one that pays for "compare rather than always reset".
         // Clearing both addresses on every edit would pass every other assertion in this file while
         // doubling the traffic a public geocoder sees for an edit to the weight.
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -327,7 +329,7 @@ public class DeliverySideEffectTests(PostgresFixture postgres)
         var delivery = await ReadAsync(client, dispatcher, deliveryId, cancellationToken);
 
         // The pickup's answer survived the dropoff's failure, and the dropoff is absent rather than
-        // wrong - DR-11's two legitimate states, one per point.
+        // wrong - the address's two legitimate states, one per point.
         Assert.Equal("Київ, Хрещатик, 1", Address(delivery, "pickup"));
         Assert.Null(Address(delivery, "dropoff"));
     }
@@ -337,8 +339,8 @@ public class DeliverySideEffectTests(PostgresFixture postgres)
     {
         // The guard that only a race can reach: the write scope reloads, and refuses an address
         // whose coordinates have changed since it was asked for. Without the reload the old point's
-        // street would be stored beside the new coordinates, which is the one pairing DR-11 forbids
-        // and the one the screen presents as authoritative.
+        // street would be stored beside the new coordinates, which is the one pairing the address
+        // cache forbids and the one the screen presents as authoritative.
         var cancellationToken = TestContext.Current.CancellationToken;
 
         var gate = new TaskCompletionSource();
@@ -391,8 +393,9 @@ public class DeliverySideEffectTests(PostgresFixture postgres)
 
         // The coordinates the dispatcher chose, described by the lookup that asked about *them*.
         // Drop the runner's coordinate comparison and this is "Київ, Хрещатик, 1" instead: the held
-        // job writes the old point's street against the new coordinates, and the edit's own job then
-        // finds an address already there and leaves it - which is exactly the pairing DR-11 forbids.
+        // job writes the old point's street against the new coordinates, and the edit's own job
+        // then finds an address already there and leaves it - which is exactly the pairing the
+        // address cache forbids.
         var point = delivery.GetProperty("pickup").GetProperty("point");
 
         Assert.Equal(moved.Latitude, point.GetProperty("latitude").GetDouble(), 6);
@@ -577,7 +580,7 @@ public class DeliverySideEffectTests(PostgresFixture postgres)
     }
 
     // =====================================================================================
-    // FR-28: the client is told, and the attempt is recorded either way
+    // The client is told, and the attempt is recorded either way
     // =====================================================================================
 
     [Fact]
@@ -615,8 +618,8 @@ public class DeliverySideEffectTests(PostgresFixture postgres)
         // The address on the Identity account, which is the only place a client's address lives.
         Assert.Equal(customer.Email, message.Recipient);
 
-        // NFR-14 reaches the mail too: the subject and the body are Ukrainian, and the two status
-        // labels in the body are the ones the screens use.
+        // Localization reaches the mail too: the subject and the body are Ukrainian, and the two
+        // status labels in the body are the ones the screens use.
         Assert.Contains("У дорозі", message.Body, StringComparison.Ordinal);
         Assert.Contains("Очікує", message.Body, StringComparison.Ordinal);
         Assert.False(string.IsNullOrWhiteSpace(message.Subject));
@@ -629,19 +632,19 @@ public class DeliverySideEffectTests(PostgresFixture postgres)
         Assert.Equal(NotificationOutcome.Sent, attempt.Outcome);
         Assert.Null(attempt.Error);
 
-        // AD-13: stored at offset zero, from the injected clock.
+        // Stored at offset zero, from the injected clock.
         Assert.Equal(TimeSpan.Zero, attempt.AttemptedAt.Offset);
     }
 
     [Fact]
     public async Task A_send_that_throws_is_recorded_and_the_status_change_still_stands()
     {
-        // The row this story exists for. The original swallowed a failed notification silently; the
+        // The headline row. The original swallowed a failed notification silently; the
         // remediation is that the write survives untouched *and* that the failure leaves a record.
         var cancellationToken = TestContext.Current.CancellationToken;
 
         // Comfortably past the column's thousand characters, so the truncation is exercised rather
-        // than assumed - an untruncated message would fail the insert and lose the very row FR-28
+        // than assumed - an untruncated message would fail the insert and lose the very row the log
         // exists to keep.
         var reason = new string('я', 1500);
 
@@ -691,7 +694,7 @@ public class DeliverySideEffectTests(PostgresFixture postgres)
     [Fact]
     public async Task A_delivery_with_no_client_sends_nothing_and_records_nothing()
     {
-        // FR-16 makes a delivery with no client legal, and FR-28 has nobody to write to. "No row"
+        // A delivery with no client is legal, and its notice has nobody to write to. "No row"
         // has to mean "nothing was owed" here, which is why the sent case above writes one.
         var cancellationToken = TestContext.Current.CancellationToken;
 
@@ -723,9 +726,9 @@ public class DeliverySideEffectTests(PostgresFixture postgres)
     [Fact]
     public async Task A_driver_advancing_their_own_delivery_notifies_exactly_as_dispatch_does()
     {
-        // FR-34 and FR-28 meeting: the lifecycle has one path and every role walks it, so the
-        // notification cannot depend on who moved the parcel. A role branch anywhere in the
-        // dispatch seam would show up here and nowhere else.
+        // One status path and status-change email meeting: the lifecycle has one path and every
+        // role walks it, so the notification cannot depend on who moved the parcel. A role branch
+        // anywhere in the dispatch seam would show up here and nowhere else.
         var cancellationToken = TestContext.Current.CancellationToken;
 
         var geocoder = new FakeGeocoder();
@@ -772,9 +775,8 @@ public class DeliverySideEffectTests(PostgresFixture postgres)
         await using var unitOfWork = await factory.Database.UnitOfWorkFactory
             .CreateAsync(cancellationToken);
 
-        // The screen's own page, asked for the way the screen asks for it: the read is bounded
-        // (NFR-27), and a helper that could not say so would be reading a method the product does
-        // not have.
+        // The screen's own page, asked for the way the screen asks for it: the read is bounded,
+        // and a helper that could not say so would be reading a method the product does not have.
         return (await unitOfWork.NotificationAttempts.ListAsync(
             new ListNotificationAttemptsQuery(0, ListNotificationAttemptsQueryValidator.MaximumLimit),
             sort: null,

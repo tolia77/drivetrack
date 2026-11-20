@@ -34,8 +34,8 @@ internal sealed record Participant(int UserId, int? DriverId, string Token, stri
 /// The connection is a real <c>HubConnection</c> against the real pipeline, because the hub is where
 /// chat's authorization is enforced: a test that called <c>ChatHub</c>'s methods directly would
 /// assert against a class, not against a caller who had to negotiate, authenticate and be added to a
-/// group before hearing anything. NFR-17 names messaging as the feature the original never tested,
-/// and this is what testing it means.
+/// group before hearing anything. Messaging is the feature the original never tested, and this is
+/// what testing it means.
 /// </para>
 /// </summary>
 internal sealed class ChatWorld : IAsyncDisposable
@@ -65,7 +65,7 @@ internal sealed class ChatWorld : IAsyncDisposable
         return new ChatWorld(factory, factory.CreateClient());
     }
 
-    /// <summary>The seeded administrator (FR-9), who is deliberately not a chat participant.</summary>
+    /// <summary>The seeded administrator, who is deliberately not a chat participant.</summary>
     public async Task<Participant> AdminAsync(CancellationToken cancellationToken)
     {
         var token = await AdministrationApi.AdminTokenAsync(Client, cancellationToken);
@@ -74,7 +74,7 @@ internal sealed class ChatWorld : IAsyncDisposable
         return new Participant(userId, null, token, TestConfiguration.AdminEmail);
     }
 
-    /// <summary>A dispatcher, opened through the endpoint story 7.1 ships.</summary>
+    /// <summary>A dispatcher, opened through the dispatcher administration endpoint.</summary>
     public async Task<Participant> DispatcherAsync(
         string adminToken,
         CancellationToken cancellationToken,
@@ -90,7 +90,7 @@ internal sealed class ChatWorld : IAsyncDisposable
         return new Participant(userId, null, token, email);
     }
 
-    /// <summary>A client, opened through public registration (FR-1).</summary>
+    /// <summary>A client, opened through public registration.</summary>
     public async Task<Participant> ClientAsync(CancellationToken cancellationToken)
     {
         var (userId, email) = await AdministrationApi.RegisterClientAsync(Client, cancellationToken);
@@ -102,12 +102,12 @@ internal sealed class ChatWorld : IAsyncDisposable
     }
 
     /// <summary>
-    /// A driver, with the account and the driver row DR-3 makes inseparable.
+    /// A driver, with the account and the driver row the role model makes inseparable.
     /// <para>
     /// Written through the unit of work rather than through a raw context so the password is hashed
     /// by Identity and sign-in accepts it, and through the unit of work rather than through the
     /// driver endpoint because that one needs a dispatcher and these tests need drivers with no
-    /// dispatcher in the story.
+    /// dispatcher in the picture.
     /// </para>
     /// </summary>
     public async Task<Participant> DriverAsync(
@@ -189,7 +189,7 @@ internal sealed class ChatWorld : IAsyncDisposable
 
         driver.VehicleId = vehicle.Id;
 
-        // Open: FR-117 reads "on duty" as a shift with no end, so a row with an EndedAt would leave
+        // Open: "on duty" means a shift with no end, so a row with an EndedAt would leave
         // the driver off duty and the assertion would be about nothing.
         context.Shifts.Add(new Shift
         {
@@ -287,7 +287,7 @@ internal sealed class ChatWorld : IAsyncDisposable
     /// <para>
     /// The protocol takes the adapter's typed-id converters, exactly as the server's does. Without
     /// them a <c>DriverId</c> arrives as the number it is and fails to read back — which is also
-    /// what proves the server wrote a number rather than <c>{"value":7}</c> (AD-22, NFR-1).
+    /// what proves the server wrote a number rather than <c>{"value":7}</c>.
     /// </para>
     /// </summary>
     /// <param name="token">A bearer token, or null for a connection presenting no token.</param>

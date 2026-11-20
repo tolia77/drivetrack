@@ -370,7 +370,7 @@ public class DashboardServiceTests(PostgresFixture postgres)
         Assert.Equal("Андрій Шевчук", review.ClientName);
         Assert.Equal("Олена Коваленко", review.DriverName);
 
-        // The roster card carries the standing that review gives her (FR-118).
+        // The roster card carries the standing that review gives her.
         var rated = Assert.Single(view.Drivers, driver => driver.Id == olena.DriverId);
         Assert.Equal(5.0, rated.Rating);
         Assert.Equal(1, rated.ReviewCount);
@@ -400,7 +400,7 @@ public class DashboardServiceTests(PostgresFixture postgres)
 
         var view = await world.ReadAsync(admin, UserRole.Admin, cancellationToken);
 
-        // AD-4 admits the administrator; chat is the one place they take no part.
+        // The dashboard admits the administrator; chat is the one place they take no part.
         Assert.Equal("Адміністратор", view.FirstName);
         Assert.Null(view.Conversations);
         Assert.Equal(1, view.DriversTotal);

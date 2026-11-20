@@ -16,7 +16,7 @@ namespace DriveTrack.Integration.Tests.Support;
 /// Every suite that touches the schema goes through here, so each gets an isolated database
 /// produced by the real migration pipeline and the real <c>AddInfrastructure</c> registration —
 /// a test that passes against a hand-rolled context proves nothing about the schema the
-/// application actually runs on (AD-20, NFR-18).
+/// application actually runs on.
 /// </para>
 /// </summary>
 internal sealed class TestDatabase : IAsyncDisposable
@@ -40,18 +40,18 @@ internal sealed class TestDatabase : IAsyncDisposable
     /// <summary>Connection string for this test's own database.</summary>
     public string ConnectionString { get; }
 
-    /// <summary>The context factory the container would hand a caller (AD-5).</summary>
+    /// <summary>The context factory the container would hand a caller.</summary>
     public IDbContextFactory<AppDbContext> ContextFactory =>
         _services.GetRequiredService<IDbContextFactory<AppDbContext>>();
 
-    /// <summary>The per-operation persistence scope factory (AD-5).</summary>
+    /// <summary>The per-operation persistence scope factory.</summary>
     public IUnitOfWorkFactory UnitOfWorkFactory =>
         _services.GetRequiredService<IUnitOfWorkFactory>();
 
-    /// <summary>The migrator the composition root runs at start-up (AD-20).</summary>
+    /// <summary>The migrator the composition root runs at start-up.</summary>
     public DatabaseMigrator Migrator => _services.GetRequiredService<DatabaseMigrator>();
 
-    /// <summary>The startup seeder the composition root runs after the migrator (FR-9).</summary>
+    /// <summary>The startup seeder the composition root runs after the migrator.</summary>
     public IdentitySeeder Seeder => _services.GetRequiredService<IdentitySeeder>();
 
     /// <summary>

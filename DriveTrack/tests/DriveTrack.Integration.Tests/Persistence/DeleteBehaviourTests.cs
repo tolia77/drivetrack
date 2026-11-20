@@ -8,7 +8,7 @@ using DriveTrack.Integration.Tests.Support;
 namespace DriveTrack.Integration.Tests.Persistence;
 
 /// <summary>
-/// AD-20's delete table, proved at the schema level.
+/// The declared delete behaviour of every foreign key, proved at the schema level.
 /// <para>
 /// Every delete here is raw SQL rather than <c>DbSet.Remove</c>, deliberately: EF can produce
 /// the right outcome by issuing its own statements for dependents it happens to be tracking,
@@ -51,7 +51,7 @@ public class DeleteBehaviourTests(PostgresFixture postgres)
 
         await database.ExecuteAsync($"DELETE FROM drivers WHERE id = {driverId.Value}", cancellationToken);
 
-        // FR-16, FR-39: an unassigned delivery is legal, so the delivery survives with no driver.
+        // An unassigned delivery is legal, so the delivery survives with no driver.
         Assert.Equal(1L, await CountAsync(database, $"deliveries WHERE id = {deliveryId}", cancellationToken));
         Assert.Null(await database.ScalarAsync(
             $"SELECT driver_id FROM deliveries WHERE id = {deliveryId}", cancellationToken));
@@ -91,7 +91,7 @@ public class DeleteBehaviourTests(PostgresFixture postgres)
 
         await database.ExecuteAsync($"DELETE FROM clients WHERE id = {clientId.Value}", cancellationToken);
 
-        // FR-47: the delivery is a record of work done and outlives the account that asked for it.
+        // The delivery is a record of work done and outlives the account that asked for it.
         Assert.Equal(1L, await CountAsync(database, $"deliveries WHERE id = {deliveryId}", cancellationToken));
         Assert.Null(await database.ScalarAsync(
             $"SELECT client_id FROM deliveries WHERE id = {deliveryId}", cancellationToken));
@@ -117,7 +117,7 @@ public class DeleteBehaviourTests(PostgresFixture postgres)
             driverId = driver.Id;
         }
 
-        // FR-43's block on deleting an assigned vehicle is an application rule (story 4.1). At
+        // The block on deleting an assigned vehicle is an application rule. At
         // the schema level the point is only that it cannot take the driver down with it.
         await database.ExecuteAsync($"DELETE FROM vehicles WHERE id = {vehicleId}", cancellationToken);
 
@@ -181,8 +181,9 @@ public class DeleteBehaviourTests(PostgresFixture postgres)
             await context.SaveChangesAsync(cancellationToken);
         }
 
-        // DR-9. The append-only trigger permits this precisely because the cascade runs inside
-        // the referential-integrity trigger rather than as a statement of its own.
+        // Deleting a delivery removes its timeline. The append-only trigger permits this precisely
+        // because the cascade runs inside the referential-integrity trigger rather than as a
+        // statement of its own.
         await database.ExecuteAsync($"DELETE FROM deliveries WHERE id = {deliveryId}", cancellationToken);
 
         Assert.Equal(0L, await CountAsync(database, "timeline_entries", cancellationToken));

@@ -12,10 +12,10 @@ namespace DriveTrack.Integration.Tests.Configuration;
 /// and pointed at a loopback relay.
 /// <para>
 /// The counterpart of <c>GeocoderAdapterTests</c>, and it exists for the same reason. Every suite
-/// about FR-28 replaces this port with a fake and asserts what the system recorded, which is right —
-/// but it leaves the transport itself unexecuted, and every way it can be wrong is silent from
-/// there. Address the message to the from-address, swap the subject for the body, drop the
-/// recipient: the whole solution stays green, and the notification log records a confident
+/// about status-change email replaces this port with a fake and asserts what the system recorded,
+/// which is right — but it leaves the transport itself unexecuted, and every way it can be wrong is
+/// silent from there. Address the message to the from-address, swap the subject for the body, drop
+/// the recipient: the whole solution stays green, and the notification log records a confident
 /// <c>Sent</c> for mail that went somewhere else. So the envelope this adapter actually puts on the
 /// wire is read back here.
 /// </para>

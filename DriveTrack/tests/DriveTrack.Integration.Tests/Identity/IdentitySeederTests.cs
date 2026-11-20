@@ -6,7 +6,7 @@ using DriveTrack.Integration.Tests.Support;
 namespace DriveTrack.Integration.Tests.Identity;
 
 /// <summary>
-/// FR-9: the documented way a first administrator exists at all, and the property that makes
+/// The documented way a first administrator exists at all, and the property that makes
 /// running it on every start safe.
 /// <para>
 /// Idempotence is the whole assertion. A seeder that writes a second admin, or a fifth role row, on
@@ -101,8 +101,9 @@ public class IdentitySeederTests(PostgresFixture postgres)
     [Fact]
     public async Task The_schema_refuses_a_second_role_row_for_one_user()
     {
-        // AD-4 is a claim about the database, not about the code that usually writes it. Counting
-        // rows after a happy-path write assumes the index; this asks the index directly.
+        // One role per user is a claim about the database, not about the code that usually writes
+        // it. Counting rows after a happy-path write assumes the index; this asks the index
+        // directly.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var database = await TestDatabase.CreateAsync(postgres.ConnectionString, cancellationToken);
 
@@ -122,7 +123,7 @@ public class IdentitySeederTests(PostgresFixture postgres)
             cancellationToken));
 
         // SQLSTATE 23505: the unique index on asp_net_user_roles.user_id, which is the whole of
-        // AD-4's enforcement.
+        // the one-role enforcement.
         Assert.Contains("23505", failure.ToString(), StringComparison.Ordinal);
 
         Assert.Equal(
@@ -133,8 +134,8 @@ public class IdentitySeederTests(PostgresFixture postgres)
     [Fact]
     public async Task The_seeded_admin_holds_exactly_one_role_row()
     {
-        // AD-4, on the one account that is most tempting to give extra rows to: admin passes every
-        // check by rule inside the guard, not by holding the other three roles.
+        // One role per user, on the one account that is most tempting to give extra rows to: admin
+        // passes every check by rule inside the guard, not by holding the other three roles.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var database = await TestDatabase.CreateAsync(postgres.ConnectionString, cancellationToken);
 

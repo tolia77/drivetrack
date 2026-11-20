@@ -24,8 +24,8 @@ namespace DriveTrack.Integration.Tests.Authorization;
 /// compare an owner id refuse with <c>AUTH_FORBIDDEN</c>. The members that answer a <em>scope</em>
 /// narrow in the query instead, so a row outside it is answered <c>COMMON_NOT_FOUND</c> — a client
 /// asking about somebody else's parcel gets the same answer as one asking about a parcel that never
-/// existed, which is AD-3's whole point and a weaker disclosure than a 403 would be. Each case below
-/// says which it expects and why.
+/// existed, which is the whole point of narrowing and a weaker disclosure than a 403 would be.
+/// Each case below says which it expects and why.
 /// </para>
 /// <para>
 /// Every attempt here is refused, so nothing in this file writes — which is what lets it run beside
@@ -38,9 +38,9 @@ public class OwnershipBoundaryTests(PostgresFixture postgres)
     [Fact]
     public async Task Another_driver_cannot_move_the_parcel_they_are_not_carrying()
     {
-        // FR-34 through RequireAssignedDriver: a null assignment never matches, and neither does
-        // another driver's. The status is read back because a 403 answered after the write would
-        // look identical on the wire.
+        // The status write through RequireAssignedDriver: a null assignment never matches, and
+        // neither does another driver's. The status is read back because a 403 answered after the
+        // write would look identical on the wire.
         var cancellationToken = TestContext.Current.CancellationToken;
         var world = await AuthorizationWorld.InstanceAsync(postgres.ConnectionString, cancellationToken);
 
@@ -64,7 +64,7 @@ public class OwnershipBoundaryTests(PostgresFixture postgres)
     [Fact]
     public async Task Another_driver_cannot_capture_the_proof_of_a_parcel_they_are_not_carrying()
     {
-        // The same predicate on the evidence (FR-119). A second capture would be refused as a
+        // The same predicate on the evidence. A second capture would be refused as a
         // duplicate too, so the assertion is the code rather than the outcome: AUTH_FORBIDDEN says
         // the guard stopped it, PROOF_ALREADY_CAPTURED would say the uniqueness rule did.
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -128,9 +128,9 @@ public class OwnershipBoundaryTests(PostgresFixture postgres)
     [Fact]
     public async Task Another_client_reaches_neither_the_delivery_nor_its_proof()
     {
-        // FR-25 and FR-122 from the other party's side. The own-deliveries list is narrowed rather
-        // than refused - a client with no deliveries has an empty list, not a 403 - so the claim is
-        // about what is in it.
+        // Delivery and proof visibility from the other party's side. The own-deliveries list is
+        // narrowed rather than refused - a client with no deliveries has an empty list, not a 403 -
+        // so the claim is about what is in it.
         var cancellationToken = TestContext.Current.CancellationToken;
         var world = await AuthorizationWorld.InstanceAsync(postgres.ConnectionString, cancellationToken);
 
@@ -197,7 +197,7 @@ public class OwnershipBoundaryTests(PostgresFixture postgres)
         // nothing at all about a real asset. This is the same route at the captured signature.
         //
         // RequireScope narrows the asset query rather than comparing an owner, so a stranger is
-        // answered exactly as they would be for an asset that was never captured (DR-14, AD-3).
+        // answered exactly as they would be for an asset that was never captured.
         var cancellationToken = TestContext.Current.CancellationToken;
         var world = await AuthorizationWorld.InstanceAsync(postgres.ConnectionString, cancellationToken);
 

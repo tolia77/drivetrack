@@ -12,12 +12,12 @@ using Microsoft.Extensions.Localization;
 namespace DriveTrack.Integration.Tests.Fleet;
 
 /// <summary>
-/// FR-40 to FR-45 over HTTP, against the real <c>Program.cs</c> pipeline.
+/// Vehicle management over HTTP, against the real <c>Program.cs</c> pipeline.
 /// <para>
-/// The outermost surface the intent reaches, and the only one where the status, the envelope and
-/// what actually landed in the database are asserted together. The headline row is FR-43: the
-/// original system let a vehicle be assigned and never released, which made an assigned vehicle
-/// permanently undeletable — so "refused, and here is the way out" is the claim, not merely
+/// The outermost surface there is, and the only one where the status, the envelope and what
+/// actually landed in the database are asserted together. The headline row is the assigned-vehicle
+/// delete: the original system let a vehicle be assigned and never released, which made an assigned
+/// vehicle permanently undeletable — so "refused, and here is the way out" is the claim, not merely
 /// "refused".
 /// </para>
 /// </summary>
@@ -59,7 +59,7 @@ public class VehicleManagementTests(PostgresFixture postgres)
             Assert.Equal(plate, data.GetProperty("licensePlate").GetString());
             Assert.Equal(1200m, data.GetProperty("capacityKg").GetDecimal());
 
-            // FR-40 names all five. These two are read by no logic in this milestone, which is
+            // A vehicle has five fields. These two are read by no logic yet, which is
             // exactly why the round trip has to be asserted: nothing else would notice them being
             // dropped on the way in.
             Assert.Equal(42_000, data.GetProperty("mileage").GetInt32());
@@ -85,9 +85,9 @@ public class VehicleManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task A_plate_that_differs_only_by_whitespace_or_case_is_a_conflict()
     {
-        // FR-41. The friendly check answers FLEET_LICENSE_PLATE_IN_USE and the unique index behind
-        // it answers PERSISTENCE_UNIQUE_VIOLATION; both are 409, so either is a correct outcome and
-        // the caller cannot tell which one ran (NFR-2).
+        // Unique plates. The friendly check answers FLEET_LICENSE_PLATE_IN_USE and the unique index
+        // behind it answers PERSISTENCE_UNIQUE_VIOLATION; both are 409, so either is a correct
+        // outcome and the caller cannot tell which one ran.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -111,13 +111,13 @@ public class VehicleManagementTests(PostgresFixture postgres)
             // The friendly check, specifically. Accepting the unique violation as well would
             // let the application-level check be deleted outright with this test still green -
             // and it is the check that produces a code a caller can act on. The index behind
-            // it is the race backstop and answers the same 409 (NFR-2), but a plate normalized
+            // it is the race backstop and answers the same 409, but a plate normalized
             // on write means the friendly answer always gets there first.
             Assert.Equal(
                 nameof(ErrorCode.FLEET_LICENSE_PLATE_IN_USE),
                 error.GetProperty("code").GetString());
 
-            // NFR-3: nothing about the schema reaches the client.
+            // Nothing about the schema reaches the client.
             var message = error.GetProperty("message").GetString() ?? string.Empty;
 
             Assert.DoesNotContain("SQLSTATE", message, StringComparison.OrdinalIgnoreCase);
@@ -170,9 +170,9 @@ public class VehicleManagementTests(PostgresFixture postgres)
     [InlineData(true)]
     public async Task An_update_moving_a_plate_onto_another_vehicle_is_a_conflict(bool lowerCase)
     {
-        // FR-41 holds on the way through an edit too. Tested because no other PUT body in this
-        // suite carries a licensePlate at all: without this the duplicate check in UpdateAsync
-        // could be deleted with nothing failing.
+        // Plate uniqueness holds on the way through an edit too. Tested because no other PUT body
+        // in this suite carries a licensePlate at all: without this the duplicate check in
+        // UpdateAsync could be deleted with nothing failing.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -251,9 +251,9 @@ public class VehicleManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task A_vehicle_a_driver_holds_is_refused_with_the_way_out_in_the_message()
     {
-        // FR-43, and the defect it closes. The schema's SetNull would happily strand a driver
-        // holding nothing, so the application refuses - but only because FR-38 now gives the caller
-        // a way to release the assignment first.
+        // The assigned-vehicle delete, and the defect it closes. The schema's SetNull would happily
+        // strand a driver holding nothing, so the application refuses - but only because the
+        // caller now has a way to release the assignment first.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -319,8 +319,8 @@ public class VehicleManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task An_update_changes_only_the_fields_it_names()
     {
-        // AD-23 over the wire: absent means unchanged. A payload naming only the capacity must not
-        // be judged as though the model were empty.
+        // Absent versus null over the wire: absent means unchanged. A payload naming only the
+        // capacity must not be judged as though the model were empty.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -390,7 +390,7 @@ public class VehicleManagementTests(PostgresFixture postgres)
 
         var editError = (await FleetApi.ReadAsync(edited, cancellationToken)).GetProperty("error");
 
-        // NFR-4: keyed by the name the caller sent, not by the CLR path through the wrapper.
+        // Keyed by the name the caller sent, not by the CLR path through the wrapper.
         Assert.True(editError.GetProperty("fields").TryGetProperty("mileage", out _));
     }
 
@@ -426,7 +426,7 @@ public class VehicleManagementTests(PostgresFixture postgres)
             cancellationToken);
 
         // And no field list at all. The converter cannot know which property the null belonged to,
-        // so it names none - NFR-4's `error.fields` keys are ones a form can attach a message to,
+        // so it names none - `error.fields` keys are ones a form can attach a message to,
         // and a key invented from the CLR type would name an input the caller does not have.
         // Pinned so the choice stays deliberate rather than becoming an accident of the writer.
         var error = (await FleetApi.ReadAsync(refused, cancellationToken)).GetProperty("error");
@@ -505,7 +505,7 @@ public class VehicleManagementTests(PostgresFixture postgres)
 
         Assert.Equal(nameof(ErrorCode.COMMON_VALIDATION_FAILED), error.GetProperty("code").GetString());
 
-        // NFR-4: keyed by the name the caller sent, not by the CLR path through the wrapper.
+        // Keyed by the name the caller sent, not by the CLR path through the wrapper.
         Assert.True(error.GetProperty("fields").TryGetProperty("model", out _));
     }
 
@@ -515,7 +515,7 @@ public class VehicleManagementTests(PostgresFixture postgres)
     [InlineData(0, 101)]
     public async Task Paging_outside_its_range_is_refused_before_any_query(int offset, int limit)
     {
-        // NFR-27's second half. The original passed skip and limit through unchecked.
+        // Paging's second half. The original passed skip and limit through unchecked.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -587,7 +587,7 @@ public class VehicleManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task The_unassigned_list_excludes_a_vehicle_a_driver_holds()
     {
-        // FR-45: the list that feeds the assignment control. A held vehicle offered there is a
+        // The list that feeds the assignment control. A held vehicle offered there is a
         // choice that can only be refused.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
@@ -634,7 +634,7 @@ public class VehicleManagementTests(PostgresFixture postgres)
     [InlineData(UserRole.Driver)]
     public async Task A_signed_in_caller_of_the_wrong_role_is_refused_by_the_guard(UserRole role)
     {
-        // FR-12: the controller carries a bare [Authorize], so this 403 is IAccessGuard's answer
+        // The controller carries a bare [Authorize], so this 403 is IAccessGuard's answer
         // and not an attribute's. Removing the attribute would change the anonymous case below and
         // nothing about this one.
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -678,8 +678,8 @@ public class VehicleManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task An_admin_gets_the_same_success_a_dispatcher_does()
     {
-        // AD-4's override end to end: the admin holds one role row like everybody else and passes
-        // by rule inside the guard.
+        // The admin override end to end: the admin holds one role row like everybody else and
+        // passes by rule inside the guard.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();

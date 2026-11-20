@@ -36,9 +36,10 @@ internal static class ReviewApi
     /// </summary>
     /// <remarks>
     /// Driven through the real lifecycle rather than seeded at the end state, and that is not
-    /// ceremony: FR-120 refuses <c>Delivered</c> without a proof or a note, and the transition table
-    /// refuses Pending → Delivered outright — so a helper that "just set the status" would arrange a
-    /// row the product cannot produce and prove nothing about the rule under test.
+    /// ceremony: the proof-required gate refuses <c>Delivered</c> without a proof or a note, and
+    /// the transition table refuses Pending → Delivered outright — so a helper that "just set the
+    /// status" would arrange a row the product cannot produce and prove nothing about the rule
+    /// under test.
     /// </remarks>
     /// <param name="client">The API client.</param>
     /// <param name="dispatcherToken">A dispatch token, which is what opens a delivery.</param>
@@ -78,7 +79,7 @@ internal static class ReviewApi
 
         if (status is DeliveryStatus.Delivered or DeliveryStatus.Failed)
         {
-            // FR-120's note rather than a proof: the precondition is "a proof or an explanation",
+            // The gate's note rather than a proof: the precondition is "a proof or an explanation",
             // and a sentence is the cheaper half of it in a suite that is not about proofs.
             await AdvanceAsync(client, driver.Token, deliveryId, status, cancellationToken, "вручено");
         }
@@ -88,7 +89,7 @@ internal static class ReviewApi
 
     /// <summary>Writes a review, and hands the response back rather than asserting it.</summary>
     /// <remarks>
-    /// Unasserted because half this story's matrix is about which refusal a caller gets: a helper
+    /// Unasserted because half the review matrix is about which refusal a caller gets: a helper
     /// that insisted on success could only be used by the rows that succeed.
     /// </remarks>
     public static Task<HttpResponseMessage> WriteAsync(
@@ -106,7 +107,7 @@ internal static class ReviewApi
             new { deliveryId, rating, text },
             cancellationToken);
 
-    /// <summary>Reads the whole collection (FR-64).</summary>
+    /// <summary>Reads the whole collection.</summary>
     /// <param name="client">The API client.</param>
     /// <param name="token">The caller, or null for an anonymous read.</param>
     /// <param name="cancellationToken">The test's token.</param>
@@ -122,7 +123,7 @@ internal static class ReviewApi
         FleetApi.SendAsync(
             client, HttpMethod.Get, "/api/reviews" + query, token, body: null, cancellationToken);
 
-    /// <summary>Reads the caller's own reviews (FR-63).</summary>
+    /// <summary>Reads the caller's own reviews.</summary>
     /// <param name="client">The API client.</param>
     /// <param name="token">The caller, or null for an anonymous read.</param>
     /// <param name="cancellationToken">The test's token.</param>
@@ -135,7 +136,7 @@ internal static class ReviewApi
         FleetApi.SendAsync(
             client, HttpMethod.Get, "/api/reviews/mine" + query, token, body: null, cancellationToken);
 
-    /// <summary>Edits a review (FR-65). Both fields are sent, because a form sends both.</summary>
+    /// <summary>Edits a review. Both fields are sent, because a form sends both.</summary>
     public static Task<HttpResponseMessage> EditAsync(
         HttpClient client,
         string? token,
@@ -151,7 +152,7 @@ internal static class ReviewApi
             new { rating, text },
             cancellationToken);
 
-    /// <summary>Deletes a review (FR-66).</summary>
+    /// <summary>Deletes a review.</summary>
     public static Task<HttpResponseMessage> DeleteAsync(
         HttpClient client,
         string? token,
@@ -192,7 +193,7 @@ internal static class ReviewApi
         return [.. (await FleetApi.ItemsAsync(response, cancellationToken)).EnumerateArray()];
     }
 
-    /// <summary>The driver roster as dispatch reads it, which is where FR-98's aggregate lands.</summary>
+    /// <summary>The driver roster as dispatch reads it, which is where the rating aggregate lands.</summary>
     public static async Task<JsonElement[]> DriverRosterAsync(
         HttpClient client,
         string dispatcherToken,

@@ -98,7 +98,7 @@ public class DeliveryConcurrencyTests(PostgresFixture postgres)
         Assert.Equal(DeliveryStatus.Delivered, stored.Status);
     }
 
-    /// <summary>What <c>ChangeStatusAsync</c> stages: the move and the entry recording it (AD-27).</summary>
+    /// <summary>What <c>ChangeStatusAsync</c> stages: the move and the entry recording it.</summary>
     private static void StageMove(
         IUnitOfWork unitOfWork,
         Delivery delivery,

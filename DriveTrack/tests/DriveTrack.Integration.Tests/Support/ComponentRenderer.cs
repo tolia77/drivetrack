@@ -16,7 +16,7 @@ namespace DriveTrack.Integration.Tests.Support;
 /// bunit is the obvious tool and cannot be had — <c>api.nuget.org</c> is unreachable from this
 /// machine, so restore cannot resolve a new package. What the shared framework already gives us is
 /// <see cref="HtmlRenderer"/>, which renders a component to HTML in-process. That is enough for
-/// every render-shaped claim the story makes: the dialog's ARIA wiring, the table's three states,
+/// every render-shaped claim these tests make: the dialog's ARIA wiring, the table's three states,
 /// the map's container contract. Interaction a browser alone can produce is asserted one level
 /// down instead, against the pure function or the module listener that decides it.
 /// </para>
@@ -114,7 +114,7 @@ internal static class ComponentRenderer
         where TComponent : IComponent
     {
         // The render is done under the culture the application actually runs in rather than the
-        // machine's. The default is uk-UA: the resources are neutral-uk (NFR-14/NFR-15) and a
+        // machine's. The default is uk-UA: the resources are neutral-uk and a
         // visitor who has chosen nothing is served Ukrainian, so that is what "no argument" has to
         // mean if the screen tests written before the second language are to keep asserting what
         // they were written to assert.
@@ -173,13 +173,13 @@ internal static class ComponentRenderer
 
         services.AddSingleton<IJSRuntime, UncallableJSRuntime>();
 
-        // AD-13's clock, because a screen that renders a date reads it from here rather than from
-        // the ambient one. The system clock is the honest default for a render harness: a test that
-        // needs a fixed instant registers its own below, and the last registration is the one
+        // The injected clock, because a screen that renders a date reads it from here rather than
+        // from the ambient one. The system clock is the honest default for a render harness: a test
+        // that needs a fixed instant registers its own below, and the last registration is the one
         // GetRequiredService answers with.
         services.AddSingleton(TimeProvider.System);
 
-        // The interface is Ukrainian (NFR-14), and the default HTML encoder escapes every
+        // The interface is Ukrainian, and the default HTML encoder escapes every
         // non-Latin character to a numeric reference - so `Завантаження…` renders as a run of
         // `&#x417;…` and every assertion about what a component SAYS would have to be written
         // against entities. Widening the encoder keeps the assertions readable and keeps a real

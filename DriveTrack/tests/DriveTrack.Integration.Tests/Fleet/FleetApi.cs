@@ -26,16 +26,16 @@ internal static class FleetApi
 
     /// <summary>
     /// A host whose default scheme is the production path selector rather than the probe: the
-    /// fleet's whole refusal story is about real bearer tokens carrying a real role claim.
+    /// fleet's refusals are all about real bearer tokens carrying a real role claim.
     /// </summary>
     /// <param name="connectionString">The container's own database.</param>
     /// <param name="cancellationToken">The test's token.</param>
     /// <param name="configureServices">
     /// Registrations applied after everything else, so they win the resolve — how a suite replaces
-    /// AD-12's two outbound ports with fakes.
+    /// the two outbound ports with fakes.
     /// </param>
     /// <param name="clock">
-    /// The host's clock (AD-13). Null takes the real one, which is what every suite about
+    /// The host's clock. Null takes the real one, which is what every suite about
     /// authorization wants. A stopped one is how a suite makes two writes share an instant — the
     /// case the notification log's id tie-break exists for and which the real clock, ticking
     /// between two HTTP round trips, never produces.
@@ -61,7 +61,7 @@ internal static class FleetApi
     /// <summary>
     /// A bearer token for a caller of that role.
     /// <para>
-    /// The admin is the seeded one (FR-9). A dispatcher has no registration endpoint — the product
+    /// The admin is the seeded one. A dispatcher has no registration endpoint — the product
     /// deliberately ships none — so the account is created through the same Identity port the
     /// application uses and then signed in over HTTP, which is what makes the token real rather
     /// than hand-assembled.
@@ -208,7 +208,7 @@ internal static class FleetApi
         return document.RootElement.Clone();
     }
 
-    /// <summary>Asserts the response is the failure envelope for that code, at the status AD-7 assigns it.</summary>
+    /// <summary>Asserts the response is the failure envelope for that code, at the status the envelope assigns it.</summary>
     public static async Task AssertFailureAsync(
         HttpResponseMessage response,
         HttpStatusCode expectedStatus,
@@ -230,7 +230,7 @@ internal static class FleetApi
 
         Assert.False(string.IsNullOrWhiteSpace(message));
 
-        // NFR-3: the wire message is the localized string for the code and nothing else, so no
+        // The wire message is the localized string for the code and nothing else, so no
         // SQLSTATE, constraint name or stack frame has a path to a client.
         Assert.DoesNotContain("SQLSTATE", message, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("23505", message, StringComparison.Ordinal);

@@ -11,13 +11,14 @@ using DriveTrack.Integration.Tests.Support;
 namespace DriveTrack.Integration.Tests.Reviews;
 
 /// <summary>
-/// AD-17 over the review payloads: what an author is shown, and what they are not told.
+/// The disclosure rule over the review payloads: what an author is shown, and what they are not
+/// told.
 /// <para>
 /// The claim the type system already makes is that <see cref="AuthoredReviewSummary"/> has no party
 /// field. This asserts the same thing over the wire, because that is the level at which it can
-/// fail: a later story that reused <see cref="ReviewSummary"/> for the author's list — the obvious
+/// fail: a later change that reused <see cref="ReviewSummary"/> for the author's list — the obvious
 /// economy, since it carries strictly more — would compile, pass every rule test, and ship the
-/// driver's name to the client whose delivery they carried (FR-27).
+/// driver's name to the client whose delivery they carried.
 /// </para>
 /// <para>
 /// So the body is read as text and searched for names that must not be in it, and then as a
@@ -108,9 +109,9 @@ public class ReviewDisclosureTests(PostgresFixture postgres)
     [Fact]
     public async Task The_moderation_list_does_name_both_parties()
     {
-        // The other side of AD-17, and the reason the two types are two types rather than one that
-        // is sometimes filled in. Without this the disclosure assertions above would pass equally
-        // well against a system that had simply stopped resolving parties anywhere.
+        // The other side of the disclosure rule, and the reason the two types are two types rather
+        // than one that is sometimes filled in. Without this the disclosure assertions above would
+        // pass equally well against a system that had simply stopped resolving parties anywhere.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -132,11 +133,11 @@ public class ReviewDisclosureTests(PostgresFixture postgres)
     [Fact]
     public async Task An_authors_page_is_scoped_in_the_query_rather_than_filtered_after_it()
     {
-        // AD-3's rule on the review lists, and the defect it exists to make unrepresentable.
-        // A hundred and twenty reviews belong to a stranger and three to this author; a page
-        // fetched unscoped and narrowed afterwards answers an empty first page, and no amount of
-        // paging further finds them. Two rows would never reach this: it takes more of somebody
-        // else's than one page holds.
+        // Narrow-in-the-query on the review lists, and the defect it exists to make
+        // unrepresentable. A hundred and twenty reviews belong to a stranger and three to this
+        // author; a page fetched unscoped and narrowed afterwards answers an empty first page, and
+        // no amount of paging further finds them. Two rows would never reach this: it takes more of
+        // somebody else's than one page holds.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -191,7 +192,7 @@ public class ReviewDisclosureTests(PostgresFixture postgres)
 
     /// <summary>
     /// Saves <paramref name="count"/> reviews written by one client, each on a delivery of its own
-    /// (DR-6), and answers their row ids in the order they were written.
+    /// (one review per delivery), and answers their row ids in the order they were written.
     /// <para>
     /// Write order, not read order: the review lists answer newest first, so a caller comparing
     /// against a page reverses what this returns.

@@ -6,12 +6,12 @@ using Microsoft.EntityFrameworkCore;
 namespace DriveTrack.Integration.Tests.Persistence;
 
 /// <summary>
-/// AD-27's guard, which is the reason the append-only rule is worth anything.
+/// The timeline's database guard, which is the reason the append-only rule is worth anything.
 /// <para>
 /// The interface has no update or delete method, but an interface only binds code that goes
 /// through it. These tests issue SQL straight at the table — the shape a stray script, a
 /// migration or a console session would take — and prove the database itself refuses, while
-/// still letting the one removal DR-9 declares run.
+/// still letting the one declared removal, the cascade from a deleted delivery, run.
 /// </para>
 /// </summary>
 public class TimelineAppendOnlyTests(PostgresFixture postgres)
@@ -20,7 +20,7 @@ public class TimelineAppendOnlyTests(PostgresFixture postgres)
 
     /// <summary>
     /// The name the guard raises under. It is not a real check constraint - a trigger has no
-    /// constraint of its own - but story 1.3 translates violations by name, so the trigger
+    /// constraint of its own - but the commit path translates violations by name, so the trigger
     /// supplies a stable one rather than leaving callers to match on message text.
     /// </summary>
     private const string AppendOnlyConstraint = "ck_timeline_entries_append_only";
@@ -71,7 +71,7 @@ public class TimelineAppendOnlyTests(PostgresFixture postgres)
             delivery.Id, new UserId(user.Id), note: "Left with neighbour"));
         await context.SaveChangesAsync(cancellationToken);
 
-        // FR-107, FR-108: a note-only entry is legal, and it is how a correction is made.
+        // A note-only entry is legal, and it is how a correction is made.
         context.TimelineEntries.Add(Seed.NewTimelineEntry(
             delivery.Id,
             new UserId(user.Id),
@@ -142,7 +142,7 @@ public class TimelineAppendOnlyTests(PostgresFixture postgres)
             entryId = entry.Id;
         }
 
-        // AD-20: set null, not restrict and not cascade. This is also an UPDATE on an
+        // Set null, not restrict and not cascade. This is also an UPDATE on an
         // append-only table, permitted for the same depth reason as the cascade above.
         await database.ExecuteAsync($"DELETE FROM asp_net_users WHERE id = {userId}", cancellationToken);
 
@@ -202,7 +202,7 @@ public class TimelineAppendOnlyTests(PostgresFixture postgres)
         // tracked its entries, EF would client-cascade them with DELETE statements of its own at
         // trigger depth 1 and the guard would refuse the whole operation. The AsNoTracking in
         // ListForDeliveryAsync is what keeps that from happening, and this is the test that says
-        // so - without it, removing that one call breaks nothing until a later story.
+        // so - without it, removing that one call breaks nothing until a real deletion fails.
         await using (var unitOfWork = await database.UnitOfWorkFactory.CreateAsync(cancellationToken))
         {
             var entries = await unitOfWork.TimelineEntries

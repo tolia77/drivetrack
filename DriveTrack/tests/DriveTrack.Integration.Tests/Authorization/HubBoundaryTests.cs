@@ -29,9 +29,9 @@ public class HubBoundaryTests(PostgresFixture postgres)
     [Fact]
     public async Task A_handshake_with_no_credentials_is_refused_and_reaches_no_hub_method()
     {
-        // FR-75. Asserted at the HTTP level as well as through the client, because the status is
-        // the contract: 401 rather than the cookie handler's redirect to a sign-in page, which a
-        // programmatic caller cannot read.
+        // History is for participants only. Asserted at the HTTP level as well as through the
+        // client, because the status is the contract: 401 rather than the cookie handler's redirect
+        // to a sign-in page, which a programmatic caller cannot read.
         var cancellationToken = TestContext.Current.CancellationToken;
         var world = await AuthorizationWorld.InstanceAsync(postgres.ConnectionString, cancellationToken);
 
@@ -51,10 +51,10 @@ public class HubBoundaryTests(PostgresFixture postgres)
     [Fact]
     public void No_controller_can_answer_a_message_so_the_hub_is_the_only_door_to_history()
     {
-        // Not a refusal, and not FR-75 itself: the claim that history is unreachable without
-        // credentials is carried by the handshake test above, which is where an anonymous caller is
-        // actually turned away. What this adds is the other half of that sentence - that the hub is
-        // the *only* door, so refusing the handshake refuses history.
+        // Not a refusal, and not the participants-only rule itself: the claim that history is
+        // unreachable without credentials is carried by the handshake test above, which is where an
+        // anonymous caller is actually turned away. What this adds is the other half of that
+        // sentence - that the hub is the *only* door, so refusing the handshake refuses history.
         //
         // Asserted as a dependency rather than by looking for "chat" or "message" in a route
         // template, because a route named /api/threads or .../history would satisfy a name scan
@@ -82,7 +82,7 @@ public class HubBoundaryTests(PostgresFixture postgres)
     [Fact]
     public async Task A_client_and_an_administrator_reach_no_thread_and_no_roster()
     {
-        // AD-15's two deliberate exclusions, on all three of the methods that take a decision. An
+        // Chat's two deliberate exclusions, on all three of the methods that take a decision. An
         // administrator is refused here and nowhere else in the system, which is exactly the kind
         // of asymmetry a sweep has to restate rather than assume.
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -155,7 +155,7 @@ public class HubBoundaryTests(PostgresFixture postgres)
         var world = await AuthorizationWorld.InstanceAsync(postgres.ConnectionString, cancellationToken);
 
         // Both roles chat excludes and a driver who is not the thread's: the administrator is as
-        // much a stranger to a thread as the client is (AD-15), and leaving one has to be as
+        // much a stranger to a thread as the client is, and leaving one has to be as
         // uneventful for them.
         foreach (var token in new[]
         {
@@ -197,7 +197,7 @@ public class HubBoundaryTests(PostgresFixture postgres)
     private static void AssertRefusal(HubException failure, ErrorCode expected)
     {
         // A HubException carries one string, and what crosses the wire is the resource key the
-        // screen renders - never a sentence, and never a stack frame (NFR-3).
+        // screen renders - never a sentence, and never a stack frame.
         Assert.Contains(expected.ToString(), failure.Message, StringComparison.Ordinal);
 
         foreach (var leak in new[] { "   at ", "SELECT ", "Npgsql", "DriveTrack.Application" })

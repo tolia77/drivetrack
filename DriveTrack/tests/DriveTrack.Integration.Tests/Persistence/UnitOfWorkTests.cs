@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 namespace DriveTrack.Integration.Tests.Persistence;
 
 /// <summary>
-/// AD-5 and NFR-9: one operation, one scope, one commit — and nothing left behind when the
+/// One operation, one scope, one commit — and nothing left behind when the
 /// operation does not finish. The scope is the only thing standing between a multi-step write
 /// and a half-applied one, so it is asserted against a real database rather than a fake.
 /// </summary>
@@ -106,7 +106,7 @@ public class UnitOfWorkTests(PostgresFixture postgres)
 
         await using var context = await database.CreateContextAsync(cancellationToken);
 
-        // NFR-9: the legal half is gone too. Without the transaction the vehicle would be
+        // The legal half is gone too. Without the transaction the vehicle would be
         // sitting there, committed, with nothing that references it.
         Assert.Equal(0, await context.Vehicles.CountAsync(cancellationToken));
         Assert.Equal(0, await context.Reviews.CountAsync(cancellationToken));
@@ -164,7 +164,7 @@ public class UnitOfWorkTests(PostgresFixture postgres)
             actorUserId = user.Id;
         }
 
-        // AD-27 writes a timeline entry inside the transaction of the change it records, so two
+        // A timeline entry is written inside the transaction of the change it records, so two
         // entries appended by one operation share an instant exactly. The ids are assigned by
         // hand, and the higher one is written first, so the rows sit on the page in the reverse
         // of their append order: ordering by occurred_at alone returns "Second" first and the
@@ -199,7 +199,7 @@ public class UnitOfWorkTests(PostgresFixture postgres)
         //
         // The arm this covers is easy to lose, because DbUpdateConcurrencyException derives from
         // DbUpdateException and the translator only recognises SQLSTATEs - so without an arm of its
-        // own it falls through as an unmodelled defect and leaves as a 500 (AD-8, NFR-2).
+        // own it falls through as an unmodelled defect and leaves as a 500.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var database = await TestDatabase.CreateAsync(postgres.ConnectionString, cancellationToken);
 
@@ -256,7 +256,7 @@ public class UnitOfWorkTests(PostgresFixture postgres)
 
         // These two lookups are the only ones in the system whose predicate compares a
         // value-converted key, so they are the only place a converter or translation regression
-        // would show up before a later story tripped over it at runtime.
+        // would show up before a caller tripped over it at runtime.
         var client = await unitOfWork.Clients.GetByIdAsync(clientId, cancellationToken);
         var driver = await unitOfWork.Drivers.GetByIdAsync(driverId, cancellationToken);
 
@@ -312,7 +312,7 @@ public class UnitOfWorkTests(PostgresFixture postgres)
             entries = await unitOfWork.TimelineEntries.ListForDeliveryAsync(deliveryId, cancellationToken);
         }
 
-        // AD-6: the scope is gone, and the results are still readable - which is only true
+        // The scope is gone, and the results are still readable - which is only true
         // because nothing crossed the boundary holding a live context open.
         Assert.NotNull(delivery2);
         Assert.Equal(deliveryId, delivery2.Id);
