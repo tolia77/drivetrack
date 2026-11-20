@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Net;
 using System.Text.Json;
 
-namespace DriveTrack.Integration.Tests.Fleet;
+namespace DriveTrack.Integration.Tests.Support;
 
 /// <summary>
 /// The eight routes a shift is reached by, collected the way <c>ReviewApi</c> collects its five.

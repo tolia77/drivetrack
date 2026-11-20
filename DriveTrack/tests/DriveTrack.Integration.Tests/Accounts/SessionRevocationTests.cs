@@ -6,7 +6,7 @@ using DriveTrack.Integration.Tests.Persistence;
 using DriveTrack.Integration.Tests.Support;
 using DriveTrack.Web.Authentication;
 
-namespace DriveTrack.Integration.Tests.Identity;
+namespace DriveTrack.Integration.Tests.Accounts;
 
 /// <summary>
 /// The cookie's revalidation, against the real <c>Program.cs</c> pipeline and the cookie the

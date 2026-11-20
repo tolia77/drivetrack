@@ -2,7 +2,6 @@ using System.Net;
 using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Errors;
 using DriveTrack.Domain.Drivers;
-using DriveTrack.Integration.Tests.Fleet;
 using DriveTrack.Integration.Tests.Persistence;
 using DriveTrack.Integration.Tests.Support;
 

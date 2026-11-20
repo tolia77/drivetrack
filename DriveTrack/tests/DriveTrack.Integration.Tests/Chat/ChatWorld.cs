@@ -5,7 +5,6 @@ using DriveTrack.Domain.Drivers;
 using DriveTrack.Domain.Shifts;
 using DriveTrack.Domain.Vehicles;
 using DriveTrack.Integration.Tests.Deliveries;
-using DriveTrack.Integration.Tests.Identity;
 using DriveTrack.Integration.Tests.Support;
 using DriveTrack.Web.Api.Json;
 using Microsoft.AspNetCore.Http.Connections;

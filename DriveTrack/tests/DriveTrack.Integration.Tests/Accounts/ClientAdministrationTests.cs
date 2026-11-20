@@ -15,7 +15,7 @@ using DriveTrack.Integration.Tests.Support;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace DriveTrack.Integration.Tests.Identity;
+namespace DriveTrack.Integration.Tests.Accounts;
 
 /// <summary>
 /// The client administration rows of the I/O matrix, over HTTP, against the real

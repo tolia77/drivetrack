@@ -8,7 +8,7 @@ using DriveTrack.Application.Common.Errors;
 using DriveTrack.Domain.Accounts;
 using DriveTrack.Integration.Tests.Support;
 
-namespace DriveTrack.Integration.Tests.Fleet;
+namespace DriveTrack.Integration.Tests.Support;
 
 /// <summary>
 /// The plumbing the two fleet suites share: a host with the real schemes, a bearer token for a

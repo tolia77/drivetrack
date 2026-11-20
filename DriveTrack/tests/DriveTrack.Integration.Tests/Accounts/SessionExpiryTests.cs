@@ -3,7 +3,7 @@ using DriveTrack.Application.Common.Errors;
 using DriveTrack.Integration.Tests.Support;
 using DriveTrack.Web.Components.Routing;
 
-namespace DriveTrack.Integration.Tests.Identity;
+namespace DriveTrack.Integration.Tests.Accounts;
 
 /// <summary>
 /// Session expiry, asserted at the two levels it is decided: the rule that recognises an expired

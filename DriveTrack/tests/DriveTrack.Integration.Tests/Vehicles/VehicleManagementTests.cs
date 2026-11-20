@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 
-namespace DriveTrack.Integration.Tests.Fleet;
+namespace DriveTrack.Integration.Tests.Vehicles;
 
 /// <summary>
 /// Vehicle management over HTTP, against the real <c>Program.cs</c> pipeline.

@@ -3,10 +3,9 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.RegularExpressions;
-using DriveTrack.Integration.Tests.Fleet;
 using DriveTrack.Integration.Tests.Support;
 
-namespace DriveTrack.Integration.Tests.Deliveries;
+namespace DriveTrack.Integration.Tests.Support;
 
 /// <summary>
 /// The arrangement the two proof suites share: a multipart capture, a proof read, and the one thing

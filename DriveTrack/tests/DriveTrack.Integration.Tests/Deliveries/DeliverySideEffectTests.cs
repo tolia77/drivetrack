@@ -8,7 +8,6 @@ using DriveTrack.Domain.Deliveries;
 using DriveTrack.Domain.Drivers;
 using DriveTrack.Domain.Notifications;
 using DriveTrack.Infrastructure.SideEffects;
-using DriveTrack.Integration.Tests.Fleet;
 using DriveTrack.Integration.Tests.Persistence;
 using DriveTrack.Integration.Tests.Support;
 using Microsoft.Extensions.DependencyInjection;

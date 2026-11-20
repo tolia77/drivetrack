@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text;
 using DriveTrack.Domain.Accounts;
 using DriveTrack.Integration.Tests.Deliveries;
+using DriveTrack.Integration.Tests.Support;
 
 namespace DriveTrack.Integration.Tests.Authorization;
 

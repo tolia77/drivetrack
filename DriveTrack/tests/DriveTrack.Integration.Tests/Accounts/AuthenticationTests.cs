@@ -23,7 +23,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Microsoft.IdentityModel.JsonWebTokens;
 
-namespace DriveTrack.Integration.Tests.Identity;
+namespace DriveTrack.Integration.Tests.Accounts;
 
 /// <summary>
 /// The register, sign-in and profile rows of the I/O matrix, over HTTP, against the real

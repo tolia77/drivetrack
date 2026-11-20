@@ -8,7 +8,7 @@ using DriveTrack.Integration.Tests.Persistence;
 using DriveTrack.Integration.Tests.Support;
 using Microsoft.EntityFrameworkCore;
 
-namespace DriveTrack.Integration.Tests.Fleet;
+namespace DriveTrack.Integration.Tests.Drivers;
 
 /// <summary>
 /// Driver management over HTTP, against the real <c>Program.cs</c> pipeline.

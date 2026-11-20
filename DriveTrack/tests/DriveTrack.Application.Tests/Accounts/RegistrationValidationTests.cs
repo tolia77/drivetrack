@@ -2,7 +2,7 @@ using DriveTrack.Application.Accounts.Authentication;
 using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Errors;
 
-namespace DriveTrack.Application.Tests.Users;
+namespace DriveTrack.Application.Tests.Accounts;
 
 /// <summary>
 /// The registration rules, driven through the real <c>EnsureValidAsync</c> seam so the assertions

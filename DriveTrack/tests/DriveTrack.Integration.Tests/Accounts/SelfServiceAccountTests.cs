@@ -7,7 +7,7 @@ using DriveTrack.Domain.Accounts;
 using DriveTrack.Integration.Tests.Persistence;
 using DriveTrack.Integration.Tests.Support;
 
-namespace DriveTrack.Integration.Tests.Identity;
+namespace DriveTrack.Integration.Tests.Accounts;
 
 /// <summary>
 /// The self-service account I/O matrix over HTTP, against the real <c>Program.cs</c>

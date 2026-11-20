@@ -7,7 +7,7 @@ using DriveTrack.Application.Common.Errors;
 using DriveTrack.Domain.Accounts;
 using DriveTrack.Integration.Tests.Support;
 
-namespace DriveTrack.Integration.Tests.Identity;
+namespace DriveTrack.Integration.Tests.Support;
 
 /// <summary>
 /// The moves both administration suites make: boot a host on the real schemes, get a bearer token

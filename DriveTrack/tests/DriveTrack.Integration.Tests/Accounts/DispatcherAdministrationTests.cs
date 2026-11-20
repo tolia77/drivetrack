@@ -9,7 +9,7 @@ using DriveTrack.Domain.Drivers;
 using DriveTrack.Integration.Tests.Persistence;
 using DriveTrack.Integration.Tests.Support;
 
-namespace DriveTrack.Integration.Tests.Identity;
+namespace DriveTrack.Integration.Tests.Accounts;
 
 /// <summary>
 /// The dispatcher administration rows of the I/O matrix, over HTTP, against the real pipeline and

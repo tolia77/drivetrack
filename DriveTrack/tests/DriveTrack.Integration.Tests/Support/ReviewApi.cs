@@ -5,10 +5,9 @@ using DriveTrack.Domain.Clients;
 using DriveTrack.Domain.Deliveries;
 using DriveTrack.Domain.Drivers;
 using DriveTrack.Integration.Tests.Deliveries;
-using DriveTrack.Integration.Tests.Fleet;
 using DriveTrack.Integration.Tests.Support;
 
-namespace DriveTrack.Integration.Tests.Reviews;
+namespace DriveTrack.Integration.Tests.Support;
 
 /// <summary>
 /// The arrangement the review suites share: a delivery that has actually been carried, and the five

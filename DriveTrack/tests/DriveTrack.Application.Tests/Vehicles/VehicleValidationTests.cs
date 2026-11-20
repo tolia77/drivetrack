@@ -6,13 +6,13 @@ using DriveTrack.Application.Vehicles;
 using FluentValidation;
 using FluentValidation.Results;
 
-namespace DriveTrack.Application.Tests.Fleet;
+namespace DriveTrack.Application.Tests.Vehicles;
 
 /// <summary>
-/// The vehicle and driver length rules judge the trimmed text, because the services store it
-/// trimmed: a value of exactly the column's width with a trailing space fits once trimmed.
+/// The vehicle length rules judge the trimmed text, because the service stores it trimmed: a value of
+/// exactly the column's width with a trailing space fits once trimmed.
 /// </summary>
-public class FleetValidationTests
+public class VehicleValidationTests
 {
     private static readonly string Plate20 =
         new('A', CreateVehicleCommandValidator.LicensePlateMaximumLength);
@@ -69,38 +69,6 @@ public class FleetValidationTests
             nameof(ErrorCode.COMMON_FIELD_REQUIRED));
     }
 
-    [Fact]
-    public void Full_width_driver_fields_with_trailing_spaces_are_accepted_on_create()
-    {
-        var name = new string('я', RegisterClientCommandValidator.NameMaximumLength) + " ";
-        var licence = new string('7', CreateDriverCommandValidator.LicenseNumberMaximumLength) + " ";
-
-        Assert.Empty(
-            Validate(
-                new CreateDriverCommandValidator(),
-                new CreateDriverCommand(name, name, "olena@drivetrack.test ", "New-Passw0rd", licence, null))
-                .Errors);
-    }
-
-    [Fact]
-    public void A_licence_number_one_character_wider_than_the_column_is_refused_on_edit()
-    {
-        var licence = new string('7', CreateDriverCommandValidator.LicenseNumberMaximumLength + 1);
-
-        AssertRefused(
-            Validate(new UpdateDriverCommandValidator(), DriverEdit(licence)),
-            nameof(UpdateDriverCommand.LicenseNumber),
-            nameof(ErrorCode.FLEET_LICENSE_NUMBER_TOO_LONG));
-    }
-
-    [Fact]
-    public void A_full_width_licence_number_with_a_trailing_space_is_accepted_on_edit()
-    {
-        var licence = new string('7', CreateDriverCommandValidator.LicenseNumberMaximumLength) + " ";
-
-        Assert.Empty(Validate(new UpdateDriverCommandValidator(), DriverEdit(licence)).Errors);
-    }
-
     private static CreateVehicleCommand Vehicle(string plate) => new("Фургон", plate, 1200m, 0, null);
 
     private static UpdateVehicleCommand VehicleEdit(string plate) =>
@@ -110,13 +78,6 @@ public class FleetValidationTests
             Optional<decimal>.Present(1200m),
             Optional<int>.Present(0),
             Optional<DateOnly?>.Present(null));
-
-    private static UpdateDriverCommand DriverEdit(string licence) =>
-        new(
-            Optional<string>.Present("Олена"),
-            Optional<string>.Present("Петренко"),
-            Optional<string>.Present(licence),
-            Optional<int?>.Present(null));
 
     private static ValidationResult Validate<T>(IValidator<T> validator, T instance) =>
         validator.Validate(instance);

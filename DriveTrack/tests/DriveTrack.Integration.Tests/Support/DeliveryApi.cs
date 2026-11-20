@@ -4,10 +4,9 @@ using DriveTrack.Domain.Accounts;
 using DriveTrack.Domain.Clients;
 using DriveTrack.Domain.Deliveries;
 using DriveTrack.Domain.Drivers;
-using DriveTrack.Integration.Tests.Fleet;
 using DriveTrack.Integration.Tests.Support;
 
-namespace DriveTrack.Integration.Tests.Deliveries;
+namespace DriveTrack.Integration.Tests.Support;
 
 /// <summary>
 /// The arrangement the two delivery suites share: a caller of each role, a vehicle of a chosen

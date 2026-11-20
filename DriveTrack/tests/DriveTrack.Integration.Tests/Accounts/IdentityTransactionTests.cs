@@ -6,7 +6,7 @@ using DriveTrack.Domain.Drivers;
 using DriveTrack.Integration.Tests.Persistence;
 using DriveTrack.Integration.Tests.Support;
 
-namespace DriveTrack.Integration.Tests.Identity;
+namespace DriveTrack.Integration.Tests.Accounts;
 
 /// <summary>
 /// The unit of work's crux, against a real PostgreSQL: Identity is not a second persistence

@@ -16,7 +16,6 @@ using DriveTrack.Domain.Notifications;
 using DriveTrack.Domain.Shifts;
 using DriveTrack.Infrastructure.Persistence;
 using DriveTrack.Integration.Tests.Deliveries;
-using DriveTrack.Integration.Tests.Fleet;
 using DriveTrack.Integration.Tests.Persistence;
 using DriveTrack.Integration.Tests.Support;
 using Microsoft.EntityFrameworkCore;

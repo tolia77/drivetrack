@@ -3,7 +3,7 @@ using DriveTrack.Application.Accounts.Dispatchers;
 using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Errors;
 
-namespace DriveTrack.Application.Tests.Users;
+namespace DriveTrack.Application.Tests.Accounts;
 
 /// <summary>
 /// The account administration 422 cases, driven through the real <c>EnsureValidAsync</c>

@@ -5,7 +5,7 @@ using DriveTrack.Domain.Drivers;
 using DriveTrack.Integration.Tests.Persistence;
 using DriveTrack.Integration.Tests.Support;
 
-namespace DriveTrack.Integration.Tests.Identity;
+namespace DriveTrack.Integration.Tests.Accounts;
 
 /// <summary>
 /// The documented way a first administrator exists at all, and the property that makes

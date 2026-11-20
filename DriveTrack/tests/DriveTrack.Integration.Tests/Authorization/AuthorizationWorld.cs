@@ -8,7 +8,6 @@ using DriveTrack.Domain.Clients;
 using DriveTrack.Domain.Deliveries;
 using DriveTrack.Domain.Drivers;
 using DriveTrack.Integration.Tests.Deliveries;
-using DriveTrack.Integration.Tests.Fleet;
 using DriveTrack.Integration.Tests.Support;
 
 [assembly: AssemblyFixture(typeof(DriveTrack.Integration.Tests.Authorization.AuthorizationWorldFixture))]

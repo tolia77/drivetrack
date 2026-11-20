@@ -2,7 +2,7 @@ using DriveTrack.Application.Accounts.Profile;
 using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Errors;
 
-namespace DriveTrack.Application.Tests.Users;
+namespace DriveTrack.Application.Tests.Accounts;
 
 /// <summary>
 /// The self-service profile, password and email 422 cases, driven through the real
