@@ -1,7 +1,9 @@
 using System.Net;
 using System.Text.RegularExpressions;
+using DriveTrack.Application.Accounts.Authentication;
+using DriveTrack.Application.Accounts.Profile;
+using DriveTrack.Application.Accounts;
 using DriveTrack.Application.Authorization;
-using DriveTrack.Application.Users;
 using DriveTrack.Domain.Identity;
 using DriveTrack.Integration.Tests.Support;
 using DriveTrack.Web.Components.Account;

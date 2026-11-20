@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using DriveTrack.Application.Deliveries.SideEffects;
 
 namespace DriveTrack.Integration.Tests.Authorization;
 

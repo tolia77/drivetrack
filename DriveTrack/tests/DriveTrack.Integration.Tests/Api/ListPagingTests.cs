@@ -1,4 +1,3 @@
-using DriveTrack.Application.Users;
 using DriveTrack.Application.Reviews;
 using DriveTrack.Application.Shifts;
 using DriveTrack.Application.Drivers;
@@ -17,6 +16,8 @@ using DriveTrack.Application.Notifications;
 using DriveTrack.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using DriveTrack.Application.Accounts.Clients;
+using DriveTrack.Application.Accounts.Dispatchers;
 
 namespace DriveTrack.Integration.Tests.Api;
 

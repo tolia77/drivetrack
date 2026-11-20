@@ -5,13 +5,16 @@ using DriveTrack.Application.Common;
 using DriveTrack.Application.Deliveries;
 using DriveTrack.Application.Drivers;
 using DriveTrack.Application.Reviews;
-using DriveTrack.Application.Users;
 using DriveTrack.Application.Notifications;
 using DriveTrack.Application.Shifts;
 using DriveTrack.Application.Vehicles;
 using DriveTrack.Domain.Deliveries;
 using DriveTrack.Domain.Reviews;
 using DriveTrack.Integration.Tests.Support;
+using DriveTrack.Application.Accounts.Authentication;
+using DriveTrack.Application.Accounts.Clients;
+using DriveTrack.Application.Accounts.Dispatchers;
+using DriveTrack.Application.Deliveries.Proof;
 
 namespace DriveTrack.Integration.Tests.Localization;
 

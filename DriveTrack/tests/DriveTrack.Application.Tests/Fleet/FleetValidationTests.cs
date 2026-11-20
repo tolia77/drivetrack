@@ -1,9 +1,9 @@
 using DriveTrack.Application.Common;
 using DriveTrack.Application.Drivers;
-using DriveTrack.Application.Users;
 using DriveTrack.Application.Vehicles;
 using FluentValidation;
 using FluentValidation.Results;
+using DriveTrack.Application.Accounts.Authentication;
 
 namespace DriveTrack.Application.Tests.Fleet;
 

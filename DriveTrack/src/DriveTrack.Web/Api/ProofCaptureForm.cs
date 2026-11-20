@@ -1,5 +1,6 @@
 using System.Globalization;
 using DriveTrack.Application.Common;
+using DriveTrack.Application.Deliveries.Proof;
 using DriveTrack.Application.Deliveries;
 using DriveTrack.Domain.Deliveries;
 using Microsoft.AspNetCore.Http;

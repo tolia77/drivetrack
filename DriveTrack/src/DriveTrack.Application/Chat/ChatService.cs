@@ -1,9 +1,9 @@
 using System.Globalization;
 using DriveTrack.Application.Abstractions;
+using DriveTrack.Application.Accounts;
 using DriveTrack.Application.Authorization;
 using DriveTrack.Application.Common;
 using DriveTrack.Application.Drivers;
-using DriveTrack.Application.Users;
 using DriveTrack.Domain.Chat;
 using DriveTrack.Domain.Drivers;
 using DriveTrack.Domain.Identity;

@@ -84,10 +84,13 @@ public class SeverabilityTests
     private static readonly string[] AllowedSeams =
     [
         Path.Combine("DriveTrack.Domain", "Chat", "Message.cs"),
-        Path.Combine("DriveTrack.Application", "Chat", "ChatContracts.cs"),
+        Path.Combine("DriveTrack.Application", "Chat", "ChatMessage.cs"),
         Path.Combine("DriveTrack.Application", "Chat", "ChatService.cs"),
-        Path.Combine("DriveTrack.Application", "Chat", "ChatValidators.cs"),
+        Path.Combine("DriveTrack.Application", "Chat", "ChatThread.cs"),
+        Path.Combine("DriveTrack.Application", "Chat", "ChatThreadSummary.cs"),
         Path.Combine("DriveTrack.Application", "Chat", "IChatService.cs"),
+        Path.Combine("DriveTrack.Application", "Chat", "SendMessageCommand.cs"),
+        Path.Combine("DriveTrack.Application", "Chat", "SendMessageCommandValidator.cs"),
         Path.Combine("DriveTrack.Application", "Abstractions", "IMessageRepository.cs"),
         Path.Combine("DriveTrack.Application", "Abstractions", "IUnitOfWork.cs"),
 

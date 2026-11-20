@@ -1,0 +1,6 @@
+namespace DriveTrack.Application.Accounts.Authentication;
+
+/// <summary>Credentials presented for sign-in.</summary>
+/// <param name="Email">The address the account signs in with.</param>
+/// <param name="Password">The password, verified against the stored hash and never logged.</param>
+public sealed record SignInCommand(string? Email, string? Password);

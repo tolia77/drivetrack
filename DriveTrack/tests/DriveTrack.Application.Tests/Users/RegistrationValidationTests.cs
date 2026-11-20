@@ -1,5 +1,5 @@
+using DriveTrack.Application.Accounts.Authentication;
 using DriveTrack.Application.Common;
-using DriveTrack.Application.Users;
 
 namespace DriveTrack.Application.Tests.Users;
 
