@@ -1,5 +1,5 @@
 using System.Text.RegularExpressions;
-using DriveTrack.Web.Account;
+using DriveTrack.Web.Components.Routing;
 
 namespace DriveTrack.Integration.Tests.Components;
 

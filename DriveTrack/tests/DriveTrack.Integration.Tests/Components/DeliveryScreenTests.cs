@@ -14,7 +14,7 @@ using DriveTrack.Domain.Clients;
 using DriveTrack.Domain.Deliveries;
 using DriveTrack.Domain.Drivers;
 using DriveTrack.Integration.Tests.Support;
-using DriveTrack.Web.Account;
+using DriveTrack.Web.Components.Failures;
 using DriveTrack.Web.Components.Shared;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;

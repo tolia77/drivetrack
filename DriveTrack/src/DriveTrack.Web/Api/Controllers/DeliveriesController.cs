@@ -1,0 +1,241 @@
+using DriveTrack.Application.Common;
+using DriveTrack.Application.Common.Paging;
+using DriveTrack.Application.Deliveries;
+using DriveTrack.Application.Deliveries.Proof;
+using DriveTrack.Domain.Deliveries;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace DriveTrack.Web.Api.Controllers;
+
+/// <summary>
+/// Deliveries over REST.
+/// <para>
+/// <c>[Authorize]</c> here is a convenience, not the decision: it stops an anonymous request before
+/// it reaches a service, but whether <em>this</em> caller may open, read or delete a delivery is
+/// decided by <c>IAccessGuard</c> inside <see cref="IDeliveryService"/> and nowhere else.
+/// That is also why there is no <c>Roles</c> argument — the two lists below are reserved to
+/// different callers, and an attribute that named one of them would be a second, coarser copy of a
+/// rule the service already states precisely.
+/// </para>
+/// <para>
+/// The two lists are separate routes rather than one route that branches on the caller's role.
+/// Domain branching stays out of adapters and the shapes are different types, so the
+/// split is in the routing table where a reader can see it: <c>/api/deliveries</c> answers
+/// dispatch's view, <c>/api/deliveries/mine</c> answers a driver's or a client's, and neither can
+/// be coaxed into answering the other.
+/// </para>
+/// <para>
+/// Thin by construction: no try/catch, no <c>IActionResult</c>, no status set by hand. Every
+/// status and every message is left to the envelope.
+/// </para>
+/// </summary>
+[ApiController]
+[Route("api/deliveries")]
+[Authorize]
+public sealed class DeliveriesController(
+    IDeliveryService deliveries,
+    IProofOfDeliveryService proofs) : ControllerBase
+{
+    /// <summary>
+    /// One page of every delivery with the number that matched, filtered and sorted over
+    /// every row. Defaults to the first hundred, newest first.
+    /// </summary>
+    /// <remarks>
+    /// The paging parameters are nullable so an omitted one takes the default here rather than
+    /// binding to zero — a limit of zero is a refusal, and "I did not say" must not mean "give me
+    /// nothing". <c>sort</c> is a column name and is refused with <c>COMMON_SORT_INVALID</c> when the
+    /// list has no such column; <c>desc=true</c> reverses it. The text filters are case-insensitive
+    /// substrings; <c>createdFrom</c> and <c>createdTo</c> are local days, both inclusive.
+    /// </remarks>
+    [HttpGet]
+    public Task<Paged<DeliverySummary>> ListAsync(
+        [FromQuery] int? offset,
+        [FromQuery] int? limit,
+        [FromQuery] string? sort,
+        [FromQuery] bool? desc,
+        [FromQuery] string? driver,
+        [FromQuery] string? client,
+        [FromQuery] string? pickup,
+        [FromQuery] string? dropoff,
+        [FromQuery] string? packageDetails,
+        [FromQuery] string? deliveryNotes,
+        [FromQuery] DeliveryStatus? status,
+        [FromQuery] DateOnly? createdFrom,
+        [FromQuery] DateOnly? createdTo,
+        [FromQuery] bool? overdue,
+        CancellationToken cancellationToken) =>
+        deliveries.ListAsync(
+            new ListDeliveriesQuery(
+                offset ?? 0,
+                limit ?? ListDeliveriesQueryValidator.MaximumLimit,
+                sort,
+                desc ?? false,
+                driver,
+                client,
+                pickup,
+                dropoff,
+                packageDetails,
+                deliveryNotes,
+                status,
+                createdFrom,
+                createdTo,
+                overdue ?? false),
+            cancellationToken);
+
+    /// <summary>
+    /// One page of the caller's own deliveries. The payload carries no counterparty
+    /// identity, because the type it is built from has no field for one.
+    /// </summary>
+    /// <remarks>
+    /// Sorted and filtered like the dispatch list, without the two counterparty columns: there is
+    /// no <c>driver</c> or <c>client</c> filter here, and <c>sort=driver</c> or <c>sort=client</c>
+    /// is refused with <c>COMMON_SORT_INVALID</c>.
+    /// </remarks>
+    [HttpGet("mine")]
+    public Task<Paged<AssignedDeliverySummary>> ListMineAsync(
+        [FromQuery] int? offset,
+        [FromQuery] int? limit,
+        [FromQuery] string? sort,
+        [FromQuery] bool? desc,
+        [FromQuery] string? pickup,
+        [FromQuery] string? dropoff,
+        [FromQuery] string? packageDetails,
+        [FromQuery] string? deliveryNotes,
+        [FromQuery] DeliveryStatus? status,
+        [FromQuery] DateOnly? createdFrom,
+        [FromQuery] DateOnly? createdTo,
+        [FromQuery] bool? overdue,
+        CancellationToken cancellationToken) =>
+        deliveries.ListMineAsync(
+            new ListDeliveriesQuery(
+                offset ?? 0,
+                limit ?? ListDeliveriesQueryValidator.MaximumLimit,
+                sort,
+                desc ?? false,
+                Pickup: pickup,
+                Dropoff: dropoff,
+                PackageDetails: packageDetails,
+                DeliveryNotes: deliveryNotes,
+                Status: status,
+                CreatedFrom: createdFrom,
+                CreatedTo: createdTo,
+                OverdueOnly: overdue ?? false),
+            cancellationToken);
+
+    /// <summary>
+    /// The places matching a typed address, each with the point a map click would set.
+    /// </summary>
+    /// <remarks>
+    /// A literal segment beside the <c>{id:int}</c> routes below, and the constraint is what keeps
+    /// the two apart: <c>places</c> is not an integer, so it can only ever match this route.
+    /// </remarks>
+    [HttpGet("places")]
+    public Task<IReadOnlyList<PlaceMatch>> SearchPlacesAsync(
+        [FromQuery] string? query,
+        CancellationToken cancellationToken) =>
+        deliveries.SearchPlacesAsync(new SearchPlacesQuery(query), cancellationToken);
+
+    /// <summary>One delivery, as dispatch reads it.</summary>
+    [HttpGet("{id:int}")]
+    public Task<DeliverySummary> GetAsync(int id, CancellationToken cancellationToken) =>
+        deliveries.GetAsync(id, cancellationToken);
+
+    /// <summary>Opens a delivery.</summary>
+    [HttpPost]
+    public Task<DeliverySummary> CreateAsync(
+        [FromBody] CreateDeliveryCommand command,
+        CancellationToken cancellationToken) =>
+        deliveries.CreateAsync(command, cancellationToken);
+
+    /// <summary>Asks for a delivery as the client who wants it.</summary>
+    /// <remarks>
+    /// A route of its own rather than a shape flag on <see cref="CreateAsync"/>, and the body type
+    /// is the whole reason: <see cref="RequestDeliveryCommand"/> has no driver, no client and no
+    /// status, so those three are unrepresentable on this wire rather than ignored on it. A literal
+    /// segment beside the <c>{id:int}</c> routes for the reason <c>places</c> is one — an integer
+    /// can never match it.
+    /// <para>
+    /// Still no <c>Roles</c> argument. "A client acting for their own row" is not a role list, and
+    /// <c>IAccessGuard.RequireDeliveryComposer</c> states it precisely.
+    /// </para>
+    /// </remarks>
+    [HttpPost("requests")]
+    public Task<AssignedDeliverySummary> RequestAsync(
+        [FromBody] RequestDeliveryCommand command,
+        CancellationToken cancellationToken) =>
+        deliveries.RequestAsync(command, cancellationToken);
+
+    /// <summary>Changes a delivery. Absent fields are left alone.</summary>
+    [HttpPut("{id:int}")]
+    public Task<DeliverySummary> UpdateAsync(
+        int id,
+        [FromBody] UpdateDeliveryCommand command,
+        CancellationToken cancellationToken) =>
+        deliveries.UpdateAsync(id, command, cancellationToken);
+
+    /// <summary>Deletes a delivery and its dependents. Admin only, decided in the service.</summary>
+    [HttpDelete("{id:int}")]
+    public Task DeleteAsync(int id, CancellationToken cancellationToken) =>
+        deliveries.DeleteAsync(id, cancellationToken);
+
+    /// <summary>
+    /// Advances a delivery's lifecycle. Still no <c>Roles</c> argument: "the
+    /// assigned driver, or dispatch" is not a role list, and the guard states it precisely.
+    /// </summary>
+    [HttpPost("{id:int}/status")]
+    public Task<TimelineEntryView> ChangeStatusAsync(
+        int id,
+        [FromBody] ChangeDeliveryStatusCommand command,
+        CancellationToken cancellationToken) =>
+        deliveries.ChangeStatusAsync(id, command, cancellationToken);
+
+    /// <summary>Appends a note to a delivery's timeline, changing nothing else.</summary>
+    [HttpPost("{id:int}/timeline")]
+    public Task<TimelineEntryView> AddNoteAsync(
+        int id,
+        [FromBody] AddDeliveryNoteCommand command,
+        CancellationToken cancellationToken) =>
+        deliveries.AddNoteAsync(id, command, cancellationToken);
+
+    /// <summary>A delivery's history, oldest first.</summary>
+    [HttpGet("{id:int}/timeline")]
+    public Task<IReadOnlyList<TimelineEntryView>> ListTimelineAsync(
+        int id,
+        CancellationToken cancellationToken) =>
+        deliveries.ListTimelineAsync(id, cancellationToken);
+
+    /// <summary>
+    /// Records the hand-over: recipient, capture point, one signature and at least one
+    /// photograph, as <c>multipart/form-data</c>.
+    /// </summary>
+    /// <remarks>
+    /// The two limits are sized from <c>ProofAssetRules</c> rather than typed, and that is the
+    /// point of the rules living in Application: a body cap chosen independently of the validator's
+    /// per-asset cap would refuse a legal photograph with a framework 413 carrying no contract code
+    /// at all, which is a refusal no client can act on and no localized catalogue has a message for.
+    /// <para>
+    /// Still no <c>Roles</c> argument, for the reason the rest of this controller has none: "the
+    /// assigned driver, or dispatch" is not a role list, and the guard inside the capability states
+    /// it precisely.
+    /// </para>
+    /// </remarks>
+    [HttpPost("{id:int}/proof")]
+    [RequestSizeLimit(ProofAssetRules.MaximumRequestBytes)]
+    [RequestFormLimits(
+        MultipartBodyLengthLimit = ProofAssetRules.MaximumRequestBytes,
+        ValueCountLimit = ProofAssetRules.MaximumPhotos + 8)]
+    public Task<ProofOfDeliveryView> CaptureProofAsync(
+        int id,
+        [FromForm] ProofCaptureForm form,
+        CancellationToken cancellationToken) =>
+        proofs.CaptureAsync(id, form.ToCommand(), cancellationToken);
+
+    /// <summary>
+    /// A delivery's proof. The capturer's name is present for an administrator or a
+    /// dispatcher and absent for everyone else — decided in the capability, not here.
+    /// </summary>
+    [HttpGet("{id:int}/proof")]
+    public Task<ProofOfDeliveryView> GetProofAsync(int id, CancellationToken cancellationToken) =>
+        proofs.GetAsync(id, cancellationToken);
+}

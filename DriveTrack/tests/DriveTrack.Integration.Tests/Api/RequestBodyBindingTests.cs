@@ -10,7 +10,7 @@ using DriveTrack.Integration.Tests.Fleet;
 using DriveTrack.Integration.Tests.Persistence;
 using DriveTrack.Integration.Tests.Reviews;
 using DriveTrack.Integration.Tests.Support;
-using DriveTrack.Web.Api;
+using DriveTrack.Web.Api.Envelope;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;

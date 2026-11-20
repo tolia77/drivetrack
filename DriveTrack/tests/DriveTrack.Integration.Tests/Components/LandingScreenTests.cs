@@ -2,8 +2,8 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using DriveTrack.Domain.Accounts;
 using DriveTrack.Integration.Tests.Support;
-using DriveTrack.Web.Account;
 using DriveTrack.Web.Components.Pages;
+using DriveTrack.Web.Components.Routing;
 
 namespace DriveTrack.Integration.Tests.Components;
 

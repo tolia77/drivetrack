@@ -2,7 +2,7 @@ using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Errors;
 using DriveTrack.Application.Common.Locations;
 using DriveTrack.Application.Deliveries;
-using DriveTrack.Web.Account;
+using DriveTrack.Web.Components.Failures;
 
 namespace DriveTrack.Web.Components.Shared;
 

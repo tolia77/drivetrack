@@ -77,7 +77,7 @@ public class SeverabilityTests
     /// <item>the composition root of each layer — <c>Infrastructure/DependencyInjection.cs</c>
     /// registers the service, <c>Web/Program.cs</c> maps the hub — because the layering puts
     /// registration there and nowhere else;</item>
-    /// <item><c>Web/Account/HubCaller.cs</c>, which exists only so the hub has a caller to hand to
+    /// <item><c>Web/Authentication/HubCaller.cs</c>, which exists only so the hub has a caller to hand to
     /// <c>ICurrentUser</c> and names the hub in explaining why it is public.</item>
     /// </list>
     /// </summary>
@@ -103,7 +103,7 @@ public class SeverabilityTests
         Path.Combine("DriveTrack.Infrastructure", "Persistence", "UnitOfWork.cs"),
         Path.Combine("DriveTrack.Infrastructure", "Persistence", "Configurations", "MessageConfiguration.cs"),
         Path.Combine("DriveTrack.Infrastructure", "Persistence", "Repositories", "EfMessageRepository.cs"),
-        Path.Combine("DriveTrack.Web", "Account", "HubCaller.cs"),
+        Path.Combine("DriveTrack.Web", "Authentication", "HubCaller.cs"),
         Path.Combine("DriveTrack.Web", "Components", "Pages", "Chat.razor"),
         Path.Combine("DriveTrack.Web", "Components", "Pages", "ChatLine.razor"),
         Path.Combine("DriveTrack.Web", "Components", "Pages", "ChatRosterRow.razor"),

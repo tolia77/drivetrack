@@ -3,7 +3,7 @@ using DriveTrack.Application;
 using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Errors;
 using DriveTrack.Integration.Tests.Support;
-using DriveTrack.Web.Account;
+using DriveTrack.Web.Components.Failures;
 using FluentValidation;
 using FluentValidation.Validators;
 using Microsoft.Extensions.DependencyInjection;

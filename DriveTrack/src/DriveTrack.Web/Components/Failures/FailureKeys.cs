@@ -1,0 +1,169 @@
+using DriveTrack.Application.Common;
+using DriveTrack.Application.Common.Errors;
+
+namespace DriveTrack.Web.Components.Failures;
+
+/// <summary>
+/// Turns one of the typed failures into the resource keys a screen shows.
+/// <para>
+/// The REST adapter already does this, in <c>EnvelopeWriter</c>: the code becomes
+/// <c>error.message</c> and each field error becomes an entry in <c>error.fields</c>. The Blazor
+/// forms need the same answer in a different shape, so the rule lives here rather than being
+/// written out twice — a screen that resolved its own message would be the second place a failure's message is
+/// decided.
+/// </para>
+/// </summary>
+internal static class FailureKeys
+{
+    /// <summary>
+    /// The failures a screen renders: one per offending field on a validation failure, otherwise a
+    /// single entry carrying the code itself - naming the input it is about when the code is one
+    /// of the few <see cref="FieldOf"/> maps, and no field otherwise.
+    /// <para>
+    /// The field travels with the key, because most rules share <c>COMMON_VALIDATION_FAILED</c> and
+    /// the key alone cannot say which input was refused. <c>Distinct</c> is on the pair, so two
+    /// oversized assets are still one sentence while a weight and a note are two.
+    /// </para>
+    /// <para>
+    /// Each field is normalized to its root segment: the wire envelope keeps the full path, but a
+    /// form has an input called <c>Pickup</c>, not one called <c>Pickup.Latitude</c>.
+    /// </para>
+    /// </summary>
+    public static IReadOnlyList<ScreenFailure> For(DriveTrackException failure)
+    {
+        ArgumentNullException.ThrowIfNull(failure);
+
+        if (failure is ValidationException validation && validation.FieldErrors.Count > 0)
+        {
+            return validation.FieldErrors
+                .Select(field => new ScreenFailure(RootOf(field.Field), field.MessageKey))
+                .Distinct()
+                .ToArray();
+        }
+
+        return [new ScreenFailure(FieldOf(failure.Code), failure.Code.ToString())];
+    }
+
+    /// <summary>
+    /// The input a refusal is really about, for the few codes the service raises with no field.
+    /// <para>
+    /// The service has no reason to name a field here - for a REST caller the code alone is the
+    /// whole answer, and the envelope, its status and its payload stay exactly as they were. A form
+    /// is different: a capacity refusal is about the weight box whose hint already shows the limit,
+    /// and reporting it in a banner at the top of a long dialog, while the dispatcher is scrolled
+    /// down at Save, is reporting it where nobody is looking. So the adapter attaches the field,
+    /// and <see cref="Unclaimed"/> still hands it to the banner on any screen that does not render
+    /// that box.
+    /// </para>
+    /// <para>
+    /// Not-found, forbidden and transition codes are deliberately absent: they are about the
+    /// action or the record, not about any one input.
+    /// </para>
+    /// </summary>
+    private static readonly IReadOnlyDictionary<ErrorCode, string> FieldByCode =
+        new Dictionary<ErrorCode, string>
+        {
+            [ErrorCode.DELIVERY_EXCEEDS_VEHICLE_CAPACITY] = "PackageWeightKg",
+            [ErrorCode.AUTH_EMAIL_ALREADY_IN_USE] = "Email",
+            [ErrorCode.AUTH_CURRENT_PASSWORD_INCORRECT] = "CurrentPassword",
+            [ErrorCode.FLEET_LICENSE_PLATE_IN_USE] = "LicensePlate",
+        };
+
+    /// <summary>The field a field-less refusal belongs to, or null when it belongs to none.</summary>
+    /// <param name="code">The refusal's code.</param>
+    /// <returns>The CLR property name of the input, as a <c>DtFieldError</c> spells it.</returns>
+    public static string? FieldOf(ErrorCode code) => FieldByCode.GetValueOrDefault(code);
+
+    /// <summary>
+    /// The failures a single field-level control shows: those naming exactly that field.
+    /// <para>
+    /// Compared on the root the screen already normalized to, so a rule that fired on
+    /// <c>Pickup.Latitude</c> is claimed by the control over the <c>Pickup</c> input - the same
+    /// collapse <see cref="For"/> does, and the reason it happens there rather than here.
+    /// </para>
+    /// </summary>
+    /// <param name="failures">Everything the screen collected.</param>
+    /// <param name="field">The CLR property name the control was given, as a plain string.</param>
+    /// <returns>The subset to render under that input; empty renders nothing.</returns>
+    public static IReadOnlyList<ScreenFailure> ClaimedBy(
+        IReadOnlyList<ScreenFailure>? failures,
+        string? field)
+    {
+        if (failures is null || failures.Count == 0 || string.IsNullOrWhiteSpace(field))
+        {
+            return [];
+        }
+
+        var wanted = field.Trim();
+
+        return [.. failures.Where(failure =>
+            string.Equals(failure.Field, wanted, StringComparison.Ordinal))];
+    }
+
+    /// <summary>
+    /// The failures no field-level control on the screen has claimed - what the banner still has to
+    /// show.
+    /// <para>
+    /// Failures are never silent, and that is the whole point of the subtraction being stated this
+    /// way round. A screen names the fields it renders an input for, and <em>everything else</em> falls through: a failure on a
+    /// field the open dialog does not show, a 403, a 404, a 409 carrying no field at all. The
+    /// alternative - a banner that hides whatever any field might have claimed - would make a
+    /// refusal invisible the first time a form dropped an input.
+    /// </para>
+    /// </summary>
+    /// <param name="failures">Everything the screen collected.</param>
+    /// <param name="fields">
+    /// The fields rendered inline, comma-separated, exactly as the <c>DtFieldError</c> controls on
+    /// the same screen spell them. Null or blank claims nothing, which is why a screen that has not
+    /// been given per-field messages still shows every refusal.
+    /// </param>
+    /// <returns>The subset the banner renders.</returns>
+    public static IReadOnlyList<ScreenFailure> Unclaimed(
+        IReadOnlyList<ScreenFailure>? failures,
+        string? fields)
+    {
+        if (failures is null || failures.Count == 0)
+        {
+            return [];
+        }
+
+        var claimed = Names(fields);
+
+        return claimed.Count == 0
+            ? failures
+            : [.. failures.Where(failure =>
+                failure.Field is not { } field || !claimed.Contains(field))];
+    }
+
+    /// <summary>
+    /// The field names in a comma-separated attribute value, blanks dropped. Public so the source
+    /// scan that pairs a banner's list against the screen's own <c>DtFieldError</c> controls reads
+    /// the list the same way the banner does.
+    /// </summary>
+    /// <param name="fields">The attribute value, or null.</param>
+    /// <returns>The names, without duplicates.</returns>
+    public static IReadOnlySet<string> Names(string? fields) =>
+        string.IsNullOrWhiteSpace(fields)
+            ? new HashSet<string>(StringComparer.Ordinal)
+            : fields
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .ToHashSet(StringComparer.Ordinal);
+
+    /// <summary>
+    /// The first segment of a field path: everything before the first <c>.</c> or <c>[</c>. Null
+    /// when nothing usable is left, so a blank name falls back to the message alone rather than
+    /// asking the catalogue for an empty key.
+    /// </summary>
+    private static string? RootOf(string field)
+    {
+        if (string.IsNullOrWhiteSpace(field))
+        {
+            return null;
+        }
+
+        var end = field.IndexOfAny(['.', '[']);
+        var root = (end < 0 ? field : field[..end]).Trim();
+
+        return root.Length == 0 ? null : root;
+    }
+}

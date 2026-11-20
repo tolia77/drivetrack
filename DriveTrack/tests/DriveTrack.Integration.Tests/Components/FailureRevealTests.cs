@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Errors;
 using DriveTrack.Integration.Tests.Support;
-using DriveTrack.Web.Account;
+using DriveTrack.Web.Components.Failures;
 using DriveTrack.Web.Components.Shared;
 
 namespace DriveTrack.Integration.Tests.Components;

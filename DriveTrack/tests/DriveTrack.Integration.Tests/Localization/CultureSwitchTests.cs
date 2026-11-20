@@ -11,7 +11,7 @@ using DriveTrack.Domain.Accounts;
 using DriveTrack.Integration.Tests.Components;
 using DriveTrack.Integration.Tests.Persistence;
 using DriveTrack.Integration.Tests.Support;
-using DriveTrack.Web.Account;
+using DriveTrack.Web.Components.Failures;
 using DriveTrack.Web.Components.Layout;
 using DriveTrack.Web.Components.Shared;
 using Microsoft.AspNetCore.Mvc.Testing;

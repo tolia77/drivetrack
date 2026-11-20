@@ -7,7 +7,7 @@ using DriveTrack.Domain.Accounts;
 using DriveTrack.Domain.Drivers;
 using DriveTrack.Integration.Tests.Architecture;
 using DriveTrack.Integration.Tests.Persistence;
-using DriveTrack.Web.Api;
+using DriveTrack.Web.Api.Json;
 using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
