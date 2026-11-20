@@ -11,16 +11,16 @@ using Microsoft.AspNetCore.SignalR;
 namespace DriveTrack.Web.Hubs;
 
 /// <summary>
-/// FR-70 and FR-75: the live half of chat. A transport, and deliberately nothing more.
+/// The live half of chat. A transport, and deliberately nothing more.
 /// <para>
 /// The hub takes no authorization decision of its own. It asks <see cref="IChatService"/> — which
 /// asks <c>IAccessGuard</c> — and adds the connection to a group only once that call has returned.
 /// The order is the whole point: a group join that happened first would leave a refused caller
 /// receiving every broadcast in a conversation they were told they could not read, and the refusal
-/// would look correct in every log (FR-75, AD-15).
+/// would look correct in every log.
 /// </para>
 /// <para>
-/// A group is named from the <c>DriverId</c> (AD-15, AD-22), never from a user id, so the group a
+/// A group is named from the <c>DriverId</c>, never from a user id, so the group a
 /// connection listens on and the row a message is stored against are the same key.
 /// </para>
 /// <para>
@@ -42,13 +42,13 @@ public sealed class ChatHub(IChatService chat, ISessionService sessions, HubCall
 
     /// <summary>
     /// The group a driver's conversation is broadcast on. Keyed on the driver row, so it cannot be
-    /// confused with a user id even by accident (AD-22).
+    /// confused with a user id even by accident.
     /// </summary>
     /// <param name="driverId">The driver row the conversation belongs to.</param>
     public static string GroupFor(DriverId driverId) =>
         "driver-" + driverId.Value.ToString(CultureInfo.InvariantCulture);
 
-    /// <summary>Every driver's conversation, for the dispatch desk's roster (FR-68).</summary>
+    /// <summary>Every driver's conversation, for the dispatch desk's roster.</summary>
     public async Task<IReadOnlyList<ChatThreadSummary>> ListThreads()
     {
         Adopt();
@@ -65,8 +65,7 @@ public sealed class ChatHub(IChatService chat, ISessionService sessions, HubCall
     }
 
     /// <summary>
-    /// Joins the conversation of <paramref name="driverId"/> and answers with its history
-    /// (FR-71, FR-73).
+    /// Joins the conversation of <paramref name="driverId"/> and answers with its history.
     /// </summary>
     /// <param name="driverId">The driver row the conversation is keyed on.</param>
     public async Task<ChatThread> JoinThread(int driverId)
@@ -115,15 +114,14 @@ public sealed class ChatHub(IChatService chat, ISessionService sessions, HubCall
     }
 
     /// <summary>
-    /// Writes a message into a conversation and broadcasts the stored row to everyone joined to it
-    /// (FR-70, FR-73).
+    /// Writes a message into a conversation and broadcasts the stored row to everyone joined to it.
     /// </summary>
     /// <param name="driverId">The driver row the conversation is keyed on.</param>
     /// <param name="text">
     /// The message body, or null. Null is a designed input rather than a defensive allowance: the
     /// screen sends its draft, which is null until the box has been typed in, and
     /// <see cref="SendMessageCommand.Text"/> is nullable to receive it. A non-nullable parameter
-    /// would have the hub's own binder answer for an empty box, in a shape that is not AD-8's.
+    /// would have the hub's own binder answer for an empty box, in a shape that is not the typed failure's.
     /// </param>
     public async Task Send(int driverId, string? text)
     {
@@ -195,13 +193,13 @@ public sealed class ChatHub(IChatService chat, ISessionService sessions, HubCall
     }
 
     /// <summary>
-    /// Turns one of AD-8's typed failures into the only shape SignalR can carry back to a caller.
+    /// Turns one of the typed failures into the only shape SignalR can carry back to a caller.
     /// <para>
     /// The message is a resource key from <c>ErrorMessages.resx</c>, chosen by the same rule the
     /// Blazor forms use: the offending field's key for a validation failure, the contract code
     /// otherwise. So the screen renders the localized sentence for what actually went wrong rather
     /// than a generic one, and nothing but a key crosses the wire — a <c>HubException</c>'s message
-    /// reaches the browser verbatim, and an exception message is for logs (NFR-3).
+    /// reaches the browser verbatim, and an exception message is for logs.
     /// </para>
     /// <para>
     /// Only the message key: a <c>HubException</c> carries one string, so the field name a screen

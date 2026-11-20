@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DriveTrack.Infrastructure.Persistence.Configurations;
 
-/// <summary>Mapping for <see cref="ProofAsset"/> (AD-26, DR-14).</summary>
+/// <summary>Mapping for <see cref="ProofAsset"/>.</summary>
 internal sealed class ProofAssetConfiguration : IEntityTypeConfiguration<ProofAsset>
 {
     /// <inheritdoc />

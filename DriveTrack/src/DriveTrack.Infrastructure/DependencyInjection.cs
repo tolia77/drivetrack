@@ -28,21 +28,21 @@ using Microsoft.Extensions.Options;
 namespace DriveTrack.Infrastructure;
 
 /// <summary>
-/// Infrastructure's composition surface. AD-1 permits exactly one caller —
+/// Infrastructure's composition surface. The layering permits exactly one caller —
 /// <c>DriveTrack.Web/Program.cs</c> — so every Infrastructure detail stays behind this method.
 /// </summary>
 public static class DependencyInjection
 {
     /// <summary>
     /// Configuration key holding the PostgreSQL connection string. Supplied as the
-    /// <c>ConnectionStrings__Default</c> environment variable (AD-19); never committed.
+    /// <c>ConnectionStrings__Default</c> environment variable; never committed.
     /// </summary>
     public const string ConnectionStringKey = "ConnectionStrings:Default";
 
     /// <summary>
     /// Registers the pooled <see cref="AppDbContext"/> factory, the per-operation persistence
-    /// scope (AD-5), ASP.NET Core Identity's services without its stores or managers, the access
-    /// guard, the account capability, the token issuer, the clock (AD-13) and the
+    /// scope, ASP.NET Core Identity's services without its stores or managers, the access
+    /// guard, the account capability, the token issuer, the clock and the
     /// <see cref="DatabaseMigrator"/>.
     /// </summary>
     /// <exception cref="InvalidOperationException">
@@ -70,7 +70,7 @@ public static class DependencyInjection
                 "(see .env.example) before starting the application.");
         }
 
-        // NFR-11 / AD-19: query and parameter diagnostics only in Development.
+        // Query and parameter diagnostics only in Development.
         var isDevelopment = environment.IsDevelopment();
 
         services.AddPooledDbContextFactory<AppDbContext>(options =>
@@ -81,7 +81,7 @@ public static class DependencyInjection
         });
 
         // AddPooledDbContextFactory also registers the context itself, scoped, as a
-        // convenience. AD-5 forbids exactly that registration: on a Blazor Server circuit a
+        // convenience. The unit-of-work rule forbids exactly that registration: on a Blazor Server circuit a
         // scoped context lives for hours, accumulates tracked entities, serves stale reads and
         // throws on concurrent renders. Removing the descriptor turns "do not inject a context"
         // from a rule everyone has to remember into one the container cannot satisfy.
@@ -89,10 +89,10 @@ public static class DependencyInjection
 
         services.AddSingleton<DatabaseMigrator>();
 
-        // AD-5: the only way to reach a context is to open a scope.
+        // The only way to reach a context is to open a scope.
         services.AddSingleton<IUnitOfWorkFactory, UnitOfWorkFactory>();
 
-        // AD-13: time is injected so a time-dependent rule can be tested. DateTime.UtcNow and
+        // Time is injected so a time-dependent rule can be tested. DateTime.UtcNow and
         // database default timestamps appear nowhere. TryAdd, not Add: a caller that has
         // already registered a fake clock keeps it, where an unconditional Add would win by
         // being last and quietly hand every test the real one back.
@@ -119,7 +119,7 @@ public static class DependencyInjection
     /// The four <c>RemoveAll</c> calls are the same move as <c>RemoveAll&lt;AppDbContext&gt;()</c>
     /// above. <c>AddEntityFrameworkStores</c> registers stores over a scoped context that no longer
     /// exists, and a resolvable <c>UserManager</c> would be a second, non-transactional way to write
-    /// a user — the exact trap AD-5 exists to close. Removing them turns "never use UserManager
+    /// a user — the exact trap the unit-of-work rule exists to close. Removing them turns "never use UserManager
     /// directly" from a rule people remember into one the container cannot satisfy.
     /// </para>
     /// </summary>
@@ -127,11 +127,11 @@ public static class DependencyInjection
     {
         services.AddIdentityCore<ApplicationUser>(options =>
             {
-                // AD-4 / FR-1: one account per address, checked by Identity. The schema's backstop
+                // One account per address, checked by Identity. The schema's backstop
                 // is the unique user_name_index (UserName is the email); email_index is not unique.
                 options.User.RequireUniqueEmail = true;
 
-                // FR-8's policy, stated rather than inherited, because a validator message keyed
+                // The password policy, stated rather than inherited, because a validator message keyed
                 // AUTH_PASSWORD_TOO_WEAK is only honest if the threshold is written down.
                 options.Password.RequiredLength = 8;
                 options.Password.RequireDigit = true;
@@ -192,12 +192,12 @@ public static class DependencyInjection
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
         services.AddSingleton<IAccessTokenIssuer, JwtAccessTokenIssuer>();
 
-        // AD-2: the guard reads the caller, and the caller is per request, so both are scoped.
+        // The guard reads the caller, and the caller is per request, so both are scoped.
         // ICurrentUser itself is registered by the adapter that can actually read a caller.
         services.AddScoped<IAccessGuard, AccessGuard>();
         services.AddScoped<IUserService, UserService>();
 
-        // FR-46…FR-50: the two account-administration capabilities. Scoped for the same reason as
+        // The two account-administration capabilities. Scoped for the same reason as
         // the guard - each reads the caller of the request or circuit it is serving.
         services.AddScoped<IClientAdministrationService, ClientAdministrationService>();
         services.AddScoped<IDispatcherAdministrationService, DispatcherAdministrationService>();
@@ -206,52 +206,52 @@ public static class DependencyInjection
         services.AddScoped<IVehicleService, VehicleService>();
         services.AddScoped<IDriverService, DriverService>();
 
-        // The product's central record (FR-14 to FR-27). Scoped like the rest: it reads the caller
+        // The product's central record. Scoped like the rest: it reads the caller
         // of the request or circuit it is serving, and it takes the clock registered above so
-        // FR-19's overdue rule is a function of an injected TimeProvider rather than of the machine.
+        // the overdue rule is a function of an injected TimeProvider rather than of the machine.
         services.AddScoped<IDeliveryService, DeliveryService>();
 
-        // FR-28's read side. Scoped for the same reason as the rest: the guard inside it reads the
+        // The notification log's read side. Scoped for the same reason as the rest: the guard inside it reads the
         // caller of the request or circuit it is serving.
         services.AddScoped<INotificationLogService, NotificationLogService>();
 
-        // FR-119 to FR-123. Scoped like every other capability - it reads the caller of the request
+        // Proof of delivery. Scoped like every other capability - it reads the caller of the request
         // or circuit it is serving - even though the port it calls is a singleton below.
         services.AddScoped<IProofOfDeliveryService, ProofOfDeliveryService>();
 
-        // FR-68 to FR-76. Scoped like every other capability - it reads the caller of the request,
+        // Chat. Scoped like every other capability - it reads the caller of the request,
         // the circuit or the hub invocation it is serving - and registered here with every other
         // Application capability.
         services.AddScoped<IChatService, ChatService>();
 
-        // FR-62 to FR-67 and FR-98. Scoped like every other capability - it reads the caller of the
+        // Reviews. Scoped like every other capability - it reads the caller of the
         // request or circuit it is serving - and registered here with every other Application
         // capability.
         //
-        // AD-24 shows up as a shape in the container: this one takes IDeliveryService and the
+        // The single-owner rule shows up as a shape in the container: this one takes IDeliveryService and the
         // driver capability takes this one, so the two directions are declared rather than
         // discovered. Neither closes a cycle, because the Deliveries capability reads neither.
         services.AddScoped<IReviewService, ReviewService>();
 
-        // FR-109 to FR-117. Scoped like every other capability - it reads the caller of the request
+        // Shifts. Scoped like every other capability - it reads the caller of the request
         // or circuit it is serving - and it takes the clock registered above, so going on and off
-        // duty is stamped from an injected TimeProvider rather than from the machine (AD-13).
+        // duty is stamped from an injected TimeProvider rather than from the machine.
         //
-        // AD-24 shows up in the container here too: the driver capability above takes this one for
-        // FR-116's flag, and this one takes neither it nor the deliveries capability. The edge runs
+        // The single-owner rule shows up in the container here too: the driver capability above takes
+        // this one for the off-duty flag, and this one takes neither it nor the deliveries capability. The edge runs
         // one way only, which is what makes the pair resolvable at all.
         services.AddScoped<IShiftService, ShiftService>();
 
         // The dispatcher's and the administrator's first screen. Scoped like every other
         // capability - it reads the caller of the circuit it is serving - and it takes the clock
         // registered above, so "today" is a function of an injected TimeProvider and its
-        // LocalTimeZone rather than of the machine (AD-13). It reads and writes nothing it owns,
+        // LocalTimeZone rather than of the machine. It reads and writes nothing it owns,
         // and it takes no other capability, so it closes no cycle in the container.
         services.AddScoped<IDashboardService, DashboardService>();
     }
 
     /// <summary>
-    /// Registers AD-26's object-storage port: the settings, the eager check on them, and the Garage
+    /// Registers the object-storage port: the settings, the eager check on them, and the Garage
     /// adapter behind <see cref="IAssetStore"/>.
     /// </summary>
     /// <exception cref="InvalidOperationException">
@@ -290,8 +290,8 @@ public static class DependencyInjection
     }
 
     /// <summary>
-    /// Registers AD-12's outbound ports and the queue that runs them after a commit: the geocoder
-    /// (FR-94, FR-104), the mail transport (FR-28), the job runner, the queue behind
+    /// Registers the outbound ports and the queue that runs them after a commit: the geocoder,
+    /// the mail transport, the job runner, the queue behind
     /// <see cref="IDeliverySideEffects"/> and the one background loop that drains it.
     /// </summary>
     /// <exception cref="InvalidOperationException">
@@ -335,7 +335,7 @@ public static class DependencyInjection
         var geocoder = configuration.GetSection(GeocoderOptions.SectionName).Get<GeocoderOptions>()
             ?? new GeocoderOptions();
 
-        // One client for the process (NFR-8's other half): a client per lookup exhausts the socket
+        // One client for the process: a client per lookup exhausts the socket
         // pool under load, and this one holds no per-request state - the agent header is set on the
         // request, beside the value it was read from.
         //
@@ -351,7 +351,8 @@ public static class DependencyInjection
         services.AddSingleton<IEmailSender, SmtpEmailSender>();
 
         // Singletons, like the factory and the clock they are built from. A side effect belongs to
-        // no request and to no circuit - that is the whole of AD-12 - so there is no scope for one
+        // no request and to no circuit - that is the whole point of running it outside the
+        // transaction - so there is no scope for one
         // to live in, and the runner opens its own unit of work per job.
         services.AddSingleton<IDeliverySideEffectRunner, DeliverySideEffectRunner>();
 

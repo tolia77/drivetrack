@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DriveTrack.Infrastructure.Persistence.Repositories;
 
-/// <summary>EF Core implementation of <see cref="INotificationAttemptRepository"/>. See <see cref="EfClientRepository"/> for the AD-6 rules every repository here follows.</summary>
+/// <summary>EF Core implementation of <see cref="INotificationAttemptRepository"/>. See <see cref="EfClientRepository"/> for the materialization rules every repository here follows.</summary>
 internal sealed class EfNotificationAttemptRepository(AppDbContext context) : INotificationAttemptRepository
 {
     /// <inheritdoc />
@@ -19,7 +19,7 @@ internal sealed class EfNotificationAttemptRepository(AppDbContext context) : IN
 
         var descending = query.Descending;
 
-        // AD-3: ordered before OFFSET and LIMIT, because an unordered OFFSET is a page that can
+        // Ordered before OFFSET and LIMIT, because an unordered OFFSET is a page that can
         // repeat and skip rows between requests - and every order ends on the id, because two
         // attempts written by one commit share an instant to the microsecond.
         //

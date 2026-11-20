@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
   <!--
-    NFR-14: the name of an input, in Ukrainian, keyed by the CLR property a validator names when it
+    The name of an input, in Ukrainian, keyed by the CLR property a validator names when it
     refuses one. Read at run time through IStringLocalizer<FieldNames> by DtFailureBanner, so the
     banner can say which field was refused instead of leaving a shared message to name nothing.
 

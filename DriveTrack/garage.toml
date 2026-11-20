@@ -1,6 +1,6 @@
-# Garage node configuration (AD-19).
+# Garage node configuration.
 #
-# The three settings the S3 client must match are fixed here so no later story has to guess
+# The three settings the S3 client must match are fixed here so no client has to guess
 # them: the S3 API is bound explicitly, and the region is the literal string `garage`.
 # Path-style addressing is a client-side setting and is mandatory against this node.
 #
@@ -12,7 +12,7 @@ metadata_dir = "/var/lib/garage/meta"
 data_dir = "/var/lib/garage/data"
 db_engine = "sqlite"
 
-# Single instance is an accepted constraint (PRD section 10), so one copy of each object.
+# Single instance is an accepted constraint, so one copy of each object.
 replication_factor = 1
 
 rpc_bind_addr = "[::]:3901"

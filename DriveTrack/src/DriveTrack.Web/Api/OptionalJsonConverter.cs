@@ -5,7 +5,7 @@ using DriveTrack.Application.Common;
 namespace DriveTrack.Web.Api;
 
 /// <summary>
-/// AD-23's <see cref="Optional{T}"/> on the wire.
+/// <see cref="Optional{T}"/> on the wire.
 /// <para>
 /// Without this, a partial update cannot tell the two cases apart at all. <c>Optional&lt;T&gt;</c>
 /// is a struct with public <c>HasValue</c> and <c>Value</c> members, so the default serializer would
@@ -22,7 +22,7 @@ namespace DriveTrack.Web.Api;
 /// </para>
 /// <para>
 /// Registered on the one <c>JsonSerializerOptions</c> the whole adapter shares, beside the typed-id
-/// and enum converters, so every reader and writer in the process agrees (AD-21, AD-22).
+/// and enum converters, so every reader and writer in the process agrees.
 /// </para>
 /// </summary>
 internal sealed class OptionalJsonConverterFactory : JsonConverterFactory
@@ -78,7 +78,7 @@ internal sealed class OptionalJsonConverter<T> : JsonConverter<Optional<T>>
         {
             if (CanHoldNull)
             {
-                // The arm FR-38 travels: `"vehicleId": null` releases the vehicle, and
+                // The arm a vehicle release travels: `"vehicleId": null` releases the vehicle, and
                 // `"nextMaintenanceDate": null` means no servicing is scheduled.
                 return Optional<T>.Present(default!);
             }
@@ -90,10 +90,10 @@ internal sealed class OptionalJsonConverter<T> : JsonConverter<Optional<T>>
             //
             // The contract's own failure rather than a JsonException: a JsonException is caught by
             // the input formatter and becomes a model-state error the pipeline deliberately
-            // suppresses (AD-9), while a DriveTrackException propagates out of model binding to
+            // suppresses, while a DriveTrackException propagates out of model binding to
             // ApiEnvelopeMiddleware and answers 422 with the envelope.
             //
-            // No field list, deliberately. NFR-4 promises `error.fields` keys the caller can attach
+            // No field list, deliberately. `error.fields` promises keys the caller can attach
             // a message to, and this converter is handed a value and never the property it came
             // from. A key invented from the CLR type would name an input the caller does not have.
             throw new ValidationException(

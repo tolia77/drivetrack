@@ -8,10 +8,10 @@ namespace DriveTrack.Web.Api;
 /// The envelope backstop for everything the result filter cannot reach: an exception thrown before
 /// or outside the action pipeline, and a status the router produced with no body at all - an
 /// unmatched <c>/api</c> route being the case <c>UseStatusCodePagesWithReExecute</c> would otherwise
-/// answer with the HTML not-found page (NFR-1).
+/// answer with the HTML not-found page.
 /// <para>
 /// Branched onto <c>/api</c> only, so the Blazor shell keeps its HTML error and not-found pages.
-/// This is also the single catch site for AD-8's typed failures: nothing between a throw site and
+/// This is also the single catch site for the typed failures: nothing between a throw site and
 /// here catches and reshapes one, which is what makes "the code the service threw is the code the
 /// client sees" true rather than customary.
 /// </para>
@@ -54,8 +54,8 @@ internal sealed class ApiEnvelopeMiddleware(RequestDelegate next, ILogger<ApiEnv
         }
         catch (Exception exception)
         {
-            // Unmodelled: a defect. AD-7 assigns it no status, and NFR-3 still demands a structured
-            // error, so it becomes 500 plus COMMON_UNEXPECTED_ERROR. Logged once, at Error, with the
+            // Unmodelled: a defect. The status table assigns it no status, and it still needs a
+            // structured error, so it becomes 500 plus COMMON_UNEXPECTED_ERROR. Logged once, at Error, with the
             // exception - once, because nothing above rethrows it.
             logger.LogError(
                 exception,

@@ -8,9 +8,8 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0
 WORKDIR /src
 
-# Debian rather than Alpine (AD-28): the dart-sass binaries are glibc-linked. No ICU line is
-# needed either — the SDK image already carries full ICU, so uk-UA resolves and formats correctly
-# (NFR-14, NFR-15).
+# Debian rather than Alpine: the dart-sass binaries are glibc-linked. No ICU line is
+# needed either — the SDK image already carries full ICU, so uk-UA resolves and formats correctly.
 
 # Restore against the project graph before the source mount lands, so a cold start does not spend
 # its first minute pulling packages. The mount replaces /src/src afterwards; this layer is here

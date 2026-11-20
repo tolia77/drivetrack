@@ -78,7 +78,7 @@ internal static class ListQueries
     /// <summary>
     /// An enum column as its position in the enum's declaration, for ordering.
     /// <para>
-    /// The enums are stored as their names (AD-21), so an ORDER BY on the column itself sorts them
+    /// The enums are stored as their names, so an ORDER BY on the column itself sorts them
     /// alphabetically - "Delivered" before "Pending" - which is an order nobody reading a lifecycle
     /// would recognise. This writes the declaration order out as a CASE expression instead.
     /// </para>

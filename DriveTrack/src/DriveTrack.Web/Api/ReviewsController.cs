@@ -6,24 +6,24 @@ using Microsoft.AspNetCore.Mvc;
 namespace DriveTrack.Web.Api;
 
 /// <summary>
-/// Reviews over REST (FR-59 to FR-67).
+/// Reviews over REST.
 /// <para>
 /// <c>[Authorize]</c> carries no roles, and that is the point. Who may write a review, read the
 /// whole collection, or edit and delete one is decided by <c>IAccessGuard</c> inside
 /// <see cref="IReviewService"/> — and this capability is where a role argument would be most
 /// wrong: naming a pair of roles on the writes would read as one rule and mean three different ones
 /// across the five routes, because writing a review, editing one and deleting one are reserved to
-/// three different sets of callers (AD-2).
+/// three different sets of callers.
 /// </para>
 /// <para>
 /// The two lists are separate routes rather than one route that branches on the caller's role, for
-/// the reason <c>DeliveriesController</c> splits its two: AD-1 keeps domain branching out of
-/// adapters and AD-17 makes the shapes different types, so <c>/api/reviews</c> answers moderation's
+/// the reason <c>DeliveriesController</c> splits its two: domain branching stays out of
+/// adapters and the shapes are different types, so <c>/api/reviews</c> answers moderation's
 /// view — with both parties — and <c>/api/reviews/mine</c> answers the author's, which has no party
 /// field at all.
 /// </para>
 /// <para>
-/// Thin by construction (NFR-7): bind, call, return. The envelope comes from the global result
+/// Thin by construction: bind, call, return. The envelope comes from the global result
 /// filter and every failure from the branch middleware, so there is no error status code and no
 /// <c>try</c> in this file — only the delete's 204.
 /// </para>
@@ -33,7 +33,7 @@ namespace DriveTrack.Web.Api;
 [Authorize]
 public sealed class ReviewsController(IReviewService reviews) : ControllerBase
 {
-    /// <summary>One page of every review, with both parties named (FR-65). Defaults to the first hundred.</summary>
+    /// <summary>One page of every review, with both parties named. Defaults to the first hundred.</summary>
     /// <remarks>
     /// The paging parameters are nullable so an omitted one takes the default here rather than
     /// binding to zero — a limit of zero is a refusal, and "I did not say" must not mean "give me
@@ -56,7 +56,7 @@ public sealed class ReviewsController(IReviewService reviews) : ControllerBase
             cancellationToken);
 
     /// <summary>
-    /// One page of the reviews the caller wrote (FR-64). The payload carries no party identity,
+    /// One page of the reviews the caller wrote. The payload carries no party identity,
     /// because the type it is built from has no field for one.
     /// </summary>
     [HttpGet("mine")]
@@ -74,7 +74,7 @@ public sealed class ReviewsController(IReviewService reviews) : ControllerBase
                 desc ?? false),
             cancellationToken);
 
-    /// <summary>Writes a review of one of the caller's own finished deliveries (FR-59 to FR-62, FR-67).</summary>
+    /// <summary>Writes a review of one of the caller's own finished deliveries.</summary>
     [HttpPost]
     public Task<AuthoredReviewSummary> CreateAsync(
         [FromBody] CreateReviewCommand command,
@@ -82,7 +82,7 @@ public sealed class ReviewsController(IReviewService reviews) : ControllerBase
         reviews.CreateAsync(command, cancellationToken);
 
     /// <summary>
-    /// Edits a review (FR-63, FR-66). Every field the body omits is left alone (AD-23).
+    /// Edits a review. Every field the body omits is left alone.
     /// </summary>
     [HttpPut("{id:int}")]
     public Task<AuthoredReviewSummary> UpdateAsync(
@@ -91,7 +91,7 @@ public sealed class ReviewsController(IReviewService reviews) : ControllerBase
         CancellationToken cancellationToken) =>
         reviews.UpdateAsync(id, command, cancellationToken);
 
-    /// <summary>Deletes a review (FR-63, FR-66). 204, with no body.</summary>
+    /// <summary>Deletes a review. 204, with no body.</summary>
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteAsync(int id, CancellationToken cancellationToken)
     {

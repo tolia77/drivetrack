@@ -7,25 +7,25 @@ using Microsoft.AspNetCore.Mvc;
 namespace DriveTrack.Web.Api;
 
 /// <summary>
-/// Deliveries over REST (FR-14 to FR-27).
+/// Deliveries over REST.
 /// <para>
 /// <c>[Authorize]</c> here is a convenience, not the decision: it stops an anonymous request before
 /// it reaches a service, but whether <em>this</em> caller may open, read or delete a delivery is
-/// decided by <c>IAccessGuard</c> inside <see cref="IDeliveryService"/> and nowhere else (AD-2).
+/// decided by <c>IAccessGuard</c> inside <see cref="IDeliveryService"/> and nowhere else.
 /// That is also why there is no <c>Roles</c> argument — the two lists below are reserved to
 /// different callers, and an attribute that named one of them would be a second, coarser copy of a
 /// rule the service already states precisely.
 /// </para>
 /// <para>
 /// The two lists are separate routes rather than one route that branches on the caller's role.
-/// AD-1 keeps domain branching out of adapters and AD-17 makes the shapes different types, so the
+/// Domain branching stays out of adapters and the shapes are different types, so the
 /// split is in the routing table where a reader can see it: <c>/api/deliveries</c> answers
 /// dispatch's view, <c>/api/deliveries/mine</c> answers a driver's or a client's, and neither can
 /// be coaxed into answering the other.
 /// </para>
 /// <para>
-/// Thin by construction: no try/catch, no <c>IActionResult</c>, no status set by hand. AD-7 leaves
-/// every status and every message to the envelope.
+/// Thin by construction: no try/catch, no <c>IActionResult</c>, no status set by hand. Every
+/// status and every message is left to the envelope.
 /// </para>
 /// </summary>
 [ApiController]
@@ -36,8 +36,8 @@ public sealed class DeliveriesController(
     IProofOfDeliveryService proofs) : ControllerBase
 {
     /// <summary>
-    /// One page of every delivery with the number that matched (FR-18), filtered and sorted over
-    /// every row (FR-20, FR-101). Defaults to the first hundred, newest first.
+    /// One page of every delivery with the number that matched, filtered and sorted over
+    /// every row. Defaults to the first hundred, newest first.
     /// </summary>
     /// <remarks>
     /// The paging parameters are nullable so an omitted one takes the default here rather than
@@ -82,13 +82,13 @@ public sealed class DeliveriesController(
             cancellationToken);
 
     /// <summary>
-    /// One page of the caller's own deliveries (FR-25, FR-27). The payload carries no counterparty
+    /// One page of the caller's own deliveries. The payload carries no counterparty
     /// identity, because the type it is built from has no field for one.
     /// </summary>
     /// <remarks>
     /// Sorted and filtered like the dispatch list, without the two counterparty columns: there is
     /// no <c>driver</c> or <c>client</c> filter here, and <c>sort=driver</c> or <c>sort=client</c>
-    /// is refused with <c>COMMON_SORT_INVALID</c> (AD-17).
+    /// is refused with <c>COMMON_SORT_INVALID</c>.
     /// </remarks>
     [HttpGet("mine")]
     public Task<Paged<AssignedDeliverySummary>> ListMineAsync(
@@ -122,7 +122,7 @@ public sealed class DeliveriesController(
             cancellationToken);
 
     /// <summary>
-    /// The places matching a typed address (FR-104), each with the point a map click would set.
+    /// The places matching a typed address, each with the point a map click would set.
     /// </summary>
     /// <remarks>
     /// A literal segment beside the <c>{id:int}</c> routes below, and the constraint is what keeps
@@ -139,14 +139,14 @@ public sealed class DeliveriesController(
     public Task<DeliverySummary> GetAsync(int id, CancellationToken cancellationToken) =>
         deliveries.GetAsync(id, cancellationToken);
 
-    /// <summary>Opens a delivery (FR-14 to FR-17).</summary>
+    /// <summary>Opens a delivery.</summary>
     [HttpPost]
     public Task<DeliverySummary> CreateAsync(
         [FromBody] CreateDeliveryCommand command,
         CancellationToken cancellationToken) =>
         deliveries.CreateAsync(command, cancellationToken);
 
-    /// <summary>Asks for a delivery as the client who wants it (FR-89, FR-90, FR-91).</summary>
+    /// <summary>Asks for a delivery as the client who wants it.</summary>
     /// <remarks>
     /// A route of its own rather than a shape flag on <see cref="CreateAsync"/>, and the body type
     /// is the whole reason: <see cref="RequestDeliveryCommand"/> has no driver, no client and no
@@ -155,7 +155,7 @@ public sealed class DeliveriesController(
     /// can never match it.
     /// <para>
     /// Still no <c>Roles</c> argument. "A client acting for their own row" is not a role list, and
-    /// <c>IAccessGuard.RequireDeliveryComposer</c> states it precisely (AD-2).
+    /// <c>IAccessGuard.RequireDeliveryComposer</c> states it precisely.
     /// </para>
     /// </remarks>
     [HttpPost("requests")]
@@ -164,7 +164,7 @@ public sealed class DeliveriesController(
         CancellationToken cancellationToken) =>
         deliveries.RequestAsync(command, cancellationToken);
 
-    /// <summary>Changes a delivery (FR-22). Absent fields are left alone (AD-23).</summary>
+    /// <summary>Changes a delivery. Absent fields are left alone.</summary>
     [HttpPut("{id:int}")]
     public Task<DeliverySummary> UpdateAsync(
         int id,
@@ -172,13 +172,13 @@ public sealed class DeliveriesController(
         CancellationToken cancellationToken) =>
         deliveries.UpdateAsync(id, command, cancellationToken);
 
-    /// <summary>Deletes a delivery and its dependents (FR-24). Admin only, decided in the service.</summary>
+    /// <summary>Deletes a delivery and its dependents. Admin only, decided in the service.</summary>
     [HttpDelete("{id:int}")]
     public Task DeleteAsync(int id, CancellationToken cancellationToken) =>
         deliveries.DeleteAsync(id, cancellationToken);
 
     /// <summary>
-    /// Advances a delivery's lifecycle (FR-30 to FR-34). Still no <c>Roles</c> argument: "the
+    /// Advances a delivery's lifecycle. Still no <c>Roles</c> argument: "the
     /// assigned driver, or dispatch" is not a role list, and the guard states it precisely.
     /// </summary>
     [HttpPost("{id:int}/status")]
@@ -188,7 +188,7 @@ public sealed class DeliveriesController(
         CancellationToken cancellationToken) =>
         deliveries.ChangeStatusAsync(id, command, cancellationToken);
 
-    /// <summary>Appends a note to a delivery's timeline, changing nothing else (FR-107).</summary>
+    /// <summary>Appends a note to a delivery's timeline, changing nothing else.</summary>
     [HttpPost("{id:int}/timeline")]
     public Task<TimelineEntryView> AddNoteAsync(
         int id,
@@ -196,7 +196,7 @@ public sealed class DeliveriesController(
         CancellationToken cancellationToken) =>
         deliveries.AddNoteAsync(id, command, cancellationToken);
 
-    /// <summary>A delivery's history, oldest first (FR-108).</summary>
+    /// <summary>A delivery's history, oldest first.</summary>
     [HttpGet("{id:int}/timeline")]
     public Task<IReadOnlyList<TimelineEntryView>> ListTimelineAsync(
         int id,
@@ -204,7 +204,7 @@ public sealed class DeliveriesController(
         deliveries.ListTimelineAsync(id, cancellationToken);
 
     /// <summary>
-    /// Records the hand-over (FR-119): recipient, capture point, one signature and at least one
+    /// Records the hand-over: recipient, capture point, one signature and at least one
     /// photograph, as <c>multipart/form-data</c>.
     /// </summary>
     /// <remarks>
@@ -230,8 +230,8 @@ public sealed class DeliveriesController(
         proofs.CaptureAsync(id, form.ToCommand(), cancellationToken);
 
     /// <summary>
-    /// A delivery's proof (FR-122). The capturer's name is present for an administrator or a
-    /// dispatcher and absent for everyone else — decided in the capability, not here (AD-17).
+    /// A delivery's proof. The capturer's name is present for an administrator or a
+    /// dispatcher and absent for everyone else — decided in the capability, not here.
     /// </summary>
     [HttpGet("{id:int}/proof")]
     public Task<ProofOfDeliveryView> GetProofAsync(int id, CancellationToken cancellationToken) =>

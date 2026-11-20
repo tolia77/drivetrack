@@ -1,7 +1,7 @@
 namespace DriveTrack.Infrastructure.Email;
 
 /// <summary>
-/// The outbound-mail settings, bound from the <c>Smtp</c> configuration section (AD-19).
+/// The outbound-mail settings, bound from the <c>Smtp</c> configuration section.
 /// <para>
 /// Every value arrives as an environment variable in the container — <c>Smtp__Host</c>,
 /// <c>Smtp__Port</c>, <c>Smtp__UseStartTls</c>, <c>Smtp__User</c>, <c>Smtp__Password</c>,
@@ -13,7 +13,7 @@ namespace DriveTrack.Infrastructure.Email;
 /// <para>
 /// <see cref="Host"/> has no default, and its absence is not an error at startup. A deployment with
 /// no relay configured is a deployment that sends no mail, and that has to be a running system
-/// rather than one that refuses to start: FR-28's remediation for a notification that could not be
+/// rather than one that refuses to start: the remediation for a notification that could not be
 /// sent is a recorded attempt, not a dead application.
 /// </para>
 /// </summary>

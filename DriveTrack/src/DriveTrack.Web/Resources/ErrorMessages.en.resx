@@ -3,7 +3,7 @@
   <!--
     The English satellite of ErrorMessages.resx: one entry per ErrorCode member, keyed by the
     member name, in English. These strings are the only source of error.message on the wire
-    (NFR-3) when the caller's culture is en-US; no exception text, SQL fragment or constraint
+    when the caller's culture is en-US; no exception text, SQL fragment or constraint
     name is ever read into a response body in either language.
   -->
   <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
@@ -188,7 +188,7 @@
   <data name="DELIVERY_PACKAGE_WEIGHT_TOO_LARGE" xml:space="preserve">
     <value>The package weight is too large. Check that the number is right.</value>
   </data>
-  <!-- FR-100. States which end has to be later, for the reason SHIFT_ENDED_BEFORE_STARTED does. -->
+  <!-- States which end has to be later, for the reason SHIFT_ENDED_BEFORE_STARTED does. -->
   <data name="DELIVERY_WINDOW_ENDS_BEFORE_IT_STARTS" xml:space="preserve">
     <value>The end of the delivery window must be later than its start.</value>
   </data>
@@ -201,7 +201,7 @@
   <data name="DELIVERY_RECIPIENT_NAME_TOO_LONG" xml:space="preserve">
     <value>The recipient name is too long: 200 characters at most.</value>
   </data>
-  <!-- FR-119's three shape refusals, said as three sentences: whoever meets one is standing at a
+  <!-- The proof's three shape refusals, said as three sentences: whoever meets one is standing at a
        door holding a phone, and "the proof is incomplete" would leave them guessing which. -->
   <data name="DELIVERY_PROOF_SIGNATURE_REQUIRED" xml:space="preserve">
     <value>Exactly one recipient signature is required.</value>

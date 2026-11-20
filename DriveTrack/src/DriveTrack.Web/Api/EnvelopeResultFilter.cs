@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 namespace DriveTrack.Web.Api;
 
 /// <summary>
-/// Wraps every controller outcome in the envelope (NFR-1). Registered globally, so an action cannot
+/// Wraps every controller outcome in the envelope. Registered globally, so an action cannot
 /// opt out by forgetting to.
 /// <para>
 /// A result filter is the only thing in the pipeline that can see an action's return value, which is
@@ -48,7 +48,7 @@ internal sealed class EnvelopeResultFilter : IAsyncResultFilter
         ObjectResult objectResult => EnvelopeInPlace(httpContext, objectResult),
 
         // Json(dto) is not an ObjectResult, so without this arm it would fall through unenveloped -
-        // the second wire shape NFR-1 exists to close, arriving through the one helper that looks
+        // the second wire shape the envelope exists to close, arriving through the one helper that looks
         // most like it is already doing the right thing.
         JsonResult jsonResult => Envelope(
             httpContext,
@@ -56,7 +56,7 @@ internal sealed class EnvelopeResultFilter : IAsyncResultFilter
             jsonResult.Value),
 
         // NotFound(), Conflict(), Unauthorized(): a status and no body at all. Without this arm they
-        // would leave as an empty response, which is a second wire shape (NFR-1).
+        // would leave as an empty response, which is a second wire shape.
         StatusCodeResult statusCodeResult => Envelope(
             httpContext,
             statusCodeResult.StatusCode,
@@ -99,7 +99,7 @@ internal sealed class EnvelopeResultFilter : IAsyncResultFilter
     /// The envelope for one status and one action value. Below 400 the value is the payload; at 400
     /// and above the value is dropped and the message comes from the localized catalogue for the
     /// code the status implies - a <c>ProblemDetails</c> or a diagnostic string an action passed
-    /// alongside a 4xx is untranslated by construction and must not reach a client (NFR-3, NFR-14).
+    /// alongside a 4xx is untranslated by construction and must not reach a client.
     /// </summary>
     private static ObjectResult Envelope(HttpContext httpContext, int statusCode, object? value) =>
         new(Build(httpContext, statusCode, value))

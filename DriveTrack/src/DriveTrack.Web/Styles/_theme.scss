@@ -197,7 +197,7 @@ fieldset:disabled button.btn {
 // `focus-ring-on-dark`, which the palette declares for exactly this and which holds at 7:1.
 //
 // The navigation itself is the anchor, because it is the element that paints `nav-bg`: the rule is
-// scoped to the ground rather than to the controls, so anything focusable a later story puts on
+// scoped to the ground rather than to the controls, so anything focusable later put on
 // that surface inherits the right ring without being named here. The descendant form is what makes
 // that true - `:focus-visible` on any child - and the three named controls follow it for browsers
 // that give a clicked control `:focus` and never `:focus-visible`.
@@ -212,7 +212,7 @@ fieldset:disabled button.btn {
 
 
 // -----------------------------------------------------------------------------
-// The shell (NFR-22, NFR-25)
+// The shell
 //
 // NavigationShell's frame, published here rather than in the two components that
 // draw it. Blazor stamps a scoped stylesheet's rules with the scope attribute of
@@ -244,7 +244,7 @@ $dt-breakpoint-phone-max: $dt-breakpoint-phone - 0.02px;
 
 .dt-main {
     // Without this a wide table inside a screen widens the shell instead of
-    // scrolling inside it (NFR-22).
+    // scrolling inside it.
     min-width: 0;
     padding: var(--dt-space-6);
     background-color: var(--dt-surface-page);
@@ -268,10 +268,10 @@ $dt-breakpoint-phone-max: $dt-breakpoint-phone - 0.02px;
     color: var(--dt-nav-ink);
 }
 
-// NFR-25: the mark and the wordmark are one lock-up, so the brand is a flex row
+// The mark and the wordmark are one lock-up, so the brand is a flex row
 // rather than a glyph that happens to sit before some text - a baseline-aligned
-// glyph drifts as the wordmark's size changes, and that size is a token a later
-// story is free to move.
+// glyph drifts as the wordmark's size changes, and that size is a token that is
+// free to move.
 .dt-nav__brand {
     display: flex;
     align-items: center;
@@ -316,7 +316,7 @@ $dt-breakpoint-phone-max: $dt-breakpoint-phone - 0.02px;
     gap: var(--dt-space-1);
 }
 
-// What pins the foot to the bottom (NFR-25). A client has four destinations and an
+// What pins the foot to the bottom. A client has four destinations and an
 // administrator ten, and without this the account actions would sit under the last
 // link and land somewhere different on every role's screen.
 .dt-nav__spacer {
@@ -658,7 +658,7 @@ $dt-breakpoint-phone-max: $dt-breakpoint-phone - 0.02px;
 //
 // The scaffold rendered its own English sentence here through `content:` and
 // carried a base64 warning icon inside the `background` shorthand. Both are gone:
-// an untranslatable literal in a stylesheet is exactly the NFR-14 leak
+// an untranslatable literal in a stylesheet is exactly the untranslated-text leak
 // `UserFacingTextTests` guards against in markup, and the icon was a literal
 // visual value with no token to own it. What is left takes the same shape as the
 // circuit-failure bar in MainLayout: a tinted surface carrying body text, with the
@@ -777,17 +777,14 @@ $dt-breakpoint-phone-max: $dt-breakpoint-phone - 0.02px;
 
 
 // -----------------------------------------------------------------------------
-// Status labels (FR-18, FR-109)
+// Status labels
 //
-// Published ahead of its consumers. No screen renders `.dt-status` yet - the four
-// statuses are still drawn as Bootstrap badges - and Spec B is what moves them onto
-// these classes. The rules are app-level rather than scoped because the same four
-// statuses will be read on the dispatch board, a driver's own list, the timeline
+// The rules are app-level rather than scoped because the same four
+// statuses are read on the dispatch board, a driver's own list, the timeline
 // and the proof view, and a scoped copy per screen is where two start disagreeing.
 //
-// The shape is not decoration. StatusLabel's specification says the green and the
-// red "differ by shape and word; they are not colour-blind safe on hue alone", so
-// each status carries a `::before` glyph as well as a fill: hollow circle for
+// The shape is not decoration. The green and the red are not colour-blind safe on
+// hue alone, so they differ by shape and word as well: each status carries a `::before` glyph as well as a fill: hollow circle for
 // Pending, triangle for In Transit, filled circle for Delivered, cross for Failed,
 // square for Finished. Drawn in CSS rather than as a character, so it inherits the
 // label's own colour and needs no font that has the glyph.
@@ -809,8 +806,8 @@ $dt-breakpoint-phone-max: $dt-breakpoint-phone - 0.02px;
     // one value out of the way of one other, and it survives a palette change.
     //
     // `currentColor` rather than a token: the border is the text's colour at every status, so
-    // the four pairs stay the only place a status names a value. NFR-29 allows the keyword
-    // for exactly this.
+    // the four pairs stay the only place a status names a value. The design-token rule allows
+    // the keyword for exactly this.
     //
     // The Badge stays borderless, so the two vocabularies still never look alike - Badge's
     // README makes that a rule, and a bordered square beside a bare pill keeps it true.
@@ -906,7 +903,7 @@ $dt-breakpoint-phone-max: $dt-breakpoint-phone - 0.02px;
 
 
 // -----------------------------------------------------------------------------
-// Ratings (FR-98, AD-18, AD-28)
+// Ratings
 //
 // App-level for the same reason as the status labels: two screens render the same
 // judgement. The reviews screen shows a single verdict, and the driver roster
@@ -1060,7 +1057,7 @@ $dt-breakpoint-phone-max: $dt-breakpoint-phone - 0.02px;
 
 
 // -----------------------------------------------------------------------------
-// The filter panel (FR-20, FR-101)
+// The filter panel
 //
 // A card whose body is the form itself, so the ten controls are one bounded
 // object on the page rather than three loose rows of inputs floating on the
@@ -1297,7 +1294,7 @@ $dt-breakpoint-phone-max: $dt-breakpoint-phone - 0.02px;
 // header's own once scrolled. Keyed on the header's hook rather than on the buttons, because
 // the sign-in frame's header draws the same language button on white and must not follow.
 // The hover is a solid dark-ground step rather than the design's translucent white, which
-// NFR-29 refuses here.
+// the design-token rule refuses here.
 .dt-landing-header--on-photo .dt-landing-menu-button {
     color: var(--landing-head-ink);
 }
@@ -1792,7 +1789,7 @@ td.dt-table-window .dt-badge {
 
 // Available to a screen reader, absent from the page. The `clip-path` form rather
 // than the older negative-margin one: a `margin: -1px` is a literal visual value
-// and NFR-29 is right to refuse it, and `inset(50%)` says the same thing without
+// and the design-token rule is right to refuse it, and `inset(50%)` says the same thing without
 // pulling the element out of its own box.
 .dt-visually-hidden {
     position: absolute;

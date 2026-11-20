@@ -1,7 +1,7 @@
 namespace DriveTrack.Infrastructure.Objects;
 
 /// <summary>
-/// The object-store settings, bound from the <c>ObjectStore</c> configuration section (AD-19).
+/// The object-store settings, bound from the <c>ObjectStore</c> configuration section.
 /// <para>
 /// Every value arrives as an environment variable in the container —
 /// <c>ObjectStore__ServiceUrl</c>, <c>ObjectStore__Region</c>, <c>ObjectStore__AccessKey</c>,

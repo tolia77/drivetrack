@@ -15,53 +15,53 @@ using Microsoft.EntityFrameworkCore;
 namespace DriveTrack.Infrastructure.Persistence;
 
 /// <summary>
-/// The single EF Core context for DriveTrack, and under AD-20 the only authority for the
+/// The single EF Core context for DriveTrack, and the only authority for the
 /// database schema — the model here is what migrations are generated from, and a migration is
 /// the only thing that touches the database.
 /// <para>
 /// It derives from <see cref="IdentityDbContext{TUser, TRole, TKey}"/> so the Identity tables
-/// and the domain tables share one model, one migration history and one transaction. AD-5
-/// depends on that: creating an <c>ApplicationUser</c> and its <c>Driver</c> row must be one
+/// and the domain tables share one model, one migration history and one transaction. The
+/// unit of work depends on that: creating an <c>ApplicationUser</c> and its <c>Driver</c> row must be one
 /// atomic write, which is impossible across two contexts.
 /// </para>
 /// </summary>
 public class AppDbContext(DbContextOptions<AppDbContext> options)
     : IdentityDbContext<ApplicationUser, IdentityRole<int>, int>(options)
 {
-    /// <summary>Client subtype rows (DR-3).</summary>
+    /// <summary>Client subtype rows.</summary>
     public DbSet<Client> Clients => Set<Client>();
 
-    /// <summary>Driver subtype rows (DR-3).</summary>
+    /// <summary>Driver subtype rows.</summary>
     public DbSet<Driver> Drivers => Set<Driver>();
 
     /// <summary>The fleet.</summary>
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();
 
-    /// <summary>Deliveries, with their two embedded locations (AD-11).</summary>
+    /// <summary>Deliveries, with their two embedded locations.</summary>
     public DbSet<Delivery> Deliveries => Set<Delivery>();
 
-    /// <summary>The append-only delivery timeline (AD-27).</summary>
+    /// <summary>The append-only delivery timeline.</summary>
     public DbSet<TimelineEntry> TimelineEntries => Set<TimelineEntry>();
 
-    /// <summary>Proof captured at hand-over (FR-119).</summary>
+    /// <summary>Proof captured at hand-over.</summary>
     public DbSet<ProofOfDelivery> ProofOfDeliveries => Set<ProofOfDelivery>();
 
-    /// <summary>Outbound notification records (FR-28).</summary>
+    /// <summary>Outbound notification records.</summary>
     public DbSet<NotificationAttempt> NotificationAttempts => Set<NotificationAttempt>();
 
-    /// <summary>Driver shifts (FR-110).</summary>
+    /// <summary>Driver shifts.</summary>
     public DbSet<Shift> Shifts => Set<Shift>();
 
-    /// <summary>Delivery reviews (FR-62).</summary>
+    /// <summary>Delivery reviews.</summary>
     public DbSet<Review> Reviews => Set<Review>();
 
-    /// <summary>Chat messages, keyed by driver thread (AD-15).</summary>
+    /// <summary>Chat messages, keyed by driver thread.</summary>
     public DbSet<Message> Messages => Set<Message>();
 
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // Identity's own mapping first, so a configuration below can extend it - AD-4's unique
+        // Identity's own mapping first, so a configuration below can extend it - the one-role unique
         // index on AspNetUserRoles.UserId is exactly that.
         base.OnModelCreating(modelBuilder);
 
@@ -75,7 +75,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     {
         base.ConfigureConventions(configurationBuilder);
 
-        // AD-22: registered for the type, not per property, so every UserId column in the schema
+        // Registered for the type, not per property, so every UserId column in the schema
         // is an integer produced by the same converter - including the nullable ones, which
         // pre-convention configuration covers automatically.
         configurationBuilder.Properties<UserId>().HaveConversion<UserIdConverter>();
@@ -83,7 +83,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
         configurationBuilder.Properties<ClientId>().HaveConversion<ClientIdConverter>();
 
         // Registered as a convention rather than invoked at the end of OnModelCreating, so
-        // configuration added by a later story cannot end up outside the naming policy.
+        // configuration added later cannot end up outside the naming policy.
         configurationBuilder.Conventions.Add(_ => new SnakeCaseNamingConvention());
     }
 }

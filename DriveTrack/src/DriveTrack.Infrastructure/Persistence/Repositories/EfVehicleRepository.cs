@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DriveTrack.Infrastructure.Persistence.Repositories;
 
-/// <summary>EF Core implementation of <see cref="IVehicleRepository"/>. See <see cref="EfClientRepository"/> for the AD-6 rules every repository here follows.</summary>
+/// <summary>EF Core implementation of <see cref="IVehicleRepository"/>. See <see cref="EfClientRepository"/> for the materialization rules every repository here follows.</summary>
 internal sealed class EfVehicleRepository(AppDbContext context) : IVehicleRepository
 {
     /// <inheritdoc />
@@ -68,7 +68,7 @@ internal sealed class EfVehicleRepository(AppDbContext context) : IVehicleReposi
     public async Task<IReadOnlyList<Vehicle>> ListUnassignedAsync(CancellationToken cancellationToken)
     {
         // The assignment column lives on the driver row, so the question is asked of Drivers even
-        // though the answer is a set of vehicles. AD-24 keeps that here rather than on the driver
+        // though the answer is a set of vehicles. The single-owner rule keeps that here rather than on the driver
         // repository: which vehicles are free is a Vehicles-owned question.
         var held = context.Drivers
             .Where(driver => driver.VehicleId != null)

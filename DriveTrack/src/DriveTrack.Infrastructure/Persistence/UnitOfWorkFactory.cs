@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 namespace DriveTrack.Infrastructure.Persistence;
 
 /// <summary>
-/// Creates a persistence scope per operation from the pooled context factory (AD-5).
+/// Creates a persistence scope per operation from the pooled context factory.
 /// <para>
 /// Registered as a singleton, which is safe precisely because it holds no context of its own:
 /// every scope gets a fresh one from the pool and returns it on disposal. That is the whole
