@@ -1,5 +1,5 @@
 /*
-    FR-86 and NFR-29 together. Every palette value is a token, and so are the two widths: the design
+    Every palette value is a token, and so are the two widths: the design
     publishes `dialog-narrow` for a form and `dialog-wide` for a dialog holding two map columns, and
     a panel that restated either figure would be a second place to change it.
 

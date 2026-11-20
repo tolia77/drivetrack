@@ -5,7 +5,7 @@
 @inject IStringLocalizer<UiText> Localizer
 @inherits PagedScreen<ListNotificationAttemptsQuery, NotificationAttemptSummary, NotificationSort>
 
-@* FR-28: the row an administrator can read.
+@* The row an administrator can read.
 
    The original swallowed a failed notification silently, and this screen is the other half of the
    remediation - a table with a home is only a remediation if somebody can open it. Every attempt is
@@ -15,12 +15,11 @@
 
    [Authorize] carries no roles, like every other screen here. Who may read this is decided by
    IAccessGuard inside INotificationLogService - RequireRole(Admin), named outright - and a role on
-   the attribute would be a second copy of that rule in a place no test of the rule would read
-   (AD-2, FR-12).
+   the attribute would be a second copy of that rule in a place no test of the rule would read.
 
    Independent @if blocks and one literal localizer key per string, for the two reasons the shell
-   components already state: an `else` at markup level reads to NFR-14's scan as a rendered English
-   word, and a key composed at run time is a key the closed-catalogue test cannot see. *@
+   components already state: an `else` at markup level reads to the localization scan as a rendered
+   English word, and a key composed at run time is a key the closed-catalogue test cannot see. *@
 
 <PageTitle>@Localizer["NotificationsTitle"]</PageTitle>
 
@@ -41,7 +40,7 @@
 
 <DtFailureBanner Failures="_failures" />
 
-@* NFR-27: the log a page at a time, newest first, sorted by the server over the whole history - so
+@* The log a page at a time, newest first, sorted by the server over the whole history - so
    the oldest attempt is a page away rather than out of reach, and the pager says how many there are. *@
 @* `dt-table-cards` is where this screen opts into the shared collapse: below the phone breakpoint
    the table's rows stop being rows and become cards. The collapse is stated once, in
@@ -102,8 +101,8 @@
                 @attempt.DeliveryId
             </td>
             <td>
-                @* AD-18 / FR-16: the enum member is what the database stores and the wire carries
-                   (AD-21); what a reader sees is a word. There is one kind today, so there is one
+                @* The enum member is what the database stores and the wire carries;
+                   what a reader sees is a word. There is one kind today, so there is one
                    block - a second joins it the day a second kind is written.
 
                    The cell's own name goes inside that block with the word it names: a kind this
@@ -141,9 +140,10 @@
             </td>
             <td>
                 <span class="dt-visually-hidden dt-notification-label">@Localizer["NotificationAttemptedAt"]</span>
-                @* Routed through a method rather than formatted in markup: NFR-14's scan strips a
-                   Razor expression only up to its first closing bracket, so a `.ToString(...)` tail
-                   would be left behind in the text node and read as a rendered English word. *@
+                @* Routed through a method rather than formatted in markup: the localization scan
+                   strips a Razor expression only up to its first closing bracket, so a
+                   `.ToString(...)` tail would be left behind in the text node and read as a
+                   rendered English word. *@
                 @Attempted(attempt)
             </td>
             @* The reason, which only a refused attempt has - and a successful attempt is the
@@ -168,7 +168,7 @@
     {
         // The circuit outlives the request that opened it, so the cookie can be gone by the time a
         // screen calls a service. Raising the contract's own code here is what puts that case
-        // through FR-13's single boundary instead of a per-screen redirect.
+        // through the single session-expiry boundary instead of a per-screen redirect.
         if (!Caller.IsAuthenticated)
         {
             throw new ForbiddenException(
@@ -218,7 +218,7 @@
         view with { Offset = offset, Limit = limit, Sort = sort.ToString(), Descending = descending };
 
     /// <summary>
-    /// The attempt's instant in local time (AD-13: storage is offset zero, and the conversion
+    /// The attempt's instant in local time (storage is at offset zero, and the conversion
     /// happens here, in the presentation layer, and nowhere else).
     /// </summary>
     private static string Attempted(NotificationAttemptSummary attempt) =>
@@ -240,7 +240,7 @@
         {
             // A dispatcher who typed the address reaches the guard's refusal here rather than a
             // blank page, and it resolves through the same catalogue the REST envelope uses, so the
-            // two cannot disagree (NFR-3).
+            // two cannot disagree.
             _failures = FailureKeys.For(failure);
 
             return null;

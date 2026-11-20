@@ -1,4 +1,4 @@
-@* TimelineEntry: one line of a delivery's append-only history (FR-105 to FR-108).
+@* TimelineEntry: one line of a delivery's append-only history.
 
    A status change, a note, or both. The dot's glyph is the entry's own summary - Create for the
    entry that brought the delivery into being, Confirm for a delivery that arrived, Warning for one
@@ -46,7 +46,7 @@
             <span class="dt-timeline-when">@When</span>
         </div>
 
-        @* FR-106: a note rides on the entry it explains, whether or not that entry moved anything. *@
+        @* A note rides on the entry it explains, whether or not that entry moved anything. *@
         @if (Note is not null)
         {
             <p class="dt-timeline-note">@Note</p>

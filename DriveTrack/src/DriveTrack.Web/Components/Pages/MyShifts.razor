@@ -1,22 +1,22 @@
 @page "/my-shifts"
-@* FR-109 and FR-112: a driver going on and off duty, and the log of when they did.
+@* A driver going on and off duty, and the log of when they did.
 
    One action, not two. Whether the driver is on duty is one predicate - an open shift exists - so
    the screen offers exactly the transition that predicate allows, and a driver never meets a button
    that can only be refused. The refusals still exist and still decide: SHIFT_ALREADY_OPEN and
-   SHIFT_NOT_OPEN are raised by IShiftService whatever this screen drew (FR-12).
+   SHIFT_NOT_OPEN are raised by IShiftService whatever this screen drew.
 
    The rows are the caller's own, and that is the guard's answer rather than this screen's. There is
    no driver column and no driver filter: IAccessGuard.RequireShiftScope narrows the list to the
    caller's own driver row before the query is built, so a driver cannot be shown somebody else's
-   shift by a mistake made here (AD-3).
+   shift by a mistake made here.
 
-   The Roles argument routes a wrong role to /access-denied (FR-79). A dispatcher is sent there on
+   The Roles argument routes a wrong role to /access-denied. A dispatcher is sent there on
    purpose: their scope narrows nothing, so this screen would show them the whole roster under a
    heading that says "mine" - which is the same reason MyDeliveries refuses them.
 
    The @if blocks below are independent rather than if/else chains: an `else` at markup level reads
-   to NFR-14's source scan as a rendered English word. *@
+   to the localization source scan as a rendered English word. *@
 @attribute [Authorize(Roles = "Driver")]
 @inject IShiftService Duty
 @inject ICurrentUser Caller
@@ -65,12 +65,12 @@
     }
 </div>
 
-@* FR-110's refusals arrive here: already on duty, or not on duty at all. Resolved through the same
-   catalogue the REST envelope uses, so the two cannot disagree (NFR-3). Neither names a field, so
-   both stay here; FR-111's backwards window names both ends and is said under each box instead. *@
+@* The start and end refusals arrive here: already on duty, or not on duty at all. Resolved through
+   the same catalogue the REST envelope uses, so the two cannot disagree. Neither names a field, so
+   both stay here; a backwards window names both ends and is said under each box instead. *@
 <DtFailureBanner Failures="_failures" InlineFields="@InlineFields" />
 
-@* NFR-27: the driver's history a page at a time, newest first, sorted by the server over every one
+@* The driver's history a page at a time, newest first, sorted by the server over every one
    of their shifts - so the first shift they ever worked is a page away rather than out of reach. *@
 @* `dt-table-cards` is where this screen opts into the shared collapse: below the phone breakpoint
    the table's rows stop being rows and become cards. The collapse is stated once, in
@@ -152,7 +152,7 @@
     </DtDataTable>
 </div>
 
-@* FR-85: the shared dialog. FR-112 gives a driver their own corrections - a shift they started an
+@* The shared dialog. A driver may correct their own shifts - a shift they started an
    hour late is theirs to fix - and the guard is what keeps it to their own. *@
 <DtDialog @ref="_formDialog" Title="@Localizer["ShiftForm"]" OnClosed="ClearFailures">
     <ChildContent>
@@ -180,8 +180,8 @@
                            Type="InputDateType.DateTimeLocal"
                            ParsingErrorMessage="@Localizer["DateParseError"]"
                            @bind-Value="_form.EndedAt" />
-                @* FR-117 said in a sentence: emptying this box leaves a finished shift finished. A
-                   shift is ended by the action above, once, and never un-ended. *@
+                @* The never-un-ended rule said in a sentence: emptying this box leaves a finished
+                   shift finished. A shift is ended by the action above, once, and never un-ended. *@
                 <DtFieldError Field="EndedAt" Failures="_failures" />
                 <div class="form-text">@Localizer["ShiftEndedAtHint"]</div>
             </div>
@@ -200,7 +200,7 @@
     </Actions>
 </DtDialog>
 
-@* FR-81 and NFR-22: a destructive action is confirmed through the shared prompt, a driver's own as
+@* A destructive action is confirmed through the shared prompt, a driver's own as
    much as a dispatcher's. *@
 <DtConfirmDialog @ref="_deleteDialog"
                  Title="@Localizer["DeleteShiftTitle"]"
@@ -212,7 +212,7 @@
     /// <summary>
     /// Drops the refusals when the form is dismissed, however it was dismissed.
     /// <para>
-    /// FR-83. A refusal claimed by a box inside the dialog is subtracted from the banner outside it,
+    /// A refusal claimed by a box inside the dialog is subtracted from the banner outside it,
     /// so leaving the list populated past the close would leave that sentence with nowhere on the
     /// page to render - invisible, which is the outcome this whole change exists to prevent.
     /// Hung off <c>OnClosed</c> rather than off the cancel handler because Escape and the backdrop
@@ -222,7 +222,7 @@
     private void ClearFailures() => _failures = [];
     /// <summary>
     /// The boxes this screen renders a <c>DtFieldError</c> for. Stated once and bound by every
-    /// banner on the page: the list repeated per banner is exactly the drift FR-83 is broken by,
+    /// banner on the page: the list repeated per banner is exactly the drift that loses a refusal,
     /// and a screen carries the banner more than once because a dialog opened with showModal()
     /// leaves the page behind it inert.
     /// </summary>
@@ -259,7 +259,7 @@
     {
         // The circuit outlives the request that opened it, so the cookie can be gone by the time a
         // screen calls a service. Raising the contract's own code here is what puts that case
-        // through FR-13's single boundary instead of a per-screen redirect.
+        // through the single session-expiry boundary instead of a per-screen redirect.
         if (!Caller.IsAuthenticated)
         {
             throw new ForbiddenException(
@@ -317,7 +317,7 @@
         try
         {
             // No driver in either query: the narrowing is the guard's, and naming one here would be
-            // a second place deciding whose rows a driver may see (AD-3).
+            // a second place deciding whose rows a driver may see.
             var page = await Duty.ListAsync(view, CircuitToken);
 
             var open = await Duty.ListAsync(
@@ -346,7 +346,7 @@
         try
         {
             // No instant in the command: going on duty is stamped by the server's clock, so a
-            // driver cannot report having started an hour ago by pressing the button now (AD-13).
+            // driver cannot report having started an hour ago by pressing the button now.
             await Duty.StartAsync(new StartShiftCommand(driverId), CircuitToken);
 
             _failures = [];
@@ -394,7 +394,7 @@
             Id = shift.Id,
 
             // Local time, because the control shows local time and the circuit runs on the server -
-            // the same reading every other screen gives a stored instant (NFR-15).
+            // the same reading every other screen gives a stored instant.
             StartedAt = shift.StartedAt.ToLocalTime(),
             EndedAt = shift.EndedAt?.ToLocalTime(),
         };
@@ -492,7 +492,7 @@
     }
 
     /// <summary>
-    /// An instant as this screen shows it. Local time against the current culture (NFR-15).
+    /// An instant as this screen shows it. Local time against the current culture.
     /// </summary>
     private static string Moment(DateTimeOffset value) =>
         value.ToLocalTime().ToString("g", System.Globalization.CultureInfo.CurrentCulture);
@@ -513,7 +513,7 @@
         public DateTimeOffset? EndedAt { get; set; }
 
         /// <summary>
-        /// The correction this form describes (AD-23, FR-117).
+        /// The correction this form describes.
         /// <para>
         /// An empty box is <em>absent</em> rather than a present null:
         /// <c>Optional&lt;DateTimeOffset&gt;</c> has no case for a clear, so emptying the end box

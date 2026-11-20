@@ -1,10 +1,10 @@
 /*
-    The day separator (FR-71), scoped to the component that writes the <li> rather than to the screen
+    The day separator, scoped to the component that writes the <li> rather than to the screen
     around it: a `.razor.css` is compiled against its own component's markup, so a rule left in
     `Chat.razor.css` would carry the screen's scope attribute and match nothing at all.
 
     Every palette value is a `--dt-*` token; `display` and `justify-content` are geometry, which
-    NFR-29's scan deliberately does not read.
+    the design-token scan deliberately does not read.
 */
 
 /*

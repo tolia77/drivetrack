@@ -1,4 +1,4 @@
-// FR-119: where the hand-over happened, read from the device rather than typed.
+// Where the hand-over happened, read from the device rather than typed.
 //
 // One function, and every way it can fail answers the same thing: null. A browser with no
 // geolocation API, a user who refuses the prompt, a device that cannot get a fix before the timeout

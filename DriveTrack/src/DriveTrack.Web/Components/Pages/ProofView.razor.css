@@ -1,6 +1,6 @@
 /*
-    NFR-29: every palette value here resolves to a `--dt-*` token. The image sizing figures are
-    geometry - `width`, `max-width`, `height`, and `overflow-wrap` on the facts list - and NFR-29's
+    Every palette value here resolves to a `--dt-*` token. The image sizing figures are
+    geometry - `width`, `max-width`, `height`, and `overflow-wrap` on the facts list - and the token
     scan deliberately does not read them.
 */
 

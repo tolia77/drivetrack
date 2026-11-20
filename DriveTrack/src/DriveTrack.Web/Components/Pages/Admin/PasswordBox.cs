@@ -3,14 +3,14 @@ using DriveTrack.Application.Common;
 namespace DriveTrack.Web.Components.Pages.Admin;
 
 /// <summary>
-/// FR-50's rule, in one place: what an administrator typed into a password box, as the absent-or-
-/// present answer an update command carries (AD-23).
+/// The administrator password rule, in one place: what an administrator typed into a password box,
+/// as the absent-or- present answer an update command carries.
 /// <para>
 /// It lives in a class rather than in each screen's <c>@code</c> block for the reason
-/// <c>SessionExpiry.NoticeKey</c> does: this is the decision the whole story turns on, and a private
-/// method inside a generated component class is reachable by no test. Both screens call this and
-/// hold only the markup, so replacing <see cref="Optional{T}.Absent"/> with a present value here
-/// fails a test instead of shipping a silently cleared password.
+/// <c>SessionExpiry.NoticeKey</c> does: this is the decision both administration screens turn on,
+/// and a private method inside a generated component class is reachable by no test. Both screens
+/// call this and hold only the markup, so replacing <see cref="Optional{T}.Absent"/> with a present
+/// value here fails a test instead of shipping a silently cleared password.
 /// </para>
 /// </summary>
 internal static class PasswordBox

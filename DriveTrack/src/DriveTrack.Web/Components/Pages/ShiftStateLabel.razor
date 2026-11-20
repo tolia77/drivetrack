@@ -1,4 +1,4 @@
-@* FR-117's two states, named once.
+@* A shift's two states, named once.
 
    A shift is running or it is finished, and both screens say so - two copies of one vocabulary
    otherwise, and the kind of duplication where the second copy is the one that goes stale.
@@ -12,9 +12,9 @@
    one - which is why a driver's duty is a plain Badge and never this.
 
    Independent @@if blocks rather than a ternary or an if/else chain: an `else` at markup level reads
-   to NFR-14's source scan as a rendered English word, and a key composed at run time would be a key
-   the closed-catalogue test cannot see. The two literal localizer lookups below are what make those
-   two keys reachable. *@
+   to the localization source scan as a rendered English word, and a key composed at run time would
+   be a key the closed-catalogue test cannot see. The two literal localizer lookups below are what
+   make those two keys reachable. *@
 @inject IStringLocalizer<UiText> Localizer
 
 @if (IsOpen)
@@ -30,7 +30,7 @@
     /// <summary>
     /// Whether the shift is still running. A bool rather than a status enum, because there is no
     /// status column to mirror: open is <c>EndedAt IS NULL</c>, which is also the filter of the
-    /// index enforcing one open shift per driver (FR-110, FR-117).
+    /// index enforcing one open shift per driver.
     /// </summary>
     [Parameter]
     [EditorRequired]

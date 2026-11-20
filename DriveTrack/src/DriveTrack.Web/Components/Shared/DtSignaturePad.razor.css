@@ -1,7 +1,7 @@
 /*
-    NFR-29: every palette value here resolves to a `--dt-*` token. What stays literal is geometry -
+    Every palette value here resolves to a `--dt-*` token. What stays literal is geometry -
     the pad's height, its full width, the absolute placement of the baseline and the cross - and
-    NFR-29's scan deliberately does not read `width`, `height`, `inset`, `top` or `left`.
+    the design-token scan deliberately does not read `width`, `height`, `inset`, `top` or `left`.
 
     The height is stated because a canvas with no height collapses to nothing: there is no content
     inside it to give the box a size, so a pad laid out by its contents would be invisible. 11.25rem

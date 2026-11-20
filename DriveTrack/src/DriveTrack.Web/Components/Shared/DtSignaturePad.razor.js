@@ -1,4 +1,4 @@
-// FR-119: the signature pad's behaviour, confined to the component's own module.
+// The signature pad's behaviour, confined to the component's own module.
 //
 // Pointer events rather than mouse and touch events: one set of listeners covers a finger, a stylus
 // and a mouse, and setPointerCapture keeps a stroke attached to the canvas when the finger leaves
@@ -245,8 +245,8 @@ function resize(element, state) {
 
 /**
  * The ink colour, read from the design token the stylesheet publishes rather than written here.
- * NFR-29 keeps literal palette values out of everything but the token file, and a canvas stroke is
- * as visible as a border.
+ * The design-token rule keeps literal palette values out of everything but the token file, and a
+ * canvas stroke is as visible as a border.
  *
  * `signature-ink` rather than the body text colour: the two carry the same value today, but a
  * signature is a mark on a pad rather than text on a surface, and the palette names it separately

@@ -1,5 +1,5 @@
 /*
-    FR-121 and NFR-29: the capture panel, drawn at 360px first.
+    The capture panel, drawn at 360px first.
 
     Every colour, spacing figure and radius here resolves to a `--dt-*` token. The figures that are
     geometry - `display`, `flex-direction`, `flex-wrap`, `grid-template-columns`, `position`,
@@ -227,7 +227,7 @@
         it - the signature's clear button sliding out from under a bar that looked
         like it should have covered it. Offset by the padding it has to clear, and
         given that much padding of its own so the action is not flush with the
-        edge. `bottom` is a position offset and outside NFR-29's scan, which is
+        edge. `bottom` is a position offset and outside the design-token scan, which is
         what lets it be stated as arithmetic on the token.
     */
     bottom: calc(-1 * var(--dt-space-5));
@@ -239,7 +239,7 @@
 
 /*
     Full width, and the label centred in it. One action, so there is nothing for it to be aligned
-    against - and a button a thumb cannot miss is the whole of FR-121 on this screen.
+    against - and a button a thumb cannot miss is the whole of the touch-target rule on this screen.
 */
 .dt-proof-submit {
     flex: 1;
@@ -248,8 +248,9 @@
 }
 
 /*
-    FR-121 read as the design states it: every hit target on this panel is at least `touch-target`.
-    A driver is standing at a door holding a parcel, and a 36px control is one a thumb misses.
+    The touch-target rule read as the design states it: every hit target on this panel is at least
+    `touch-target`. A driver is standing at a door holding a parcel, and a 36px control is one a
+    thumb misses.
 
     ::deep, because the controls are the framework's own markup - InputFile renders the <input>
     itself - and a scoped rule only reaches what its own component wrote.

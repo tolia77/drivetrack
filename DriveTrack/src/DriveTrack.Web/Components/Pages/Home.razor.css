@@ -8,7 +8,7 @@
     phone, the closing band's route - are components of their own under `Components/Illustrations/`,
     drawn in the artboard's colours, and none of their paint is here.
 
-    NFR-29: every palette value is a `--dt-*` reference. What is literal is geometry the palette
+    Every palette value is a `--dt-*` reference. What is literal is geometry the palette
     does not name - the content width, the glyph tiles, the column counts and the phone breakpoint,
     which a media query cannot read from a custom property at all.
 
@@ -279,8 +279,8 @@
 /* ---------------------------------------------------------------- sections */
 
 /*
-    The design pads a section by `space-6 + space-4`; NFR-29 reads a sum as a literal, so it is the
-    largest step on its own. Its scroll margin is with the pinned header, above.
+    The design pads a section by `space-6 + space-4`; the token scan reads a sum as a literal, so it
+    is the largest step on its own. Its scroll margin is with the pinned header, above.
 */
 .dt-landing-section {
     padding: var(--dt-space-6) 0;
@@ -398,7 +398,7 @@
 
     Its top is kept clear of the header by a spacer rather than by padding: the design's 128px is
     the header's own 72px and the air under it, which is geometry the header's height already
-    writes as a figure, where a padding is a palette value NFR-29 holds to the spacing steps.
+    writes as a figure, where a padding is a palette value the token rule holds to the spacing steps.
 */
 .dt-landing-hero-section {
     position: relative;

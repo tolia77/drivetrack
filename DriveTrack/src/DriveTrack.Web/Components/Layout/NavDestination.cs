@@ -13,54 +13,54 @@ public enum NavDestination
     /// <summary>The signed-in caller's own profile.</summary>
     Profile,
 
-    /// <summary>The driver roster, offered to a dispatcher or an admin (FR-35, FR-77).</summary>
+    /// <summary>The driver roster, offered to a dispatcher or an admin.</summary>
     Drivers,
 
-    /// <summary>The vehicle fleet, offered to a dispatcher or an admin (FR-40, FR-77).</summary>
+    /// <summary>The vehicle fleet, offered to a dispatcher or an admin.</summary>
     Vehicles,
 
-    /// <summary>The client roster (FR-46, FR-48).</summary>
+    /// <summary>The client roster.</summary>
     Clients,
 
-    /// <summary>The dispatcher roster (FR-49).</summary>
+    /// <summary>The dispatcher roster.</summary>
     Dispatchers,
 
-    /// <summary>The dispatch board: every delivery, offered to a dispatcher or an admin (FR-18).</summary>
+    /// <summary>The dispatch board: every delivery, offered to a dispatcher or an admin.</summary>
     Deliveries,
 
     /// <summary>
-    /// The caller's own deliveries (FR-25). A personal destination, like the profile: it shows
+    /// The caller's own deliveries. A personal destination, like the profile: it shows
     /// whatever the caller's own scope narrows to rather than a roster somebody administers.
     /// </summary>
     MyDeliveries,
 
     /// <summary>
-    /// The log of outbound notification attempts (FR-28). An administrator's, and nobody else's:
+    /// The log of outbound notification attempts. An administrator's, and nobody else's:
     /// it carries the address of every client the system has ever written to.
     /// </summary>
     Notifications,
 
     /// <summary>
-    /// The conversation between the dispatch desk and a driver (FR-68, FR-69). Offered to those two
+    /// The conversation between the dispatch desk and a driver. Offered to those two
     /// roles and to no others — chat has two participants, and neither a client nor an
     /// administrator is one of them.
     /// </summary>
     Chat,
 
     /// <summary>
-    /// Reviews (FR-62 to FR-67). Offered to the client who writes them and to the two roles that
+    /// Reviews. Offered to the client who writes them and to the two roles that
     /// read and moderate them — and never to a driver, who is the party being judged.
     /// </summary>
     Reviews,
 
     /// <summary>
-    /// Every driver's shifts (FR-113, FR-114). Dispatch's screen: it shows who is on duty across the
+    /// Every driver's shifts. Dispatch's screen: it shows who is on duty across the
     /// whole roster and is where a shift somebody logged wrongly gets corrected.
     /// </summary>
     Shifts,
 
     /// <summary>
-    /// The caller's own shifts, and the button that starts and ends one (FR-109, FR-112). A personal
+    /// The caller's own shifts, and the button that starts and ends one. A personal
     /// destination in the sense <see cref="MyDeliveries"/> is: it shows what the caller's own scope
     /// narrows to rather than a roster somebody administers.
     /// </summary>
@@ -68,19 +68,17 @@ public enum NavDestination
 }
 
 /// <summary>
-/// FR-77: which destinations a role is offered, kept as a table rather than as markup conditionals.
+/// Which destinations a role is offered, kept as a table rather than as markup conditionals.
 /// <para>
-/// FR-12 first, because it is the part that is easy to get wrong: hiding a link is a convenience,
-/// never the authorization decision. <c>IAccessGuard</c> inside the service settles whether a caller
-/// may do a thing, and it runs whether or not the link was ever rendered. This table only decides
-/// what is worth showing.
+/// The authorization point first, because it is the part that is easy to get wrong: hiding a link
+/// is a convenience, never the authorization decision. <c>IAccessGuard</c> inside the service
+/// settles whether a caller may do a thing, and it runs whether or not the link was ever rendered.
+/// This table only decides what is worth showing.
 /// </para>
 /// <para>
-/// Story 4.1 is the first to make the table do anything: the fleet screens are offered to a
-/// dispatcher and an admin and to nobody else, so the rows are no longer uniform. A driver and a
-/// client are still offered what every signed-in caller has. That the switch was already written
-/// out in full is why this was a row rather than another <c>@if</c> in <c>NavMenu.razor</c>, which
-/// is how the baseline's navigation grew.
+/// The rows are not uniform: the fleet screens are offered to a dispatcher and an admin and to
+/// nobody else, and each role's tier below adds its own destinations to a shared base. A new
+/// destination is a row here rather than another <c>@if</c> in <c>NavMenu.razor</c>.
 /// </para>
 /// </summary>
 internal static class NavDestinations
@@ -91,7 +89,7 @@ internal static class NavDestinations
 
     /// <summary>
     /// The personal destinations plus the caller's own deliveries, for the two roles that are a
-    /// party to one (FR-25, FR-27): a driver sees what they carry, a client sees what they
+    /// party to one: a driver sees what they carry, a client sees what they
     /// requested.
     /// <para>
     /// Not in <see cref="Personal"/>, and the distinction is the whole point of this table. A
@@ -107,12 +105,11 @@ internal static class NavDestinations
 
     /// <summary>
     /// What a driver is offered: what any party to a delivery is, plus their conversation with the
-    /// dispatch desk (FR-69).
+    /// dispatch desk.
     /// <para>
-    /// This is where story 8.1 splits a tier that until now served two roles. A driver and a client
-    /// were offered the same destinations, and chat is the first thing only one of them has: the
-    /// PRD gives chat two participants, dispatch and drivers, and a client is not one. Folding it
-    /// into <see cref="Assigned"/> would have offered a client a link that can only refuse.
+    /// A tier of its own rather than <see cref="Assigned"/>, because chat is something only a
+    /// driver has: chat has two participants, dispatch and drivers, and a client is not one.
+    /// Folding it into <see cref="Assigned"/> would offer a client a link that can only refuse.
     /// </para>
     /// </summary>
     private static readonly IReadOnlySet<NavDestination> Driver =
@@ -120,28 +117,26 @@ internal static class NavDestinations
         {
             NavDestination.Chat,
 
-            // FR-109 and FR-112: going on and off duty, and the log of when they did. A driver's
+            // Going on and off duty, and the log of when they did. A driver's
             // own, like their deliveries - and not a client's, who has no shifts at all, which is
             // the second thing this tier has that Assigned does not.
             NavDestination.MyShifts,
         };
 
     /// <summary>
-    /// What a client is offered: what any party to a delivery is, plus the reviews they write
-    /// (FR-62, FR-63).
+    /// What a client is offered: what any party to a delivery is, plus the reviews they write.
     /// <para>
-    /// Story 7.2 finishes the split story 8.1 began. <see cref="Assigned"/> used to be a client's
-    /// whole tier, and it cannot be any more: a driver builds on the same set, and a driver must
-    /// not be offered reviews — they are the party being judged, and every review route refuses
-    /// them. Folding it into <see cref="Assigned"/> would have handed a driver a link that can only
-    /// refuse.
+    /// A tier of its own rather than <see cref="Assigned"/>, because a driver builds on the same
+    /// set, and a driver must not be offered reviews — they are the party being judged, and every
+    /// review route refuses them. Folding it into <see cref="Assigned"/> would hand a driver a link
+    /// that can only refuse.
     /// </para>
     /// </summary>
     private static readonly IReadOnlySet<NavDestination> Client =
         new HashSet<NavDestination>(Assigned) { NavDestination.Reviews };
 
     /// <summary>
-    /// The personal destinations plus the fleet, for the two roles that run dispatch. FR-12 still
+    /// The personal destinations plus the fleet, for the two roles that run dispatch. The same rule
     /// holds: this decides what is worth showing, and <c>IAccessGuard</c> decides who may do it.
     /// <para>
     /// Built from <see cref="Personal"/> rather than restating its members: a destination added
@@ -154,24 +149,23 @@ internal static class NavDestinations
         NavDestination.Drivers,
         NavDestination.Vehicles,
 
-        // FR-18's dispatch board sits in this tier rather than the personal one: it shows every
+        // The dispatch board sits in this tier rather than the personal one: it shows every
         // delivery in the system, which is a thing to run rather than a thing to own.
         NavDestination.Deliveries,
 
-        // FR-113 and FR-114's shift roster, in this tier for the same reason: it shows every
+        // The shift roster, in this tier for the same reason: it shows every
         // driver's shifts and is where dispatch corrects one, which is running the fleet rather
         // than owning a row. A driver's own screen is MyShifts, in the tier above.
         NavDestination.Shifts,
     };
 
     /// <summary>
-    /// What both roles that run dispatch are offered: the fleet, plus FR-48's client roster, which
+    /// What both roles that run dispatch are offered: the fleet, plus the client roster, which
     /// they open to attach a client to a delivery. Not the dispatcher roster - administering
-    /// accounts is admin-only work (FR-49).
+    /// accounts is admin-only work.
     /// <para>
-    /// Named for the work rather than for either role, because story 8.1 is the first story where
-    /// the two diverge: chat belongs to a dispatcher and not to an admin, so the admin tier can no
-    /// longer be built from the dispatcher's.
+    /// Named for the work rather than for either role, because the two diverge: chat belongs to a
+    /// dispatcher and not to an admin, so the admin tier cannot be built from the dispatcher's.
     /// </para>
     /// </summary>
     private static readonly IReadOnlySet<NavDestination> Dispatch =
@@ -179,7 +173,7 @@ internal static class NavDestinations
         {
             NavDestination.Clients,
 
-            // FR-64 and FR-65: a dispatcher reads every review and an administrator moderates them,
+            // A dispatcher reads every review and an administrator moderates them,
             // so the destination belongs to the work rather than to either role. Neither authors
             // one - IAccessGuard.RequireReviewAuthor refuses both - which is why the screen offers
             // them no compose action rather than a button that can only refuse.
@@ -193,20 +187,20 @@ internal static class NavDestinations
 
     /// <summary>
     /// What a dispatcher is offered: the dispatch work, plus the conversations they hold with the
-    /// drivers carrying it (FR-68).
+    /// drivers carrying it.
     /// </summary>
     private static readonly IReadOnlySet<NavDestination> Dispatcher =
         new HashSet<NavDestination>(Dispatch) { NavDestination.Chat };
 
     /// <summary>
     /// What an administrator is offered: the dispatch work, plus the roster of dispatchers
-    /// themselves and FR-28's notification log. Built from <see cref="Dispatch"/> for the reason
+    /// themselves and the notification log. Built from <see cref="Dispatch"/> for the reason
     /// <see cref="Fleet"/> is built from <see cref="Personal"/>: a destination added to that tier
     /// has to reach this one, and a restated list is how that stops happening.
     /// <para>
     /// Built from <see cref="Dispatch"/> rather than from <see cref="Dispatcher"/>, and the
-    /// difference is the whole of story 8.1's navigation change. Chat is the first capability an
-    /// admin is deliberately locked out of — the PRD's "admins moderate rather than dispatch" — and
+    /// difference is chat. It is a capability an admin is deliberately locked out of — admins
+    /// moderate rather than dispatch — and
     /// <c>IAccessGuard.RequireChatParticipant</c> refuses them by rule, so offering the link would
     /// be offering one that can only refuse.
     /// </para>
@@ -233,7 +227,7 @@ internal static class NavDestinations
         new HashSet<NavDestination>();
 
     /// <summary>The destinations a caller of that role is offered.</summary>
-    /// <param name="role">The caller's single role (AD-4).</param>
+    /// <param name="role">The caller's single role.</param>
     public static IReadOnlySet<NavDestination> For(UserRole role) => role switch
     {
         UserRole.Admin => Administrator,

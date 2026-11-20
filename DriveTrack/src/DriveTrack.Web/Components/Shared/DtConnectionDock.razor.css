@@ -1,11 +1,11 @@
 /*
-    NFR-29: every palette value is a `--dt-*` token, and so is the depth - `z-dock` is the step the
+    Every palette value is a `--dt-*` token, and so is the depth - `z-dock` is the step the
     palette declares for exactly this, above the navigation and above a dialog, because a circuit
     that has failed is the one thing that outranks whatever is on screen.
 
     The figures that stay literal are geometry: the dock's width bound, its offset from the bottom
     edge and the dot's box. `color-scheme: light only` stays with them: the app ships one light
-    theme (NFR-21), and this element must not be repainted by a user-agent dark preference.
+    theme, and this element must not be repainted by a user-agent dark preference.
 */
 
 .dt-dock {

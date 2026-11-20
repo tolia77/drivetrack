@@ -1,7 +1,7 @@
 namespace DriveTrack.Web.Components.Shared;
 
 /// <summary>
-/// NFR-24's icon vocabulary, closed at compile time.
+/// The icon vocabulary, closed at compile time.
 /// <para>
 /// The scaffold's navigation carried three <c>bi-*-nav-menu</c> spans with no CSS rule behind
 /// them — an empty box on every screen, and nothing in the build said so. Naming the set as an
@@ -31,13 +31,13 @@ public enum IconName
     /// <summary>Creating an account.</summary>
     Register,
 
-    /// <summary>A create action (AD-28's create colour).</summary>
+    /// <summary>A create action (the palette's create colour).</summary>
     Create,
 
-    /// <summary>An edit action (AD-28's edit colour).</summary>
+    /// <summary>An edit action (the palette's edit colour).</summary>
     Edit,
 
-    /// <summary>A destructive action (AD-28's destructive colour).</summary>
+    /// <summary>A destructive action (the palette's destructive colour).</summary>
     Delete,
 
     /// <summary>Accepting a prompt.</summary>
@@ -55,60 +55,60 @@ public enum IconName
     /// <summary>A caution notice.</summary>
     Warning,
 
-    /// <summary>Access refused (FR-79).</summary>
+    /// <summary>Access refused.</summary>
     Forbidden,
 
-    /// <summary>Nothing at this address (FR-78).</summary>
+    /// <summary>Nothing at this address.</summary>
     NotFound,
 
-    /// <summary>A point on the map (FR-15, FR-21).</summary>
+    /// <summary>A point on the map.</summary>
     Location,
 
-    /// <summary>The client roster (FR-46).</summary>
+    /// <summary>The client roster.</summary>
     Clients,
 
-    /// <summary>The dispatcher roster (FR-49).</summary>
+    /// <summary>The dispatcher roster.</summary>
     Dispatchers,
-    /// <summary>The driver roster (FR-35).</summary>
+    /// <summary>The driver roster.</summary>
     Drivers,
 
-    /// <summary>The vehicle fleet (FR-40).</summary>
+    /// <summary>The vehicle fleet.</summary>
     Vehicles,
 
-    /// <summary>Deliveries: the parcel that is the product's central record (FR-18, FR-25).</summary>
+    /// <summary>Deliveries: the parcel that is the product's central record.</summary>
     Deliveries,
 
-    /// <summary>A delivery's append-only history (FR-105 to FR-108).</summary>
+    /// <summary>A delivery's append-only history.</summary>
     Timeline,
 
-    /// <summary>Looking a place up by its address (FR-104).</summary>
+    /// <summary>Looking a place up by its address.</summary>
     Search,
 
-    /// <summary>The log of outbound notification attempts (FR-28).</summary>
+    /// <summary>The log of outbound notification attempts.</summary>
     Notifications,
 
-    /// <summary>Capturing the hand-over: the action that takes the photographs (FR-119).</summary>
+    /// <summary>Capturing the hand-over: the action that takes the photographs.</summary>
     Camera,
 
-    /// <summary>A captured proof of delivery, as something to read rather than to take (FR-122).</summary>
+    /// <summary>A captured proof of delivery, as something to read rather than to take.</summary>
     Proof,
 
-    /// <summary>A driver's conversation, and the destination that opens it (FR-68, FR-69).</summary>
+    /// <summary>A driver's conversation, and the destination that opens it.</summary>
     Chat,
 
-    /// <summary>Sending the message that has been typed (FR-70).</summary>
+    /// <summary>Sending the message that has been typed.</summary>
     Send,
 
-    /// <summary>A client's verdict on a delivery, and the destination that opens them (FR-62, FR-63).</summary>
+    /// <summary>A client's verdict on a delivery, and the destination that opens them.</summary>
     Reviews,
 
-    /// <summary>A driver's stretch of time on duty, and the two destinations that open them (FR-109, FR-113).</summary>
+    /// <summary>A driver's stretch of time on duty, and the two destinations that open them.</summary>
     Shifts,
 
-    /// <summary>The control that reveals the navigation below the phone breakpoint (NFR-22).</summary>
+    /// <summary>The control that reveals the navigation below the phone breakpoint.</summary>
     Menu,
 
-    /// <summary>A sortable column header, and the direction it can be taken in (FR-82).</summary>
+    /// <summary>A sortable column header, and the direction it can be taken in.</summary>
     Sort,
 
     /// <summary>
@@ -118,10 +118,10 @@ public enum IconName
     /// </summary>
     SortAscending,
 
-    /// <summary>The same column ordered the other way (FR-82).</summary>
+    /// <summary>The same column ordered the other way.</summary>
     SortDescending,
 
-    /// <summary>The reading language, and the control that changes it (NFR-14).</summary>
+    /// <summary>The reading language, and the control that changes it.</summary>
     Language,
 
     /// <summary>A control that opens a menu below it.</summary>

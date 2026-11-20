@@ -1,11 +1,11 @@
 @inject IStringLocalizer<UiText> Localizer
 
-@* FR-68: one conversation in the dispatch desk's roster.
+@* One conversation in the dispatch desk's roster.
 
    Its own component rather than a block inside the screen's @foreach, and the reason is testable
    rendering: the roster arrives over a live hub connection, so a statically rendered screen never
    holds a row and nothing in this solution could read one back. Given its summary as a parameter,
-   this renders on its own (DW-17, DW-18) - which is what makes the name, the vehicle, the plate,
+   this renders on its own - which is what makes the name, the vehicle, the plate,
    the duty badge and `aria-current` assertable at all.
 
    A bare <button> rather than a `.btn`: this is not an action on a record, it is a row of a list
@@ -13,7 +13,7 @@
    inside it.
 
    Independent @if blocks and one literal localizer key per string, for the reason the screens
-   state: an `else` at markup level reads to NFR-14's scan as a rendered English word. *@
+   state: an `else` at markup level reads to the localization scan as a rendered English word. *@
 
 <li>
     @* aria-current on the open one, decided in ChatViews rather than here. It is the only thing
@@ -68,8 +68,8 @@
     /// <summary>
     /// What opening this conversation does. A <see cref="Func{TResult}"/> rather than an
     /// <c>EventCallback</c> so the screen can hand over the handler it already builds in C# — a
-    /// <c>=&gt;</c> written in an attribute closes the tag as far as NFR-14's markup scan is
-    /// concerned, and everything after it is read as rendered English.
+    /// <c>=&gt;</c> written in an attribute closes the tag as far as the localization markup scan
+    /// is concerned, and everything after it is read as rendered English.
     /// </summary>
     /// <remarks>
     /// Non-null with a default that does nothing, because <c>@@onclick</c> hands this straight to

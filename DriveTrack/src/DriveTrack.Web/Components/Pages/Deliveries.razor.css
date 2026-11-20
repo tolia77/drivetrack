@@ -22,7 +22,7 @@
     So this file reaches none of DtDataTable's elements and carries no `::deep` at all. The two
     rules below are about a span this screen writes itself.
 
-    NFR-29: every palette value here is a `--dt-*` reference. What is literal is geometry the
+    Every palette value here is a `--dt-*` reference. What is literal is geometry the
     palette does not name - the breakpoint itself, which a media query cannot read from a custom
     property at all.
 */
@@ -156,8 +156,8 @@
     A `min-width` rather than a `width`: the table still distributes what is left
     over, so this is a floor under the two columns that need one and not a layout
     written in figures. The figure is geometry the palette does not name - there is
-    no token for how wide a column of addresses should be - and NFR-29 does not
-    scan it.
+    no token for how wide a column of addresses should be - and the token scan
+    does not read it.
 */
 .dt-deliveries td.dt-delivery-place {
     min-width: 13rem;

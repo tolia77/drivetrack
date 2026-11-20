@@ -1,4 +1,4 @@
-// FR-70, FR-75 / NFR-26: the SignalR browser client, vendored rather than fetched from a CDN.
+// The SignalR browser client, vendored rather than fetched from a CDN.
 //
 // The bundle lives under wwwroot/lib/signalr/ at a pinned version of the same major as the server,
 // so the code the chat screen runs on is served by this application and by nothing else. A library

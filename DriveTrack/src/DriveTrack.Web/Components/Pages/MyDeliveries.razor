@@ -1,27 +1,27 @@
 @page "/my-deliveries"
-@* FR-25, FR-27, FR-96: what a driver is carrying, and what a client asked for.
+@* What a driver is carrying, and what a client asked for.
 
    Neither role edits or deletes a delivery, so there is no edit dialog and no delete prompt: both
    are dispatch's. Opening one is split rather than absent. A client asks for a delivery of their own
-   (FR-89 to FR-91) through the request dialog below, which is why this screen carries a form at all;
+   through the request dialog below, which is why this screen carries a form at all;
    a driver asks for nothing, so neither the action nor the dialog is rendered for them. Withheld,
    not decided - IAccessGuard.RequireDeliveryComposer refuses a driver's request whether or not this
-   screen ever drew a button (FR-12).
+   screen ever drew a button.
 
    The request form is deliberately not the dispatch board's. That one names a driver, a client and a
    delivery window; this one cannot, because RequestDeliveryCommand has no field for any of them.
 
    What both roles do have is the delivery's history. A driver advances the parcel they are carrying
-   (FR-26) and a client adds a note to their own delivery (FR-107), so the row's history action opens
+   and a client adds a note to their own delivery, so the row's history action opens
    the shared timeline panel - with the transition buttons drawn for a driver and withheld from a
-   client (FR-90). Withheld, not decided: IAccessGuard.RequireAssignedDriver refuses a client's
-   status change whether or not this screen ever drew a button (FR-12).
+   client. Withheld, not decided: IAccessGuard.RequireAssignedDriver refuses a client's
+   status change whether or not this screen ever drew a button.
 
    The rows are AssignedDeliverySummary, which has no driver and no client field at all. That is
-   what makes FR-27 and FR-96 structural: a counterparty's name cannot reach this page through a
-   mapping mistake, because there is nowhere on the type to put one (AD-17).
+   what makes withholding the counterparty structural: a counterparty's name cannot reach this page
+   through a mapping mistake, because there is nowhere on the type to put one.
 
-   The Roles argument routes a wrong role to /access-denied (FR-79). It is a convenience, not the
+   The Roles argument routes a wrong role to /access-denied. It is a convenience, not the
    decision: IAccessGuard.RequireScope inside IDeliveryService is what narrows the rows, and it runs
    whether or not this screen was ever rendered. *@
 @attribute [Authorize(Roles = "Driver,Client")]
@@ -43,7 +43,7 @@
         <Icon Name="IconName.Deliveries" />@Localizer["MyDeliveriesTitle"]
     </h1>
 
-    @* FR-89: the client's one way of asking for a delivery, on the one screen their deliveries live
+    @* The client's one way of asking for a delivery, on the one screen their deliveries live
        on. A driver never sees it - OffersRequest says so - and the guard refuses them either way.
 
        The create colour, because it creates something. It wore the edit colour while the dispatch
@@ -96,8 +96,8 @@
                parcel described from three sides, and a reader comparing rows reads them together, so
                the cell stacks them instead of spreading them across the table. The notes did not go
                anywhere: they are the muted last line of that cell, which is the only place on this
-               screen a driver can read what the client asked for (FR-107 stores them; nothing else
-               renders them). *@
+               screen a driver can read what the client asked for (the request stores them; nothing
+               else renders them). *@
             <th scope="col">@Localizer["Package"]</th>
             <th scope="col" aria-sort="@SortState(DeliverySort.Status)">
                 <button type="button" class="btn btn-link btn-sm dt-my-delivery-sort-status"
@@ -113,7 +113,7 @@
             </th>
         </HeaderTemplate>
         <RowTemplate Context="delivery">
-            @* FR-19 and FR-100: the window the delivery was promised in and, when the clock has passed
+            @* The window the delivery was promised in and, when the clock has passed
                its far bound, the badge saying so - inside this cell rather than in a column of its own,
                for the reason the dispatch board merged the same pair. Overdue is derived from the
                window, so a column apart from it was the same fact twice with four columns in between;
@@ -138,13 +138,13 @@
                     <DtBadge Variant="DtBadgeVariant.Overdue">@Localizer["Overdue"]</DtBadge>
                 }
             </td>
-            @* FR-94: the address when one has been resolved, the coordinates when none has. Nothing on
-               this screen resolves one - that is story 5.2's port - and an empty cell would be the
-               whole location missing rather than only its name. *@
-            @* FR-21: the cell is the way to the map here for the same reason it is on the dispatch
+            @* The address when one has been resolved, the coordinates when none has. Nothing on
+               this screen resolves one - that is the geocoder's job - and an empty cell would be
+               the whole location missing rather than only its name. *@
+            @* The cell is the way to the map here for the same reason it is on the dispatch
                board. The requirement names no role, and a driver reading an address as text is the
                one person on the system who most needs to see where it is. The label is the resolved
-               address, or the raw coordinates when none resolved (FR-94), so the cell is never
+               address, or the raw coordinates when none resolved, so the cell is never
                empty. *@
             <td>
                 <span class="dt-visually-hidden dt-my-delivery-label">@Localizer["Pickup"]</span>
@@ -167,10 +167,10 @@
                The weight carries its unit on the line, because the merged heading names the parcel
                rather than the kilograms and the dropped heading was where "кг" used to be said.
 
-               FR-107's notes are the last line and are muted, because they qualify the parcel rather
-               than identify it. They are here rather than nowhere: a client types "зателефонувати
-               перед прибуттям", the command stores it, and this cell is the only place the driver
-               standing at the door can read it. *@
+               The request's notes are the last line and are muted, because they qualify the parcel
+               rather than identify it. They are here rather than nowhere: a client types
+               "зателефонувати перед прибуттям", the command stores it, and this cell is the only
+               place the driver standing at the door can read it. *@
             <td class="dt-my-delivery-package">
                 <span class="dt-visually-hidden dt-my-delivery-label">@Localizer["Package"]</span>
                 <span>@delivery.PackageDetails</span>
@@ -189,16 +189,17 @@
                    breakpoint the head is dropped outright, so without this the group of actions
                    would be the one part of a card that announces nothing at all. *@
                 <span class="dt-visually-hidden dt-my-delivery-label">@Localizer["Actions"]</span>
-                @* FR-107 and FR-108 for both roles, FR-26 for the driver: a client reads the history
-                   and adds a note, a driver does that and advances the parcel they are carrying. *@
+                @* History and notes for both roles, status changes for the driver: a client reads
+                   the history and adds a note, a driver does that and advances the parcel they are
+                   carrying. *@
                 <button type="button" class="btn btn-outline-secondary btn-sm dt-delivery-timeline"
                         @onclick="TimelineHandler(delivery)">
                     <Icon Name="IconName.Timeline" />@Localizer["Timeline"]
                 </button>
 
-                @* FR-119: the capture, offered to the driver carrying the parcel and withheld from the
+                @* The capture, offered to the driver carrying the parcel and withheld from the
                    client who asked for it. Withheld, not decided - IAccessGuard.RequireAssignedDriver
-                   refuses a client's capture whether or not this screen ever drew a button (FR-12). *@
+                   refuses a client's capture whether or not this screen ever drew a button. *@
                 @if (OffersProofCapture(_role, _captured.Contains(delivery.Id)))
                 {
                     @* The create colour, for the reason the request action above wears it: capturing
@@ -209,7 +210,7 @@
                     </button>
                 }
 
-                @* FR-122: reading the evidence is for anyone who can see the delivery, the client
+                @* Reading the evidence is for anyone who can see the delivery, the client
                    included. The panel answers "nothing captured yet" the same way it answers "not
                    yours", which is what stops the action disclosing anything by being pressed. *@
                 <button type="button" class="btn btn-outline-secondary btn-sm dt-proof-open"
@@ -221,8 +222,8 @@
     </DtDataTable>
 </div>
 
-@* FR-21: the same map component the dispatch board opens, with picking off. One map, two jobs
-   (NFR-26). No OnClosed: the viewed point is the only state it holds and the next open overwrites
+@* The same map component the dispatch board opens, with picking off. One map, two jobs.
+   No OnClosed: the viewed point is the only state it holds and the next open overwrites
    it, so there is nothing stale for a close to drop. *@
 <DtDialog @ref="_mapDialog" Title="@Localizer["LocationTitle"]">
     <ChildContent>
@@ -240,7 +241,7 @@
 
    The flag draws or hides the status select; it authorizes nothing. A client who reached this
    markup another way is still refused by IAccessGuard, and a driver is still refused on a delivery
-   that is not theirs (FR-12, FR-26). *@
+   that is not theirs. *@
 @if (_timeline is not null)
 {
     <DeliveryTimeline DeliveryId="_timeline.Id"
@@ -274,15 +275,15 @@
     </ChildContent>
 </DtDialog>
 
-@* FR-89 to FR-91. Rendered at all only for a client, so a driver's page carries no request markup
+@* Rendered at all only for a client, so a driver's page carries no request markup
    to find rather than a hidden dialog they cannot open - which is the difference between "the
    affordance is withheld" and "the affordance is styled away".
 
-   The shape is the dispatch board's create dialog and the differences are the story: no driver box,
+   The shape is the dispatch board's create dialog and the differences are the point: no driver box,
    no client box and no window bounds, because RequestDeliveryCommand has no field to bind them to.
    The two address blocks sit OUTSIDE <EditForm> for the reason they do there - an <input> inside a
    form whose default button submits would make Enter in a search box send the request. Each block is
-   a DtLocationPicker, the same component the dispatch board renders: FR-104's column is one column
+   a DtLocationPicker, the same component the dispatch board renders: the picker is one column
    however many dialogs ask for it, which is what stops the two drifting apart again. *@
 @if (_offersRequest)
 {
@@ -322,7 +323,8 @@
                 @* Clearing the number field leaves a parse failure on the EditContext and
                    OnValidSubmit then never fires, so without this the button would do nothing and
                    say nothing. ValidationSummary rather than per-field ValidationMessage: a
-                   `For="@(() => ...)"` lambda inside an attribute is what NFR-14's scan misreads. *@
+                   `For="@(() => ...)"` lambda inside an attribute is what the localization scan
+                   misreads. *@
                 <ValidationSummary />
 
                 <div class="mb-4">
@@ -333,7 +335,7 @@
                 <div class="mb-4">
                     <label class="form-label" for="request-weight">@Localizer["PackageWeightKg"]</label>
                     @* No {0} in the message: the framework fills it with the CLR property name,
-                       which would put a Latin word in front of a user (NFR-14). *@
+                       which would put a Latin word in front of a user. *@
                     <InputNumber id="request-weight" class="form-control"
                                  ParsingErrorMessage="@Localizer["NumberParseError"]"
                                  @bind-Value="_request.PackageWeightKg" />
@@ -368,7 +370,7 @@
     /// <summary>
     /// Drops the refusals when the form is dismissed, however it was dismissed.
     /// <para>
-    /// FR-83. A refusal claimed by a box inside the dialog is subtracted from the banner outside it,
+    /// A refusal claimed by a box inside the dialog is subtracted from the banner outside it,
     /// so leaving the list populated past the close would leave that sentence with nowhere on the
     /// page to render - invisible, which is the outcome this whole change exists to prevent.
     /// Hung off <c>OnClosed</c> rather than off the cancel handler because Escape and the backdrop
@@ -378,7 +380,7 @@
     private void ClearFailures() => _failures = [];
     /// <summary>
     /// The boxes this screen renders a <c>DtFieldError</c> for. Stated once and bound by every
-    /// banner on the page: the list repeated per banner is exactly the drift FR-83 is broken by,
+    /// banner on the page: the list repeated per banner is exactly the drift that loses a refusal,
     /// and a screen carries the banner more than once because a dialog opened with showModal()
     /// leaves the page behind it inert.
     /// </summary>
@@ -401,8 +403,8 @@
     /// It starts empty and grows, and that is honest rather than complete: the row shape carries no
     /// proof flag, and asking the capability once per row would be a hundred reads to draw a page.
     /// So the button is offered until this screen has reason to believe otherwise, and the
-    /// authoritative refusal is the capability's own - a second capture is a 409 the panel shows
-    /// (FR-123), not a button that was never drawn.
+    /// authoritative refusal is the capability's own - a second capture is a 409 the panel shows,
+    /// not a button that was never drawn.
     /// </remarks>
     private readonly HashSet<int> _captured = [];
 
@@ -421,7 +423,7 @@
 
     /// <summary>
     /// Why the last request submission was refused, rendered inside the request dialog. Not the
-    /// address boxes' — each of those keeps its own (DW-41), so a search that succeeds cannot clear
+    /// address boxes' — each of those keeps its own, so a search that succeeds cannot clear
     /// a refusal still on screen.
     /// </summary>
     private IReadOnlyList<ScreenFailure> _failures = [];
@@ -445,34 +447,34 @@
     private UserRole _role;
 
     /// <summary>
-    /// Whether a role has any lifecycle action on a delivery of their own. A client never does
-    /// (FR-90), so offering them a button that could only ever be refused would be worse than
+    /// Whether a role has any lifecycle action on a delivery of their own. A client never does,
+    /// so offering them a button that could only ever be refused would be worse than
     /// offering none.
     /// </summary>
     /// <remarks>
     /// Internal and static so it can be asserted directly, for the reason the dispatch board lifts
     /// its filter and sort rules out: static rendering builds no panel until a row is chosen and
     /// dispatches no event that could choose one, so the flag's effect is unreachable from a render
-    /// test — and inverting it would leave every suite green while a client was handed the buttons
-    /// FR-90 says must not be drawn.
+    /// test — and inverting it would leave every suite green while a client was handed buttons
+    /// that must not be drawn for them.
     /// </remarks>
     /// <param name="role">The signed-in caller's role.</param>
     internal static bool OffersStatusChange(UserRole role) => role == UserRole.Driver;
 
     /// <summary>
     /// Whether this caller is offered the capture action on this row: the driver carrying the
-    /// parcel, and only while the delivery has no proof (FR-119, FR-123).
+    /// parcel, and only while the delivery has no proof.
     /// <para>
-    /// A client is never offered it. FR-122 lets them read the evidence and nothing lets them make
+    /// A client is never offered it. A client may read the evidence and nothing lets them make
     /// it, so a button that could only ever be refused would be worse than no button — and
-    /// <c>IAccessGuard.RequireAssignedDriver</c> refuses their capture either way (FR-12).
+    /// <c>IAccessGuard.RequireAssignedDriver</c> refuses their capture either way.
     /// </para>
     /// </summary>
     /// <remarks>
     /// Internal and static so it can be asserted directly, for the reason
     /// <see cref="OffersStatusChange"/> is: static rendering dispatches no event that could capture
     /// anything, so the flag's effect is unreachable from a render test — and inverting it would
-    /// leave every suite green while a client was handed an action FR-90's sibling rule says is not
+    /// leave every suite green while a client was handed an action that is not
     /// theirs.
     /// </remarks>
     /// <param name="role">The signed-in caller's role.</param>
@@ -481,7 +483,7 @@
         role == UserRole.Driver && !hasProof;
 
     /// <summary>
-    /// Whether this caller may ask for a delivery of their own (FR-89). A client may; a driver
+    /// Whether this caller may ask for a delivery of their own. A client may; a driver
     /// carries parcels and composes none, so they are offered neither the action nor the form.
     /// </summary>
     /// <remarks>
@@ -507,7 +509,7 @@
     {
         // The circuit outlives the request that opened it, so the cookie can be gone by the time a
         // screen calls a service. Raising the contract's own code here is what puts that case
-        // through FR-13's single boundary instead of a per-screen redirect.
+        // through the single session-expiry boundary instead of a per-screen redirect.
         if (!Caller.IsAuthenticated)
         {
             throw new ForbiddenException(
@@ -534,7 +536,7 @@
     /// <remarks>
     /// Two of the six columns: a window is when the parcel is due and a status is where it is in its
     /// lifecycle, the two questions a driver or a client sorts by. The two name columns the dispatch
-    /// list sorts by are not on this list at all (AD-17).
+    /// list sorts by are not on this list at all.
     /// </remarks>
     protected override IReadOnlyCollection<DeliverySort> Sortable { get; } =
     [
@@ -584,7 +586,7 @@
     }
 
     /// <summary>
-    /// Sends the request (FR-89 to FR-91) and refreshes the list it will appear in.
+    /// Sends the request and refreshes the list it will appear in.
     /// </summary>
     /// <remarks>
     /// The command carries five values and nothing else. There is no driver to send, no status to
@@ -697,8 +699,8 @@
 
     /// <summary>
     /// Closes the capture dialog once a proof has committed and withdraws the action for that row.
-    /// The list is refetched too: FR-120 means the delivery can now be marked delivered with no
-    /// note, and the timeline panel behind this one reads its state from the same load.
+    /// The list is refetched too: with a proof on record the delivery can now be marked delivered
+    /// with no note, and the timeline panel behind this one reads its state from the same load.
     /// </summary>
     private async Task CapturedAsync()
     {
@@ -726,11 +728,11 @@
         // than a page of everyone's, filtered.
         await Mine.ListMineAsync(view, CircuitToken);
 
-    /// <summary>The location as the cell shows it, shared with the dispatch board (FR-94).</summary>
+    /// <summary>The location as the cell shows it, shared with the dispatch board.</summary>
     private static string Describe(LocationView location) => LocationText.Describe(location);
 
     /// <summary>
-    /// The figures of a delivery window as this screen's first column shows them (FR-100).
+    /// The figures of a delivery window as this screen's first column shows them.
     /// </summary>
     /// <remarks>
     /// The reading itself is <see cref="CellText.Window" />'s, shared with the dispatch board: the
@@ -752,7 +754,7 @@
     /// rather than assigned from outside, so "the dropoff box sets the dropoff" stays one readable
     /// line instead of two handlers on the screen that could be crossed.
     /// <para>
-    /// There is no driver, client, status or window property, and that is the story rather than an
+    /// There is no driver, client, status or window property, and that is the point rather than an
     /// omission: the command has no field for one, so a form that carried one would be collecting a
     /// value with nowhere to send it.
     /// </para>
@@ -770,7 +772,7 @@
 
         public MapLocation? Dropoff { get; set; }
 
-        /// <summary>FR-104's box above the pickup map, wired to <em>this</em> form's pickup point.</summary>
+        /// <summary>The address box above the pickup map, wired to <em>this</em> form's pickup point.</summary>
         public PlaceSearch PickupSearch { get; }
 
         /// <inheritdoc cref="PickupSearch" />

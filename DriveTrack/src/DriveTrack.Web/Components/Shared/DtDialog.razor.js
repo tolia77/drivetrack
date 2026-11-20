@@ -1,4 +1,4 @@
-// NFR-19: the dialog's behaviour, confined to the component's own module.
+// The dialog's behaviour, confined to the component's own module.
 //
 // showModal() supplies focus trapping, Escape dismissal and focus restoration; the only thing the
 // platform does not give us is backdrop dismissal, and that is the guard below. Everything

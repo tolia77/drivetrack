@@ -1,14 +1,14 @@
 @inject IStringLocalizer<UiText> Localizer
 
-@* FR-73 and FR-76: one line of a conversation — who wrote it, when, and what it says.
+@* One line of a conversation — who wrote it, when, and what it says.
 
    Its own component rather than a block inside the screen's @foreach, and the reason is testable
    rendering: the screen's conversation arrives over a live hub connection, so static rendering never
    reaches a state where a single message exists and nothing in this solution could read one back.
-   Given its message as a parameter, this renders on its own (DW-17, DW-18).
+   Given its message as a parameter, this renders on its own.
 
    Independent @if blocks and one literal localizer key per string, for the reason the screens state:
-   an `else` at markup level reads to NFR-14's scan as a rendered English word. *@
+   an `else` at markup level reads to the localization scan as a rendered English word. *@
 
 <li class="@ChatViews.LineClass(Message!.SenderUserId, ViewerUserId)">
     <p class="dt-bubble__text">@Message.Text</p>
@@ -28,7 +28,7 @@
         {
             @Localizer["ChatYou"]
         }
-        @* AD-20: the account is gone and the line is not. *@
+        @* The account is gone and the line is not. *@
         @if (!IsOwn && Message.SenderUserId is null)
         {
             @Localizer["ChatUnknownSender"]
@@ -48,7 +48,7 @@
     public ChatMessageView? Message { get; set; }
 
     /// <summary>
-    /// The reading caller's user id, so their own lines can be set apart (FR-73). A plain number
+    /// The reading caller's user id, so their own lines can be set apart. A plain number
     /// because that is what crosses the interop boundary; nothing authorizes on it.
     /// </summary>
     [Parameter]
@@ -62,11 +62,11 @@
     private bool IsOwn => Message!.SenderUserId == ViewerUserId;
 
     /// <summary>
-    /// The instant a line was sent, in the culture the application runs in (NFR-15).
+    /// The instant a line was sent, in the culture the application runs in.
     /// <para>
     /// Date and time, the "g" every other screen in this solution renders an instant with. A
-    /// time-only format is the one shape a conversation cannot use: chat keeps its whole history
-    /// (FR-71), so a line written last month renders as a bare clock reading and is read as
+    /// time-only format is the one shape a conversation cannot use: chat keeps its whole history,
+    /// so a line written last month renders as a bare clock reading and is read as
     /// today's.
     /// </para>
     /// </summary>

@@ -1,4 +1,4 @@
-// NFR-4: a refusal is shown where the user is looking.
+// A refusal is shown where the user is looking.
 //
 // A refused save in a long dialog used to report itself at the top of the dialog body while the
 // user was scrolled down at Save, so nothing visibly happened. After a refusal arrives, the first

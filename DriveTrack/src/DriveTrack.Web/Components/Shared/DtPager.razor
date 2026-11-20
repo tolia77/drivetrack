@@ -15,7 +15,7 @@
    so a second click cannot ask for a page relative to one that has not arrived yet.
 
    The @if blocks are independent rather than if/else chains: an `else` at markup level reads to
-   NFR-14's source scan as a rendered English word. *@
+   the localization source scan as a rendered English word. *@
 
 @if (Total > 0)
 {
@@ -146,8 +146,8 @@
     /// <summary>
     /// Previous is disabled on the first page and while a page loads - never hidden, so the bar does
     /// not change shape under the reader's thumb at the ends. A property rather than an expression
-    /// in the attribute: a comparison operator inside an attribute closes the tag as far as NFR-14's
-    /// source scan is concerned.
+    /// in the attribute: a comparison operator inside an attribute closes the tag as far as the
+    /// localization source scan is concerned.
     /// </summary>
     private bool AtFirst => Disabled || Current <= 1;
 
@@ -200,7 +200,7 @@
     /// <summary>
     /// A catalogue sentence with its figures written in. The format is resolved as a plain lookup
     /// so the key stays a literal the closed-catalogue test can see; the figures are formatted in
-    /// the reader's own culture (NFR-15).
+    /// the reader's own culture.
     /// </summary>
     private static string Format(LocalizedString format, params object?[] values) =>
         string.Format(System.Globalization.CultureInfo.CurrentCulture, format.Value, values);

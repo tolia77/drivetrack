@@ -20,7 +20,7 @@
     and there is one failure page. A shared `.dt-*` class for a single consumer would be a name
     the next reader has to go looking for the second user of.
 
-    NFR-29 sees `color` and nothing else here; there is no geometry to tokenise.
+    The token scan sees `color` and nothing else here; there is no geometry to tokenise.
 */
 
 .dt-error-heading {
