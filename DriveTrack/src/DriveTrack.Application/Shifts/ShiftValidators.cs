@@ -4,11 +4,11 @@ using FluentValidation;
 namespace DriveTrack.Application.Shifts;
 
 /// <summary>
-/// FR-111 over a shift dispatch is recording after the fact: a window may not run backwards.
+/// The end-after-start rule over a shift dispatch is recording after the fact: a window may not run backwards.
 /// <para>
 /// The rule is stated on <c>EndedAt</c> rather than on the pair, because that is the field a
 /// dispatcher entered wrongly — <c>StartedAt</c> is where the parallel rule lands on the edit path,
-/// for the reason <see cref="ShiftStateValidator"/> gives. NFR-4 promises <c>error.fields</c> keys a
+/// for the reason <see cref="ShiftStateValidator"/> gives. Validation promises <c>error.fields</c> keys a
 /// form can attach a message to, so which property a rule hangs off decides which box gets marked.
 /// </para>
 /// <para>
@@ -36,10 +36,10 @@ public sealed class CreateShiftCommandValidator : AbstractValidator<CreateShiftC
 }
 
 /// <summary>
-/// The same rule, applied to the state the shift will hold rather than to the payload (FR-111).
+/// The same rule, applied to the state the shift will hold rather than to the payload.
 /// <para>
-/// AD-23: this validator is only ever handed <c>UpdateShiftCommand.MergedOnto</c>'s result, in which
-/// both fields are filled in from the stored row. That is what makes the case FR-111 is most easily
+/// This validator is only ever handed <c>UpdateShiftCommand.MergedOnto</c>'s result, in which
+/// both fields are filled in from the stored row. That is what makes the case the rule is most easily
 /// regressed by a refusal: <c>PUT {"startedAt": T+9h}</c> against a shift of <c>[T, T+8h]</c>
 /// carries no end at all, so a validator reading the payload would see one instant and nothing to
 /// compare it with.
@@ -49,7 +49,7 @@ public sealed class CreateShiftCommandValidator : AbstractValidator<CreateShiftC
 /// a form marks rather than about the rule. A merged state can be reached from either side: an edit
 /// that moves only the start, and an edit that moves only the end. Hanging the rule off one property
 /// would answer every backwards window by naming that one, so half the callers would be told the
-/// box they never touched was wrong while the box they did touch stayed unflagged (NFR-4). Naming
+/// box they never touched was wrong while the box they did touch stayed unflagged. Naming
 /// both is the honest answer, because a window that runs backwards really is a disagreement between
 /// two values rather than a fault in either.
 /// </para>
@@ -75,7 +75,7 @@ public sealed class ShiftStateValidator : AbstractValidator<ShiftState>
 }
 
 /// <summary>
-/// NFR-27's "validated rather than passed through unchecked", over the shift list.
+/// Paging "validated rather than passed through unchecked", over the shift list.
 /// <para>
 /// Every message is an <see cref="ErrorCode"/> name applied per rule, for the reason
 /// <c>ListDeliveriesQueryValidator</c> states: a limit of two million is a 422 naming the field

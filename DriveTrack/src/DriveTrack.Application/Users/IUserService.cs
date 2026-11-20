@@ -3,7 +3,7 @@ using DriveTrack.Domain.Identity;
 namespace DriveTrack.Application.Users;
 
 /// <summary>
-/// The account capability (FR-1, FR-4, FR-5, FR-87, FR-88, FR-92): opening an account, entering it,
+/// The account capability: opening an account, entering it,
 /// and the four things a user does to their own — read it, edit it, change its password, change its
 /// address.
 /// <para>
@@ -13,35 +13,35 @@ namespace DriveTrack.Application.Users;
 /// </para>
 /// <para>
 /// All four self-service members ask <c>RequireSelf</c>, and that single question is the whole of
-/// their authorization. AD-4 puts "an admin satisfies every check" inside the guard, once, so
-/// <c>RequireSelf</c> already reads as "the user themselves, or an admin" — which is exactly FR-92's
-/// two halves. A role branch inside this capability to narrow the admin case would be a second place
+/// their authorization. The admin override puts "an admin satisfies every check" inside the guard,
+/// once, so <c>RequireSelf</c> already reads as "the user themselves, or an admin" — which is
+/// exactly the email change's two halves. A role branch inside this capability to narrow the admin case would be a second place
 /// authorization lived.
 /// </para>
 /// </summary>
 public interface IUserService
 {
     /// <summary>
-    /// Opens a client account and returns the session it starts (FR-1). Anonymous by design.
+    /// Opens a client account and returns the session it starts. Anonymous by design.
     /// </summary>
     Task<AuthenticatedSession> RegisterClientAsync(
         RegisterClientCommand command,
         CancellationToken cancellationToken);
 
-    /// <summary>Exchanges credentials for a session (FR-4). Anonymous by design.</summary>
+    /// <summary>Exchanges credentials for a session. Anonymous by design.</summary>
     Task<AuthenticatedSession> SignInAsync(SignInCommand command, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Reads a user's profile (FR-5). The caller must be that user, or hold
+    /// Reads a user's profile. The caller must be that user, or hold
     /// <see cref="UserRole.Admin"/>.
     /// </summary>
     Task<UserProfile> GetProfileAsync(UserId userId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Edits a user's own name, and their phone number when they are a client (FR-87). The caller
+    /// Edits a user's own name, and their phone number when they are a client. The caller
     /// must be that user, or hold <see cref="UserRole.Admin"/>.
     /// <para>
-    /// Partial (AD-23): a field the command leaves absent is left alone. A phone number sent by an
+    /// Partial: a field the command leaves absent is left alone. A phone number sent by an
     /// account with no client row behind it is refused rather than dropped.
     /// </para>
     /// </summary>
@@ -54,10 +54,10 @@ public interface IUserService
         CancellationToken cancellationToken);
 
     /// <summary>
-    /// Replaces a user's own password, having checked the current one (FR-88). The caller must be
+    /// Replaces a user's own password, having checked the current one. The caller must be
     /// that user, or hold <see cref="UserRole.Admin"/>.
     /// <para>
-    /// Nothing is returned: a password has no readable form (FR-8), so there is no state to hand
+    /// Nothing is returned: a password has no readable form, so there is no state to hand
     /// back. The change rolls the account's security stamp, so every cookie session issued before
     /// it - the caller's own included - is refused at its next revalidation and has to sign in with
     /// the new password. A bearer token carries no stamp and runs to its own expiry.
@@ -74,8 +74,8 @@ public interface IUserService
         CancellationToken cancellationToken);
 
     /// <summary>
-    /// Replaces the address a user's account signs in with (FR-92). The caller must be that user, or
-    /// hold <see cref="UserRole.Admin"/> — which is what gives FR-92 its administrator half without
+    /// Replaces the address a user's account signs in with. The caller must be that user, or
+    /// hold <see cref="UserRole.Admin"/> — which is what gives the change its administrator half without
     /// a second guard member.
     /// <para>
     /// Asking for the address the account already holds, in any casing, is not a conflict and is not

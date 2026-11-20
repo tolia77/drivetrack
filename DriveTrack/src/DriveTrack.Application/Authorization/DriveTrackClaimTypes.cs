@@ -10,8 +10,8 @@ namespace DriveTrack.Application.Authorization;
 /// than a pair of string literals somebody has to keep in step.
 /// </para>
 /// <para>
-/// These are names, not types: nothing here names <c>ClaimsPrincipal</c>, so AD-22's ban on the
-/// adapter's caller shape leaking into Application still holds.
+/// These are names, not types: nothing here names <c>ClaimsPrincipal</c>, so the adapter's caller shape
+/// still never leaks into Application.
 /// </para>
 /// </summary>
 public static class DriveTrackClaimTypes
@@ -19,7 +19,7 @@ public static class DriveTrackClaimTypes
     /// <summary>The user row's id, as an invariant integer string.</summary>
     public const string UserId = "drivetrack/user-id";
 
-    /// <summary>The single role (AD-4), as a <see cref="Domain.Identity.UserRole"/> member name.</summary>
+    /// <summary>The single role, as a <see cref="Domain.Identity.UserRole"/> member name.</summary>
     public const string Role = "drivetrack/role";
 
     /// <summary>The driver row's id. Absent unless the user is a driver.</summary>

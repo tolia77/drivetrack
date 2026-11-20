@@ -5,7 +5,7 @@ using DriveTrack.Domain.Identity;
 namespace DriveTrack.Application.Users;
 
 /// <summary>
-/// AD-3's pipeline, read-only: load → guard → answer. Nothing is written, so the scope is disposed
+/// The fixed operation pipeline, read-only: load → guard → answer. Nothing is written, so the scope is disposed
 /// without a commit.
 /// </summary>
 public sealed class SessionService(

@@ -4,11 +4,11 @@ using FluentValidation;
 namespace DriveTrack.Application.Users;
 
 /// <summary>
-/// FR-3's rules for opening a client account.
+/// The rules for opening a client account.
 /// <para>
 /// Every message is an <see cref="ErrorCode"/> <em>name</em>, never a sentence: the adapter resolves
 /// it through the same localized catalogue as <c>error.code</c>, so a field message is Ukrainian by
-/// construction (NFR-14) and nothing a validator writes can reach a user untranslated.
+/// construction and nothing a validator writes can reach a user untranslated.
 /// <c>ErrorContractTests</c> closes that catalogue in both directions, which is what makes the
 /// convention checkable rather than customary.
 /// </para>
@@ -22,7 +22,7 @@ public sealed class RegisterClientCommandValidator : AbstractValidator<RegisterC
     /// </summary>
     public const string PhoneNumberPattern = @"^\+[1-9]\d{7,14}$";
 
-    /// <summary>The longest a stored name may be, matching the column (FR-1).</summary>
+    /// <summary>The longest a stored name may be, matching the column.</summary>
     public const int NameMaximumLength = 100;
 
     /// <summary>Matching Identity's own <c>email</c> column.</summary>

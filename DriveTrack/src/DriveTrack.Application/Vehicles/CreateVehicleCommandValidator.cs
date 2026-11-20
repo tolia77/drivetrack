@@ -4,11 +4,11 @@ using FluentValidation;
 namespace DriveTrack.Application.Vehicles;
 
 /// <summary>
-/// FR-40 and FR-41's rules for a vehicle's own fields, applied to the state the row will hold.
+/// The rules for a vehicle's own fields, applied to the state the row will hold.
 /// <para>
 /// Every message is an <see cref="ErrorCode"/> name applied per rule. The bounds match the columns
 /// (<c>model</c> 100, <c>license_plate</c> 20, <c>capacity_kg</c> numeric(10,2)), so a value the
-/// database would refuse is refused here first, with a field name attached (NFR-4).
+/// database would refuse is refused here first, with a field name attached.
 /// </para>
 /// <para>
 /// The model and plate are judged trimmed, because <c>VehicleService</c> trims them before it

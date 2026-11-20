@@ -10,15 +10,15 @@ using FluentValidation;
 namespace DriveTrack.Application.Vehicles;
 
 /// <summary>
-/// AD-3's pipeline over the fleet: load resource → guard → validate → act → commit → map.
+/// The fixed operation pipeline over the fleet: load resource → guard → validate → act → commit → map.
 /// <para>
-/// AD-2: every method calls <see cref="IAccessGuard"/> through the interface, inline in its own
+/// Every method calls <see cref="IAccessGuard"/> through the interface, inline in its own
 /// body. Folding the call into a private helper would read better and would not count — the
 /// coverage gate walks each public method's IL and does not follow a call it makes.
 /// </para>
 /// <para>
-/// "Dispatcher or admin" is written <c>RequireRole(UserRole.Dispatcher)</c> throughout: AD-4 makes
-/// admin satisfy every check by rule inside the guard, so naming it here would be a second place
+/// "Dispatcher or admin" is written <c>RequireRole(UserRole.Dispatcher)</c> throughout: the admin override
+/// makes admin satisfy every check by rule inside the guard, so naming it here would be a second place
 /// the override lived.
 /// </para>
 /// </summary>
@@ -38,7 +38,7 @@ public sealed class VehicleService(
 
         accessGuard.RequireRole(UserRole.Dispatcher);
 
-        // NFR-27: refused before any query is built, which is the half the original was missing.
+        // Refused before any query is built, which is the half the original was missing.
         await listValidator.EnsureValidAsync(query, cancellationToken);
 
         await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
@@ -82,7 +82,7 @@ public sealed class VehicleService(
     {
         await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
 
-        // AD-3: load, then guard. The row is read before the decision so a future rule can be about
+        // Load, then guard. The row is read before the decision so a future rule can be about
         // the row; nothing about it is disclosed unless the guard passes.
         var vehicle = await unitOfWork.Vehicles.GetByIdAsync(id, cancellationToken);
 
@@ -144,7 +144,7 @@ public sealed class VehicleService(
             throw NotFoundException.For("vehicle", id);
         }
 
-        // AD-23: the validator reads the state the row will hold, not the payload. An update that
+        // The validator reads the state the row will hold, not the payload. An update that
         // mentions only the capacity must not be refused for a model it never sent.
         var merged = command.MergedOnto(vehicle);
 
@@ -154,10 +154,10 @@ public sealed class VehicleService(
 
         await RefuseDuplicatePlateAsync(unitOfWork, plate, keeping: vehicle.Id, cancellationToken);
 
-        // FR-103's third mover, and the one that is easiest to miss: the invariant is usually
+        // The capacity rule's third mover, and the one that is easiest to miss: the invariant is usually
         // broken by changing the delivery or by handing the driver another vehicle, but lowering
         // the capacity of the vehicle they already hold reaches the same forbidden state without
-        // either row being touched. The rule is the Deliveries capability's (AD-24), so this asks
+        // either row being touched. The rule is the Deliveries capability's, so this asks
         // rather than restates it, and it runs inside this scope so a refusal rolls the whole edit
         // back. Only when the figure actually changed: re-submitting an unchanged form is the
         // ordinary case, and a query per save would be a cost for nothing.
@@ -199,9 +199,9 @@ public sealed class VehicleService(
             throw NotFoundException.For("vehicle", id);
         }
 
-        // FR-43. The schema's SetNull would happily strand a driver holding nothing, which is the
+        // The schema's SetNull would happily strand a driver holding nothing, which is the
         // silent data loss this refusal exists to prevent - and, unlike the original, the caller now
-        // has a way out: FR-38's clear makes the vehicle deletable.
+        // has a way out: clearing the assignment makes the vehicle deletable.
         var holder = await unitOfWork.Vehicles.FindHolderAsync(vehicle.Id, cancellationToken);
 
         if (holder is { } driverId)
@@ -227,7 +227,7 @@ public sealed class VehicleService(
     /// declares carry that rule, with no migration and no functional index. Storing the plate as
     /// typed and comparing case-insensitively instead would leave the index enforcing something
     /// narrower than the check promises: two concurrent creates differing only in case would both
-    /// pass the check and both commit, and FR-41 would be broken by exactly the race the index is
+    /// pass the check and both commit, and plate uniqueness would be broken by exactly the race the index is
     /// there to lose gracefully.
     /// </para>
     /// </summary>
@@ -235,10 +235,10 @@ public sealed class VehicleService(
         licensePlate.Trim().ToUpperInvariant();
 
     /// <summary>
-    /// FR-41's friendly answer, asked against the normalized plate. The unique index on the column
+    /// The duplicate plate's friendly answer, asked against the normalized plate. The unique index on the column
     /// is the race backstop and surfaces as <c>PERSISTENCE_UNIQUE_VIOLATION</c>, which is also a
     /// 409 — so two dispatchers registering the same plate at the same instant get the same status
-    /// either way (NFR-2), and because both go through <see cref="NormalizePlate"/> the index sees
+    /// either way, and because both go through <see cref="NormalizePlate"/> the index sees
     /// the same equality this check does.
     /// </summary>
     /// <param name="keeping">

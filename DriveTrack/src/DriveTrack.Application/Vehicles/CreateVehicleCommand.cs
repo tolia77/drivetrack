@@ -1,7 +1,7 @@
 namespace DriveTrack.Application.Vehicles;
 
 /// <summary>
-/// What a dispatcher sends to put a vehicle on the fleet (FR-40): model, licence plate, capacity,
+/// What a dispatcher sends to put a vehicle on the fleet: model, licence plate, capacity,
 /// mileage and the next maintenance date.
 /// <para>
 /// The text fields are nullable because the wire can send anything and the command has to be able

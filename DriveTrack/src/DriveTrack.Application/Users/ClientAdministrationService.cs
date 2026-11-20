@@ -9,7 +9,7 @@ using FluentValidation;
 namespace DriveTrack.Application.Users;
 
 /// <summary>
-/// AD-3's pipeline over the client roster: open the scope → load → guard → validate → act → commit
+/// The fixed operation pipeline over the client roster: open the scope → load → guard → validate → act → commit
 /// → map.
 /// </summary>
 public sealed class ClientAdministrationService(
@@ -61,7 +61,7 @@ public sealed class ClientAdministrationService(
 
         // Two materialized reads joined here rather than one repository method returning a shape
         // of its own: the phone number lives on the client row and the name on the user row, and
-        // AD-6 keeps each repository answering about its own table.
+        // each repository answers about its own table.
         var byUser = clients.ToDictionary(client => client.UserId);
 
         return
@@ -81,7 +81,7 @@ public sealed class ClientAdministrationService(
 
         var account = await unitOfWork.Users.GetByIdAsync(userId, cancellationToken);
 
-        // AD-3: the row is read before the decision, and nothing about it is disclosed unless the
+        // The row is read before the decision, and nothing about it is disclosed unless the
         // guard passes.
         accessGuard.RequireRole(UserRole.Dispatcher);
 
@@ -106,7 +106,7 @@ public sealed class ClientAdministrationService(
 
         var client = await LoadClientAsync(unitOfWork, account, userId, cancellationToken);
 
-        // AD-23. The payload is merged onto what is stored, and the *merged* record is what the
+        // The payload is merged onto what is stored, and the *merged* record is what the
         // validator judges - so `{"firstName": "Олена"}` is not a phone number the caller failed to
         // send, it is a phone number they left alone.
         //
@@ -138,13 +138,13 @@ public sealed class ClientAdministrationService(
             await unitOfWork.Users.SetPasswordAsync(userId, merged.Password, cancellationToken);
         }
 
-        // FR-92's administrator half, through the same helper the self-service path uses - so the
+        // The administrator's email change, through the same helper the self-service path uses - so the
         // two cannot disagree about whether re-casing an address is a conflict. Last of the four
         // writes, because SetPasswordAsync above is the operation's one Identity update-path call
         // and this one is a plain assignment on the same tracked row.
         var email = await EmailChange.ApplyAsync(unitOfWork, account, merged.Email!, cancellationToken);
 
-        // AD-5: the renamed user, the edited client row, the new password hash and the new address
+        // The renamed user, the edited client row, the new password hash and the new address
         // reach the database here or nowhere. A taken address leaves the name unwritten too.
         await unitOfWork.CommitAsync(cancellationToken);
 
@@ -220,12 +220,12 @@ public sealed class ClientAdministrationService(
 
         if (client is null)
         {
-            // DR-3 makes the client row part of what a client account *is*, so its absence is a
+            // The client row is part of what a client account *is*, so its absence is a
             // broken invariant rather than a caller error. It leaves as the 500 envelope rather
             // than being smoothed over into a plausible-looking row.
             throw new InvalidOperationException(
                 "User " + userId.Value.ToString(CultureInfo.InvariantCulture)
-                    + " holds role Client with no client row. DR-3 requires exactly one.");
+                    + " holds role Client with no client row. Exactly one is required.");
         }
 
         return client;

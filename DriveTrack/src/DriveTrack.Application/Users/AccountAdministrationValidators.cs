@@ -4,7 +4,7 @@ using FluentValidation;
 namespace DriveTrack.Application.Users;
 
 /// <summary>
-/// FR-46's rules, held over the <em>merged</em> client account rather than over the payload (AD-23).
+/// The client-edit rules, held over the <em>merged</em> client account rather than over the payload.
 /// <para>
 /// The difference matters. A payload carrying only <c>{"firstName": "Олена"}</c> mentions no phone
 /// number, and a validator reading the payload would either wave that through or refuse a perfectly
@@ -39,7 +39,7 @@ public sealed class ClientAccountStateValidator : AbstractValidator<ClientAccoun
             .Matches(RegisterClientCommandValidator.PhoneNumberPattern)
                 .WithMessage(nameof(ErrorCode.AUTH_PHONE_NUMBER_INVALID));
 
-        // FR-92. The same three checks, and the same code, as every other address in the system.
+        // The email address: the same three checks, and the same code, as every other address in the system.
         // Whether it is *free* is asked once, in EmailChange, because that is a question about the
         // whole roster rather than about this row.
         RuleFor(state => state.Email)
@@ -85,11 +85,11 @@ public sealed class DispatcherAccountStateValidator : AbstractValidator<Dispatch
 }
 
 /// <summary>
-/// FR-49's rules for opening a dispatcher account. Not a merge: there is nothing stored yet, so
+/// The rules for opening a dispatcher account. Not a merge: there is nothing stored yet, so
 /// every field is required and the command is what gets validated.
 /// <para>
-/// There is no phone number. FR-49 lists name, email and password, and DR-3 gives a dispatcher no
-/// subtype row for a phone number to live in.
+/// There is no phone number. A dispatcher account is name, email and password, and a dispatcher has
+/// no subtype row for a phone number to live in.
 /// </para>
 /// </summary>
 public sealed class CreateDispatcherCommandValidator : AbstractValidator<CreateDispatcherCommand>

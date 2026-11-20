@@ -4,7 +4,7 @@ using FluentValidation;
 namespace DriveTrack.Application.Drivers;
 
 /// <summary>
-/// NFR-27's paging over the driver roster, with the roster screen's search (FR-36) and sort.
+/// Paging over the driver roster, with the roster screen's search and sort.
 /// <para>
 /// The roster used to be read whole and searched in the browser; it is paged like every other list
 /// now, and the search and the sort run in SQL over every driver before OFFSET and LIMIT. The
@@ -49,13 +49,13 @@ public enum DriverSort
     Vehicle,
 
     /// <summary>
-    /// The average review score (FR-118). Drivers nobody has reviewed sort to the far end in both
+    /// The average review score. Drivers nobody has reviewed sort to the far end in both
     /// directions: no verdict is neither the best rating nor the worst.
     /// </summary>
     Rating,
 }
 
-/// <summary>NFR-27's "validated rather than passed through unchecked", over the driver roster.</summary>
+/// <summary>Paging "validated rather than passed through unchecked", over the driver roster.</summary>
 public sealed class ListDriversQueryValidator : AbstractValidator<ListDriversQuery>
 {
     /// <summary>The largest page a caller may ask for, which is also the REST default page size.</summary>

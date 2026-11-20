@@ -3,10 +3,10 @@ using DriveTrack.Domain.Identity;
 namespace DriveTrack.Application.Reviews;
 
 /// <summary>
-/// The Reviews capability (FR-59 to FR-67, FR-98, FR-118): the only writer of the <c>reviews</c> table, and
+/// The Reviews capability: the only writer of the <c>reviews</c> table, and
 /// the owner of the per-driver rating derived from it.
 /// <para>
-/// AD-24 in both directions, which is the whole of this capability's boundary. It never touches
+/// The single-owner rule in both directions, which is the whole of this capability's boundary. It never touches
 /// <c>unitOfWork.Deliveries</c>, <c>.Drivers</c> or <c>.Users</c> — the delivery a review is about
 /// is read through <c>IDeliveryService</c>, and so are the parties a dispatch-side summary names.
 /// Symmetrically, the Drivers capability reads a driver's standing through
@@ -15,7 +15,7 @@ namespace DriveTrack.Application.Reviews;
 /// </para>
 /// <para>
 /// Two list methods rather than one with a role branch inside it, for the reason
-/// <c>IDeliveryService</c> has two: AD-17 makes "a role that sees less gets a distinct DTO" a type
+/// <c>IDeliveryService</c> has two: "a role that sees less gets a distinct DTO" a type
 /// rather than a convention, so the moderation list and the author's own list answer different
 /// shapes and are reached by different routes.
 /// </para>
@@ -27,16 +27,17 @@ namespace DriveTrack.Application.Reviews;
 public interface IReviewService
 {
     /// <summary>
-    /// Writes a client's verdict on one of their own finished deliveries (FR-59 to FR-62, FR-67).
+    /// Writes a client's verdict on one of their own finished deliveries.
     /// <para>
     /// One review per delivery, and the uniqueness is the database's. There is deliberately no
     /// "does a review already exist" read before the insert: a check that runs before the write is
-    /// defeated by a second request running it at the same moment, which is the worked example
-    /// DR-6 and AD-20 are about. The loser of a race gets the 409 the unique index produced.
+    /// defeated by a second request running it at the same moment, which is why one review per
+    /// delivery is a database constraint. The loser of a race gets the 409 the unique index produced.
     /// </para>
     /// <para>
-    /// Answers <see cref="AuthoredReviewSummary"/>, and that is AD-17 rather than economy: the
-    /// caller is a client, and a payload with a driver on it would put the identity FR-27 withholds
+    /// Answers <see cref="AuthoredReviewSummary"/>, and that is the distinct-DTO rule rather than economy:
+    /// the caller is a client, and a payload with a driver on it would put the identity a client is
+    /// never shown
     /// one mapping mistake away from their screen.
     /// </para>
     /// </summary>
@@ -63,22 +64,22 @@ public interface IReviewService
         CancellationToken cancellationToken);
 
     /// <summary>
-    /// One page of every review, newest first, with both parties to the delivery named (FR-65).
+    /// One page of every review, newest first, with both parties to the delivery named.
     /// Dispatcher or admin; a client reads their own through <see cref="ListMineAsync"/> and a
     /// driver is refused outright.
     /// </summary>
     /// <exception cref="Common.ForbiddenException">The caller runs neither dispatch nor the system.</exception>
     /// <exception cref="Common.ValidationException">
-    /// The paging parameters are out of range, or the sort names no column (NFR-27).
+    /// The paging parameters are out of range, or the sort names no column.
     /// </exception>
     Task<Common.Paged<ReviewSummary>> ListAsync(
         ListReviewsQuery query,
         CancellationToken cancellationToken);
 
     /// <summary>
-    /// One page of the reviews the caller wrote (FR-64), carrying no party at all. The narrowing
+    /// One page of the reviews the caller wrote, carrying no party at all. The narrowing
     /// comes from the guard and reaches the query, so paging stays correct for an author whose rows
-    /// are not the first hundred (AD-3).
+    /// are not the first hundred.
     /// </summary>
     /// <exception cref="Common.ForbiddenException">The caller is not a client with a client row id.</exception>
     /// <exception cref="Common.ValidationException">
@@ -96,12 +97,12 @@ public interface IReviewService
     Task<IReadOnlyList<AuthoredReviewSummary>> ListAllMineAsync(CancellationToken cancellationToken);
 
     /// <summary>
-    /// Changes a review (FR-63, FR-66). Absent fields are left alone (AD-23); the rules are judged against
+    /// Changes a review. Absent fields are left alone; the rules are judged against
     /// the merged state.
     /// <para>
     /// Its author, or an administrator moderating. Answers the party-free shape for both, because
     /// one of the two callers is a client and a type with no party field cannot carry one to them
-    /// (AD-17) — a moderator who wants the parties reads the list.
+    /// — a moderator who wants the parties reads the list.
     /// </para>
     /// </summary>
     /// <exception cref="Common.ForbiddenException">
@@ -115,16 +116,15 @@ public interface IReviewService
         UpdateReviewCommand command,
         CancellationToken cancellationToken);
 
-    /// <summary>Removes a review (FR-63, FR-66). Its author, or an administrator moderating.</summary>
+    /// <summary>Removes a review. Its author, or an administrator moderating.</summary>
     /// <exception cref="Common.ForbiddenException">The caller may not change this review.</exception>
     /// <exception cref="Common.NotFoundException">No review has that id.</exception>
     Task DeleteAsync(int id, CancellationToken cancellationToken);
 
     /// <summary>
-    /// The standing of each of the named drivers (FR-118), derived on demand and stored nowhere
-    /// (DR-18).
+    /// The standing of each of the named drivers, derived on demand and stored nowhere.
     /// <para>
-    /// The port AD-24 gives the Drivers capability: it owns the driver, this capability owns the
+    /// The port the single-owner rule gives the Drivers capability: it owns the driver, this capability owns the
     /// reviews the rating comes from, and neither reaches into the other's table. Batched by
     /// design — a roster asks once for every driver on it rather than once per row.
     /// </para>

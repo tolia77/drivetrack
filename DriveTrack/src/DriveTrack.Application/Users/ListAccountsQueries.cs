@@ -4,7 +4,7 @@ using FluentValidation;
 namespace DriveTrack.Application.Users;
 
 /// <summary>
-/// NFR-27's paging over the client roster, with the roster screen's sort, applied in SQL over every
+/// Paging over the client roster, with the roster screen's sort, applied in SQL over every
 /// client before OFFSET and LIMIT.
 /// </summary>
 /// <param name="Offset">Rows to skip. Zero is the first page.</param>
@@ -36,7 +36,7 @@ public enum ClientSort
     PhoneNumber,
 }
 
-/// <summary>NFR-27's "validated rather than passed through unchecked", over the client roster.</summary>
+/// <summary>Paging "validated rather than passed through unchecked", over the client roster.</summary>
 public sealed class ListClientsQueryValidator : AbstractValidator<ListClientsQuery>
 {
     /// <summary>The largest page a caller may ask for, which is also the REST default page size.</summary>
@@ -59,7 +59,7 @@ public sealed class ListClientsQueryValidator : AbstractValidator<ListClientsQue
 }
 
 /// <summary>
-/// NFR-27's paging over the dispatcher roster, with the roster screen's sort, applied in SQL over
+/// Paging over the dispatcher roster, with the roster screen's sort, applied in SQL over
 /// every dispatcher before OFFSET and LIMIT.
 /// </summary>
 /// <param name="Offset">Rows to skip. Zero is the first page.</param>
@@ -88,7 +88,7 @@ public enum DispatcherSort
     Email,
 }
 
-/// <summary>NFR-27's "validated rather than passed through unchecked", over the dispatcher roster.</summary>
+/// <summary>Paging "validated rather than passed through unchecked", over the dispatcher roster.</summary>
 public sealed class ListDispatchersQueryValidator : AbstractValidator<ListDispatchersQuery>
 {
     /// <summary>The largest page a caller may ask for, which is also the REST default page size.</summary>
