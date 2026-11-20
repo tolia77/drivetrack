@@ -1,23 +1,24 @@
-using DriveTrack.Application.Reviews;
-using DriveTrack.Application.Shifts;
-using DriveTrack.Application.Drivers;
-using DriveTrack.Application.Vehicles;
 using System.Net;
 using System.Text.Json;
+using DriveTrack.Application.Abstractions.Persistence;
+using DriveTrack.Application.Accounts.Clients;
+using DriveTrack.Application.Accounts.Dispatchers;
+using DriveTrack.Application.Drivers;
+using DriveTrack.Application.Notifications;
+using DriveTrack.Application.Reviews;
+using DriveTrack.Application.Shifts;
+using DriveTrack.Application.Vehicles;
 using DriveTrack.Domain.Deliveries;
 using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Notifications;
 using DriveTrack.Domain.Shifts;
+using DriveTrack.Infrastructure.Persistence;
 using DriveTrack.Integration.Tests.Deliveries;
 using DriveTrack.Integration.Tests.Fleet;
 using DriveTrack.Integration.Tests.Persistence;
 using DriveTrack.Integration.Tests.Support;
-using DriveTrack.Application.Abstractions;
-using DriveTrack.Application.Notifications;
-using DriveTrack.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using DriveTrack.Application.Accounts.Clients;
-using DriveTrack.Application.Accounts.Dispatchers;
 
 namespace DriveTrack.Integration.Tests.Api;
 

@@ -1,5 +1,6 @@
 using System.Net;
 using DriveTrack.Application.Common;
+using DriveTrack.Application.Common.Errors;
 using DriveTrack.Application.Reviews;
 using DriveTrack.Domain.Deliveries;
 using DriveTrack.Domain.Identity;

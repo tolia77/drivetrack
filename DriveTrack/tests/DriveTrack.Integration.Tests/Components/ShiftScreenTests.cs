@@ -1,11 +1,12 @@
-using Microsoft.AspNetCore.Components;
-using DriveTrack.Application.Common;
 using System.Text.RegularExpressions;
 using DriveTrack.Application.Authorization;
+using DriveTrack.Application.Common;
+using DriveTrack.Application.Common.Paging;
 using DriveTrack.Application.Drivers;
 using DriveTrack.Application.Shifts;
 using DriveTrack.Domain.Identity;
 using DriveTrack.Integration.Tests.Support;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using MyShiftsScreen = DriveTrack.Web.Components.Pages.MyShifts;
 using ShiftsScreen = DriveTrack.Web.Components.Pages.Shifts;

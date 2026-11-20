@@ -1,4 +1,4 @@
-using DriveTrack.Application.Abstractions;
+using DriveTrack.Application.Abstractions.Outbound;
 using DriveTrack.Application.Deliveries;
 using DriveTrack.Infrastructure.SideEffects;
 using Microsoft.Extensions.DependencyInjection;

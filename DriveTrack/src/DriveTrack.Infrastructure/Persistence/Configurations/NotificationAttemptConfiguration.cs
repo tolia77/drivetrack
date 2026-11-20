@@ -1,4 +1,5 @@
 using DriveTrack.Domain.Deliveries;
+using DriveTrack.Domain.Notifications;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

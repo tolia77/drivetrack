@@ -6,12 +6,6 @@
 @using static Microsoft.AspNetCore.Components.Web.RenderMode
 @using Microsoft.AspNetCore.Components.Web.Virtualization
 @using Microsoft.JSInterop
-@using DriveTrack.Web
-@using DriveTrack.Web.Components
-@using DriveTrack.Web.Components.Layout
-@using Microsoft.AspNetCore.Authorization
-@using Microsoft.AspNetCore.Components.Authorization
-@using Microsoft.Extensions.Localization
 @using DriveTrack.Application.Accounts
 @using DriveTrack.Application.Accounts.Authentication
 @using DriveTrack.Application.Accounts.Clients
@@ -19,6 +13,9 @@
 @using DriveTrack.Application.Accounts.Profile
 @using DriveTrack.Application.Authorization
 @using DriveTrack.Application.Common
+@using DriveTrack.Application.Common.Errors
+@using DriveTrack.Application.Common.Locations
+@using DriveTrack.Application.Common.Paging
 @using DriveTrack.Application.Dashboard
 @using DriveTrack.Application.Deliveries
 @using DriveTrack.Application.Deliveries.Proof
@@ -29,10 +26,17 @@
 @using DriveTrack.Application.Shifts
 @using DriveTrack.Application.Vehicles
 @using DriveTrack.Domain.Deliveries
-@using DriveTrack.Domain.Reviews
 @using DriveTrack.Domain.Identity
+@using DriveTrack.Domain.Notifications
+@using DriveTrack.Domain.Reviews
+@using DriveTrack.Web
 @using DriveTrack.Web.Account
+@using DriveTrack.Web.Components
 @using DriveTrack.Web.Components.Account
-@using DriveTrack.Web.Components.Shared
 @using DriveTrack.Web.Components.Illustrations
+@using DriveTrack.Web.Components.Layout
+@using DriveTrack.Web.Components.Shared
 @using DriveTrack.Web.Resources
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.Extensions.Localization

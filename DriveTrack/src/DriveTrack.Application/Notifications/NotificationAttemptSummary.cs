@@ -1,4 +1,5 @@
 using DriveTrack.Domain.Deliveries;
+using DriveTrack.Domain.Notifications;
 
 namespace DriveTrack.Application.Notifications;
 

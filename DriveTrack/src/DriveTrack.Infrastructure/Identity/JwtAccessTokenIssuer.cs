@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Text;
-using DriveTrack.Application.Abstractions;
+using DriveTrack.Application.Abstractions.Outbound;
+using DriveTrack.Application.Abstractions.Persistence;
 using DriveTrack.Application.Authorization;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;

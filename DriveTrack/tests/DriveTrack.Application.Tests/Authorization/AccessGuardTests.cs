@@ -1,5 +1,6 @@
 using DriveTrack.Application.Authorization;
 using DriveTrack.Application.Common;
+using DriveTrack.Application.Common.Errors;
 using DriveTrack.Domain.Identity;
 
 namespace DriveTrack.Application.Tests.Authorization;

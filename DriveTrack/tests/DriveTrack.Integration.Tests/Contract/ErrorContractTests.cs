@@ -4,6 +4,7 @@ using System.Resources;
 using System.Xml.Linq;
 using DriveTrack.Application;
 using DriveTrack.Application.Common;
+using DriveTrack.Application.Common.Errors;
 using DriveTrack.Integration.Tests.Support;
 using DriveTrack.Web.Api;
 

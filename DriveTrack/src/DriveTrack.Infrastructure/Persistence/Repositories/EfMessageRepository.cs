@@ -1,4 +1,4 @@
-using DriveTrack.Application.Abstractions;
+using DriveTrack.Application.Abstractions.Persistence;
 using DriveTrack.Domain.Chat;
 using DriveTrack.Domain.Identity;
 using Microsoft.EntityFrameworkCore;

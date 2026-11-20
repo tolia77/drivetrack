@@ -1,3 +1,5 @@
+using DriveTrack.Application.Common.Paging;
+
 namespace DriveTrack.Application.Vehicles;
 
 /// <summary>
@@ -15,10 +17,10 @@ public interface IVehicleService
     /// One page of the fleet, searched and sorted over every vehicle, with the number the search
     /// matched.
     /// </summary>
-    /// <exception cref="Common.ValidationException">
+    /// <exception cref="Common.Errors.ValidationException">
     /// The paging arguments are out of range, or the sort names no column the list has.
     /// </exception>
-    Task<Common.Paged<VehicleSummary>> ListAsync(
+    Task<Common.Paging.Paged<VehicleSummary>> ListAsync(
         ListVehiclesQuery query,
         CancellationToken cancellationToken);
 

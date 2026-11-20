@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Xml.Linq;
 using DriveTrack.Application.Common;
+using DriveTrack.Application.Common.Errors;
 using DriveTrack.Domain.Deliveries;
 using DriveTrack.Integration.Tests.Persistence;
 using DriveTrack.Integration.Tests.Support;

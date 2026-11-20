@@ -1,4 +1,5 @@
 using DriveTrack.Application.Common;
+using DriveTrack.Application.Common.Errors;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 

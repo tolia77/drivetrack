@@ -169,7 +169,7 @@ namespace DriveTrack.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("DriveTrack.Domain.Deliveries.NotificationAttempt", b =>
+            modelBuilder.Entity("DriveTrack.Domain.Notifications.NotificationAttempt", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -880,7 +880,7 @@ namespace DriveTrack.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("DriveTrack.Domain.Deliveries.NotificationAttempt", b =>
+            modelBuilder.Entity("DriveTrack.Domain.Notifications.NotificationAttempt", b =>
                 {
                     b.HasOne("DriveTrack.Domain.Deliveries.Delivery", null)
                         .WithMany()

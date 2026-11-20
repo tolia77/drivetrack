@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Net;
 using System.Text.Json;
-using DriveTrack.Application.Abstractions;
+using DriveTrack.Application.Abstractions.Outbound;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 

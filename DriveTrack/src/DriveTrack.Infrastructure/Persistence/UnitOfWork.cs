@@ -1,5 +1,6 @@
-using DriveTrack.Application.Abstractions;
+using DriveTrack.Application.Abstractions.Persistence;
 using DriveTrack.Application.Common;
+using DriveTrack.Application.Common.Errors;
 using DriveTrack.Infrastructure.Identity;
 using DriveTrack.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;

@@ -1,5 +1,5 @@
 using System.Globalization;
-using DriveTrack.Application.Abstractions;
+using DriveTrack.Application.Abstractions.Persistence;
 using DriveTrack.Domain.Clients;
 using DriveTrack.Domain.Identity;
 using DriveTrack.Integration.Tests.Persistence;

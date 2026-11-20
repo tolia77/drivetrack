@@ -1,5 +1,6 @@
-using DriveTrack.Application.Deliveries.SideEffects;
 using DriveTrack.Application.Deliveries;
+using DriveTrack.Application.Deliveries.SideEffects;
+using DriveTrack.Application.Notifications;
 using DriveTrack.Domain.Common;
 using DriveTrack.Domain.Deliveries;
 

@@ -1,8 +1,9 @@
 using System.Globalization;
-using DriveTrack.Application.Abstractions;
+using DriveTrack.Application.Abstractions.Persistence;
 using DriveTrack.Application.Accounts;
 using DriveTrack.Application.Authorization;
 using DriveTrack.Application.Common;
+using DriveTrack.Application.Common.Errors;
 using DriveTrack.Application.Drivers;
 using DriveTrack.Domain.Chat;
 using DriveTrack.Domain.Drivers;

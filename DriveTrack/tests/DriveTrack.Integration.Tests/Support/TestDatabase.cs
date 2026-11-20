@@ -1,4 +1,4 @@
-using DriveTrack.Application.Abstractions;
+using DriveTrack.Application.Abstractions.Persistence;
 using DriveTrack.Infrastructure;
 using DriveTrack.Infrastructure.Identity;
 using DriveTrack.Infrastructure.Persistence;

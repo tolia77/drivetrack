@@ -49,7 +49,7 @@ public interface IUserService
     /// </summary>
     /// <returns>The profile as it stands after the edit.</returns>
     /// <exception cref="Common.NotFoundException">No account has that id.</exception>
-    /// <exception cref="Common.ValidationException">The merged profile breaks a rule.</exception>
+    /// <exception cref="Common.Errors.ValidationException">The merged profile breaks a rule.</exception>
     Task<UserProfile> UpdateProfileAsync(
         UserId userId,
         UpdateProfileCommand command,
@@ -66,7 +66,7 @@ public interface IUserService
     /// </para>
     /// </summary>
     /// <exception cref="Common.NotFoundException">No account has that id.</exception>
-    /// <exception cref="Common.ValidationException">
+    /// <exception cref="Common.Errors.ValidationException">
     /// The command breaks a rule, the current password does not match
     /// (<c>AUTH_CURRENT_PASSWORD_INCORRECT</c>), or Identity's own policy refused the new one.
     /// </exception>
@@ -86,7 +86,7 @@ public interface IUserService
     /// </summary>
     /// <returns>The profile as it stands after the change.</returns>
     /// <exception cref="Common.NotFoundException">No account has that id.</exception>
-    /// <exception cref="Common.ValidationException">The address is absent or malformed.</exception>
+    /// <exception cref="Common.Errors.ValidationException">The address is absent or malformed.</exception>
     /// <exception cref="Common.ConflictException">Another account already holds that address.</exception>
     Task<UserProfile> ChangeEmailAsync(
         UserId userId,

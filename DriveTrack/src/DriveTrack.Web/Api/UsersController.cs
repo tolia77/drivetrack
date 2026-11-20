@@ -1,5 +1,5 @@
-using DriveTrack.Application.Accounts.Profile;
 using DriveTrack.Application.Accounts;
+using DriveTrack.Application.Accounts.Profile;
 using DriveTrack.Domain.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

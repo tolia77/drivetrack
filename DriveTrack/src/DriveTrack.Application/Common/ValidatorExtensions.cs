@@ -1,5 +1,7 @@
 ﻿using FluentValidation;
 
+using DriveTrack.Application.Common.Errors;
+
 namespace DriveTrack.Application.Common;
 
 /// <summary>
@@ -41,7 +43,7 @@ public static class ValidatorExtensions
             .Select(failure => new FieldError(failure.PropertyName, failure.ErrorMessage))
             .ToArray();
 
-        throw new ValidationException(
+        throw new Errors.ValidationException(
             ErrorCode.COMMON_VALIDATION_FAILED,
             "Validation of " + typeof(T).Name + " failed on: "
                 + string.Join(", ", fieldErrors.Select(field => field.Field)),

@@ -1,4 +1,4 @@
-using DriveTrack.Application.Abstractions;
+using DriveTrack.Application.Abstractions.Persistence;
 using DriveTrack.Domain.Deliveries;
 using Microsoft.EntityFrameworkCore;
 

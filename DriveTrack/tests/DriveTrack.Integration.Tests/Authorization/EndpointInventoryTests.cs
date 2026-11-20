@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using DriveTrack.Application.Deliveries;
+using DriveTrack.Application.Deliveries.SideEffects;
 using DriveTrack.Integration.Tests.Architecture;
 using DriveTrack.Integration.Tests.Persistence;
 using DriveTrack.Integration.Tests.Support;
@@ -10,7 +11,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
-using DriveTrack.Application.Deliveries.SideEffects;
 
 namespace DriveTrack.Integration.Tests.Authorization;
 

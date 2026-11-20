@@ -1,7 +1,9 @@
 using System.Globalization;
-using DriveTrack.Application.Abstractions;
+using DriveTrack.Application.Abstractions.Persistence;
 using DriveTrack.Application.Authorization;
 using DriveTrack.Application.Common;
+using DriveTrack.Application.Common.Errors;
+using DriveTrack.Application.Common.Paging;
 using DriveTrack.Application.Deliveries;
 using DriveTrack.Domain.Deliveries;
 using DriveTrack.Domain.Identity;
@@ -202,7 +204,7 @@ public sealed class ReviewService(
         // nothing. Both are refused as columns this list does not have.
         if (sort is ReviewSort.Client or ReviewSort.Driver)
         {
-            throw new Common.ValidationException(
+            throw new Common.Errors.ValidationException(
                 ErrorCode.COMMON_VALIDATION_FAILED,
                 "An author's own reviews cannot be sorted by a party's name.",
                 [new FieldError(nameof(ListReviewsQuery.Sort), nameof(ErrorCode.COMMON_SORT_INVALID))]);

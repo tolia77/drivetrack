@@ -1,4 +1,5 @@
 using DriveTrack.Application.Common;
+using DriveTrack.Application.Common.Errors;
 using DriveTrack.Application.Shifts;
 using DriveTrack.Domain.Identity;
 using DriveTrack.Domain.Shifts;

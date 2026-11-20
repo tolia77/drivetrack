@@ -1,6 +1,10 @@
-using DriveTrack.Application.Abstractions;
+using DriveTrack.Application.Abstractions.Outbound;
+using DriveTrack.Application.Abstractions.Persistence;
 using DriveTrack.Application.Authorization;
 using DriveTrack.Application.Common;
+using DriveTrack.Application.Common.Errors;
+using DriveTrack.Application.Common.Locations;
+using DriveTrack.Application.Common.Paging;
 using DriveTrack.Application.Deliveries.SideEffects;
 using DriveTrack.Domain.Common;
 using DriveTrack.Domain.Deliveries;
@@ -92,7 +96,7 @@ public sealed class DeliveryService(
         // list does not have, and the two name filters are dropped for the same reason.
         if (ListSort.Parse<DeliverySort>(query.Sort) is DeliverySort.Driver or DeliverySort.Client)
         {
-            throw new Common.ValidationException(
+            throw new Common.Errors.ValidationException(
                 ErrorCode.COMMON_VALIDATION_FAILED,
                 "The own-deliveries list cannot be sorted by a counterparty's name.",
                 [new FieldError(nameof(ListDeliveriesQuery.Sort), nameof(ErrorCode.COMMON_SORT_INVALID))]);

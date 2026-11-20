@@ -2,8 +2,9 @@
 using System.Globalization;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
-using DriveTrack.Application.Abstractions;
+using DriveTrack.Application.Abstractions.Persistence;
 using DriveTrack.Application.Common;
+using DriveTrack.Application.Common.Errors;
 using DriveTrack.Domain.Deliveries;
 using DriveTrack.Domain.Identity;
 using DriveTrack.Domain.Reviews;
@@ -17,7 +18,7 @@ using Microsoft.Extensions.Options;
 
 // System.ComponentModel.DataAnnotations declares a ValidationException too, and the probe model
 // needs [Required] from that namespace. The alias states which one the throws below mean.
-using ValidationException = DriveTrack.Application.Common.ValidationException;
+using ValidationException = DriveTrack.Application.Common.Errors.ValidationException;
 
 namespace DriveTrack.Integration.Tests.Support;
 

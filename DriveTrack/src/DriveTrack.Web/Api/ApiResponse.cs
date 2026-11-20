@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using DriveTrack.Application.Common;
+using DriveTrack.Application.Common.Errors;
 
 namespace DriveTrack.Web.Api;
 

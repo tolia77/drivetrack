@@ -1,4 +1,5 @@
 ﻿using DriveTrack.Application.Common;
+using DriveTrack.Application.Common.Errors;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 

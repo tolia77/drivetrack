@@ -1,6 +1,7 @@
 using DriveTrack.Domain.Chat;
 using DriveTrack.Domain.Deliveries;
 using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Notifications;
 using DriveTrack.Domain.Reviews;
 using DriveTrack.Domain.Shifts;
 using DriveTrack.Integration.Tests.Support;

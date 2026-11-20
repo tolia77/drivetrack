@@ -1,3 +1,4 @@
+using DriveTrack.Application.Common.Paging;
 using DriveTrack.Domain.Identity;
 
 namespace DriveTrack.Application.Shifts;
@@ -43,10 +44,10 @@ public interface IShiftService
     /// The caller is anonymous (<c>AUTH_UNAUTHENTICATED</c>, 401), or is a client, or is a driver
     /// whose claims carry no driver row id (<c>AUTH_FORBIDDEN</c>, 403).
     /// </exception>
-    /// <exception cref="Common.ValidationException">
+    /// <exception cref="Common.Errors.ValidationException">
     /// The paging parameters are out of range, or the sort names no column.
     /// </exception>
-    Task<Common.Paged<ShiftSummary>> ListAsync(
+    Task<Common.Paging.Paged<ShiftSummary>> ListAsync(
         ListShiftsQuery query,
         CancellationToken cancellationToken);
 
@@ -83,7 +84,7 @@ public interface IShiftService
     /// </summary>
     /// <exception cref="Common.ForbiddenException">The caller may not act on this driver's shifts.</exception>
     /// <exception cref="Common.NotFoundException">No driver has that id.</exception>
-    /// <exception cref="Common.ValidationException">The window runs backwards.</exception>
+    /// <exception cref="Common.Errors.ValidationException">The window runs backwards.</exception>
     /// <exception cref="Common.ConflictException">
     /// The shift would be left open beside another open one (<c>SHIFT_ALREADY_OPEN</c>).
     /// </exception>
@@ -96,7 +97,7 @@ public interface IShiftService
     /// </summary>
     /// <exception cref="Common.ForbiddenException">The caller may not change this shift.</exception>
     /// <exception cref="Common.NotFoundException">No shift has that id.</exception>
-    /// <exception cref="Common.ValidationException">The merged window runs backwards.</exception>
+    /// <exception cref="Common.Errors.ValidationException">The merged window runs backwards.</exception>
     Task<ShiftSummary> UpdateAsync(
         int id,
         UpdateShiftCommand command,

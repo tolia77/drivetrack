@@ -1,3 +1,4 @@
+using DriveTrack.Application.Common.Paging;
 using DriveTrack.Domain.Identity;
 
 namespace DriveTrack.Application.Reviews;
@@ -54,7 +55,7 @@ public interface IReviewService
     /// The delivery has not reached <c>Delivered</c> or <c>Failed</c>
     /// (<c>REVIEW_DELIVERY_NOT_COMPLETED</c>).
     /// </exception>
-    /// <exception cref="Common.ValidationException">The rating is off the scale, or the text is empty or too long.</exception>
+    /// <exception cref="Common.Errors.ValidationException">The rating is off the scale, or the text is empty or too long.</exception>
     /// <exception cref="Common.ConflictException">
     /// A review already exists for that delivery (<c>PERSISTENCE_UNIQUE_VIOLATION</c>, 409), raised
     /// by <c>ix_reviews_delivery_id</c> at commit rather than by a lookup beforehand.
@@ -69,10 +70,10 @@ public interface IReviewService
     /// driver is refused outright.
     /// </summary>
     /// <exception cref="Common.ForbiddenException">The caller runs neither dispatch nor the system.</exception>
-    /// <exception cref="Common.ValidationException">
+    /// <exception cref="Common.Errors.ValidationException">
     /// The paging parameters are out of range, or the sort names no column.
     /// </exception>
-    Task<Common.Paged<ReviewSummary>> ListAsync(
+    Task<Common.Paging.Paged<ReviewSummary>> ListAsync(
         ListReviewsQuery query,
         CancellationToken cancellationToken);
 
@@ -82,10 +83,10 @@ public interface IReviewService
     /// are not the first hundred.
     /// </summary>
     /// <exception cref="Common.ForbiddenException">The caller is not a client with a client row id.</exception>
-    /// <exception cref="Common.ValidationException">
+    /// <exception cref="Common.Errors.ValidationException">
     /// The paging parameters are out of range, or the sort names a column this list does not carry.
     /// </exception>
-    Task<Common.Paged<AuthoredReviewSummary>> ListMineAsync(
+    Task<Common.Paging.Paged<AuthoredReviewSummary>> ListMineAsync(
         ListReviewsQuery query,
         CancellationToken cancellationToken);
 
@@ -110,7 +111,7 @@ public interface IReviewService
     /// a driver (403).
     /// </exception>
     /// <exception cref="Common.NotFoundException">No review has that id.</exception>
-    /// <exception cref="Common.ValidationException">The merged state is one the row may not hold.</exception>
+    /// <exception cref="Common.Errors.ValidationException">The merged state is one the row may not hold.</exception>
     Task<AuthoredReviewSummary> UpdateAsync(
         int id,
         UpdateReviewCommand command,

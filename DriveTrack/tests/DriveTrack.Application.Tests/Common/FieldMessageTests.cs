@@ -1,13 +1,15 @@
+using DriveTrack.Application.Accounts.Authentication;
+using DriveTrack.Application.Accounts.Dispatchers;
 using DriveTrack.Application.Common;
+using DriveTrack.Application.Common.Errors;
+using DriveTrack.Application.Common.Locations;
 using DriveTrack.Application.Deliveries;
 using DriveTrack.Application.Drivers;
 using DriveTrack.Application.Vehicles;
 using DriveTrack.Domain.Deliveries;
 using FluentValidation;
 using FluentValidation.Validators;
-using DriveTrack.Application.Accounts.Authentication;
-using DriveTrack.Application.Accounts.Dispatchers;
-using ValidationException = DriveTrack.Application.Common.ValidationException;
+using ValidationException = DriveTrack.Application.Common.Errors.ValidationException;
 
 namespace DriveTrack.Application.Tests.Common;
 

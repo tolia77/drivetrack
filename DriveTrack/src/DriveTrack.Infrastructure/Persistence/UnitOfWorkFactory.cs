@@ -1,4 +1,4 @@
-using DriveTrack.Application.Abstractions;
+using DriveTrack.Application.Abstractions.Persistence;
 using DriveTrack.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 

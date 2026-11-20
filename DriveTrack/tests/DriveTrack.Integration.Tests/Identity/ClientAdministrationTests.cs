@@ -1,10 +1,11 @@
 using System.Globalization;
 using System.Net;
 using System.Text.Json;
-using DriveTrack.Application.Abstractions;
+using DriveTrack.Application.Abstractions.Persistence;
 using DriveTrack.Application.Accounts.Clients;
 using DriveTrack.Application.Authorization;
 using DriveTrack.Application.Common;
+using DriveTrack.Application.Common.Errors;
 using DriveTrack.Domain.Identity;
 using DriveTrack.Domain.Reviews;
 using DriveTrack.Integration.Tests.Persistence;
