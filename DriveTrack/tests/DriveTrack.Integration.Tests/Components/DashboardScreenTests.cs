@@ -40,7 +40,7 @@ public class DashboardScreenTests
         Assert.Contains("Прострочено доставок: 3. Доставок без водія: 2.", SharedMarkup.TextOf(warning), StringComparison.Ordinal);
         Assert.Contains("Призначте водія", SharedMarkup.TextOf(warning), StringComparison.Ordinal);
 
-        // The two actions, each an icon and its words (NFR-24).
+        // The two actions, each an icon and its words.
         Assert.Contains(@"href=""chat""", html, StringComparison.Ordinal);
         Assert.Contains(@"href=""deliveries""", html, StringComparison.Ordinal);
         Assert.Contains("Створити доставку", text, StringComparison.Ordinal);

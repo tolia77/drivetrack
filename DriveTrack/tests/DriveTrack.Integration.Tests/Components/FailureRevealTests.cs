@@ -70,7 +70,7 @@ public class FailureRevealTests
     [Fact]
     public async Task A_pinned_refusal_on_a_screen_without_that_box_still_reaches_the_banner()
     {
-        // FR-83: the Drivers edit dialog renders no address box, so an e-mail refusal pinned to
+        // The Drivers edit dialog renders no address box, so an e-mail refusal pinned to
         // Email has nothing to sit under, and the banner is what keeps it on the page.
         var failures = FailureKeys.For(new ConflictException(ErrorCode.AUTH_EMAIL_ALREADY_IN_USE, "taken"));
 

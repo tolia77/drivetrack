@@ -4,9 +4,9 @@ using DriveTrack.Domain.Deliveries;
 namespace DriveTrack.Application.Tests.Deliveries;
 
 /// <summary>
-/// FR-30 to FR-33 where they live: on the entity.
+/// The delivery lifecycle where it lives: on the entity.
 /// <para>
-/// AD-10 puts the transition table in exactly one place, so this is the only suite that can assert
+/// The transition table lives in exactly one place, so this is the only suite that can assert
 /// it directly — and it needs no Docker, no host and no clock, which is the point. The endpoint
 /// suite asserts that a refusal reaches the wire as a 409 naming both statuses; this asserts that
 /// it is a refusal at all, and that the legal moves are the ones the requirements list.
@@ -17,7 +17,7 @@ public class DeliveryLifecycleTests
     [Fact]
     public void A_new_delivery_is_pending()
     {
-        // FR-30, and structural rather than a rule anybody applies: the initializer is the only
+        // Structural rather than a rule anybody applies: the initializer is the only
         // thing that can set an opening status, and nothing outside the entity can set any status.
         Assert.Equal(DeliveryStatus.Pending, New().Status);
     }
@@ -32,7 +32,7 @@ public class DeliveryLifecycleTests
         DeliveryStatus[] expected)
     {
         // The whole table in one place: Pending to In-Transit, In-Transit to Delivered or Failed,
-        // Failed back to In-Transit as a retry (FR-31), and Delivered terminal. Asserted as
+        // Failed back to In-Transit as a retry, and Delivered terminal. Asserted as
         // equality rather than as containment, so a transition added without a decision fails here
         // rather than widening the lifecycle unnoticed.
         Assert.Equal(expected, Delivery.NextStatuses(from));
@@ -76,7 +76,7 @@ public class DeliveryLifecycleTests
     }
 
     [Theory]
-    // FR-32: nothing jumps the lifecycle.
+    // Nothing jumps the lifecycle.
     [InlineData(DeliveryStatus.Pending, DeliveryStatus.Delivered)]
     [InlineData(DeliveryStatus.Pending, DeliveryStatus.Failed)]
     [InlineData(DeliveryStatus.Failed, DeliveryStatus.Delivered)]
@@ -122,7 +122,7 @@ public class DeliveryLifecycleTests
     [Fact]
     public void A_failed_delivery_goes_back_on_the_road_and_can_then_be_delivered()
     {
-        // FR-31's retry, walked end to end: the failure is not terminal, and the retry rejoins the
+        // The retry, walked end to end: the failure is not terminal, and the retry rejoins the
         // ordinary lifecycle rather than becoming a branch of its own.
         var delivery = At(DeliveryStatus.Failed);
 

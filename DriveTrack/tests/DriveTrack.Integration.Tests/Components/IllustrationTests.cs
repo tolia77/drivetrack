@@ -7,10 +7,10 @@ namespace DriveTrack.Integration.Tests.Components;
 
 /// <summary>
 /// The pictures under <c>Components/Illustrations/</c> are decoration, and that is the condition of
-/// their exemption from NFR-29 (see <c>DesignTokenTests.ProjectFiles</c>): each is hidden from
-/// assistive technology as a whole and holds nothing a keyboard or a pointer can act on. A picture
-/// of a button that took focus would be a focus stop inside an <c>aria-hidden</c> subtree - one a
-/// screen reader lands on and cannot name.
+/// their exemption from the design-token rule (see <c>DesignTokenTests.ProjectFiles</c>): each is
+/// hidden from assistive technology as a whole and holds nothing a keyboard or a pointer can act
+/// on. A picture of a button that took focus would be a focus stop inside an <c>aria-hidden</c>
+/// subtree - one a screen reader lands on and cannot name.
 /// <para>
 /// Rendered rather than read off the source, so what a child component draws inside a picture - a
 /// status label, a rating - is held to the same rule.

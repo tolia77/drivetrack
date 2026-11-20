@@ -9,8 +9,8 @@ namespace DriveTrack.Integration.Tests.Components;
 /// <para>
 /// Every one of these guards a failure that ships looking fine. A hard-coded colour in an icon
 /// looks correct until the palette changes around it; a component that calls itself shared but
-/// lives beside one screen is the drift AD-28 and this story exist to stop; a second
-/// <c>ErrorBoundary</c> catches a failure before FR-13's single handler ever sees it.
+/// lives beside one screen is the drift a shared design system exists to stop; a second
+/// <c>ErrorBoundary</c> catches a failure before the single session-expiry handler ever sees it.
 /// </para>
 /// </summary>
 public class SharedComponentTests
@@ -24,15 +24,15 @@ public class SharedComponentTests
     [Fact]
     public void There_are_shared_components_to_scan()
     {
-        // Vacuity guard: the scan set is derived from directory layout, which a later story is
-        // free to change, and an empty set makes every assertion below trivially true.
+        // Vacuity guard: the scan set is derived from directory layout, which a later change is
+        // free to alter, and an empty set makes every assertion below trivially true.
         Assert.NotEmpty(SharedMarkup.SharedComponents());
     }
 
     [Fact]
     public void An_icon_takes_its_colour_from_the_text_it_sits_beside()
     {
-        // `currentColor` is the one colour keyword NFR-29's scanner allows, and it is not a
+        // `currentColor` is the one colour keyword the token scanner allows, and it is not a
         // concession: it means a glyph follows whatever token coloured its surroundings, so the
         // same icon reads correctly on a card and on the navy navigation without a second rule.
         var offenders = new List<string>();
@@ -126,7 +126,7 @@ public class SharedComponentTests
     [Fact]
     public void The_icon_markup_is_inline_and_needs_no_second_stylesheet()
     {
-        // NFR-24 without a webfont, a sprite or a third <link>: one <svg> the component writes
+        // Icons without a webfont, a sprite or a third <link>: one <svg> the component writes
         // itself, which is also why it renders identically on first paint and offline.
         var markup = SharedMarkup.ReadShared("Icon.razor");
 
@@ -155,7 +155,7 @@ public class SharedComponentTests
 
         Assert.Empty(strays);
 
-        // And the ones this story added are all there.
+        // And the shared library's own components are all there.
         foreach (var expected in new[]
                  {
                      "Icon.razor", "DtDialog.razor", "DtConfirmDialog.razor",
@@ -171,7 +171,7 @@ public class SharedComponentTests
     [Fact]
     public void No_new_shared_component_declares_an_error_boundary_of_its_own()
     {
-        // FR-13: SessionExpiryBoundary is the one error surface, and it is the only file here
+        // SessionExpiryBoundary is the one error surface, and it is the only file here
         // allowed to name an ErrorBoundary. A second one catches a failure before the shared
         // handler sees it, and the screen shows a different notice than the product decided on.
         var offenders = SharedMarkup.SharedComponents()
@@ -207,7 +207,7 @@ public class SharedComponentTests
     [Fact]
     public void A_shared_component_binds_to_a_DTO_rather_than_to_a_domain_entity()
     {
-        // AD-1 and AD-17 at the component tier: the map takes MapLocation, the application layer's
+        // Layering at the component tier: the map takes MapLocation, the application layer's
         // shared coordinate pair, and not the domain's Location - which carries a cached address
         // and a resolution timestamp no map has any business knowing about.
         var map = SharedMarkup.ReadShared("DtMap.razor");

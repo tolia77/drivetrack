@@ -15,15 +15,14 @@ using ReviewsScreen = DriveTrack.Web.Components.Pages.Reviews;
 namespace DriveTrack.Integration.Tests.Components;
 
 /// <summary>
-/// What the reviews screen actually renders, per role, with the capabilities stubbed (FR-62 to
-/// FR-67).
+/// What the reviews screen actually renders, per role, with the capabilities stubbed.
 /// <para>
 /// A source scan cannot make these claims. "A dispatcher gets the collection and no actions" and "a
 /// client gets their own reviews and a way to write one" are properties of the output, and the file
 /// contains all the same words whether they hold or not.
 /// </para>
 /// <para>
-/// FR-12 throughout: none of this is authorization. <c>IAccessGuard</c> inside the review service
+/// None of this is authorization. <c>IAccessGuard</c> inside the review service
 /// refuses a caller whatever this screen drew, and <c>ReviewTests</c> is where that is proved. What
 /// is asserted here is that the screen does not offer an action that could only ever fail.
 /// </para>
@@ -124,7 +123,7 @@ public class ReviewScreenTests
     [Fact]
     public async Task A_client_is_shown_what_they_wrote_and_a_way_to_write_another()
     {
-        // FR-62 and FR-63. The author's own table, which carries no party at all, and the one
+        // The author's own table, which carries no party at all, and the one
         // action their role has.
         var html = await RenderAsync(UserRole.Client);
 
@@ -138,12 +137,12 @@ public class ReviewScreenTests
         Assert.Contains("усе було чудово", html, StringComparison.Ordinal);
         Assert.Contains("запізнилися на дві години", html, StringComparison.Ordinal);
 
-        // AD-17 at the surface: the author's table has no party column, so no counterparty's name
+        // At the surface, the author's table has no party column, so no counterparty's name
         // is rendered even though the moderation stub beside it carries two.
         Assert.DoesNotContain("Тарас Шевченко", html, StringComparison.Ordinal);
         Assert.DoesNotContain("Марія Коваль", html, StringComparison.Ordinal);
 
-        // FR-63 and NFR-22: their own delete is confirmed like any other destructive action.
+        // Their own delete is confirmed like any other destructive action.
         Assert.Contains("dt-review-delete", html, StringComparison.Ordinal);
         Assert.Contains("dt-confirm-accept", html, StringComparison.Ordinal);
     }
@@ -151,7 +150,7 @@ public class ReviewScreenTests
     [Fact]
     public async Task A_dispatcher_is_shown_every_review_and_offered_no_way_to_touch_one()
     {
-        // FR-64 against FR-65, rendered. The one role whose answer differs between reading and
+        // Reading against writing, rendered. The one role whose answer differs between reading and
         // writing, and the reason an action is absent rather than disabled: a dispatcher's edit
         // could only ever be refused by the guard.
         var html = await RenderAsync(UserRole.Dispatcher);
@@ -173,7 +172,7 @@ public class ReviewScreenTests
     [Fact]
     public async Task An_administrator_moderates_and_is_offered_no_way_to_author()
     {
-        // The PRD's retirement of FR-97, rendered: an administrator edits and deletes anything and
+        // Moderation without authorship, rendered: an administrator edits and deletes anything and
         // writes nothing. The absent create action is the half a reader will take for an omission,
         // and it is the product decision.
         var html = await RenderAsync(UserRole.Admin);
@@ -204,10 +203,10 @@ public class ReviewScreenTests
     [Fact]
     public async Task Every_rating_wears_the_class_its_band_earned_and_never_a_colour()
     {
-        // AD-18 and AD-28 together: the band is Domain's reading of the number, the class is what
-        // that band looks like, and the colour is a token the stylesheet owns. A literal colour in
-        // the markup would be caught by NFR-29's scanner; a threshold in the markup would be caught
-        // by nothing, which is why the class is looked up rather than computed here.
+        // The band is Domain's reading of the number, the class is what that band looks like, and
+        // the colour is a token the stylesheet owns. A literal colour in the markup would be caught
+        // by the token scanner; a threshold in the markup would be caught by nothing, which is why
+        // the class is looked up rather than computed here.
         var client = await RenderAsync(UserRole.Client);
         var admin = await RenderAsync(UserRole.Admin);
 
@@ -267,8 +266,8 @@ public class ReviewScreenTests
     [Fact]
     public async Task Every_action_on_the_screen_carries_an_icon_beside_its_text()
     {
-        // NFR-24. Asserted by counting rather than by naming, because the failure this catches is a
-        // button added later without one - which no named assertion would notice.
+        // Icons on every action. Asserted by counting rather than by naming, because the failure
+        // this catches is a button added later without one - which no named assertion would notice.
         var html = await RenderAsync(UserRole.Admin);
 
         var buttons = Regex.Matches(
@@ -291,9 +290,9 @@ public class ReviewScreenTests
     [Fact]
     public async Task Nothing_on_the_screen_is_written_in_English()
     {
-        // NFR-14 as the rendered page rather than as a source scan. UserFacingTextTests reads the
-        // markup and cannot see a key that resolves to an English value or to the key itself, which
-        // is exactly what a missing resource entry looks like.
+        // Translation as the rendered page rather than as a source scan. UserFacingTextTests reads
+        // the markup and cannot see a key that resolves to an English value or to the key itself,
+        // which is exactly what a missing resource entry looks like.
         foreach (var role in new[] { UserRole.Client, UserRole.Dispatcher, UserRole.Admin, UserRole.Driver })
         {
             var text = Regex.Replace(
@@ -315,7 +314,7 @@ public class ReviewScreenTests
     [Fact]
     public async Task The_write_dialog_offers_the_scale_and_opens_on_its_default()
     {
-        // FR-67 and AD-18: the control cannot present a number the check constraint would refuse,
+        // The control cannot present a number the check constraint would refuse,
         // because its options are the scale's own values - and an unfilled form opens on the top of
         // it rather than on a complaint nobody made.
         var html = await RenderAsync(UserRole.Client);
@@ -369,10 +368,11 @@ public class ReviewScreenTests
     [Fact]
     public async Task The_delivery_picker_offers_only_what_may_still_be_reviewed()
     {
-        // FR-62's two halves as the client meets them: a delivery that has been carried, and one
-        // they have not already written about. The stub carries a counter-example to each - an
-        // InTransit parcel and a finished one that already has a review - so a filter deleted from
-        // the screen shows up here as an extra option rather than as nothing at all.
+        // The two conditions on a reviewable delivery as the client meets them: a delivery that has
+        // been carried, and one they have not already written about. The stub carries a
+        // counter-example to each - an InTransit parcel and a finished one that already has a
+        // review - so a filter deleted from the screen shows up here as an extra option rather than
+        // as nothing at all.
         var html = await RenderAsync(UserRole.Client);
 
         Assert.Equal(
@@ -430,7 +430,7 @@ public class ReviewScreenTests
 
         Assert.Contains("<h1", body, StringComparison.Ordinal);
 
-        // NFR-24: the heading carries the glyph the navigation already uses for this destination.
+        // The heading carries the glyph the navigation already uses for this destination.
         Assert.Contains("<svg", body, StringComparison.Ordinal);
 
         // Found by its hook and only then asserted about by its colour, because `btn btn-primary`
@@ -499,10 +499,10 @@ public class ReviewScreenTests
     [Fact]
     public async Task A_dispatcher_gets_a_head_and_rows_of_the_same_width_and_no_actions_column()
     {
-        // FR-64 against FR-65 as a layout claim rather than a capability one. The heading and the
-        // cell are gated on the same predicate, and they have to stay paired: hide one without the
-        // other and the table below the head is a column narrower than the head above it, so every
-        // value in every row is announced and painted under the wrong name.
+        // Reading against writing as a layout claim rather than a capability one. The heading and
+        // the cell are gated on the same predicate, and they have to stay paired: hide one without
+        // the other and the table below the head is a column narrower than the head above it, so
+        // every value in every row is announced and painted under the wrong name.
         var html = await RenderAsync(UserRole.Dispatcher);
 
         var columns = HeaderCell.Matches(html).Count;
@@ -637,7 +637,7 @@ public class ReviewScreenTests
 
     /// <summary>
     /// The rendered page with its Cyrillic content removed, so a stray hex colour is visible. A
-    /// weaker check than NFR-29's scanner and aimed at a different place: that one reads the
+    /// weaker check than the token scanner and aimed at a different place: that one reads the
     /// stylesheets, this one reads what a component put in an attribute.
     /// </summary>
     private static string ColourCandidates(string html) =>

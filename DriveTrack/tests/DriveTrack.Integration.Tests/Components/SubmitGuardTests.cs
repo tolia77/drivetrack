@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace DriveTrack.Integration.Tests.Components;
 
 /// <summary>
-/// The in-flight guard on every submit control in the product (DW-15, DW-31, DW-37).
+/// The in-flight guard on every submit control in the product.
 /// <para>
 /// A Blazor Server handler that awaits its service yields the circuit at that await, and the control
 /// that started it stays live: a second click dispatches a second write. Nothing downstream
@@ -83,7 +83,7 @@ public class SubmitGuardTests
     /// The two account forms carry a <c>&lt;button type="submit"&gt;</c> and are still outside the
     /// rule, for the reason <see cref="CircuitCancellationTests"/> already records about them: they
     /// are marked <c>[ExcludeFromInteractiveRouting]</c> and render statically so the form POST can
-    /// reach <c>HttpContext.SignInAsync</c> (AD-14). There is no circuit behind them to re-render a
+    /// reach <c>HttpContext.SignInAsync</c>. There is no circuit behind them to re-render a
     /// flag, so a <c>disabled</c> binding there could never become true and would be a guard in name
     /// only. The sign-out control is excluded on the same ground from the other direction: it sits in
     /// a plain <c>&lt;form method="post"&gt;</c> posting to an endpoint, and has no C# handler at all.
@@ -139,7 +139,7 @@ public class SubmitGuardTests
 
         Assert.True(body is not null, $"{file} declares no handler named {handler}.");
 
-        // The scenario the matrix calls "second click while in flight": the handler reads the flag
+        // A second click while in flight: the handler reads the flag
         // and returns before it reaches the write. The `disabled` attribute alone is not the guard -
         // it is a hint to the browser, and a click already dispatched, a keyboard activation, or a
         // second circuit reaches the handler whatever the button looked like.
@@ -156,7 +156,7 @@ public class SubmitGuardTests
                     + "stopped.");
         }
 
-        // The scenario the matrix calls "first click": set before the first await, so the render
+        // The first click: set before the first await, so the render
         // that ComponentBase performs between the handler returning to its await and the server
         // answering already carries the disabled control. Set after it, the flag is true only once
         // the write it was meant to cover has already been dispatched.

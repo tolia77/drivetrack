@@ -88,7 +88,7 @@ public class ComponentLibraryTests
     [Fact]
     public void Every_piece_of_the_vocabulary_has_a_component_of_its_own()
     {
-        // Vacuity guard for everything below, and the story's own checklist. A screen that needs a
+        // Vacuity guard for everything below, and the library's checklist. A screen that needs a
         // badge and finds no DtBadge writes a span with a class on it, and the second screen that
         // needs one writes a slightly different span.
         foreach (var expected in new[]
@@ -133,7 +133,7 @@ public class ComponentLibraryTests
         DeliveryStatus status,
         string modifier)
     {
-        // The matrix's first row. The shape as well as the fill hangs off this class - the design
+        // The shape as well as the fill hangs off this class - the design
         // says the green and the red "differ by shape and word; they are not colour-blind safe on
         // hue alone" - so a label that lost the class would lose the distinction and keep the word.
         var html = await ComponentRenderer.RenderAsync<Web.Components.Shared.DeliveryStatusLabel>(
@@ -153,7 +153,7 @@ public class ComponentLibraryTests
     [InlineData(false, "dt-status--finished")]
     public async Task A_shift_state_wears_the_status_shape_rather_than_a_badge(bool isOpen, string modifier)
     {
-        // The matrix's second row. The same shape a delivery status wears, deliberately - a reader
+        // The same shape a delivery status wears, deliberately - a reader
         // learns one vocabulary - and never Bootstrap's badge, which carried the state in its hue
         // alone and looked exactly like the duty marker beside it on the same screen.
         var html = await ComponentRenderer.RenderAsync<Web.Components.Pages.ShiftStateLabel>(
@@ -167,11 +167,11 @@ public class ComponentLibraryTests
     [Fact]
     public async Task A_delivery_status_with_no_face_fails_loudly()
     {
-        // The matrix's first row read the other way, and the defect it names: the label used to be
-        // four independent arms, so a fifth status would have rendered an empty unclassed span onto
-        // a delivery table and every timeline line - a blank cell that looks like missing data
-        // rather than like a missing decision. AD-10's own Delivery.NextStatuses fails this way for
-        // the same reason.
+        // The status label read the other way, and the defect it guards against: the label used to
+        // be four independent arms, so a fifth status would have rendered an empty unclassed span
+        // onto a delivery table and every timeline line - a blank cell that looks like missing data
+        // rather than like a missing decision. Delivery.NextStatuses fails this way for the same
+        // reason.
         await Assert.ThrowsAnyAsync<ArgumentOutOfRangeException>(() =>
             ComponentRenderer.RenderAsync<Web.Components.Shared.DeliveryStatusLabel>(
                 new Dictionary<string, object?> { ["Status"] = (DeliveryStatus)99 }));
@@ -194,7 +194,7 @@ public class ComponentLibraryTests
     [Fact]
     public async Task An_unrated_driver_shows_words_and_neither_stars_nor_a_zero()
     {
-        // The matrix's third row. Null and zero are different claims - nobody has said anything,
+        // Null and zero are different claims - nobody has said anything,
         // versus everybody said the worst thing - and the second is what a screen says the moment
         // it renders an absent average through the same path as a present one.
         var html = await ComponentRenderer.RenderAsync<DtRatingDisplay>(
@@ -276,7 +276,7 @@ public class ComponentLibraryTests
     [Fact]
     public void The_overdue_marker_is_the_badge_on_both_screens_that_draw_one()
     {
-        // The matrix's sixth row, asserted at the two places the marker is written: a delivery past
+        // Asserted at the two places the marker is written: a delivery past
         // its window is marked beside the window on the dispatch board and on a driver's or
         // client's own list, and both used to write Bootstrap's red badge - which is the same
         // chrome the Failed status wore two columns away.
@@ -299,10 +299,10 @@ public class ComponentLibraryTests
     [MemberData(nameof(DualModeDialogs))]
     public void The_save_action_follows_the_mode_its_dialog_is_in(string file, string hook, string creating)
     {
-        // The matrix's fourth and fifth rows. Six screens open one dialog for both modes, so the
-        // save button is the only thing on screen that can say which one the reader is in - and
-        // AD-28 gives create and edit different colours precisely so that it does. A button that is
-        // slate in both is a dialog that has stopped answering the question.
+        // Six screens open one dialog for both modes, so the save button is the only thing on
+        // screen that can say which one the reader is in - and The palette gives create and edit
+        // different colours precisely so that it does. A button that is slate in both is a dialog
+        // that has stopped answering the question.
         //
         // Read from the source, and for the edit arm above all: a statically rendered screen holds
         // an empty form, so the mode with an id set is genuinely unreachable here. The create arm is
@@ -403,7 +403,7 @@ public class ComponentLibraryTests
     [Fact]
     public async Task The_range_names_the_rows_on_screen_and_the_total_they_were_cut_from()
     {
-        // The I/O matrix's first row: 86 deliveries, page 1 of size 10.
+        // 86 deliveries, page 1 of size 10.
         var first = await RenderTableAsync(Page(offset: 0, count: 10, total: 86));
 
         Assert.Contains("1–10 з 86 доставок", first, StringComparison.Ordinal);
@@ -450,7 +450,7 @@ public class ComponentLibraryTests
     [Fact]
     public async Task A_middle_page_shows_its_neighbours_and_both_ends_with_a_gap_on_each_side()
     {
-        // The I/O matrix's second row: page 5 of 9 is 1 … 4 5 6 … 9.
+        // Page 5 of 9 is 1 … 4 5 6 … 9.
         var html = await RenderTableAsync(Page(offset: 40, count: 10, total: 86));
 
         Assert.Equal([1, 4, 5, 6, 9], PageNumbers(html));

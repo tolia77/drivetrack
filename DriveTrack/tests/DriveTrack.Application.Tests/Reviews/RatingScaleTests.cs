@@ -3,10 +3,10 @@ using DriveTrack.Domain.Reviews;
 namespace DriveTrack.Application.Tests.Reviews;
 
 /// <summary>
-/// FR-98's thresholds, asserted where they live.
+/// The rating colour thresholds, asserted where they live.
 /// <para>
 /// The point of the class under test is that "four and above is good" is a product rule in Domain
-/// rather than a class name chosen in markup (AD-18). A rule in markup is a rule no test can reach;
+/// rather than a class name chosen in markup. A rule in markup is a rule no test can reach;
 /// these six cases are what that decision buys.
 /// </para>
 /// <para>
@@ -50,7 +50,7 @@ public class RatingScaleTests
     {
         // The constants restate CK_Reviews_Rating. The column is the authority - a race cannot slip
         // a 6 past it - and this is what makes the validator's 422 and the constraint's refusal the
-        // same answer to the same question (NFR-2).
+        // same answer to the same question.
         Assert.Equal(1, RatingScale.Minimum);
         Assert.Equal(5, RatingScale.Maximum);
 

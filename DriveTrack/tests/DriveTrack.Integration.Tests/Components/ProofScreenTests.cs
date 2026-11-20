@@ -15,7 +15,7 @@ namespace DriveTrack.Integration.Tests.Components;
 /// A source scan cannot make these claims. "A dispatcher is shown who captured the proof and a
 /// client is not" is a property of the output, and the file contains all the same words whether it
 /// holds or not — the component renders the name when it was given one, and whether it was given one
-/// is the capability's decision (AD-17). Rendering it once per role is what proves the two halves
+/// is the capability's decision. Rendering it once per role is what proves the two halves
 /// are wired to each other.
 /// </para>
 /// <para>
@@ -44,7 +44,7 @@ public class ProofScreenTests
     [Fact]
     public async Task A_client_is_shown_no_capturer_at_all()
     {
-        // FR-122 and AD-17 reaching the markup: not merely that the name is absent, but that the
+        // Proof visibility reaching the markup: not merely that the name is absent, but that the
         // label introducing it is too - a row reading "Зафіксував —" would still tell a client that
         // somebody they are not allowed to know about exists.
         var html = await RenderProofAsync(capturedByName: null);
@@ -60,9 +60,9 @@ public class ProofScreenTests
     [Fact]
     public async Task Every_asset_is_fetched_from_the_authenticated_route()
     {
-        // DR-14 at the component tier: the markup names an id on a route this application serves,
-        // and never a bucket, a key or anything with a scheme in it. A presigned URL here would move
-        // the FR-122 decision to whoever copied the page source.
+        // Assets outside the row, at the component tier: the markup names an id on a route this
+        // application serves, and never a bucket, a key or anything with a scheme in it. A
+        // presigned URL here would move the visibility decision to whoever copied the page source.
         var html = await RenderProofAsync(capturedByName: "Тарас Шевченко");
 
         Assert.Contains("src=\"/proof-assets/7\"", html, StringComparison.Ordinal);
@@ -96,7 +96,7 @@ public class ProofScreenTests
         // The predicate the own-deliveries screen draws its capture button from. Static rendering
         // dispatches no event that could capture anything, so its effect is unreachable from a
         // render test - and inverting it would leave every suite green while a client was handed an
-        // action the guard could only ever refuse (FR-12).
+        // action the guard could only ever refuse.
         Assert.Equal(
             expected,
             Web.Components.Pages.MyDeliveries.OffersProofCapture(role, hasProof));
@@ -176,7 +176,7 @@ public class ProofScreenTests
     [Fact]
     public async Task A_freshly_opened_pad_invites_a_signature_and_says_it_has_none()
     {
-        // The matrix's "pad untouched" row. A 10rem rectangle with no frame, no baseline and no
+        // An untouched pad. A 10rem rectangle with no frame, no baseline and no
         // sentence was the scaffold's whole affordance, and a driver holding a parcel has no way of
         // knowing a blank box is somewhere to draw - the prompt and the dashed frame are what say so.
         var html = await RenderCaptureAsync(Parcel);
@@ -280,7 +280,7 @@ public class ProofScreenTests
     [Fact]
     public async Task The_photo_control_counts_what_has_been_chosen_against_what_is_allowed()
     {
-        // The matrix's photo rows, at the state a freshly opened panel is in: nothing chosen, the
+        // The photo rules, at the state a freshly opened panel is in: nothing chosen, the
         // count against the ceiling, and the Add tile offered. The figure the badge shows is
         // ProofAssetRules' own, so the panel cannot advertise a limit the validator does not hold.
         var html = await RenderCaptureAsync(Parcel);
@@ -334,7 +334,7 @@ public class ProofScreenTests
         //
         // What this is NOT is a limit. The tile going is a drawing decision; the refusal is
         // CaptureProofCommandValidator's, and it names the ceiling in the same sentence the REST
-        // surface answers with (AD-9). A panel that threw the sixth file away here would be a
+        // surface answers with. A panel that threw the sixth file away here would be a
         // second, stricter definition of a valid proof.
         Assert.Equal(offered, Web.Components.Pages.ProofCapture.OffersAnotherPhoto(chosen));
     }
@@ -351,17 +351,17 @@ public class ProofScreenTests
         // instead. Lifted out for the reason the Add-tile rule is: no render can choose a file.
         //
         // It decides what the pill says and nothing else. The files are still sent, and
-        // CaptureProofCommandValidator is still what turns them down (AD-9).
+        // CaptureProofCommandValidator is still what turns them down.
         Assert.Equal(over, Web.Components.Pages.ProofCapture.IsOverTheLimit(chosen));
     }
 
     [Fact]
     public async Task A_dropoff_with_no_resolved_address_still_names_where_the_parcel_is_going()
     {
-        // FR-94's fallback, on the summary card. Nothing in this milestone resolves an address, so
-        // this is the branch a driver actually meets - and a card that rendered a null address would
+        // The unresolved-address fallback, on the summary card. An address that has not resolved
+        // is a branch a driver can meet - and a card that rendered a null address would
         // be a blank line where the door should be. The coordinates are what the record holds
-        // (DR-11), so they are what is shown, through the reading both delivery screens share.
+        // so they are what is shown, through the reading both delivery screens share.
         var unresolved = Parcel with
         {
             Dropoff = new LocationView(new MapLocation(50.4470, 30.5220), null),
@@ -375,8 +375,8 @@ public class ProofScreenTests
     [Fact]
     public async Task A_capture_with_nowhere_to_record_it_cannot_be_sent()
     {
-        // The matrix's "location pending" row, which is the state every panel opens in: the device
-        // has not answered, so there is no capture point and the action is disabled. FR-119 records
+        // "Location pending" is the state every panel opens in: the device
+        // has not answered, so there is no capture point and the action is disabled. Proof records
         // where the hand-over happened and this panel draws no coordinate box, so a submit without
         // one can only ever return a 422 naming a field nobody could fill in - after every
         // photograph has been streamed up the circuit.
@@ -468,7 +468,7 @@ public class ProofScreenTests
     /// The capture panel, rendered as a driver's dialog builds it. The capability is stubbed and
     /// never called: nothing on a first render captures anything, and static rendering never reaches
     /// <c>OnAfterRenderAsync</c> - which is exactly why the panel opens with no coordinates and is
-    /// the state the matrix's "location pending" row describes.
+    /// the "location pending" state.
     /// </summary>
     /// <param name="summary">The row the capture is about, or null for a panel given none.</param>
     private static Task<string> RenderCaptureAsync(AssignedDeliverySummary? summary) =>

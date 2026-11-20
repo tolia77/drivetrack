@@ -8,12 +8,12 @@ using ValidationException = DriveTrack.Application.Common.ValidationException;
 namespace DriveTrack.Integration.Tests.Contract;
 
 /// <summary>
-/// AD-9: validation is a call an application service makes, not something an adapter pipeline does
+/// Validation is a call an application service makes, not something an adapter pipeline does
 /// on its behalf.
 /// <para>
 /// That is a boundary, so it gets a boundary assertion as well as a behavioural one. The seam is
 /// only worth having while nothing else can reach a validator - the moment an MVC filter runs one,
-/// "authorize then validate" (AD-3) stops being a property of the operation pipeline and becomes a
+/// "authorize then validate" stops being a property of the operation pipeline and becomes a
 /// coincidence of middleware ordering.
 /// </para>
 /// </summary>
@@ -46,7 +46,7 @@ public class ValidationTests
         Assert.Equal(ErrorCode.COMMON_VALIDATION_FAILED, failure.Code);
 
         // One FieldError per failure, not one per request: a form that reports its errors one at a
-        // time is a form filled in as many times (NFR-4).
+        // time is a form filled in as many times.
         Assert.Equal(
             ["Rating", "Title"],
             failure.FieldErrors.Select(field => field.Field).Order().ToArray());
@@ -67,7 +67,7 @@ public class ValidationTests
     public async Task A_field_message_is_a_resource_key_the_catalogue_resolves()
     {
         // The convention the adapter's field localization depends on: a validator states a key, not
-        // a sentence, so nothing it writes can reach a user untranslated (NFR-14).
+        // a sentence, so nothing it writes can reach a user untranslated.
         var cancellationToken = TestContext.Current.CancellationToken;
         var validator = new ProbeCommandValidator();
 
@@ -111,11 +111,10 @@ public class ValidationTests
     [Fact]
     public void The_discovery_seam_finds_the_validators_it_is_pointed_at()
     {
-        // Epic 1 ships no command, so the assertion above is vacuously true today. This does not
-        // close that hole: it calls AddValidatorsFromAssembly directly rather than AddApplication,
-        // so it proves only that FluentValidation's discovery finds a validator in an assembly it is
-        // pointed at. It does not prove AddApplication points at the right one - only a validator
-        // actually living in DriveTrack.Application can, and Epic 2 ships the first.
+        // This calls AddValidatorsFromAssembly directly rather than AddApplication, so it proves
+        // only that FluentValidation's discovery finds a validator in an assembly it is pointed at.
+        // Whether AddApplication points at the right one is the assertion above, over the
+        // validators actually living in DriveTrack.Application.
         var services = new ServiceCollection();
         services.AddValidatorsFromAssembly(typeof(ProbeCommandValidator).Assembly);
 
@@ -127,8 +126,8 @@ public class ValidationTests
     [Fact]
     public void No_file_under_the_web_project_names_FluentValidation()
     {
-        // AD-9's boundary. The adapter must have no way to run a validator, which starts with it
-        // having no way to name one.
+        // The validation boundary. The adapter must have no way to run a validator, which starts
+        // with it having no way to name one.
         var webDirectory = RepositoryLayout.ProjectDirectory("DriveTrack.Web");
 
         var offenders = Directory

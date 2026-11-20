@@ -8,7 +8,7 @@ using FluentValidation;
 namespace DriveTrack.Application.Tests.Deliveries;
 
 /// <summary>
-/// The rows of story 5.1's edge-case matrix that a validator decides, plus AD-23's merge.
+/// The delivery edge cases that a validator decides, plus the absent-versus-null merge.
 /// <para>
 /// Asserted here rather than over HTTP because these are rules about a value, and a suite that
 /// needed Docker to find out that a weight of zero is refused would be a suite nobody runs while
@@ -31,8 +31,8 @@ public class DeliveryValidationTests
     [Fact]
     public void The_minimum_delivery_is_valid()
     {
-        // The matrix's first row: two points, a description and a weight. No driver, no client, no
-        // notes and no window - FR-16 makes every one of those optional, and a validator that
+        // The ordinary case: two points, a description and a weight. No driver, no client, no
+        // notes and no window - every one of those is optional, and a validator that
         // quietly required one would make the ordinary case impossible.
         Assert.Empty(Failures(Create()));
     }
@@ -42,9 +42,9 @@ public class DeliveryValidationTests
     [InlineData(-1)]
     public void A_weight_that_is_not_positive_is_refused_naming_the_field(decimal weight)
     {
-        // FR-102. The check constraint refuses this too, and with no field list at all - SQLSTATE
+        // The check constraint refuses this too, and with no field list at all - SQLSTATE
         // 23514 carries a constraint name, not a property - so the validator is what turns it into
-        // something a form can attach to an input (NFR-4).
+        // something a form can attach to an input.
         Assert.Contains(
             nameof(CreateDeliveryCommand.PackageWeightKg),
             Failures(Create(weight: weight)));
@@ -91,7 +91,7 @@ public class DeliveryValidationTests
     [Fact]
     public void An_inverted_window_is_refused()
     {
-        // FR-100, and exactly what ck_deliveries_delivery_window says.
+        // Exactly what ck_deliveries_delivery_window says.
         Assert.Contains(
             nameof(CreateDeliveryCommand.WindowLatestAt),
             Failures(Create(earliest: Noon.AddHours(2), latest: Noon)));
@@ -114,8 +114,8 @@ public class DeliveryValidationTests
     [InlineData(false, false)]
     public void Either_bound_may_stand_alone_and_both_may_be_absent(bool earliest, bool latest)
     {
-        // The other half of FR-100, and the half a "both must be present" rule would break: a
-        // dispatcher who knows only the deadline must be able to record only the deadline.
+        // The other half of the window rule, and the half a "both must be present" rule would
+        // break: a dispatcher who knows only the deadline must be able to record only the deadline.
         Assert.Empty(Failures(Create(
             earliest: earliest ? Noon : null,
             latest: latest ? Noon.AddHours(2) : null)));
@@ -136,8 +136,8 @@ public class DeliveryValidationTests
     {
         // Refused here rather than by MapLocation's constructor, and that is the point: a throwing
         // constructor during model binding lands in the suppressed model state and answers 500,
-        // where NFR-4 promises a 422 naming the field. NaN is in the list because it fails every
-        // comparison, so a range written as two negations would let it through.
+        // where the contract promises a 422 naming the field. NaN is in the list because it fails
+        // every comparison, so a range written as two negations would let it through.
         var failures = Failures(Create(pickup: new LocationInput(latitude, 30.5234)));
 
         Assert.Contains(failures, failure =>
@@ -179,12 +179,12 @@ public class DeliveryValidationTests
     }
 
     // =====================================================================================
-    // Requesting (story 7.4)
+    // Requesting
     //
-    // FR-89's matrix, over the five fields a client actually sends. The rules are the create path's
-    // and the assertions are written out again on purpose: "a client's 422 names the same field a
-    // dispatcher's does" is the claim, and a claim about two validators cannot be made by testing
-    // one of them.
+    // The client request path, over the five fields a client actually sends. The rules are the
+    // create path's and the assertions are written out again on purpose: "a client's 422 names the
+    // same field a dispatcher's does" is the claim, and a claim about two validators cannot be made
+    // by testing one of them.
     // =====================================================================================
 
     [Fact]
@@ -201,8 +201,8 @@ public class DeliveryValidationTests
     [InlineData(-1)]
     public void A_requested_weight_that_is_not_positive_is_refused_naming_the_field(decimal weight)
     {
-        // FR-102 reaches the request path unchanged: the column and its check constraint do not
-        // care which endpoint the row arrived through.
+        // The weight rule reaches the request path unchanged: the column and its check constraint
+        // do not care which endpoint the row arrived through.
         Assert.Contains(
             nameof(RequestDeliveryCommand.PackageWeightKg),
             Failures(Request(weight: weight)));
@@ -256,7 +256,7 @@ public class DeliveryValidationTests
     [InlineData("   ")]
     public void An_absent_requested_note_is_accepted(string? notes)
     {
-        // FR-17: notes are optional, and whitespace is the service's business to blank rather than
+        // Notes are optional, and whitespace is the service's business to blank rather than
         // the validator's to refuse.
         Assert.Empty(Failures(Request(notes: notes)));
     }
@@ -307,7 +307,7 @@ public class DeliveryValidationTests
     }
 
     // =====================================================================================
-    // Merging, then validating the merged state (AD-23)
+    // Merging, then validating the merged state
     // =====================================================================================
 
     [Fact]
@@ -335,7 +335,7 @@ public class DeliveryValidationTests
         Assert.Equal(delivery.ClientId?.Value, merged.ClientId.Value);
 
         // The location merges to the stored coordinates, and to those only: a LocationInput is
-        // coordinates, and the address is a cache they own (DR-11).
+        // coordinates, and the address is a cache they own.
         Assert.Equal(delivery.PickupLocation.Latitude, merged.Pickup.Value!.Latitude!.Value);
         Assert.Equal(delivery.PickupLocation.Longitude, merged.Pickup.Value!.Longitude!.Value);
     }
@@ -343,8 +343,8 @@ public class DeliveryValidationTests
     [Fact]
     public void A_present_null_clears_what_may_be_cleared()
     {
-        // The case a plain nullable field cannot express, and the reason Optional exists: FR-16
-        // makes an unassigned delivery legal, so `driverId: null` is an operation a dispatcher
+        // The case a plain nullable field cannot express, and the reason Optional exists: an
+        // unassigned delivery is legal, so `driverId: null` is an operation a dispatcher
         // performs rather than a malformed payload.
         var merged = Update(
             driverId: Optional<int?>.Present(null),
@@ -381,8 +381,8 @@ public class DeliveryValidationTests
     [Fact]
     public void An_update_naming_only_the_weight_is_judged_on_the_merged_row()
     {
-        // AD-23's whole point: the payload mentions one field, and the other eight are the row's.
-        // Validating the payload would refuse this for a package description it never sent.
+        // The merge's whole point: the payload mentions one field, and the other eight are the
+        // row's. Validating the payload would refuse this for a package description it never sent.
         var merged = Update(weight: Optional<decimal>.Present(20m)).MergedOnto(Stored());
 
         Assert.Empty(UpdateFailures(merged));
@@ -405,7 +405,7 @@ public class DeliveryValidationTests
     [Fact]
     public void Clearing_one_stored_bound_leaves_the_other_valid()
     {
-        // FR-100 again, through the merge: a window with one bound is a window.
+        // The window rule again, through the merge: a window with one bound is a window.
         var stored = Stored(earliest: Noon, latest: Noon.AddHours(2));
 
         var merged = Update(earliest: Optional<DateTimeOffset?>.Present(null)).MergedOnto(stored);
@@ -443,9 +443,9 @@ public class DeliveryValidationTests
     }
 
     // =====================================================================================
-    // Timeline notes (story 5.3)
+    // Timeline notes
     //
-    // FR-106 puts a note on a status change and FR-107 makes one an entry in its own right, so the
+    // A note can ride on a status change or be an entry in its own right, so the
     // same text has two commands with deliberately different rules: optional on the change, required
     // on the standalone note. Both bound by the column.
     // =====================================================================================
@@ -457,9 +457,9 @@ public class DeliveryValidationTests
     [InlineData("\t\n")]
     public void A_standalone_note_with_nothing_in_it_is_refused_naming_the_field(string? note)
     {
-        // FR-107 asks for a note, and an entry holding a single space is a line that renders as
-        // blank and reads as a correction nobody wrote. The field name is what lets the form attach
-        // the refusal to the box that produced it (NFR-4).
+        // A standalone entry asks for a note, and an entry holding a single space is a line that
+        // renders as blank and reads as a correction nobody wrote. The field name is what lets the
+        // form attach the refusal to the box that produced it.
         Assert.Contains(nameof(AddDeliveryNoteCommand.Note), NoteFailures(note));
     }
 
@@ -509,7 +509,7 @@ public class DeliveryValidationTests
     [Fact]
     public void A_status_change_needs_no_note_at_all()
     {
-        // FR-106 makes the note optional on a change: a status advances of its own accord, and
+        // The note is optional on a change: a status advances of its own accord, and
         // demanding a sentence for every one would put "ok" in a thousand rows.
         Assert.Empty(StatusFailures(new ChangeDeliveryStatusCommand(DeliveryStatus.InTransit, null)));
         Assert.Empty(StatusFailures(new ChangeDeliveryStatusCommand(DeliveryStatus.InTransit, "   ")));
@@ -533,9 +533,9 @@ public class DeliveryValidationTests
     [InlineData(DeliveryStatus.Failed)]
     public void The_validator_judges_no_transition(DeliveryStatus status)
     {
-        // AD-10 keeps the transition table in one place, and this is the other half of that claim:
+        // The transition table lives in one place, and this is the other half of that claim:
         // asking for Delivered out of nowhere is a valid command that the lifecycle then refuses
-        // with a 409 (FR-32). A rule here would report it as a 422 and be the second copy of the
+        // with a 409. A rule here would report it as a 422 and be the second copy of the
         // table besides.
         Assert.Empty(StatusFailures(new ChangeDeliveryStatusCommand(status, null)));
     }
@@ -556,7 +556,7 @@ public class DeliveryValidationTests
         int limit,
         bool valid)
     {
-        // NFR-27: a limit of two million is refused here rather than handed to the database, and a
+        // A limit of two million is refused here rather than handed to the database, and a
         // limit of zero is a refusal rather than "give me nothing".
         var result = new ListDeliveriesQueryValidator()
             .Validate(new ListDeliveriesQuery(offset, limit));
@@ -631,7 +631,7 @@ public class DeliveryValidationTests
             WindowLatestAt = latest,
 
             // No Status: it has no public setter, and a new delivery is Pending by the entity's own
-            // initializer (AD-10). That is the state this merge fixture wants anyway.
+            // initializer. That is the state this merge fixture wants anyway.
             CreatedAt = Noon,
         };
 

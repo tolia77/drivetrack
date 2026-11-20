@@ -6,7 +6,7 @@ using DriveTrack.Integration.Tests.Support;
 namespace DriveTrack.Integration.Tests.Components;
 
 /// <summary>
-/// NFR-26 for the SignalR browser client: vendored and pinned, exactly as Leaflet is.
+/// The SignalR browser client: vendored and pinned, exactly as Leaflet is.
 /// <para>
 /// There is no front-end package manager here, so "pinned" has to mean something a build can check.
 /// The version constant in the shipped file is the version, the path the module names is the
@@ -127,10 +127,11 @@ public class ChatAssetTests
     [Fact]
     public void The_newest_line_is_scrolled_to_after_a_join_and_after_every_arrival()
     {
-        // FR-74, and the only requirement in this story a browser alone can demonstrate - so it is
-        // asserted where it is decided: the module exports the move, and the screen calls it at both
-        // moments the list grows. A conversation that loads scrolled to its oldest line, or that
-        // quietly appends below the fold, is a screen that looks empty and stale to its reader.
+        // Auto-scroll to the newest line, the one chat behaviour a browser alone can show - so it
+        // is asserted where it is decided: the module exports the move, and the screen calls it at
+        // both moments the list grows. A conversation that loads scrolled to its oldest line, or
+        // that quietly appends below the fold, is a screen that looks empty and stale to its
+        // reader.
         var module = File.ReadAllText(ChatModulePath);
 
         Assert.Contains("export function scrollToNewest(elementId)", module, StringComparison.Ordinal);
@@ -266,7 +267,7 @@ public class ChatAssetTests
     [Fact]
     public void An_arriving_message_scrolls_only_a_reader_who_was_already_at_the_bottom()
     {
-        // FR-74 says the newest line is what a reader following a conversation sees. It does not say
+        // The newest line is what a reader following a conversation sees. It does not say
         // a reader who has scrolled up into last week should be dragged back down because somebody
         // typed - that is the page being taken away mid-sentence, and on a long history it is
         // unrecoverable without scrolling the whole way back.
@@ -322,14 +323,14 @@ public class ChatAssetTests
         Assert.Contains(@"const hubUrl = ""/hubs/chat"";", module, StringComparison.Ordinal);
         Assert.Contains(@"MapHub<ChatHub>(""/hubs/chat""", program, StringComparison.Ordinal);
 
-        // Outside /api, which is what lets a browser's cookie authenticate the handshake: AD-22
-        // makes /api bearer-only and the circuit holds no token.
+        // Outside /api, which is what lets a browser's cookie authenticate the handshake: /api
+        // is bearer-only and the circuit holds no token.
         Assert.DoesNotContain("/api/hubs", program, StringComparison.Ordinal);
     }
 }
 
 /// <summary>
-/// The other half of NFR-26: an asset has to be <em>served</em>, not merely present.
+/// The other half: an asset has to be <em>served</em>, not merely present.
 /// <para>
 /// Everything above reads the developer's disk. None of it would notice the file being excluded from
 /// the static web asset manifest, which is how it actually reaches a browser — the same gap

@@ -4,9 +4,9 @@ using DriveTrack.Integration.Tests.Support;
 namespace DriveTrack.Integration.Tests.Architecture;
 
 /// <summary>
-/// AD-16, as a build-failing test: chat is a module that could be deleted.
+/// Severability, as a build-failing test: chat is a module that could be deleted.
 /// <para>
-/// "Severable" is an acceptance criterion of story 8.1 and is otherwise enforced only by comments —
+/// "Severable" is otherwise enforced only by comments —
 /// <c>MessageConfiguration</c> declares a navigation-less foreign key and says why, and <c>Driver</c>
 /// holds no path back into chat. Neither of those statements can notice the day somebody adds a
 /// <c>Messages</c> collection to an entity, injects <c>IChatService</c> into a delivery screen, or
@@ -65,7 +65,7 @@ public class SeverabilityTests
     ];
 
     /// <summary>
-    /// The chat module, plus the seams AD-16 licenses. Every entry is a path relative to
+    /// The chat module, plus the seams severability licenses. Every entry is a path relative to
     /// <c>src/</c>, and every one of them is a place the module has to be visible from:
     /// <list type="bullet">
     /// <item>the module itself — the entity, the capability, the hub, the screen and the three
@@ -75,8 +75,8 @@ public class SeverabilityTests
     /// both sides of its own port, which offers that repository beside every other;</item>
     /// <item>the migrations, which are generated from the model and name every entity in it;</item>
     /// <item>the composition root of each layer — <c>Infrastructure/DependencyInjection.cs</c>
-    /// registers the service, <c>Web/Program.cs</c> maps the hub — because AD-1 puts registration
-    /// there and nowhere else;</item>
+    /// registers the service, <c>Web/Program.cs</c> maps the hub — because the layering puts
+    /// registration there and nowhere else;</item>
     /// <item><c>Web/Account/HubCaller.cs</c>, which exists only so the hub has a caller to hand to
     /// <c>ICurrentUser</c> and names the hub in explaining why it is public.</item>
     /// </list>
@@ -128,7 +128,7 @@ public class SeverabilityTests
     [Fact]
     public void No_file_outside_the_chat_module_and_its_seams_names_chat()
     {
-        // AD-16's acceptance criterion, stated as the question it is: if the chat module were
+        // Severability, stated as the question it is: if the chat module were
         // deleted, would the solution still build? Every file listed here is one that would then
         // stop compiling, so the answer is exactly the length of this list.
         var offenders = Sources()
@@ -169,9 +169,9 @@ public class SeverabilityTests
     [Fact]
     public void No_entity_holds_a_navigation_back_into_the_conversation()
     {
-        // The structural half of AD-16, and the one a name scan cannot see: `Driver` could grow an
-        // `ICollection<Message> Messages` and every assertion above would still pass, because the
-        // file naming the type would be inside the Domain layer where the entity lives.
+        // The structural half of severability, and the one a name scan cannot see: `Driver` could
+        // grow an `ICollection<Message> Messages` and every assertion above would still pass,
+        // because the file naming the type would be inside the Domain layer where the entity lives.
         //
         // MessageConfiguration's `WithMany()` - with no navigation named - is what keeps the foreign
         // key one-directional, and it is the line this asserts.

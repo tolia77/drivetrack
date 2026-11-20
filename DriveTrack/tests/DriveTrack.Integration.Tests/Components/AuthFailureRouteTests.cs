@@ -4,7 +4,7 @@ using DriveTrack.Web.Account;
 namespace DriveTrack.Integration.Tests.Components;
 
 /// <summary>
-/// FR-79 / FR-80: the anonymous half and the forbidden half of an authorization failure are
+/// The anonymous half and the forbidden half of an authorization failure are
 /// different failures, and the split is a pure function so it can be asserted without a browser.
 /// <para>
 /// The bug this closes is a quiet one. The baseline sent every refused caller to <c>/sign-in</c>,
@@ -54,7 +54,7 @@ public class AuthFailureRouteTests
     [Fact]
     public void The_route_view_redirect_renders_nothing_on_either_path()
     {
-        // FR-80: with prerendering off (AD-14) and nothing rendered here, the protected component's
+        // With prerendering off and nothing rendered here, the protected component's
         // markup cannot reach the response while the redirect is being decided or after it.
         var source = SharedMarkup.ReadComponent("Account", "RedirectOnAuthFailure.razor");
 

@@ -126,7 +126,7 @@ public class CatalogueParityTests(PostgresFixture postgres)
     [Fact]
     public async Task A_key_with_no_translation_falls_back_to_its_Ukrainian_value_rather_than_its_own_name()
     {
-        // The matrix row for a key the English catalogue does not carry. It cannot be proven by
+        // A key the English catalogue does not carry. It cannot be proven by
         // deleting one, because the two parity tests above exist precisely to stop such a key ever
         // existing - so this asks the same question of a culture that has no satellite at all.
         // fr-FR misses the satellite lookup exactly as a hole in the English catalogue would, and

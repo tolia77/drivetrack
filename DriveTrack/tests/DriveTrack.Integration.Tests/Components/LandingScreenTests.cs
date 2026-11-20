@@ -156,7 +156,7 @@ public class LandingScreenTests
 
         Assert.Contains("@layout LandingLayout", home, StringComparison.Ordinal);
 
-        // FR-13: the page's failures pass through the same boundary every other screen's do, and
+        // The page's failures pass through the same boundary every other screen's do, and
         // the dock sits outside it, as MainLayout has it. Read off the source: the boundary is the
         // framework's ErrorBoundary, which this harness cannot render without its logger.
         var layout = SharedMarkup.ReadComponent("Layout", "LandingLayout.razor");
@@ -469,7 +469,7 @@ public class LandingScreenTests
 
     /// <summary>
     /// The link to <paramref name="href"/> inside <paramref name="html"/>, asserted to carry a glyph
-    /// and localized words (NFR-24); returns its inner markup.
+    /// and localized words; returns its inner markup.
     /// </summary>
     private static string AssertActionWithIcon(string html, string href)
     {

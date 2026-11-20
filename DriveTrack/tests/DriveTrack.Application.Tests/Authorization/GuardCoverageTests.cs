@@ -7,7 +7,7 @@ using DriveTrack.Application.Authorization;
 namespace DriveTrack.Application.Tests.Authorization;
 
 /// <summary>
-/// AD-2, as a build-failing test.
+/// The one-guard rule, as a build-failing test.
 /// <para>
 /// The decision this suite exists to protect is that <em>every</em> public method on an Application
 /// service takes an authorization decision, and that the exceptions are a closed list somebody had
@@ -34,9 +34,10 @@ public class GuardCoverageTests
     /// The application services this rule is about: a type whose own name ends in <c>Service</c>, or
     /// one implementing an Application interface whose name does.
     /// <para>
-    /// The second clause is what stops the gate being a naming convention. A capability class called
-    /// anything else would carry no AD-2 obligation at all under a name-only rule, and the allowlist
-    /// test could not notice, because a method it never scanned is not a method it can miss.
+    /// The second clause is what stops the gate being a naming convention. A capability class
+    /// called anything else would carry no guard obligation at all under a name-only rule, and the
+    /// allowlist test could not notice, because a method it never scanned is not a method it can
+    /// miss.
     /// </para>
     /// </summary>
     private static readonly Type[] Services = ApplicationAssembly.Assembly
@@ -114,8 +115,8 @@ public class GuardCoverageTests
         // The claim the three tests above cannot make on their own. They say that everything
         // `IsService` matches takes an authorization decision; they say nothing about what it does
         // not match, and a gate whose blind spot is unstated cannot support "the allowlist is
-        // closed" - a capability class the rule never reached would carry no AD-2 obligation and no
-        // test could notice, because a method that was never scanned is not a method that can be
+        // closed" - a capability class the rule never reached would carry no guard obligation and
+        // no test could notice, because a method that was never scanned is not a method that can be
         // missed.
         //
         // So every public concrete class in the assembly is partitioned, and the partition is
@@ -125,7 +126,7 @@ public class GuardCoverageTests
         // another type, so such a class would be filtered out before any bucket ran and could never
         // be named. IsVisible answers "reachable from outside this assembly", which is the question.
         // Static classes stay out because IsAbstract is true for them, and the gate scans public
-        // *instance* methods - a static class has none for AD-2 to be about.
+        // *instance* methods - a static class has none for the guard rule to be about.
         var unaccounted = ApplicationAssembly.Assembly
             .GetTypes()
             .Where(type => type is { IsClass: true, IsAbstract: false, IsVisible: true })
@@ -210,10 +211,10 @@ public class GuardCoverageTests
     /// <summary>
     /// The public instance operations a service exposes, whether it declares them itself or inherits
     /// them. Property accessors and anything inherited from <see cref="object"/> are not operations
-    /// and are not what AD-2 is about.
+    /// and are not what the guard rule is about.
     /// <para>
     /// Inherited methods are included deliberately. <c>DeclaredOnly</c> would let a capability move
-    /// its public method onto a base class and carry no AD-2 obligation at all - and the allowlist
+    /// its public method onto a base class and carry no guard obligation at all - and the allowlist
     /// test could not notice, because a method it never scanned is not a method it can miss.
     /// </para>
     /// </summary>
