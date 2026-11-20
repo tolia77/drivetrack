@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using System.Globalization;
-using DriveTrack.Application.Abstractions;
+using DriveTrack.Application.Abstractions.Outbound;
 using DriveTrack.Infrastructure;
 using DriveTrack.Infrastructure.Geocoding;
 using DriveTrack.Integration.Tests.Support;

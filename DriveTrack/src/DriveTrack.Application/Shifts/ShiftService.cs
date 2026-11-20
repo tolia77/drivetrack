@@ -1,7 +1,9 @@
 using System.Globalization;
-using DriveTrack.Application.Abstractions;
+using DriveTrack.Application.Abstractions.Persistence;
 using DriveTrack.Application.Authorization;
 using DriveTrack.Application.Common;
+using DriveTrack.Application.Common.Errors;
+using DriveTrack.Application.Common.Paging;
 using DriveTrack.Domain.Identity;
 using DriveTrack.Domain.Shifts;
 using FluentValidation;
@@ -357,7 +359,7 @@ public sealed class ShiftService(
     {
         if (state.EndedAt is null && state.StartedAt > now)
         {
-            throw new Common.ValidationException(
+            throw new Common.Errors.ValidationException(
                 ErrorCode.COMMON_VALIDATION_FAILED,
                 "An open shift may not start in the future.",
                 [new FieldError(nameof(ShiftState.StartedAt), nameof(ErrorCode.SHIFT_OPEN_START_IN_FUTURE))]);

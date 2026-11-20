@@ -1,3 +1,5 @@
+using DriveTrack.Application.Common.Paging;
+
 namespace DriveTrack.Application.Deliveries;
 
 /// <summary>
@@ -19,11 +21,11 @@ public interface IDeliveryService
     /// Dispatcher or admin; a driver or a client is refused rather than quietly narrowed.
     /// </summary>
     /// <exception cref="Common.ForbiddenException">The caller runs neither dispatch nor the system.</exception>
-    /// <exception cref="Common.ValidationException">
+    /// <exception cref="Common.Errors.ValidationException">
     /// The paging parameters are out of range, the sort names no column, or the status is not one
     /// the system has.
     /// </exception>
-    Task<Common.Paged<DeliverySummary>> ListAsync(
+    Task<Common.Paging.Paged<DeliverySummary>> ListAsync(
         ListDeliveriesQuery query,
         CancellationToken cancellationToken);
 
@@ -38,10 +40,10 @@ public interface IDeliveryService
     /// carries no counterparty identity, and ordering by a name is a way of reading it.
     /// </remarks>
     /// <exception cref="Common.ForbiddenException">The caller has no session, or no row scope.</exception>
-    /// <exception cref="Common.ValidationException">
+    /// <exception cref="Common.Errors.ValidationException">
     /// The paging parameters are out of range, or the sort names no column this list has.
     /// </exception>
-    Task<Common.Paged<AssignedDeliverySummary>> ListMineAsync(
+    Task<Common.Paging.Paged<AssignedDeliverySummary>> ListMineAsync(
         ListDeliveriesQuery query,
         CancellationToken cancellationToken);
 
@@ -121,7 +123,7 @@ public interface IDeliveryService
     /// Opens a delivery. It starts <c>Pending</c> and is timestamped from the
     /// injected clock.
     /// </summary>
-    /// <exception cref="Common.ValidationException">The command describes a delivery that may not exist.</exception>
+    /// <exception cref="Common.Errors.ValidationException">The command describes a delivery that may not exist.</exception>
     /// <exception cref="Common.NotFoundException">The named driver or client has no row.</exception>
     /// <exception cref="Common.DomainRuleException">The assigned driver's vehicle cannot carry it.</exception>
     Task<DeliverySummary> CreateAsync(
@@ -156,7 +158,7 @@ public interface IDeliveryService
     /// who open a delivery through <see cref="CreateAsync"/> where the client is an explicit field
     /// (<c>AUTH_FORBIDDEN</c>, 403).
     /// </exception>
-    /// <exception cref="Common.ValidationException">The command describes a delivery that may not exist.</exception>
+    /// <exception cref="Common.Errors.ValidationException">The command describes a delivery that may not exist.</exception>
     Task<AssignedDeliverySummary> RequestAsync(
         RequestDeliveryCommand command,
         CancellationToken cancellationToken);
@@ -166,7 +168,7 @@ public interface IDeliveryService
     /// what may be cleared; every rule is judged against the merged state.
     /// </summary>
     /// <exception cref="Common.NotFoundException">No delivery has that id, or a named party has no row.</exception>
-    /// <exception cref="Common.ValidationException">The merged state is one the row may not hold.</exception>
+    /// <exception cref="Common.Errors.ValidationException">The merged state is one the row may not hold.</exception>
     /// <exception cref="Common.DomainRuleException">The merged state breaks the capacity invariant.</exception>
     Task<DeliverySummary> UpdateAsync(
         int id,
@@ -201,7 +203,7 @@ public interface IDeliveryService
     /// account that has since been deleted (<c>AUTH_UNAUTHENTICATED</c>, 401).
     /// </exception>
     /// <exception cref="Common.NotFoundException">No delivery has that id.</exception>
-    /// <exception cref="Common.ValidationException">
+    /// <exception cref="Common.Errors.ValidationException">
     /// No status was named, the status named is not one the system declares, or the note is longer
     /// than the column allows.
     /// </exception>
@@ -232,7 +234,7 @@ public interface IDeliveryService
     /// No delivery has that id, or the caller's scope does not admit it — the same answer for both,
     /// so a client learns nothing about another client's delivery.
     /// </exception>
-    /// <exception cref="Common.ValidationException">The note is blank or longer than the column allows.</exception>
+    /// <exception cref="Common.Errors.ValidationException">The note is blank or longer than the column allows.</exception>
     Task<TimelineEntryView> AddNoteAsync(
         int id,
         AddDeliveryNoteCommand command,
@@ -276,7 +278,7 @@ public interface IDeliveryService
     /// (<c>AUTH_FORBIDDEN</c>, 403). The same two codes <see cref="RequestAsync"/> answers, because
     /// it is the same guard member deciding.
     /// </exception>
-    /// <exception cref="Common.ValidationException">The query is blank or shorter than three characters.</exception>
+    /// <exception cref="Common.Errors.ValidationException">The query is blank or shorter than three characters.</exception>
     Task<IReadOnlyList<PlaceMatch>> SearchPlacesAsync(
         SearchPlacesQuery query,
         CancellationToken cancellationToken);

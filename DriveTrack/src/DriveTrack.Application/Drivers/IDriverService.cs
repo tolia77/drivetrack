@@ -1,3 +1,4 @@
+using DriveTrack.Application.Common.Paging;
 using DriveTrack.Domain.Identity;
 
 namespace DriveTrack.Application.Drivers;
@@ -30,10 +31,10 @@ public interface IDriverService
     /// search matched. Dispatcher or admin.
     /// </summary>
     /// <exception cref="Common.ForbiddenException">The caller runs neither dispatch nor the system.</exception>
-    /// <exception cref="Common.ValidationException">
+    /// <exception cref="Common.Errors.ValidationException">
     /// The paging parameters are out of range, or the sort names no column.
     /// </exception>
-    Task<Common.Paged<DriverSummary>> ListAsync(
+    Task<Common.Paging.Paged<DriverSummary>> ListAsync(
         ListDriversQuery query,
         CancellationToken cancellationToken);
 
@@ -51,7 +52,7 @@ public interface IDriverService
     /// <summary>
     /// Takes on a driver: the account, the driver row and the assignment, in one transaction.
     /// </summary>
-    /// <exception cref="Common.ValidationException">A field is missing or too long.</exception>
+    /// <exception cref="Common.Errors.ValidationException">A field is missing or too long.</exception>
     /// <exception cref="Common.NotFoundException">No vehicle has the named id.</exception>
     /// <exception cref="Common.ConflictException">
     /// The email is already in use, or another driver already holds the named vehicle.
@@ -65,7 +66,7 @@ public interface IDriverService
     /// is written to the account, and only when the name actually changed.
     /// </summary>
     /// <exception cref="Common.NotFoundException">No driver has that id, or no vehicle has the named id.</exception>
-    /// <exception cref="Common.ValidationException">The merged state is one the driver may not hold.</exception>
+    /// <exception cref="Common.Errors.ValidationException">The merged state is one the driver may not hold.</exception>
     /// <exception cref="Common.ConflictException">Another driver already holds the named vehicle.</exception>
     /// <exception cref="Common.DomainRuleException">
     /// The new vehicle cannot carry a delivery the driver already holds.

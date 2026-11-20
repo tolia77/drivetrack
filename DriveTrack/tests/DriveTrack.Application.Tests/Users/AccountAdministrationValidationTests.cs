@@ -1,6 +1,7 @@
 using DriveTrack.Application.Accounts.Clients;
 using DriveTrack.Application.Accounts.Dispatchers;
 using DriveTrack.Application.Common;
+using DriveTrack.Application.Common.Errors;
 
 namespace DriveTrack.Application.Tests.Users;
 

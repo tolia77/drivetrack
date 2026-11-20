@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using DriveTrack.Application.Common;
+using DriveTrack.Application.Common.Errors;
 using DriveTrack.Domain.Identity;
 using DriveTrack.Integration.Tests.Components;
 using DriveTrack.Integration.Tests.Persistence;

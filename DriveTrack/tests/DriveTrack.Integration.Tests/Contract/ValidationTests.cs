@@ -1,9 +1,10 @@
 using DriveTrack.Application;
 using DriveTrack.Application.Common;
+using DriveTrack.Application.Common.Errors;
 using DriveTrack.Integration.Tests.Support;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
-using ValidationException = DriveTrack.Application.Common.ValidationException;
+using ValidationException = DriveTrack.Application.Common.Errors.ValidationException;
 
 namespace DriveTrack.Integration.Tests.Contract;
 

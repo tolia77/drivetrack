@@ -1,9 +1,9 @@
-using DriveTrack.Application.Abstractions;
+using DriveTrack.Application.Abstractions.Persistence;
 using DriveTrack.Domain.Chat;
 using DriveTrack.Domain.Drivers;
+using DriveTrack.Domain.Identity;
 using DriveTrack.Domain.Shifts;
 using DriveTrack.Domain.Vehicles;
-using DriveTrack.Domain.Identity;
 using DriveTrack.Integration.Tests.Deliveries;
 using DriveTrack.Integration.Tests.Identity;
 using DriveTrack.Integration.Tests.Support;

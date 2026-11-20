@@ -1,4 +1,5 @@
 using DriveTrack.Application.Common;
+using DriveTrack.Application.Common.Errors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 

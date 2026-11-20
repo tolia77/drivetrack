@@ -1,10 +1,12 @@
 using System.Text.RegularExpressions;
 using DriveTrack.Application.Common;
+using DriveTrack.Application.Common.Errors;
+using DriveTrack.Application.Common.Locations;
 using DriveTrack.Application.Deliveries;
 using DriveTrack.Integration.Tests.Support;
 using DriveTrack.Web.Account;
 using DriveTrack.Web.Components.Shared;
-using ValidationException = DriveTrack.Application.Common.ValidationException;
+using ValidationException = DriveTrack.Application.Common.Errors.ValidationException;
 
 namespace DriveTrack.Integration.Tests.Components;
 

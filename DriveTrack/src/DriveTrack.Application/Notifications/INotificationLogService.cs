@@ -1,3 +1,5 @@
+using DriveTrack.Application.Common.Paging;
+
 namespace DriveTrack.Application.Notifications;
 
 /// <summary>
@@ -17,8 +19,8 @@ public interface INotificationLogService
     /// <param name="query">The page asked for.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <exception cref="Common.ForbiddenException">The caller does not run the system; the log is an administrator's alone, and a dispatcher is refused it.</exception>
-    /// <exception cref="Common.ValidationException">The paging parameters are out of range.</exception>
-    Task<Common.Paged<NotificationAttemptSummary>> ListAsync(
+    /// <exception cref="Common.Errors.ValidationException">The paging parameters are out of range.</exception>
+    Task<Common.Paging.Paged<NotificationAttemptSummary>> ListAsync(
         ListNotificationAttemptsQuery query,
         CancellationToken cancellationToken);
 }

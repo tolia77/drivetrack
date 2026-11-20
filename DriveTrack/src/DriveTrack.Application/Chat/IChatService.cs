@@ -61,7 +61,7 @@ public interface IChatService
     /// <exception cref="Common.NotFoundException">
     /// No driver holds that id (<c>CHAT_THREAD_NOT_FOUND</c>).
     /// </exception>
-    /// <exception cref="Common.ValidationException">
+    /// <exception cref="Common.Errors.ValidationException">
     /// The text is empty once trimmed, or longer than the column holds.
     /// </exception>
     Task<ChatMessage> SendAsync(SendMessageCommand command, CancellationToken cancellationToken);

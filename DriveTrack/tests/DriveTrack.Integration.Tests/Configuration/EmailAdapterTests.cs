@@ -1,4 +1,4 @@
-using DriveTrack.Application.Abstractions;
+using DriveTrack.Application.Abstractions.Outbound;
 using DriveTrack.Infrastructure;
 using DriveTrack.Infrastructure.Email;
 using DriveTrack.Integration.Tests.Support;

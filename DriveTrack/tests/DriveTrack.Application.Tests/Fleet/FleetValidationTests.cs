@@ -1,9 +1,10 @@
+using DriveTrack.Application.Accounts.Authentication;
 using DriveTrack.Application.Common;
+using DriveTrack.Application.Common.Errors;
 using DriveTrack.Application.Drivers;
 using DriveTrack.Application.Vehicles;
 using FluentValidation;
 using FluentValidation.Results;
-using DriveTrack.Application.Accounts.Authentication;
 
 namespace DriveTrack.Application.Tests.Fleet;
 

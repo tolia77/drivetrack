@@ -1,6 +1,6 @@
 using System.Net;
 using System.Net.Mail;
-using DriveTrack.Application.Abstractions;
+using DriveTrack.Application.Abstractions.Outbound;
 using Microsoft.Extensions.Options;
 
 namespace DriveTrack.Infrastructure.Email;

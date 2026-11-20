@@ -1,6 +1,6 @@
 using System.Reflection;
 using DriveTrack.Application;
-using DriveTrack.Application.Abstractions;
+using DriveTrack.Application.Abstractions.Persistence;
 using DriveTrack.Infrastructure;
 using DriveTrack.Infrastructure.Persistence;
 using DriveTrack.Integration.Tests.Support;
@@ -37,7 +37,7 @@ public class PersistenceContractTests
         typeof(ApplicationAssembly).Assembly
             .GetTypes()
             .Where(type => type.IsInterface
-                && type.Namespace == "DriveTrack.Application.Abstractions")
+                && type.Namespace?.StartsWith("DriveTrack.Application.Abstractions", StringComparison.Ordinal) == true)
             .OrderBy(type => type.Name)
             .ToArray();
 

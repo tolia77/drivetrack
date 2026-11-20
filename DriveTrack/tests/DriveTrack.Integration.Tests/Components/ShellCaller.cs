@@ -1,14 +1,15 @@
 using System.Globalization;
+using DriveTrack.Application.Accounts;
+using DriveTrack.Application.Accounts.Authentication;
+using DriveTrack.Application.Accounts.Profile;
 using DriveTrack.Application.Authorization;
 using DriveTrack.Application.Common;
+using DriveTrack.Application.Common.Errors;
 using DriveTrack.Domain.Identity;
 using DriveTrack.Integration.Tests.Support;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.DependencyInjection;
-using DriveTrack.Application.Accounts;
-using DriveTrack.Application.Accounts.Authentication;
-using DriveTrack.Application.Accounts.Profile;
 
 namespace DriveTrack.Integration.Tests.Components;
 

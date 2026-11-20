@@ -1,0 +1,38 @@
+using DriveTrack.Domain.Chat;
+using DriveTrack.Domain.Identity;
+
+namespace DriveTrack.Application.Abstractions.Persistence;
+
+/// <summary>
+/// Persistence for <see cref="Message"/>. No <c>Remove</c>: a message is removed only by the
+/// cascade from its driver thread.
+/// </summary>
+public interface IMessageRepository
+{
+    /// <summary>
+    /// One driver's whole conversation, oldest first.
+    /// <para>
+    /// Read back from the same <c>DriverId</c> it was written against, which is the correction this
+    /// capability exists to make: the original stored a message against a nullable recipient and
+    /// read it back by another key, so a delivered message could never be retrieved.
+    /// </para>
+    /// <para>
+    /// Unpaged, because opening a thread loads its full prior history. The <c>(driver_id,
+    /// sent_at)</c> index declared on the table is the one that serves this read.
+    /// </para>
+    /// </summary>
+    /// <param name="driverId">The driver row the conversation is keyed on.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task<IReadOnlyList<Message>> ListForDriverAsync(
+        DriverId driverId,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The newest message of each conversation, for the <paramref name="limit"/> conversations
+    /// spoken in most recently, newest first.
+    /// </summary>
+    Task<IReadOnlyList<Message>> ListLatestPerDriverAsync(int limit, CancellationToken cancellationToken);
+
+    /// <summary>Stages a new message for the next commit.</summary>
+    void Add(Message message);
+}

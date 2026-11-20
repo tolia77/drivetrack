@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
-using DriveTrack.Application.Abstractions;
+using DriveTrack.Application.Abstractions.Persistence;
 using DriveTrack.Domain.Chat;
 using DriveTrack.Domain.Deliveries;
 using DriveTrack.Domain.Identity;

@@ -91,8 +91,8 @@ public class SeverabilityTests
         Path.Combine("DriveTrack.Application", "Chat", "IChatService.cs"),
         Path.Combine("DriveTrack.Application", "Chat", "SendMessageCommand.cs"),
         Path.Combine("DriveTrack.Application", "Chat", "SendMessageCommandValidator.cs"),
-        Path.Combine("DriveTrack.Application", "Abstractions", "IMessageRepository.cs"),
-        Path.Combine("DriveTrack.Application", "Abstractions", "IUnitOfWork.cs"),
+        Path.Combine("DriveTrack.Application", "Abstractions", "Persistence", "IMessageRepository.cs"),
+        Path.Combine("DriveTrack.Application", "Abstractions", "Persistence", "IUnitOfWork.cs"),
 
         // The dashboard's conversations card, which reads the newest message per driver through
         // the message repository. A read-only card on a screen that is not chat's, so it is a seam

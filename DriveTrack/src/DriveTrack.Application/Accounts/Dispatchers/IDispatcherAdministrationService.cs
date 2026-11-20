@@ -1,3 +1,4 @@
+using DriveTrack.Application.Common.Paging;
 using DriveTrack.Domain.Identity;
 
 namespace DriveTrack.Application.Accounts.Dispatchers;
@@ -27,10 +28,10 @@ public interface IDispatcherAdministrationService
     /// Administrators only.
     /// </summary>
     /// <exception cref="Common.ForbiddenException">The caller does not run the system.</exception>
-    /// <exception cref="Common.ValidationException">
+    /// <exception cref="Common.Errors.ValidationException">
     /// The paging parameters are out of range, or the sort names no column.
     /// </exception>
-    Task<Common.Paged<DispatcherAccount>> ListAsync(
+    Task<Common.Paging.Paged<DispatcherAccount>> ListAsync(
         ListDispatchersQuery query,
         CancellationToken cancellationToken);
 

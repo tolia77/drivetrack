@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http.Json;
 using DriveTrack.Application.Chat;
 using DriveTrack.Application.Common;
+using DriveTrack.Application.Common.Errors;
 using DriveTrack.Integration.Tests.Identity;
 using DriveTrack.Integration.Tests.Persistence;
 using Microsoft.AspNetCore.SignalR;

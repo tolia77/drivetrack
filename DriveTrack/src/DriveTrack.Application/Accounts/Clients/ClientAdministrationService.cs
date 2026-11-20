@@ -1,8 +1,10 @@
 using System.Globalization;
-using DriveTrack.Application.Abstractions;
+using DriveTrack.Application.Abstractions.Persistence;
 using DriveTrack.Application.Accounts.Profile;
 using DriveTrack.Application.Authorization;
 using DriveTrack.Application.Common;
+using DriveTrack.Application.Common.Errors;
+using DriveTrack.Application.Common.Paging;
 using DriveTrack.Domain.Clients;
 using DriveTrack.Domain.Identity;
 using FluentValidation;

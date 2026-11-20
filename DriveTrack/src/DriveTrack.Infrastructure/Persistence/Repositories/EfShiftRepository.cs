@@ -1,5 +1,6 @@
-using DriveTrack.Application.Abstractions;
+using DriveTrack.Application.Abstractions.Persistence;
 using DriveTrack.Application.Common;
+using DriveTrack.Application.Common.Paging;
 using DriveTrack.Application.Shifts;
 using DriveTrack.Domain.Identity;
 using DriveTrack.Domain.Shifts;

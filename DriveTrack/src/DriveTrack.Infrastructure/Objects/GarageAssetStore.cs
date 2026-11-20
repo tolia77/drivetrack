@@ -1,8 +1,9 @@
 using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
-using DriveTrack.Application.Abstractions;
 using Microsoft.Extensions.Options;
+using DriveTrack.Application.Abstractions.Outbound;
+using DriveTrack.Application.Common.Errors;
 
 namespace DriveTrack.Infrastructure.Objects;
 

@@ -1,5 +1,6 @@
 using DriveTrack.Application.Accounts.Profile;
 using DriveTrack.Application.Common;
+using DriveTrack.Application.Common.Errors;
 
 namespace DriveTrack.Application.Tests.Users;
 

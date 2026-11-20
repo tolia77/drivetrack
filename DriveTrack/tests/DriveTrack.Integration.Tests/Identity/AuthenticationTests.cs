@@ -4,19 +4,21 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Json;
-using DriveTrack.Application.Abstractions;
+using DriveTrack.Application.Abstractions.Outbound;
+using DriveTrack.Application.Abstractions.Persistence;
+using DriveTrack.Application.Accounts.Authentication;
 using DriveTrack.Application.Authorization;
 using DriveTrack.Application.Common;
+using DriveTrack.Application.Common.Errors;
+using DriveTrack.Domain.Identity;
 using DriveTrack.Integration.Tests.Persistence;
 using DriveTrack.Integration.Tests.Support;
-using DriveTrack.Domain.Identity;
 using DriveTrack.Web.Account;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.Extensions.Localization;
-using DriveTrack.Application.Accounts.Authentication;
+using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace DriveTrack.Integration.Tests.Identity;
 

@@ -1,8 +1,10 @@
-using DriveTrack.Application.Abstractions;
+using DriveTrack.Application.Abstractions.Outbound;
+using DriveTrack.Application.Abstractions.Persistence;
 using DriveTrack.Application.Accounts.Authentication;
 using DriveTrack.Application.Accounts.Profile;
 using DriveTrack.Application.Authorization;
 using DriveTrack.Application.Common;
+using DriveTrack.Application.Common.Errors;
 using DriveTrack.Domain.Clients;
 using DriveTrack.Domain.Identity;
 using FluentValidation;
@@ -261,7 +263,7 @@ public sealed class UserService(
             // wrong; a 401 would reach the session-expiry boundary as an expired session and sign them out.
             // Qualified: FluentValidation declares a ValidationException of its own, and the one
             // that carries an ErrorCode is the only one the adapter can turn into a 422.
-            throw new Common.ValidationException(
+            throw new Common.Errors.ValidationException(
                 ErrorCode.AUTH_CURRENT_PASSWORD_INCORRECT,
                 "The current password offered with a password change does not match the stored hash.",
                 []);

@@ -1,0 +1,45 @@
+using DriveTrack.Application.Accounts.Clients;
+using DriveTrack.Application.Common;
+using DriveTrack.Application.Common.Paging;
+using DriveTrack.Domain.Clients;
+using DriveTrack.Domain.Identity;
+
+namespace DriveTrack.Application.Abstractions.Persistence;
+
+/// <summary>
+/// Persistence for <see cref="Client"/>.
+/// <para>
+/// Every method returns a materialized entity, never an <c>IQueryable</c> and never a
+/// stream over a live context, and every I/O method takes a cancellation token. The surface is
+/// deliberately narrow — a repository gains a query method only when a requirement asks for one.
+/// <see cref="ListAsync"/> is the first requirement that has: the admin and dispatcher client
+/// lists need the whole roster, so it arrived with them rather than in advance of them.
+/// </para>
+/// </summary>
+public interface IClientRepository
+{
+    /// <summary>Loads a client, or null when there is none with that id.</summary>
+    Task<Client?> GetByIdAsync(ClientId id, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Every client row. Materialized and ordered, and unpaged: it feeds the delivery
+    /// form's client picker, which has to offer every client rather than a table's page.
+    /// </summary>
+    Task<IReadOnlyList<Client>> ListAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// One page of the client roster with each client's account fields, sorted in SQL over every
+    /// client, and the size of the roster. Surname order when no column is named;
+    /// every order ends on the id.
+    /// </summary>
+    /// <param name="query">The page and the direction. Already validated.</param>
+    /// <param name="sort">The column, already parsed; null for surname order.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task<Paged<ClientRow>> ListPageAsync(
+        ListClientsQuery query,
+        ClientSort? sort,
+        CancellationToken cancellationToken);
+
+    /// <summary>Stages a new client for the next commit.</summary>
+    void Add(Client client);
+}

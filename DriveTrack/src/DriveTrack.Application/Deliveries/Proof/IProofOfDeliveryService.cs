@@ -37,7 +37,7 @@ public interface IProofOfDeliveryService
     /// The caller has no session, or is not the assigned driver and does not run dispatch.
     /// </exception>
     /// <exception cref="Common.NotFoundException">No delivery has that id.</exception>
-    /// <exception cref="Common.ValidationException">
+    /// <exception cref="Common.Errors.ValidationException">
     /// The command describes a proof that may not exist: no recipient, no coordinates, no signature,
     /// no photograph, too many photographs, a disallowed type or an oversized asset.
     /// </exception>

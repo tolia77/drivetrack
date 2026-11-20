@@ -2,12 +2,13 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using Amazon.S3;
-using DriveTrack.Application.Abstractions;
 using DriveTrack.Infrastructure;
 using DriveTrack.Infrastructure.Objects;
 using DriveTrack.Integration.Tests.Support;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using DriveTrack.Application.Abstractions.Outbound;
+using DriveTrack.Application.Common.Errors;
 
 namespace DriveTrack.Integration.Tests.Configuration;
 

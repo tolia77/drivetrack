@@ -3,6 +3,7 @@ using DriveTrack.Domain.Clients;
 using DriveTrack.Domain.Deliveries;
 using DriveTrack.Domain.Drivers;
 using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Notifications;
 using DriveTrack.Domain.Reviews;
 using DriveTrack.Domain.Shifts;
 using DriveTrack.Domain.Vehicles;
