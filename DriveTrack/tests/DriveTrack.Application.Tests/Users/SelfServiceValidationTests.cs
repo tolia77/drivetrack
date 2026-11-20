@@ -4,8 +4,8 @@ using DriveTrack.Application.Users;
 namespace DriveTrack.Application.Tests.Users;
 
 /// <summary>
-/// The 422 rows of story 7.3's I/O matrix (FR-87, FR-88, FR-92), driven through the real
-/// <c>EnsureValidAsync</c> seam (AD-9) so the assertions are about the <see cref="FieldError"/>
+/// The self-service profile, password and email 422 cases, driven through the real
+/// <c>EnsureValidAsync</c> seam so the assertions are about the <see cref="FieldError"/>
 /// list the adapter will actually receive.
 /// <para>
 /// None of these needs a database, and that is the point of validating the merged profile rather
@@ -63,9 +63,9 @@ public class SelfServiceValidationTests
     [Fact]
     public async Task A_phone_number_on_an_account_with_no_client_row_is_refused()
     {
-        // DR-3 gives a dispatcher, a driver and an administrator no row to store a number in. The
-        // alternative - dropping a field the caller did send - is exactly the failure Optional<T>
-        // exists to prevent, and it would be invisible to everyone involved.
+        // The role model gives a dispatcher, a driver and an administrator no row to store a number
+        // in. The alternative - dropping a field the caller did send - is exactly the failure
+        // Optional<T> exists to prevent, and it would be invisible to everyone involved.
         var failure = await Refuse(Profile, ValidOther() with { PhoneNumber = "+380441234567" });
 
         AssertField(failure, "PhoneNumber", nameof(ErrorCode.AUTH_PHONE_NUMBER_INVALID));
@@ -111,7 +111,7 @@ public class SelfServiceValidationTests
         var failure = await Refuse(Password, ValidPassword() with { NewPassword = string.Empty });
 
         // The policy's code: nothing was typed, so "the password is not acceptable" is exactly what
-        // there is to say, and it is the same answer Identity gives (NFR-2).
+        // there is to say, and it is the same answer Identity gives.
         AssertField(failure, "NewPassword", nameof(ErrorCode.AUTH_PASSWORD_TOO_WEAK));
     }
 
@@ -192,10 +192,10 @@ public class SelfServiceValidationTests
     [Fact]
     public async Task Every_message_is_an_error_code_name_rather_than_a_sentence()
     {
-        // NFR-14 by construction: the adapter resolves a field message through the same Ukrainian
-        // catalogue as error.code, so a sentence here would reach a user untranslated. Asserted
-        // across the whole validator rather than row by row, because the failure mode is one rule
-        // somebody wrote in prose.
+        // Translation by construction: the adapter resolves a field message through the same
+        // Ukrainian catalogue as error.code, so a sentence here would reach a user untranslated.
+        // Asserted across the whole validator rather than row by row, because the failure mode is
+        // one rule somebody wrote in prose.
         var codes = Enum.GetNames<ErrorCode>().ToHashSet(StringComparer.Ordinal);
 
         var failures = new List<ValidationException>
@@ -235,7 +235,7 @@ public class SelfServiceValidationTests
     private static void AssertField(ValidationException failure, string field, string messageKey)
     {
         // Contains rather than Single, as the administration suite does: an empty value breaks two
-        // rules on the same field at once, and NFR-4 wants both reported rather than one.
+        // rules on the same field at once, and both are reported rather than one.
         Assert.Equal(ErrorCode.COMMON_VALIDATION_FAILED, failure.Code);
         Assert.Contains(
             failure.FieldErrors,

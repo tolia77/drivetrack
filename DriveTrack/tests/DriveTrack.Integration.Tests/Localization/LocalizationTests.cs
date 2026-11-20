@@ -13,7 +13,7 @@ using Microsoft.Extensions.Localization;
 namespace DriveTrack.Integration.Tests.Localization;
 
 /// <summary>
-/// NFR-14 and NFR-15: the interface is Ukrainian or English, and which one is the user's decision
+/// The interface is Ukrainian or English, and which one is the user's decision
 /// rather than their browser's.
 /// <para>
 /// Ukrainian is the baseline and the default - it is what the neutral catalogues hold and what a
@@ -174,7 +174,7 @@ public class LocalizationTests(PostgresFixture postgres)
     public void Every_resource_value_is_written_in_Ukrainian(string fileName)
     {
         // "Has a resource key" and "the key holds a translation" are different claims, and the
-        // second is the one NFR-14 makes. An untranslated placeholder passes every other test here.
+        // second is the one that matters. An untranslated placeholder passes every other test here.
         var offenders = Guarded(fileName)
             .Where(entry => !entry.Value.Any(IsCyrillic))
             .Select(entry => entry.Key)
@@ -187,7 +187,7 @@ public class LocalizationTests(PostgresFixture postgres)
     public void No_resource_value_carries_an_English_word()
     {
         // A run of Latin letters in a translated string is either an untranslated fragment or a
-        // leaked key. Neither belongs in front of a user (NFR-14).
+        // leaked key. Neither belongs in front of a user.
         var offenders = ResourceFiles
             .SelectMany(file => Guarded(file).Select(entry => (File: file, entry.Key, entry.Value)))
             .Where(entry => HasLatinWord(entry.Value.Replace(BrandName, string.Empty, StringComparison.Ordinal)))
@@ -232,9 +232,9 @@ public class LocalizationTests(PostgresFixture postgres)
     [Fact]
     public void The_Ukrainian_locale_formats_dates_and_numbers_its_own_way()
     {
-        // NFR-15. Asserted against a known instant and a known number rather than against
-        // CurrentCulture, so this fails on a machine whose ICU data is missing rather than passing
-        // because the invariant culture happened to be in scope.
+        // Locale formatting. Asserted against a known instant and a known number rather than
+        // against CurrentCulture, so this fails on a machine whose ICU data is missing rather than
+        // passing because the invariant culture happened to be in scope.
         var date = new DateOnly(2026, 9, 7);
 
         Assert.Equal("07.09.2026", date.ToString("d", Ukrainian));
@@ -277,7 +277,7 @@ public class LocalizationTests(PostgresFixture postgres)
     [Fact]
     public void Every_UiText_key_is_asked_for_by_a_component()
     {
-        // The reverse direction. A key no component reads is dead weight (NFR-6) and, worse, makes
+        // The reverse direction. A key no component reads is dead weight and, worse, makes
         // the forward test above look more thorough than it is.
         var used = KeysUsedByComponents();
 
@@ -293,7 +293,7 @@ public class LocalizationTests(PostgresFixture postgres)
     [Fact]
     public void Every_delivery_status_has_an_email_label_and_it_matches_the_screens()
     {
-        // Story 5.2 puts a second catalogue in the system, and this is the reason that is tolerable.
+        // Email text is a second catalogue in the system, and this is the reason that is tolerable.
         // Mail copy cannot live in UiText.resx - that catalogue is closed against the keys components
         // ask for, so a subject line no component renders would fail the reverse test - and
         // DriveTrack.Application carries no IStringLocalizer to read one with. So the four status
@@ -316,8 +316,9 @@ public class LocalizationTests(PostgresFixture postgres)
     [Fact]
     public void Every_email_template_is_written_in_Ukrainian()
     {
-        // NFR-14 reaches the mail as well as the screens: an untranslated subject line is a Latin
-        // sentence in front of a client, and it is the one user-facing string no render test can see.
+        // Translation reaches the mail as well as the screens: an untranslated subject line is a
+        // Latin sentence in front of a client, and it is the one user-facing string no render test
+        // can see.
         var offenders = EmailValues()
             .Where(entry => !entry.Value.Any(IsCyrillic) || HasLatinWord(entry.Value))
             .Select(entry => entry.Key)

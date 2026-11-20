@@ -6,7 +6,7 @@ using FluentValidation.Results;
 namespace DriveTrack.Application.Tests.Reviews;
 
 /// <summary>
-/// The validation rows of story 7.2's edge-case matrix, asserted against the two validators that
+/// The review validation edge cases, asserted against the two validators that
 /// carry them.
 /// <para>
 /// Asserted here rather than over HTTP because that is where the rules live and where it is
@@ -22,7 +22,7 @@ namespace DriveTrack.Application.Tests.Reviews;
 /// </para>
 /// <para>
 /// Both validators are exercised, and that is not duplication for its own sake. They judge
-/// different things — a payload and AD-23's merged state — and an edit is the path where a rule
+/// different things — a payload and the merged state — and an edit is the path where a rule
 /// silently going missing has no other symptom: the create path would still refuse a 6, so a screen
 /// test would keep passing while <c>PUT</c> wrote one.
 /// </para>
@@ -46,9 +46,9 @@ public class ReviewValidationTests
     [InlineData(-1)]
     public void A_rating_off_the_scale_is_refused_naming_the_field(int rating)
     {
-        // FR-67, and the same answer whichever half of the system catches it: the validator's 422
+        // The same answer whichever half of the system catches it: the validator's 422
         // here, CK_Reviews_Rating's 422 through PERSISTENCE_CHECK_VIOLATION if a path ever reached
-        // the column without it (NFR-2).
+        // the column without it.
         Assert.Contains(nameof(CreateReviewCommand.Rating), Fields(Create(rating, "добре")));
         Assert.Contains(nameof(ErrorCode.REVIEW_RATING_OUT_OF_RANGE), Keys(Create(rating, "добре")));
 
@@ -122,7 +122,7 @@ public class ReviewValidationTests
     public void A_review_one_character_wider_than_the_column_is_refused_before_the_commit()
     {
         // The validator's limit is ReviewConfiguration's, which is what turns a truncation
-        // PostgreSQL would raise into a 422 naming the field (NFR-4).
+        // PostgreSQL would raise into a 422 naming the field.
         var text = new string('я', CreateReviewCommandValidator.TextMaximumLength + 1);
 
         Assert.Contains(nameof(CreateReviewCommand.Text), Fields(Create(RatingScale.Default, text)));
@@ -135,10 +135,10 @@ public class ReviewValidationTests
     [Fact]
     public void An_edit_that_changes_only_the_rating_is_judged_against_the_stored_text()
     {
-        // AD-23's whole point, and the regression this class exists to catch: a validator handed
-        // the payload would refuse this edit for carrying no text, when the review it is applied to
-        // has plenty. MergedOnto is what fills the absent half in, and it is internal, so this
-        // assembly is the only one that can say so.
+        // The absent-versus-null merge's whole point, and the regression this class exists to
+        // catch: a validator handed the payload would refuse this edit for carrying no text, when
+        // the review it is applied to has plenty. MergedOnto is what fills the absent half in, and
+        // it is internal, so this assembly is the only one that can say so.
         var stored = new Review
         {
             DeliveryId = 7,
@@ -159,7 +159,7 @@ public class ReviewValidationTests
     [Fact]
     public void An_edit_cannot_empty_a_review_by_sending_nothing_in_the_box()
     {
-        // The other arm of AD-23: absent leaves the text alone, present-and-null is a caller
+        // The other arm of the merge: absent leaves the text alone, present-and-null is a caller
         // clearing it - and a review with no text is a row the column forbids, so the rule refuses
         // it rather than letting PostgreSQL answer.
         var stored = new Review
@@ -185,7 +185,7 @@ public class ReviewValidationTests
     [Fact]
     public void The_review_page_is_bounded_like_every_other_list_in_the_product()
     {
-        // NFR-27: a limit of two million is a 422 naming the field rather than a query the database
+        // A limit of two million is a 422 naming the field rather than a query the database
         // is asked to run, and a limit of zero is a refusal rather than "give me nothing".
         var validator = new ListReviewsQueryValidator();
 
@@ -202,7 +202,7 @@ public class ReviewValidationTests
     }
 
     /// <summary>
-    /// AD-23's merge of one edited field onto a stored review, which is the only thing
+    /// The merge of one edited field onto a stored review, which is the only thing
     /// <see cref="ReviewStateValidator"/> is ever handed — and the place the edit path's trim lives.
     /// </summary>
     private static ReviewState Merged(Optional<string> text) =>

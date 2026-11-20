@@ -127,7 +127,7 @@ public class DeliveryScreenTests
     {
         var html = await RenderDeliveriesAsync(UserRole.Dispatcher);
 
-        // FR-82: the shared table, not a second one built beside it.
+        // The shared table, not a second one built beside it.
         Assert.Contains("dt-table-scroll", html, StringComparison.Ordinal);
         Assert.Contains("table-striped", html, StringComparison.Ordinal);
 
@@ -147,14 +147,14 @@ public class DeliveryScreenTests
     [Fact]
     public async Task A_location_with_no_resolved_address_shows_its_coordinates()
     {
-        // FR-94, and the reason this story can ship before the geocoder does: every location it
-        // stores has a null address, so a screen that rendered the address alone would show a
+        // An address is a cache the geocoder may not have filled yet: a location stored before it
+        // resolves has a null address, so a screen that rendered the address alone would show a
         // column of empty cells and nothing would say why.
         var html = await RenderDeliveriesAsync(UserRole.Dispatcher);
 
         Assert.Contains("50.4501; 30.5234", html, StringComparison.Ordinal);
 
-        // And the other arm: once story 5.2 fills the cache, the address is what is shown.
+        // And the other arm: once the geocoder fills the cache, the address is what is shown.
         Assert.Contains("Львів, площа Ринок", html, StringComparison.Ordinal);
     }
 
@@ -163,13 +163,13 @@ public class DeliveryScreenTests
     {
         // The distinction the two screens exist to make, as a driver sees it. Opening, editing and
         // deleting a delivery on somebody's behalf is dispatch's, and asking for one is the client's
-        // (FR-89) - so a driver gets none of it, and an action offered here could only ever be
+        // - so a driver gets none of it, and an action offered here could only ever be
         // refused.
         //
-        // The timeline is the exception story 5.3 introduced, and it is not a counter-example: a
-        // driver advances the parcel they are carrying (FR-26) and a client adds a note to their own
-        // delivery (FR-107), so that dialog belongs on both screens. What must not appear is a form
-        // that opens a delivery - dispatch's or the client's.
+        // The timeline is the exception, and it is not a counter-example: a driver advances the
+        // parcel they are carrying and a client adds a note to their own delivery, so that dialog
+        // belongs on both screens. What must not appear is a form that opens a delivery -
+        // dispatch's or the client's.
         var dispatch = await RenderDeliveriesAsync(UserRole.Dispatcher);
         var mine = await RenderMyDeliveriesAsync();
 
@@ -194,34 +194,34 @@ public class DeliveryScreenTests
         // And the count, because the named checks above only rule out the dialogs that exist today:
         // a further one, added for some later capability, would slip past every one of them.
         //
-        // Three for a driver, and each is an operation they genuinely have: story 6.1's capture a
-        // driver performs at the door (FR-119) and the proof either role may read afterwards
-        // (FR-122), and FR-21's read-only map, which the dispatch board always had and this screen
-        // did not. The timeline (story 5.3) is a fourth, but it owns its dialog and is rendered
-        // only once a row is chosen, so it is not on the page until then. The number is pinned
-        // rather than relaxed for the reason it was pinned at one: it is the only assertion that
-        // notices a dialog belonging to another role arriving here by a paste.
+        // Three for a driver, and each is an operation they genuinely have: the proof capture a
+        // driver performs at the door and the proof either role may read afterwards, and the
+        // read-only map, which the dispatch board also has. The timeline is a fourth, but it owns
+        // its dialog and is rendered only once a row is chosen, so it is not on the page until
+        // then. The number is pinned rather than relaxed for the reason it was pinned at one: it is
+        // the only assertion that notices a dialog belonging to another role arriving here by a
+        // paste.
         Assert.Equal(3, SharedMarkup.Occurrences(mine, "<dialog"));
     }
 
     [Fact]
     public async Task A_client_is_offered_the_request_action_and_the_form_behind_it()
     {
-        // FR-89 to FR-91 at the surface the intent names. The same screen, the same dialogs a
+        // Client delivery requests at the surface. The same screen, the same dialogs a
         // driver gets, plus one: the request form, which exists for exactly one role.
         var mine = await RenderMyDeliveriesAsync(role: UserRole.Client);
 
         Assert.Contains("dt-delivery-request", mine, StringComparison.Ordinal);
         Assert.Contains("Замовити доставку", mine, StringComparison.Ordinal);
 
-        // The form itself, and the two address boxes FR-104 puts above the maps.
+        // The form itself, and the two address search boxes above the maps.
         Assert.Contains("request-form", mine, StringComparison.Ordinal);
         Assert.Contains("dt-request-pickup-search", mine, StringComparison.Ordinal);
         Assert.Contains("dt-request-dropoff-search", mine, StringComparison.Ordinal);
         Assert.Contains("dt-request-submit", mine, StringComparison.Ordinal);
 
-        // And what the form must not carry, which is the story rather than a styling choice: a
-        // request names no driver, no client and no window, because RequestDeliveryCommand has no
+        // And what the form must not carry, which is the product rule rather than a styling choice:
+        // a request names no driver, no client and no window, because RequestDeliveryCommand has no
         // field to bind one to.
         Assert.DoesNotContain("delivery-driver", mine, StringComparison.Ordinal);
         Assert.DoesNotContain("delivery-client", mine, StringComparison.Ordinal);
@@ -254,10 +254,9 @@ public class DeliveryScreenTests
     [Fact]
     public async Task A_location_cell_is_an_action_on_every_screen_that_shows_one()
     {
-        // FR-21 names no role: "clicking a location cell opens a read-only map centred on that
-        // coordinate", in the same story that defines what a driver and a client see (FR-25,
-        // FR-27). The dispatch board had it and the own-deliveries screen rendered the same
-        // addresses as dead text.
+        // The read-only map names no role: clicking a location cell opens a map centred on that
+        // coordinate, for a driver and a client as much as for dispatch. Without it the
+        // own-deliveries screen renders the same addresses as dead text.
         //
         // What is asserted is that the cell is a button rather than a label, because static
         // rendering cannot click it - the same limit the dispatch board's own map test records.
@@ -271,8 +270,8 @@ public class DeliveryScreenTests
         Assert.Contains("dt-my-delivery-pickup", driver, StringComparison.Ordinal);
         Assert.Contains("dt-my-delivery-dropoff", driver, StringComparison.Ordinal);
 
-        // A client reads their own delivery's addresses too, and FR-27 withholds the driver, not
-        // the destination.
+        // A client reads their own delivery's addresses too, and what is withheld from them is the
+        // driver, not the destination.
         Assert.Contains("dt-my-delivery-pickup", customer, StringComparison.Ordinal);
         Assert.Contains("dt-my-delivery-dropoff", customer, StringComparison.Ordinal);
     }
@@ -294,10 +293,10 @@ public class DeliveryScreenTests
     [Fact]
     public async Task Both_screens_offer_the_timeline_and_neither_pays_for_it_until_it_is_opened()
     {
-        // FR-108 reaches every role that can see a delivery, so the action is on both screens. The
-        // panel inside the dialog is built only once a row has been chosen - a component per row
-        // would issue a timeline read per row on first paint, which is the cost this shape avoids
-        // and which nothing else in the suite would notice.
+        // The timeline reaches every role that can see a delivery, so the action is on both
+        // screens. The panel inside the dialog is built only once a row has been chosen - a
+        // component per row would issue a timeline read per row on first paint, which is the cost
+        // this shape avoids and which nothing else in the suite would notice.
         var dispatch = await RenderDeliveriesAsync(UserRole.Dispatcher);
         var mine = await RenderMyDeliveriesAsync(StubDeliveryService.Assigned);
 
@@ -312,8 +311,8 @@ public class DeliveryScreenTests
     [Fact]
     public async Task Both_screens_offer_the_proof_and_only_the_driver_is_offered_the_capture()
     {
-        // FR-122 reaches every role that can see a delivery, so the read action is on both screens;
-        // FR-119's capture happens at a door, so it is the driver's alone and appears on neither the
+        // Proof reaches every role that can see a delivery, so the read action is on both screens;
+        // capture happens at a door, so it is the driver's alone and appears on neither the
         // dispatch board nor a client's list. Without this, deleting either button leaves the whole
         // suite green - the dialog count next door is about the own-deliveries screen and counts
         // dialogs, not the actions that open them.
@@ -340,7 +339,7 @@ public class DeliveryScreenTests
     public async Task A_client_reaches_the_own_deliveries_screen_and_its_history_action()
     {
         // The screen serves both narrowed roles, and nothing else in the suite renders it as a
-        // client: FR-107 gives them the note field, so the row action has to be there for them too.
+        // client: they get the note field, so the row action has to be there for them too.
         var html = await RenderMyDeliveriesAsync(
             StubDeliveryService.Assigned, UserRole.Client);
 
@@ -356,10 +355,11 @@ public class DeliveryScreenTests
         UserRole role,
         bool expected)
     {
-        // FR-90, asserted where it actually lives. The render above cannot make this claim: the
-        // timeline panel is built only after a row is chosen, and static rendering dispatches no
-        // event that could choose one - so inverting the flag would leave every render assertion in
-        // this file green while a client was handed the buttons FR-90 says must not be drawn.
+        // A client never changes status, asserted where it actually lives. The render above cannot
+        // make this claim: the timeline panel is built only after a row is chosen, and static
+        // rendering dispatches no event that could choose one - so inverting the flag would leave
+        // every render assertion in this file green while a client was handed buttons that must not
+        // be drawn.
         //
         // The two dispatch roles are false here and that is not a contradiction: they read their
         // deliveries on /deliveries, where the panel is opened with the flag set outright.
@@ -369,15 +369,15 @@ public class DeliveryScreenTests
     [Fact]
     public async Task Only_an_administrator_is_offered_the_deletion_prompt()
     {
-        // FR-24 reserves deletion to an admin, and IAccessGuard refuses a dispatcher who asks. FR-12
-        // is unchanged by this: the markup hides, the guard decides.
+        // Deletion is an admin's alone, and IAccessGuard refuses a dispatcher who asks. The markup
+        // hides, the guard decides.
         var admin = await RenderDeliveriesAsync(UserRole.Admin);
         var dispatcher = await RenderDeliveriesAsync(UserRole.Dispatcher);
 
         Assert.Contains("dt-delivery-delete", admin, StringComparison.Ordinal);
         Assert.Contains("dt-confirm-accept", admin, StringComparison.Ordinal);
 
-        // NFR-19: the prompt is the native element with the ARIA trio written out.
+        // The prompt is the native element with the ARIA trio written out.
         Assert.Contains(@"aria-modal=""true""", admin, StringComparison.Ordinal);
 
         Assert.DoesNotContain("dt-delivery-delete", dispatcher, StringComparison.Ordinal);
@@ -391,7 +391,7 @@ public class DeliveryScreenTests
     [Fact]
     public async Task The_form_embeds_two_pickers_and_a_location_cell_opens_a_third_map()
     {
-        // NFR-26 / FR-15 / FR-21: one map component, two jobs. Two pickers are rendered with the
+        // One map component, two jobs. Two pickers are rendered with the
         // form; the read-only one is built when a cell is clicked, which static rendering cannot
         // do - so what is asserted here is that the cell is an action rather than a dead label.
         var html = await RenderDeliveriesAsync(UserRole.Dispatcher);
@@ -405,7 +405,7 @@ public class DeliveryScreenTests
     public async Task Both_delivery_dialogs_lay_their_two_pickers_out_the_same_way()
     {
         // The two dialogs are the same dialog for two roles, and their field sets differ only where
-        // FR-89 and FR-90 make them differ. Their *presentation* is not supposed to differ at all -
+        // a client's request has to. Their *presentation* is not supposed to differ at all -
         // and it silently did: the wide panel and the two-column picker grid were given to the
         // dispatch board and not to the request form, so a client aimed at a full-width map with the
         // second one below the fold while a dispatcher read both side by side.
@@ -460,7 +460,7 @@ public class DeliveryScreenTests
     [Fact]
     public async Task The_form_shows_the_capacity_the_dispatcher_is_about_to_exceed()
     {
-        // FR-103 says the rejection names both figures, and NFR-3 gives the envelope one message
+        // The capacity rejection names both figures, and the envelope has one message
         // per code - so the capacity reaches the dispatcher here, beside the weight input, at the
         // moment they could exceed it.
         var html = await RenderDeliveriesAsync(UserRole.Dispatcher);
@@ -472,9 +472,10 @@ public class DeliveryScreenTests
     [Fact]
     public async Task The_driver_picker_names_each_drivers_standing_and_whether_they_are_on_duty()
     {
-        // FR-98 and FR-116 at the moment a dispatcher chooses who carries a parcel. An <option>
-        // holds text and nothing else, so both the rating and the duty marker are composed in C# -
-        // which means all four branches are only covered if the stub has one driver of each kind.
+        // Rating and duty state at the moment a dispatcher chooses who carries a parcel. An
+        // <option> holds text and nothing else, so both the rating and the duty marker are composed
+        // in C# - which means all four branches are only covered if the stub has one driver of each
+        // kind.
         var html = await RenderDeliveriesAsync(UserRole.Dispatcher);
 
         var options = Regex.Matches(
@@ -485,7 +486,7 @@ public class DeliveryScreenTests
             .Select(match => System.Net.WebUtility.HtmlDecode(match.Groups["body"].Value).Trim())
             .ToArray();
 
-        // 4,5 under uk-UA, which uses a comma for the decimal mark (NFR-15): the average is rendered
+        // 4,5 under uk-UA, which uses a comma for the decimal mark: the average is rendered
         // as an average rather than rounded to a whole star. The marker after it is the driver's
         // open shift, in the same words the shift screen's own driver picker uses - and not the
         // words of the state badge beside it, which labels a shift rather than a person.
@@ -494,8 +495,9 @@ public class DeliveryScreenTests
         // And the driver nobody has reviewed, who gets the catalogue's "no value" text. Never a
         // zero: that is a rating, and the worst one the scale has.
         //
-        // FR-116's other half, and the one worth stating flatly: this driver is off duty and is
-        // still in the list. The requirement asks the form to flag rather than to refuse, so an
+        // The duty marker's other half, and the one worth stating flatly: this driver is off duty
+        // and is still in the list. The requirement asks the form to flag rather than to refuse, so
+        // an
         // <option> that had been filtered out - or disabled - would fail here rather than quietly
         // turning a note into a rule the guard never agreed to.
         Assert.Contains("Олег Коваль — Немає оцінок — Не на зміні", options);
@@ -533,8 +535,8 @@ public class DeliveryScreenTests
                 Rating: null,
                 ReviewCount: 0,
 
-                // FR-116 has no part in the capacity lookup below, and saying so is the point of
-                // stating it: a driver's duty state must not change which vehicle they hold.
+                // Duty state has no part in the capacity lookup below, and saying so is the point
+                // of stating it: a driver's duty state must not change which vehicle they hold.
                 OnDuty: true),
             new DriverSummary(
                 new DriverId(2),
@@ -559,8 +561,8 @@ public class DeliveryScreenTests
         // The driver holding vehicle 5 shows that vehicle's capacity, not another's and not a dash.
         Assert.Equal(1200m, Web.Components.Pages.Deliveries.CapacityOf(drivers, vehicles, driverId: 1));
 
-        // FR-38 makes a driver without a vehicle legal, and FR-103 leaves them unchecked: there is
-        // no figure to show, which is the one case the dash legitimately means.
+        // A driver without a vehicle is legal, and the capacity rule leaves them unchecked: there
+        // is no figure to show, which is the one case the dash legitimately means.
         Assert.Null(Web.Components.Pages.Deliveries.CapacityOf(drivers, vehicles, driverId: 2));
 
         // No driver named yet, and a driver the page never fetched: neither invents a capacity.
@@ -574,7 +576,7 @@ public class DeliveryScreenTests
     [Fact]
     public async Task The_dispatch_board_offers_every_filter_and_a_single_reset()
     {
-        // FR-20 and FR-101: a filter per column, a creation-date range, and one action that clears
+        // A filter per column, a creation-date range, and one action that clears
         // all of them. A per-field clear would leave a dispatcher hunting for the box still
         // narrowing the list.
         var html = await RenderDeliveriesAsync(UserRole.Dispatcher);
@@ -684,7 +686,7 @@ public class DeliveryScreenTests
     public async Task Each_column_heading_is_a_sort_control()
     {
         // DtDataTable renders whatever rows it is given and sorts nothing, so the control belongs
-        // to the consumer - and a heading that was only a label would leave FR-20 unimplemented
+        // to the consumer - and a heading that was only a label would leave sorting unimplemented
         // while the table looked complete.
         var html = await RenderDeliveriesAsync(UserRole.Dispatcher);
 
@@ -712,7 +714,7 @@ public class DeliveryScreenTests
 
         // And it is the delivery window that claims it. Counting one ascending heading says a
         // column is sorted and not which, so the board could open on any of the nine - the creation
-        // date it opened on before this story included - and every count above would still hold.
+        // date included - and every count above would still hold.
         // The window is the column the design leads with, because a dispatcher's question is what
         // is due next.
         var claiming = SortedHeader.Match(html);
@@ -729,10 +731,10 @@ public class DeliveryScreenTests
         DateTimeOffset? latest,
         string expected)
     {
-        // FR-100 lets either bound stand alone and lets both be absent, so the cell has four shapes
-        // and only one of them is a range. A one-sided window used to render as a range with a hole
-        // in it - a dash standing in for the missing bound, beside the dash that means "to" - which
-        // says nothing about which end is missing.
+        // A delivery window lets either bound stand alone and lets both be absent, so the cell has
+        // four shapes and only one of them is a range. A one-sided window used to render as a range
+        // with a hole in it - a dash standing in for the missing bound, beside the dash that means
+        // "to" - which says nothing about which end is missing.
         //
         // Read off the rendered cell rather than off the formatter, because the word that makes a
         // single bound directional is in the markup and the figures are in the method: an assertion
@@ -784,9 +786,9 @@ public class DeliveryScreenTests
     [Fact]
     public async Task The_overdue_mark_rides_in_the_window_cell_rather_than_a_column_of_its_own()
     {
-        // The move this story is built around. Overdue used to be a column, and it is now a badge
-        // inside the delivery window - the header map above proves the column is gone, but nothing
-        // proved where the mark went, and a badge that survived in the wrong cell would leave both
+        // Overdue is a badge inside the delivery window rather than a column of its own - the
+        // header map above proves there is no such column, but nothing else proves where the mark
+        // went, and a badge that survived in the wrong cell would leave both
         // the column count and the catalogue exactly as they should be.
         var html = await RenderDeliveriesAsync(UserRole.Dispatcher);
 
@@ -851,7 +853,7 @@ public class DeliveryScreenTests
             // The window is the board's first column and the only one whose key is not its own
             // member name: the catalogue already carried `DeliveryWindow` for the landing page's
             // summary, and a second entry saying the same word in the same two languages would be
-            // the drift NFR-6 is about.
+            // duplication for nothing.
             [DeliverySort.Window] = "DeliveryWindow",
             [DeliverySort.Driver] = "Driver",
             [DeliverySort.Client] = "Client",
@@ -1082,9 +1084,9 @@ public class DeliveryScreenTests
     [Fact]
     public async Task The_own_deliveries_screen_names_no_counterparty_and_says_so_when_empty()
     {
-        // FR-27 and FR-96 at the component tier. The type this screen renders has no party field at
-        // all, so there is nothing to leak - and the empty state says what is empty rather than
-        // rendering the blank rectangle the baseline shipped (FR-84).
+        // Hidden counterparties at the component tier. The type this screen renders has no party
+        // field at all, so there is nothing to leak - and the empty state says what is empty rather
+        // than rendering the blank rectangle the baseline shipped.
         var html = await RenderMyDeliveriesAsync();
 
         Assert.DoesNotContain("Шевченко", html, StringComparison.Ordinal);
@@ -1141,11 +1143,11 @@ public class DeliveryScreenTests
     [Fact]
     public async Task The_merged_package_cell_carries_all_three_facts_about_the_parcel()
     {
-        // Three columns became one, so the cell is the only place any of the three is now said - and
-        // the delivery notes are the one that had nowhere else to go at all. A client types them into
-        // the request form and the command stores them; DeliveryTimeline renders no notes field, so
-        // dropping this line would leave FR-107's instructions write-only and the driver standing at
-        // the door unable to read what the client asked for.
+        // Three columns became one, so the cell is the only place any of the three is now said -
+        // and the delivery notes are the one that had nowhere else to go at all. A client types
+        // them into the request form and the command stores them; DeliveryTimeline renders no notes
+        // field, so dropping this line would leave the client's instructions write-only and the
+        // driver standing at the door unable to read what the client asked for.
         var html = await RenderMyDeliveriesAsync(
             [OwnRow(details: "Одна палета", notes: "Зателефонувати перед прибуттям")]);
 
@@ -1166,10 +1168,10 @@ public class DeliveryScreenTests
     [Fact]
     public async Task The_request_action_stands_beside_the_heading_in_the_create_colour()
     {
-        // FR-89's action is about the collection the heading names rather than about any row in it,
-        // so it belongs on that line - the shape the dispatch board's create already has. Loose in a
-        // paragraph under the title it read as a caption, and it wore the edit colour while the
-        // board's create wore the create one, which said the two were different kinds of act.
+        // The request action is about the collection the heading names rather than about any row in
+        // it, so it belongs on that line - the shape the dispatch board's create already has. Loose
+        // in a paragraph under the title it read as a caption, and it wore the edit colour while
+        // the board's create wore the create one, which said the two were different kinds of act.
         var html = await RenderMyDeliveriesAsync(role: UserRole.Client);
 
         var head = PageHead.Match(html);
@@ -1370,9 +1372,9 @@ public class DeliveryScreenTests
     [InlineData(false)]
     public async Task Every_column_heading_and_field_label_is_Ukrainian(bool dispatch)
     {
-        // NFR-14, asserted on the rendered chrome rather than on the source: a key that resolved to
-        // its own name would read as Latin here and nowhere else. The data cells are excluded on
-        // purpose - a coordinate is digits and punctuation by nature.
+        // Translation, asserted on the rendered chrome rather than on the source: a key that
+        // resolved to its own name would read as Latin here and nowhere else. The data cells are
+        // excluded on purpose - a coordinate is digits and punctuation by nature.
         var html = dispatch
             ? await RenderDeliveriesAsync(UserRole.Dispatcher)
             : await RenderMyDeliveriesAsync();
@@ -1398,7 +1400,7 @@ public class DeliveryScreenTests
     public void Each_screen_is_reserved_to_the_roles_that_have_a_use_for_it(string fileName, string roles)
     {
         // The attribute is what routes a wrong role to /access-denied instead of into an error
-        // boundary (FR-79). It is a convenience and not the decision - IAccessGuard settles that,
+        // boundary. It is a convenience and not the decision - IAccessGuard settles that,
         // and the API suites assert it - but nothing else pins the attribute, and its absence is
         // invisible in a diff.
         var page = SharedMarkup.ReadComponent("Pages", fileName);
@@ -1410,7 +1412,7 @@ public class DeliveryScreenTests
     }
 
     // =====================================================================================
-    // FR-104's two address boxes
+    // The two address search boxes
     //
     // Static rendering dispatches no events, so nothing above can press a search button or click
     // one of its answers. The state and the transitions therefore live on the form, where they can
@@ -1483,10 +1485,10 @@ public class DeliveryScreenTests
     public async Task A_refused_search_answers_the_failure_keys_and_leaves_the_box_usable()
     {
         // The 422 a query under three characters earns. The screen renders these keys through the
-        // same catalogue the REST envelope uses (NFR-3), and the box has to come back out of its
+        // same catalogue the REST envelope uses, and the box has to come back out of its
         // busy state or the button stays disabled and reads as a hung screen.
         //
-        // The refusal is left on the box rather than returned (DW-41): a caller handed it can put it
+        // The refusal is left on the box rather than returned: a caller handed it can put it
         // anywhere, and where it used to be put was the screen's one failure field, which the submit
         // path also writes.
         var form = new DeliveryForm();
@@ -1732,7 +1734,7 @@ public class DeliveryScreenTests
 
     /// <summary>
     /// One own-deliveries row. The counterparties are absent because the type has nowhere to put
-    /// them, which is the whole of FR-27 and FR-96 at this tier.
+    /// them, which is the whole of withholding them at this tier.
     /// </summary>
     private static AssignedDeliverySummary OwnRow(
         int id = 1,
@@ -1878,7 +1880,7 @@ public class DeliveryScreenTests
             CancellationToken cancellationToken) =>
             Task.FromResult(Board[0]);
 
-        // Story 7.4's client request, for the reason every write above answers rather than records:
+        // The client request, for the reason every write above answers rather than records:
         // static rendering dispatches no events, so nothing here is ever called by a screen test -
         // it exists because widening IDeliveryService widens every implementation of it.
         public Task<AssignedDeliverySummary> RequestAsync(
@@ -1894,7 +1896,7 @@ public class DeliveryScreenTests
 
         public Task DeleteAsync(int id, CancellationToken cancellationToken) => Task.CompletedTask;
 
-        // Story 5.3's three members. Answering rather than recording, for the reason the writes
+        // The three timeline members. Answering rather than recording, for the reason the writes
         // above do: static rendering dispatches no events, so nothing here is ever called by a
         // screen test - they exist because widening IDeliveryService widens every implementation of
         // it, which is the compile-time consequence the stub is here to carry.
@@ -1915,7 +1917,7 @@ public class DeliveryScreenTests
             CancellationToken cancellationToken) =>
             Task.FromResult<IReadOnlyList<TimelineEntryView>>([Entry]);
 
-        // Story 5.2's address search, for the reason the three above are here: static rendering
+        // The address search, for the reason the three above are here: static rendering
         // dispatches no events, so no render test can press the search button - the member exists
         // because widening IDeliveryService widens every implementation of it.
         public Task<IReadOnlyList<PlaceMatch>> SearchPlacesAsync(
@@ -1936,7 +1938,7 @@ public class DeliveryScreenTests
     /// <summary>
     /// Two drivers: one holding the vehicle the capacity hint reads, and one holding nothing.
     /// <para>
-    /// They differ in their standing as well, because the assignment picker renders it (FR-98) and
+    /// They differ in their standing as well, because the assignment picker renders it and
     /// the two branches of that are what a single stub cannot exercise: a rated driver shows the
     /// average, an unrated one shows the "no value" text and never a zero.
     /// </para>
@@ -1956,7 +1958,7 @@ public class DeliveryScreenTests
             Rating: 4.5,
             ReviewCount: 2,
 
-            // FR-116: on duty, so the picker marks them as such. The pair below is one of each, so
+            // On duty, so the picker marks them as such. The pair below is one of each, so
             // both branches of the marker are covered by the one render.
             OnDuty: true);
 
@@ -1973,7 +1975,7 @@ public class DeliveryScreenTests
             Rating: null,
             ReviewCount: 0,
 
-            // FR-116: off duty, and still offered. The assertion that this driver is in the picker
+            // Off duty, and still offered. The assertion that this driver is in the picker
             // at all is what makes "flag, never block" a property of the screen.
             OnDuty: false);
 

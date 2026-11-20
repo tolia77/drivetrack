@@ -4,9 +4,10 @@ using DriveTrack.Web.Components.Pages.Admin;
 namespace DriveTrack.Integration.Tests.Components;
 
 /// <summary>
-/// FR-50's rule, asserted directly: an empty password box leaves the stored password alone.
+/// The blank-password rule, asserted directly: an empty password box leaves the stored password
+/// alone.
 /// <para>
-/// This is the decision the whole story turns on, and it is the one no other test can reach. The
+/// This is the decision password editing turns on, and it is the one no other test can reach. The
 /// screen tests stub every write to throw, so they never enter a save handler, and the HTTP suites
 /// never render a screen — swapping <see cref="Optional{T}.Absent"/> for a present value inside a
 /// component's <c>@code</c> block would ship green and silently overwrite a password with an empty

@@ -6,7 +6,7 @@ using DriveTrack.Web.Components.Shared;
 namespace DriveTrack.Integration.Tests.Components;
 
 /// <summary>
-/// NFR-26 / FR-15 / FR-21: one map component for picking a point and for showing one.
+/// One map component for picking a point and for showing one.
 /// <para>
 /// Leaflet builds its own DOM after Blazor has finished, so what a render can prove is the
 /// container contract — a stable id for the library to attach to and a localized label for anyone
@@ -70,7 +70,7 @@ public class MapTests
             module,
             StringComparison.Ordinal);
 
-        // FR-21: a map opened on a value that already exists is centred on it, both at creation and
+        // A map opened on a value that already exists is centred on it, both at creation and
         // when the value later changes.
         Assert.Contains(@"""setView"", _handle, value.Latitude, value.Longitude", component, StringComparison.Ordinal);
         Assert.Contains("export function setView(handle, latitude, longitude)", module, StringComparison.Ordinal);

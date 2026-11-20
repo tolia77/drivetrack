@@ -22,7 +22,7 @@ namespace DriveTrack.Application.Tests.Common;
 /// <para>
 /// The sweep below is the standing half: every validator in the layer, every rule, found by
 /// reflection rather than from a list, so a rule added later is covered by having been written. The
-/// named cases after it are the I/O matrix — a bounded rule naming its limit, a presence rule
+/// named cases after it are the specific shapes — a bounded rule naming its limit, a presence rule
 /// sharing one code, a paging bound that stays shared because no screen offers a box for it.
 /// </para>
 /// </summary>
@@ -86,7 +86,7 @@ public class FieldMessageTests
     [Fact]
     public void No_rule_states_the_generic_validation_code_as_its_field_message()
     {
-        // The acceptance criterion, said as a test. COMMON_VALIDATION_FAILED is still the code the
+        // The rule, said as a test. COMMON_VALIDATION_FAILED is still the code the
         // ValidationException itself carries - that is the 422 on the wire - but no single rule may
         // offer it as the explanation for one field, because it explains nothing about that field.
         var offenders = Messages()
@@ -102,7 +102,7 @@ public class FieldMessageTests
     public void Every_rule_states_an_error_code_name_rather_than_a_sentence()
     {
         // The convention the adapter's field localization rests on, swept across the whole layer
-        // rather than per validator: a sentence here reaches a user untranslated (NFR-14), and a
+        // rather than per validator: a sentence here reaches a user untranslated, and a
         // rule that simply forgot its WithMessage carries FluentValidation's own English.
         var codes = Enum.GetNames<ErrorCode>().ToHashSet(StringComparer.Ordinal);
 
@@ -122,7 +122,7 @@ public class FieldMessageTests
     [Fact]
     public async Task An_over_long_value_and_an_empty_one_are_no_longer_the_same_sentence()
     {
-        // The matrix's first two rows, against the same box. This is the whole defect: before, both
+        // Two refusals against the same box. This is the whole defect: before, both
         // of these produced COMMON_VALIDATION_FAILED on `PackageDetails`, and the screen had one
         // sentence for two different mistakes.
         var empty = await Refuse(
@@ -173,7 +173,7 @@ public class FieldMessageTests
     [Fact]
     public async Task Two_fields_failing_at_once_are_two_codes_on_two_fields()
     {
-        // The matrix's third row. NFR-4 wants every offending field reported, and the point of the
+        // Every offending field is reported, and the point of the
         // split codes is that the two entries no longer read the same.
         var failure = await Refuse(
             new CreateVehicleCommandValidator(),
@@ -196,7 +196,7 @@ public class FieldMessageTests
     [Fact]
     public async Task An_empty_note_is_the_shared_presence_code()
     {
-        // The matrix's second row, said the way the spec words it: one code for every bare presence
+        // One code for every bare presence
         // rule, readable because the field travels beside it.
         var failure = await Refuse(new AddDeliveryNoteCommandValidator(), new AddDeliveryNoteCommand(" "));
 
@@ -279,7 +279,7 @@ public class FieldMessageTests
     [InlineData(0, 101, "Limit", nameof(ErrorCode.COMMON_PAGING_LIMIT_INVALID))]
     public async Task A_paging_bound_keeps_a_shared_code(int offset, int limit, string field, string key)
     {
-        // The matrix's last row, and the deliberate exception to "one code per bounded rule": no
+        // The deliberate exception to "one code per bounded rule": no
         // screen offers a box for either of these, so a field-specific sentence would have nothing
         // to sit under and nothing a user could have typed differently.
         var failure = await Refuse(

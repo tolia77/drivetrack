@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Components;
 namespace DriveTrack.Integration.Tests.Components;
 
 /// <summary>
-/// FR-82 / FR-84 / NFR-22: one table with three states, and a row on the page in every one of them.
+/// One table with three states, and a row on the page in every one of them.
 /// <para>
 /// The baseline rendered nothing while loading and nothing when there was nothing to show, which
 /// reads to a user exactly like a screen that is broken. The three states are asserted against real
@@ -89,7 +89,7 @@ public class DataTableTests
     [Fact]
     public async Task The_table_is_striped_hovered_and_wrapped_in_its_own_scroll_container()
     {
-        // NFR-22, and AD-28: striping and hover come from the themed Bootstrap build rather than
+        // Striping and hover come from the themed Bootstrap build rather than
         // from a rule of our own, so the table already wears the palette.
         var html = await RenderAsync(isLoading: false, items: ThreeRows);
 

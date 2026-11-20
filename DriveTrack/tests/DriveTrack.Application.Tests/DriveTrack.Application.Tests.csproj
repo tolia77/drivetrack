@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <!--
-    Application and Domain only. AD-2's coverage gate reads compiled IL from the Application
+    Application and Domain only. The guard coverage gate reads compiled IL from the Application
     assembly, and the guard and the validators need nothing else - a database reference here
     would make a suite that must run without Docker depend on it.
   -->

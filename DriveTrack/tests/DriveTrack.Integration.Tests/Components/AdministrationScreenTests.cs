@@ -12,7 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace DriveTrack.Integration.Tests.Components;
 
 /// <summary>
-/// FR-81 / FR-82 / FR-85 for the two administration screens: each renders its roster through the
+/// The two administration screens: each renders its roster through the
 /// shared table, opens the shared dialog to edit and the shared confirmation to delete, and says all
 /// of it in Ukrainian with an icon beside every action.
 /// <para>
@@ -79,13 +79,13 @@ public class AdministrationScreenTests
     {
         var html = await RenderClientsAsync();
 
-        // FR-82: the shared table, in its rows state - not a spinner and not the empty row.
+        // The shared table, in its rows state - not a spinner and not the empty row.
         Assert.Contains("dt-table-scroll", html, StringComparison.Ordinal);
         Assert.Equal(Clients.Length, SharedMarkup.Occurrences(html, "dt-table-row"));
         Assert.Equal(0, SharedMarkup.Occurrences(html, "dt-table-status"));
         Assert.Equal(0, SharedMarkup.Occurrences(html, "dt-table-empty"));
 
-        // FR-46: name, email and phone number, for every client. Decoded first, because the
+        // Name, email and phone number, for every client. Decoded first, because the
         // encoder writes an E.164 number's leading plus as a character reference.
         var text = WebUtility.HtmlDecode(html);
 
@@ -101,7 +101,7 @@ public class AdministrationScreenTests
     [Fact]
     public async Task The_client_screen_offers_an_edit_and_a_delete_on_every_row_with_an_icon_each()
     {
-        // NFR-24: an action carries a glyph and its text, never one without the other.
+        // An action carries a glyph and its text, never one without the other.
         var html = await RenderClientsAsync();
 
         Assert.Equal(Clients.Length, SharedMarkup.Occurrences(html, "dt-client-edit"));
@@ -121,13 +121,13 @@ public class AdministrationScreenTests
     [Fact]
     public async Task A_dispatcher_reading_the_roster_is_offered_no_action_that_could_only_fail()
     {
-        // FR-48 puts a dispatcher on this screen to read it, and both writes behind the row actions
+        // A dispatcher is on this screen to read it, and both writes behind the row actions
         // are RequireRole(Admin). Rendering buttons that answer 403 on every click is worse than
         // rendering none.
         //
-        // FR-12 unchanged, and worth restating because the test cannot: this asserts what is shown,
-        // never who may act. IAccessGuard inside the service still refuses the write, and it runs
-        // whether or not the button was ever rendered.
+        // Hiding is a convenience, and worth restating because the test cannot: this asserts what
+        // is shown, never who may act. IAccessGuard inside the service still refuses the write, and
+        // it runs whether or not the button was ever rendered.
         var html = await RenderClientsAsync(UserRole.Dispatcher);
 
         // The roster itself is still there - the whole reason a dispatcher opened the screen.
@@ -141,8 +141,8 @@ public class AdministrationScreenTests
     [Fact]
     public async Task The_client_screen_edits_through_the_shared_dialog_and_never_pre_fills_a_password()
     {
-        // FR-85, and FR-8: only a hash is stored, so there is nothing to pre-fill the box with -
-        // and an empty box is exactly how AD-23's absent case is expressed on a form.
+        // Only a hash is stored, so there is nothing to pre-fill the box with - and an empty box
+        // is exactly how the absent case is expressed on a form.
         var html = await RenderClientsAsync();
 
         Assert.Contains(@"class=""dt-dialog""", html, StringComparison.Ordinal);
@@ -163,9 +163,10 @@ public class AdministrationScreenTests
     [Fact]
     public async Task The_client_edit_dialog_carries_the_address_an_administrator_may_change()
     {
-        // FR-92's administrator half, and the only route an administrator has to it: the service
-        // accepts an email on UpdateClientCommand, but without this box nobody can send one. Asserted
-        // as a render rather than as source, for the same reason the password field is.
+        // An administrator changing a client's email, and the only route they have to it: the
+        // service accepts an email on UpdateClientCommand, but without this box nobody can send
+        // one. Asserted as a render rather than as source, for the same reason the password field
+        // is.
         var html = await RenderClientsAsync();
 
         var email = Regex.Match(
@@ -185,11 +186,11 @@ public class AdministrationScreenTests
     [Fact]
     public void The_client_edit_form_opens_carrying_the_row_and_sends_every_field_back()
     {
-        // The claim the render above cannot make. AD-23 makes the command say what the form shows,
-        // so a box the administrator leaves as they found it has to send the value already in it -
-        // and FR-92 gave the address a rule, so an unfilled box is refused 422 rather than read as
-        // "unchanged". Before this form was lifted out of the component, deleting the address line
-        // turned every administrator edit of a client into a 422 with the suite still green.
+        // The claim the render above cannot make. The edit command says what the form shows, so a
+        // box the administrator leaves as they found it has to send the value already in it - and
+        // the address has a rule, so an unfilled box is refused 422 rather than read as
+        // "unchanged". Deleting the address line from the form would turn every administrator edit
+        // of a client into a 422 that no render test notices.
         var form = new ClientEditForm();
 
         form.Fill(Clients[0]);
@@ -199,8 +200,8 @@ public class AdministrationScreenTests
         Assert.Equal("olena@drivetrack.test", form.Email, StringComparer.Ordinal);
         Assert.Equal("+380441234567", form.PhoneNumber, StringComparer.Ordinal);
 
-        // Never pre-filled: only a hash is stored (FR-8), and empty is how AD-23's absent case is
-        // expressed on a form.
+        // Never pre-filled: only a hash is stored, and empty is how the absent case is expressed
+        // on a form.
         Assert.Null(form.Password);
 
         var command = form.ToCommand();
@@ -230,7 +231,7 @@ public class AdministrationScreenTests
     [Fact]
     public async Task The_client_screen_confirms_a_deletion_before_it_happens()
     {
-        // FR-81. The baseline deleted the moment the link was clicked; the shared confirmation is
+        // The baseline deleted the moment the link was clicked; the shared confirmation is
         // what makes that impossible to forget on a new screen.
         var html = await RenderClientsAsync();
 
@@ -241,7 +242,7 @@ public class AdministrationScreenTests
     [Fact]
     public async Task The_dispatcher_screen_lists_creates_edits_and_deletes()
     {
-        // FR-49 and FR-50 in one render: the roster, plus the create action this story adds and the
+        // Dispatcher administration in one render: the roster, plus the create action and the
         // two the client screen also has.
         var html = await RenderDispatchersAsync();
 
@@ -266,8 +267,8 @@ public class AdministrationScreenTests
     [Fact]
     public async Task The_dispatcher_creation_dialog_asks_for_the_address_and_the_edit_dialog_does_not()
     {
-        // FR-87 is story 7.3's: an address is settled once, at creation. A second field on the edit
-        // form would be that story arriving early and half-done.
+        // An administrator settles a dispatcher's address once, at creation; changing it later is
+        // the dispatcher's own, from the profile screen.
         var html = await RenderDispatchersAsync();
 
         Assert.Contains(@"id=""new-dispatcher-email""", html, StringComparison.Ordinal);
@@ -280,10 +281,10 @@ public class AdministrationScreenTests
     [InlineData(false)]
     public async Task Every_word_a_screen_renders_of_its_own_is_Ukrainian(bool clients)
     {
-        // NFR-14, read back from the rendered page rather than from the source: the table's headings,
-        // its dialog titles and its actions are the product's words, and every one of them has to
-        // arrive translated. The rows themselves are data - an email address is Latin by nature -
-        // so they are deliberately not in scope here.
+        // Translation, read back from the rendered page rather than from the source: the table's
+        // headings, its dialog titles and its actions are the product's words, and every one of
+        // them has to arrive translated. The rows themselves are data - an email address is Latin
+        // by nature - so they are deliberately not in scope here.
         var html = clients ? await RenderClientsAsync() : await RenderDispatchersAsync();
 
         var chrome = new List<string> { SharedMarkup.ElementWithClass(html, "thead", "dt-table-head") };
@@ -307,7 +308,7 @@ public class AdministrationScreenTests
     [Fact]
     public void Neither_screen_takes_an_authorization_decision_of_its_own()
     {
-        // The acceptance criterion, as a test: IAccessGuard.RequireRole inside the service is the
+        // IAccessGuard.RequireRole inside the service is the
         // only place a request is *refused* for its role. A role on the page attribute or an
         // <AuthorizeView> here would be a second copy of that rule, worded differently, that no
         // test of the rule would ever read.
@@ -369,62 +370,61 @@ public class AdministrationScreenTests
     [Fact]
     public void The_guard_still_has_exactly_the_decisions_the_system_makes()
     {
-        // NFR-6, and the readability half of the acceptance criterion: a reviewer asking "who may do
-        // what" has these methods to read, not a scattering of attributes.
+        // No dead code, and readability: a reviewer asking "who may do what" has these methods to
+        // read, not a scattering of attributes.
         //
-        // The list is a pin rather than a limit, and each story that moves it has to argue for the
-        // move here. Story 5.1 added RequireScope, because a driver seeing only their own rows is an
+        // The list is a pin rather than a limit, and any change that moves it has to argue for the
+        // move here. RequireScope exists because a driver seeing only their own rows is an
         // authorization decision and a repository Where written inside a service would be a second
-        // place authorization lived. Story 5.3 adds RequireAssignedDriver for the same kind of
-        // reason and not a weaker one: "the driver carrying this parcel, or dispatch, and never the
-        // client whose delivery it is" (FR-34, FR-90) is a predicate none of the other three can
-        // express - a client's scope admits their own delivery, so RequireScope would let them
-        // change its status, and a role test inside the service would be authorization living
-        // somewhere else again.
+        // place authorization lived. RequireAssignedDriver exists for the same kind of reason and
+        // not a weaker one: "the driver carrying this parcel, or dispatch, and never the client
+        // whose delivery it is" is a predicate no other member can express - a client's scope
+        // admits their own delivery, so RequireScope would let them change its status, and a role
+        // test inside the service would be authorization living somewhere else again.
         //
-        // Story 8.1 adds RequireChatParticipant, and the argument for it is the strongest of the
-        // three: it is the one question in the system whose answer contradicts AD-4. The PRD locks
-        // administrators out of chat as a product decision, so RequireRole(Dispatcher) - which
-        // reads as "a dispatcher or an admin" by design - is not merely awkward here but wrong, and
-        // RequireSelf cannot express it either because the thread key is a driver row id and a
-        // dispatcher who owns no conversation must still pass. One member with a nullable argument
-        // also answers "may this caller see the roster at all", because a null thread never equals
-        // a driver's row id - two questions, one rule, one place to read it.
+        // RequireChatParticipant has the strongest argument: its answer contradicts the admin
+        // override. Administrators are locked out of chat as a product decision, so
+        // RequireRole(Dispatcher) - which reads as "a dispatcher or an admin" by design - is not
+        // merely awkward here but wrong, and RequireSelf cannot express it either because the
+        // thread key is a driver row id and a dispatcher who owns no conversation must still pass.
+        // One member with a nullable argument also answers "may this caller see the roster at
+        // all", because a null thread never equals a driver's row id - two questions, one rule,
+        // one place to read it.
         //
-        // Story 7.4 adds RequireDeliveryComposer, and its argument is the same shape: "may this
-        // caller compose a delivery, and for which client row" is a question none of the five can
-        // answer. RequireRole(Client) reads as "a client or an admin" by AD-4's design and an admin
-        // carries no client row id, so a service using it would have to decide what a missing id
-        // means - authorization living somewhere else again. RequireScope hands a driver a scope and
-        // so cannot refuse one, and its answer is about which rows may be read rather than who may
-        // open a new one. It serves two call sites, which is the test of a question rather than a
-        // convenience: the request path and FR-104's address search behind the same form.
+        // RequireDeliveryComposer's argument is the same shape: "may this caller compose a
+        // delivery, and for which client row" is a question no other member can answer.
+        // RequireRole(Client) reads as "a client or an admin" by the admin override's design and an
+        // admin carries no client row id, so a service using it would have to decide what a
+        // missing id means - authorization living somewhere else again. RequireScope hands a driver
+        // a scope and so cannot refuse one, and its answer is about which rows may be read rather
+        // than who may open a new one. It serves two call sites, which is the test of a question
+        // rather than a convenience: the request path and the address search behind the same form.
         //
-        // Story 7.2 adds two, and they are a pair rather than two independent additions - which is
-        // itself the argument, because the split between them is the product decision.
-        // RequireReviewAuthor answers "may this caller write reviews, and as which client row": the
-        // PRD retired FR-97, so an administrator authoring customer feedback is manufacturing it
-        // rather than moderating it, and RequireRole(Client) - which reads as "a client or an
-        // admin" by AD-4's design - is not merely awkward here but wrong. It is the second member
-        // whose answer deliberately contradicts AD-4, and, as with RequireDeliveryComposer, an
+        // RequireReviewAuthor and RequireReviewOwner are a pair rather than two independent
+        // members - which is itself the argument, because the split between them is the product
+        // decision. RequireReviewAuthor answers "may this caller write reviews, and as which client
+        // row": an administrator authoring customer feedback is manufacturing it rather than
+        // moderating it, and RequireRole(Client) - which reads as "a client or an admin" by
+        // design - is not merely awkward here but wrong. It is the second member whose answer
+        // deliberately contradicts the admin override, and, as with RequireDeliveryComposer, an
         // admin carries no client row id for a service to fall back on. It serves two call sites:
         // authoring, and the author's own list, where the answer is also the scope the list is
-        // narrowed by (AD-3).
+        // narrowed by.
         //
         // RequireReviewOwner answers "may this caller change *this* review" - its author, or an
         // admin moderating, and never a dispatcher. RequireSelf cannot express it, because a
-        // review's owner is a ClientId rather than a UserId and AD-22 keeps the two from being
-        // compared; RequireScope cannot, because it hands a dispatcher the unrestricted scope and
-        // so cannot refuse one. Its nullable argument follows RequireAssignedDriver: a missing
+        // review's owner is a ClientId rather than a UserId and the typed ids keep the two from
+        // being compared; RequireScope cannot, because it hands a dispatcher the unrestricted scope
+        // and so cannot refuse one. Its nullable argument follows RequireAssignedDriver: a missing
         // review reaches the guard as a null that never matches, so it is refused rather than
         // handed to whoever asked for it.
         //
-        // Story 4.2 adds two more, and they are a pair for the same kind of reason. RequireShiftScope
-        // answers "whose shifts may this caller be shown", and it is the one addition where reusing
-        // RequireScope would be a disclosure rather than a wording problem: a client's scope is
-        // (null, clientId), whose driver half is null - which a shift query reads as "unrestricted
-        // by driver" and answers with every shift in the system, when FR-115 gives a client no part
-        // in shifts at all.
+        // RequireShiftScope and RequireShiftOwner are a pair for the same kind of reason.
+        // RequireShiftScope answers "whose shifts may this caller be shown", and it is the one
+        // member where reusing RequireScope would be a disclosure rather than a wording problem: a
+        // client's scope is (null, clientId), whose driver half is null - which a shift query reads
+        // as "unrestricted by driver" and answers with every shift in the system, when a client
+        // has no part in shifts at all.
         //
         // RequireShiftOwner answers "may this caller act on *this* driver's shift". It is the one
         // member that could have been left out: RequireAssignedDriver already answers "this driver,
@@ -475,15 +475,15 @@ public class AdministrationScreenTests
 
         Assert.Contains("<h1", body, StringComparison.Ordinal);
 
-        // NFR-24: the heading carries the glyph the navigation already uses for this destination,
+        // The heading carries the glyph the navigation already uses for this destination,
         // as every other screen's does.
         Assert.Contains("<svg", body, StringComparison.Ordinal);
 
         if (clients)
         {
             // Nothing beside it: every action on the roster is about one client and lives in that
-            // client's row. A create action here would be one this screen does not have - FR-46
-            // gives an administrator no way to open a client account.
+            // client's row. A create action here would be one this screen does not have - an
+            // administrator has no way to open a client account.
             Assert.DoesNotContain("<button", body, StringComparison.Ordinal);
 
             return;
@@ -537,11 +537,11 @@ public class AdministrationScreenTests
     [Fact]
     public async Task A_dispatcher_reading_the_roster_gets_an_actions_cell_with_nothing_in_it()
     {
-        // The other half of FR-48's hiding, and the half a phone makes visible. The per-cell name
-        // is what replaces the dropped column heading below the breakpoint, so a label written
-        // outside the `@if` that hides the buttons would give a dispatcher a card with a heading
-        // reading "Дії" and nothing at all underneath it - a row promising an action it does not
-        // offer, which is the outcome hiding the buttons exists to avoid.
+        // The other half of the dispatcher's hiding, and the half a phone makes visible. The
+        // per-cell name is what replaces the dropped column heading below the breakpoint, so a
+        // label written outside the `@if` that hides the buttons would give a dispatcher a card
+        // with a heading reading "Дії" and nothing at all underneath it - a row promising an action
+        // it does not offer, which is the outcome hiding the buttons exists to avoid.
         var html = await RenderClientsAsync(UserRole.Dispatcher);
 
         var cells = ActionsCell.Matches(html)
@@ -661,7 +661,7 @@ public class AdministrationScreenTests
             parameters: null,
             configureServices: services =>
             {
-                // The caller's role, because FR-48 puts two different roles on the client screen and
+                // The caller's role, because two different roles reach the client screen and
                 // they are offered different actions. The guard itself is not exercised here - it
                 // lives in the service, and the service is stubbed - which is the point: what the
                 // screen does with the role is hiding, not deciding.

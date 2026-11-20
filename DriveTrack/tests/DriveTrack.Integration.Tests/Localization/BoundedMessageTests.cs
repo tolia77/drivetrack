@@ -28,7 +28,7 @@ namespace DriveTrack.Integration.Tests.Localization;
 /// <para>
 /// So the pairing is asserted instead. Each sentence is read from both catalogues and matched
 /// against the constant the validator actually uses, in that language's own number format — a
-/// comma for the decimal mark in Ukrainian, a point in English (NFR-15). Widening a column now
+/// comma for the decimal mark in Ukrainian, a point in English. Widening a column now
 /// fails here rather than shipping.
 /// </para>
 /// </summary>

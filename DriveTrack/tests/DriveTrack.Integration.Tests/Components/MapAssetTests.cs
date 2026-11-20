@@ -6,7 +6,7 @@ using DriveTrack.Integration.Tests.Support;
 namespace DriveTrack.Integration.Tests.Components;
 
 /// <summary>
-/// NFR-26: Leaflet 1.9.4, vendored and pinned.
+/// Leaflet 1.9.4, vendored and pinned.
 /// <para>
 /// There is no front-end package manager here, so "pinned" has to mean something a build can check.
 /// The banner in the shipped file is the version, the paths the module names are the vendored ones,
@@ -89,9 +89,9 @@ public class MapAssetTests
     [InlineData("Shared/DtDialog.razor", "Components/Shared/DtDialog.razor.js")]
     [InlineData("Shared/DtFailureBanner.razor", "Components/Shared/DtFailureBanner.razor.js")]
     [InlineData("Shared/DtMap.razor", "Components/Shared/DtMap.razor.js")]
-    // Story 6.1's two. The signature pad is a shared component like the two above it; the capture
-    // panel is a screen, which is why the component argument is a path under Components/ rather
-    // than a bare file name - a collocated module is not a privilege of Components/Shared/.
+    // The proof-capture pair. The signature pad is a shared component like the two above it; the
+    // capture panel is a screen, which is why the component argument is a path under Components/
+    // rather than a bare file name - a collocated module is not a privilege of Components/Shared/.
     [InlineData("Shared/DtSignaturePad.razor", "Components/Shared/DtSignaturePad.razor.js")]
     [InlineData("Pages/ProofCapture.razor", "Components/Pages/ProofCapture.razor.js")]
     public void The_component_imports_the_module_at_the_path_that_is_served(string component, string served)
@@ -108,7 +108,7 @@ public class MapAssetTests
     {
         // Served from beside the images, so `url(images/marker-icon.png)` in Leaflet's own CSS
         // resolves. This is the reason the file lives in wwwroot/lib/leaflet/ rather than anywhere
-        // more convenient - and wwwroot is also the one tree NFR-29's scan never reads, which is
+        // more convenient - and wwwroot is also the one tree the token scan never reads, which is
         // what makes shipping third-party CSS unmodified safe here and nowhere else.
         var stylesheet = File.ReadAllText(Path.Combine(LeafletDirectory, "leaflet.css"));
 
@@ -118,7 +118,7 @@ public class MapAssetTests
 }
 
 /// <summary>
-/// The other half of NFR-26, and of the two collocated modules: an asset has to be
+/// The other half of vendoring, and of the two collocated modules: an asset has to be
 /// <em>served</em>, not merely present.
 /// <para>
 /// Everything above reads the developer's disk. None of it would notice the file being excluded
@@ -139,9 +139,9 @@ public class MapAssetDeliveryTests(PostgresFixture postgres)
     [InlineData("Components/Shared/DtDialog.razor.js")]
     [InlineData("Components/Shared/DtFailureBanner.razor.js")]
     [InlineData("Components/Shared/DtMap.razor.js")]
-    // Story 6.1's two, for the same reason and with a sharper consequence: a signature pad that
-    // cannot import its module is a canvas nobody can draw on, and a capture panel that cannot
-    // import its own reads no coordinates - so FR-119's capture becomes impossible, silently, with
+    // The proof-capture pair, for the same reason and with a sharper consequence: a signature pad
+    // that cannot import its module is a canvas nobody can draw on, and a capture panel that cannot
+    // import its own reads no coordinates - so proof capture becomes impossible, silently, with
     // every other test in the solution still green.
     [InlineData("Components/Shared/DtSignaturePad.razor.js")]
     [InlineData("Components/Pages/ProofCapture.razor.js")]

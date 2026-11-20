@@ -5,16 +5,16 @@ using DriveTrack.Domain.Deliveries;
 namespace DriveTrack.Application.Tests.Deliveries;
 
 /// <summary>
-/// The validation rows of story 6.1's edge-case matrix, asserted against
+/// The proof-capture validation edge cases, asserted against
 /// <see cref="CaptureProofCommandValidator"/>.
 /// <para>
 /// Every claim here is one the capture's ordering makes expensive to get wrong. The proof row
 /// commits before a single byte is written, and the store judges nothing it is handed — so a rule
 /// that failed to refuse an upload would commit a proof and then write the illegal asset under it,
-/// with FR-123 leaving no way to take either back — and a rule that refused a legal one would leave
-/// a driver standing at a door unable to record that the parcel arrived. Both are decided by this
-/// class, before anything is minted or committed, which is why they are asserted here rather than
-/// over HTTP.
+/// with proof immutability leaving no way to take either back — and a rule that refused a legal one
+/// would leave a driver standing at a door unable to record that the parcel arrived. Both are
+/// decided by this class, before anything is minted or committed, which is why they are asserted
+/// here rather than over HTTP.
 /// </para>
 /// </summary>
 public class ProofValidationTests
@@ -24,7 +24,7 @@ public class ProofValidationTests
     [Fact]
     public void The_minimum_capture_is_valid()
     {
-        // FR-119's whole sentence: a recipient, a place, a signature and one photograph.
+        // Everything proof requires: a recipient, a place, a signature and one photograph.
         Assert.Empty(Failures(Capture()));
     }
 
@@ -42,7 +42,7 @@ public class ProofValidationTests
     [InlineData("   ")]
     public void A_capture_with_no_recipient_is_refused_naming_the_field(string? recipient)
     {
-        // FR-119 records who took the parcel. A blank name is a NOT NULL column holding a space,
+        // Proof records who took the parcel. A blank name is a NOT NULL column holding a space,
         // which renders as absent and filters as present - worse than either.
         Assert.Contains(
             nameof(CaptureProofCommand.RecipientName),
@@ -66,7 +66,7 @@ public class ProofValidationTests
     [Fact]
     public void A_capture_with_no_coordinates_is_refused_naming_the_location()
     {
-        // The columns are NOT NULL and FR-119 says the point is recorded rather than typed, so a
+        // The columns are NOT NULL and the point is recorded rather than typed, so a
         // browser that refused geolocation cannot capture. There is deliberately no fallback: the
         // dropoff point would record a place the hand-over did not happen.
         Assert.Contains(Failures(Capture(location: new LocationInput(null, null))), NamesTheLocation);
@@ -150,9 +150,8 @@ public class ProofValidationTests
     [InlineData(null)]
     public void An_asset_of_a_type_a_proof_may_not_carry_is_refused_with_its_own_key(string? type)
     {
-        // NFR-28. The key rides in error.fields, which is where NFR-4 puts the per-field
-        // explanation, so a driver is told the file was the wrong sort rather than that something
-        // about the request was.
+        // The key rides in error.fields, which is where the per-field explanation goes, so a driver
+        // is told the file was the wrong sort rather than that something about the request was.
         Assert.Contains(
             nameof(ErrorCode.DELIVERY_PROOF_ASSET_TYPE_NOT_ALLOWED),
             Keys(Capture(photoContentType: type)));
@@ -177,7 +176,7 @@ public class ProofValidationTests
     public void An_asset_that_is_empty_or_oversized_is_refused_with_its_own_key(long length)
     {
         // Both ends. Zero is what a browser sends for a control nobody filled in, and an empty file
-        // is not evidence of anything; the ceiling is NFR-28's.
+        // is not evidence of anything; the ceiling is the upload size limit.
         Assert.Contains(
             nameof(ErrorCode.DELIVERY_PROOF_ASSET_TOO_LARGE),
             Keys(Capture(photoLength: length)));
@@ -218,7 +217,7 @@ public class ProofValidationTests
     /// <remarks>
     /// The streams are <see cref="Stream.Null"/> throughout. Nothing here reads a byte - the
     /// validator judges the declared length and the declared type, which is the whole point of both
-    /// being declared: NFR-28's check has to run before the store is touched, and measuring a
+    /// being declared: the upload check has to run before the store is touched, and measuring a
     /// forward-only stream would consume the bytes the store is about to write.
     /// </remarks>
     private static CaptureProofCommand Capture(

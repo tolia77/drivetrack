@@ -4,7 +4,7 @@ using DriveTrack.Integration.Tests.Support;
 namespace DriveTrack.Integration.Tests.Architecture;
 
 /// <summary>
-/// AD-1: the dependency direction is <c>Domain</c> → nothing, <c>Application</c> → Domain,
+/// The dependency direction is <c>Domain</c> → nothing, <c>Application</c> → Domain,
 /// <c>Infrastructure</c> → Application and Domain, <c>Web</c> → Application (plus the
 /// Infrastructure reference its composition root needs). An arrow not in that list is forbidden.
 /// <para>
@@ -24,10 +24,10 @@ public class LayeringTests
 
     private static readonly string[] AllLayers = [Domain, Application, Infrastructure, Web];
 
-    /// <summary>Path, relative to the Web project, of the one file AD-1 exempts.</summary>
+    /// <summary>Path, relative to the Web project, of the one file exempt from layering.</summary>
     private static readonly string CompositionRoot = "Program.cs";
 
-    /// <summary>The only project-to-project arrows AD-1 permits.</summary>
+    /// <summary>The only project-to-project arrows the layering permits.</summary>
     private static readonly Dictionary<string, string[]> AllowedReferences = new()
     {
         [Domain] = [],
@@ -55,7 +55,7 @@ public class LayeringTests
     [Fact]
     public void Domain_carries_no_package_reference()
     {
-        // AD-1's root layer stays free of infrastructure concerns, which starts with taking
+        // The root layer stays free of infrastructure concerns, which starts with taking
         // no third-party dependency at all.
         var document = XDocument.Load(RepositoryLayout.ProjectFile(Domain));
 
@@ -91,7 +91,7 @@ public class LayeringTests
     [Fact]
     public void Only_ProgramCs_in_Web_names_an_Infrastructure_namespace()
     {
-        // AD-1: Web/Program.cs is the composition root and the single file allowed to know
+        // Web/Program.cs is the composition root and the single file allowed to know
         // that Infrastructure exists.
         var webDirectory = RepositoryLayout.ProjectDirectory(Web);
 

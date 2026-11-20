@@ -31,7 +31,7 @@ public class PagingTests
         { 1, 7, "1 2 3 4 5 6 7" },
         { 4, 7, "1 2 3 4 5 6 7" },
 
-        // The spec's own examples: nine pages at page 1, and at page 5.
+        // Nine pages, at page 1 and at page 5.
         { 1, 9, "1 2 3 … 9" },
         { 5, 9, "1 … 4 5 6 … 9" },
 
@@ -132,7 +132,7 @@ public class PagingTests
     [MemberData(nameof(Lists))]
     public void Every_list_refuses_an_unknown_sort_with_the_shared_code(string list)
     {
-        // The I/O matrix's bad-input row: `?sort=bogus` is a 422 naming the sort, never a quiet
+        // The bad-input case: `?sort=bogus` is a 422 naming the sort, never a quiet
         // fallback to an order the caller did not ask for.
         var failure = Assert.Single(Validate(list, offset: 0, limit: 10, sort: "bogus").Errors);
 
@@ -144,7 +144,7 @@ public class PagingTests
     [MemberData(nameof(Lists))]
     public void Every_list_keeps_the_ceiling_of_a_hundred(string list)
     {
-        // The validator ceiling stays where it was (NFR-27): a page of a hundred is the most a caller
+        // The validator ceiling stays where it was: a page of a hundred is the most a caller
         // may ask for, and a hundred and one is refused with the shared paging code.
         Assert.True(Validate(list, offset: 0, limit: 100, sort: null).IsValid);
 

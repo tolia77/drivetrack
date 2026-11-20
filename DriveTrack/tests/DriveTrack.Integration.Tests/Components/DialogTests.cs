@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Components;
 namespace DriveTrack.Integration.Tests.Components;
 
 /// <summary>
-/// FR-81 / FR-85 / NFR-19: the shared dialog and the confirmation built on it.
+/// The shared dialog and the confirmation built on it.
 /// <para>
 /// Two halves, because the guarantees live in two places. What the markup promises — the modal
 /// role, the label wired to the heading, the destructive confirm beside a distinct cancel — is
@@ -64,7 +64,7 @@ public class DialogTests
     [Fact]
     public async Task The_dialog_is_never_rendered_already_open()
     {
-        // NFR-19's focus guarantees come from showModal(). A dialog rendered with the `open`
+        // The focus guarantees come from showModal(). A dialog rendered with the `open`
         // attribute is displayed non-modally: no focus trap, no backdrop, no Escape - and it looks
         // right on screen, which is why this is asserted rather than reviewed.
         var html = await ComponentRenderer.RenderAsync<DtDialog>(new Dictionary<string, object?>
@@ -169,11 +169,11 @@ public class DialogTests
         var confirm = SharedMarkup.ElementWithClass(html, "button", "dt-confirm-accept");
         var cancel = SharedMarkup.ElementWithClass(html, "button", "dt-confirm-cancel");
 
-        // NFR-23: destructive actions are red, and the themed Bootstrap variant is where that
+        // Destructive actions are red, and the themed Bootstrap variant is where that
         // colour comes from.
         Assert.Contains("btn-danger", html, StringComparison.Ordinal);
 
-        // NFR-24: an icon AND text. Either on its own is a guess.
+        // An icon AND text. Either on its own is a guess.
         Assert.Contains("<svg", confirm, StringComparison.Ordinal);
 
         var confirmText = SharedMarkup.TextOf(confirm);

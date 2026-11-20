@@ -5,7 +5,7 @@ using DriveTrack.Domain.Identity;
 namespace DriveTrack.Application.Tests.Authorization;
 
 /// <summary>
-/// AD-2's one decision, and AD-4's admin override, asserted directly rather than through an
+/// The guard's one decision, and the admin override, asserted directly rather than through an
 /// endpoint — the guard is the thing under test, and a test that reached it over HTTP would be
 /// asserting the pipeline as much as the rule.
 /// </summary>
@@ -16,7 +16,7 @@ public class AccessGuardTests
     [Fact]
     public void An_anonymous_caller_is_unauthenticated_not_forbidden()
     {
-        // 401, not 403, and deliberately so: FR-13's session-expiry flow branches on this single
+        // 401, not 403, and deliberately so: the session-expiry flow branches on this single
         // code, and an expired cookie on a live circuit arrives here.
         var guard = new AccessGuard(new StubCurrentUser());
 
@@ -49,7 +49,7 @@ public class AccessGuardTests
     [Fact]
     public void An_admin_reading_another_user_passes()
     {
-        // AD-4: admin satisfies every check by rule, never by holding a second role row. This is the
+        // Admin satisfies every check by rule, never by holding a second role row. This is the
         // only place in the system where that is true, which is what keeps it auditable.
         var guard = new AccessGuard(new StubCurrentUser(new UserId(8), UserRole.Admin));
 
@@ -60,7 +60,8 @@ public class AccessGuardTests
     public void An_anonymous_caller_asking_for_a_role_is_unauthenticated_not_forbidden()
     {
         // Same 401-not-403 reasoning as RequireSelf, and it has to be stated separately: a second
-        // member that answered 403 here would send an expired session down FR-13's wrong branch.
+        // member that answered 403 here would send an expired session down the wrong branch of
+        // the session-expiry flow.
         var guard = new AccessGuard(new StubCurrentUser());
 
         var failure = Assert.Throws<ForbiddenException>(() => guard.RequireRole(UserRole.Dispatcher));
@@ -86,7 +87,8 @@ public class AccessGuardTests
     [InlineData(UserRole.Client)]
     public void An_admin_passes_every_role_check(UserRole required)
     {
-        // AD-4, on the new member. This is why FR-48 needs no second guard member and why no
+        // The admin override, on the new member. This is why a dispatcher viewing clients needs no
+        // second guard member and why no
         // capability writes `RequireRole(Dispatcher) || RequireRole(Admin)`: `RequireRole(Dispatcher)`
         // already means "a dispatcher or an admin", decided here and nowhere else.
         var guard = new AccessGuard(new StubCurrentUser(new UserId(8), UserRole.Admin));
@@ -138,7 +140,7 @@ public class AccessGuardTests
     }
 
     // =====================================================================================
-    // RequireRole (story 4.1)
+    // RequireRole
     //
     // The role member, tested directly for the same reason RequireSelf is: an endpoint test would
     // be asserting the pipeline as much as the rule, and the rule is what the fleet capability
@@ -148,7 +150,7 @@ public class AccessGuardTests
     [Fact]
     public void An_anonymous_caller_asked_for_a_role_is_unauthenticated_not_forbidden()
     {
-        // 401, not 403, exactly as RequireSelf answers it: FR-13's session-expiry flow branches on
+        // 401, not 403, exactly as RequireSelf answers it: the session-expiry flow branches on
         // this single code, and an expired cookie on a live circuit arrives here too.
         var guard = new AccessGuard(new StubCurrentUser());
 
@@ -174,10 +176,10 @@ public class AccessGuardTests
     [InlineData(UserRole.Client)]
     public void No_role_but_admin_satisfies_a_check_for_admin(UserRole role)
     {
-        // The other direction of AD-4, and the one the matrix beside it reads as covered without
-        // being: admin passing every check is not the same claim as every other role failing the
-        // check for admin. Without this a guard that returned early for any authenticated caller
-        // would satisfy every other case in this file.
+        // The other direction of the admin override, and the one the matrix beside it reads as
+        // covered without being: admin passing every check is not the same claim as every other
+        // role failing the check for admin. Without this a guard that returned early for any
+        // authenticated caller would satisfy every other case in this file.
         var guard = new AccessGuard(new StubCurrentUser(Target, role));
 
         var failure = Assert.Throws<ForbiddenException>(() => guard.RequireRole(UserRole.Admin));
@@ -186,9 +188,9 @@ public class AccessGuardTests
     }
 
     // =====================================================================================
-    // RequireScope (story 5.1)
+    // RequireScope
     //
-    // AD-3's scope predicate, tested here for the reason the other two members are: an endpoint
+    // The scope predicate, tested here for the reason the other two members are: an endpoint
     // test would assert the pipeline as much as the rule, and this rule is what stops a driver
     // reading somebody else's deliveries.
     // =====================================================================================
@@ -197,7 +199,8 @@ public class AccessGuardTests
     public void An_anonymous_caller_asking_for_a_scope_is_unauthenticated_not_forbidden()
     {
         // 401, not 403, exactly as the other two members answer it: an expired cookie on a live
-        // circuit is a caller with no credentials left, and FR-13 branches on this single code.
+        // circuit is a caller with no credentials left, and the session-expiry flow branches on
+        // this single code.
         var guard = new AccessGuard(new StubCurrentUser());
 
         var failure = Assert.Throws<ForbiddenException>(() => _ = guard.RequireScope());
@@ -210,8 +213,8 @@ public class AccessGuardTests
     [InlineData(UserRole.Dispatcher)]
     public void A_caller_who_runs_dispatch_is_unrestricted(UserRole role)
     {
-        // AD-4 for the admin, and FR-18 for the dispatcher: the delivery board exists for them, so
-        // the predicate narrows nothing and the repository sees no WHERE.
+        // The admin override for the admin, and the delivery board for the dispatcher: it exists
+        // for them, so the predicate narrows nothing and the repository sees no WHERE.
         var guard = new AccessGuard(new StubCurrentUser(Target, role));
 
         var scope = guard.RequireScope();
@@ -267,8 +270,8 @@ public class AccessGuardTests
     [Fact]
     public void A_driver_holding_a_client_id_is_still_scoped_by_their_driver_row()
     {
-        // AD-4 gives an account one role, so this state should not arise - but the two claims are
-        // separate, and a guard that read whichever it found first would scope a driver by a
+        // An account holds exactly one role, so this state should not arise - but the two claims
+        // are separate, and a guard that read whichever it found first would scope a driver by a
         // client id and show them the wrong rows. The role decides which claim is the scope.
         var guard = new AccessGuard(new StubCurrentUser(
             Target,
@@ -283,9 +286,10 @@ public class AccessGuardTests
     }
 
     // =====================================================================================
-    // RequireAssignedDriver (story 5.3)
+    // RequireAssignedDriver
     //
-    // FR-26 and FR-34 as one predicate: the driver carrying the parcel, or dispatch, and nobody
+    // Who may change a delivery's status, as one predicate: the driver carrying the parcel, or
+    // dispatch, and nobody
     // else. It gets the same table the other three members have, for the same reason - this is the
     // rule that stands between a driver and somebody else's delivery.
     // =====================================================================================
@@ -293,7 +297,7 @@ public class AccessGuardTests
     [Fact]
     public void An_anonymous_caller_asking_about_an_assignment_is_unauthenticated_not_forbidden()
     {
-        // 401, not 403, exactly as the other three members answer it: FR-13's session-expiry flow
+        // 401, not 403, exactly as the other three members answer it: the session-expiry flow
         // branches on this single code, and an expired cookie on a live circuit arrives here too.
         var guard = new AccessGuard(new StubCurrentUser());
 
@@ -308,7 +312,8 @@ public class AccessGuardTests
     [InlineData(UserRole.Dispatcher)]
     public void Dispatch_may_advance_any_delivery_including_an_unassigned_one(UserRole role)
     {
-        // AD-4 for the admin and FR-34 for the dispatcher: the lifecycle is dispatch's as much as
+        // The admin override for the admin, and the single status write path for the dispatcher:
+        // the lifecycle is dispatch's as much as
         // the board is. An unassigned parcel is included deliberately - a delivery with no driver
         // still has to be movable by the people who dispatch it.
         var guard = new AccessGuard(new StubCurrentUser(Target, role));
@@ -329,7 +334,7 @@ public class AccessGuardTests
     [Fact]
     public void A_driver_may_not_advance_another_drivers_delivery()
     {
-        // FR-26. The failure worth pinning, because the plausible-looking mistake - comparing the
+        // The failure worth pinning, because the plausible-looking mistake - comparing the
         // caller's user id against the delivery's driver id - would compare two different row
         // spaces and pass for whichever driver happened to share a number with a user.
         var guard = new AccessGuard(
@@ -372,7 +377,8 @@ public class AccessGuardTests
     [Fact]
     public void A_client_may_never_advance_a_delivery_even_their_own()
     {
-        // FR-90, and the reason this member exists at all: a client's scope admits their own
+        // A client never changes status, and that is the reason this member exists at all: a
+        // client's scope admits their own
         // delivery, so RequireScope would let them change its status. The two questions are
         // different, and only one of them is "may this caller move the parcel".
         var guard = new AccessGuard(
@@ -385,9 +391,9 @@ public class AccessGuardTests
     }
 
     // =====================================================================================
-    // RequireChatParticipant (story 8.1)
+    // RequireChatParticipant
     //
-    // FR-68 to FR-76 as one predicate with a nullable argument: a value asks "may this caller work
+    // Chat access as one predicate with a nullable argument: a value asks "may this caller work
     // in this driver's conversation", null asks "may they see the list of conversations at all".
     // The admin case below is the one a reader will assume is a bug, so it is pinned hardest.
     // =====================================================================================
@@ -395,7 +401,7 @@ public class AccessGuardTests
     [Fact]
     public void An_anonymous_caller_asking_about_a_conversation_is_unauthenticated_not_forbidden()
     {
-        // 401, not 403, exactly as the other four members answer it: FR-13's session-expiry flow
+        // 401, not 403, exactly as the other four members answer it: the session-expiry flow
         // branches on this single code, and an expired cookie on a live circuit arrives here too.
         var guard = new AccessGuard(new StubCurrentUser());
 
@@ -413,7 +419,7 @@ public class AccessGuardTests
     [Fact]
     public void A_dispatcher_reaches_the_roster_and_every_conversation()
     {
-        // FR-68 and FR-71: dispatch runs every conversation, so neither argument refuses them.
+        // Dispatch runs every conversation, so neither argument refuses them.
         var guard = new AccessGuard(new StubCurrentUser(Target, UserRole.Dispatcher));
 
         guard.RequireChatParticipant(null);
@@ -424,7 +430,7 @@ public class AccessGuardTests
     [Fact]
     public void A_driver_reaches_their_own_conversation_and_no_other()
     {
-        // FR-69. The failure worth pinning is the same one RequireAssignedDriver pins: the
+        // The failure worth pinning is the same one RequireAssignedDriver pins: the
         // plausible-looking mistake is comparing the caller's user id against the thread key, which
         // compares two different row spaces and passes for whichever driver shares a number.
         var guard = new AccessGuard(
@@ -484,10 +490,11 @@ public class AccessGuardTests
     [Fact]
     public void An_admin_is_refused_every_conversation_and_the_roster_as_well()
     {
-        // The case a reader will take for a bug, and the reason this member exists at all. AD-4
-        // makes an administrator satisfy every other check in the system by rule; the PRD locks
-        // them out of chat on purpose - "admins moderate rather than dispatch" - and the original's
-        // defect list records "chat accepts clients and admins" as a fault to fix.
+        // The case a reader will take for a bug, and the reason this member exists at all. The
+        // admin override makes an administrator satisfy every other check in the system by rule;
+        // the requirements lock them out of chat on purpose - "admins moderate rather than
+        // dispatch" - and the original's defect list records "chat accepts clients and admins"
+        // as a fault to fix.
         //
         // If this test ever fails because somebody "fixed" the missing Admin arm in AccessGuard,
         // the fix is to delete the arm again, not to change this line.
@@ -504,17 +511,17 @@ public class AccessGuardTests
     }
 
     // =====================================================================================
-    // RequireDeliveryComposer (story 7.4)
+    // RequireDeliveryComposer
     //
-    // FR-89 as one predicate: may this caller compose a delivery, and for which client row. It gets
-    // the same table the other members have, including the missing-claim row - this is the rule that
-    // decides whose name a new delivery is attached to.
+    // Delivery requests as one predicate: may this caller compose a delivery, and for which client
+    // row. It gets the same table the other members have, including the missing-claim row - this is
+    // the rule that decides whose name a new delivery is attached to.
     // =====================================================================================
 
     [Fact]
     public void An_anonymous_caller_composing_a_delivery_is_unauthenticated_not_forbidden()
     {
-        // 401, not 403, exactly as every other member answers it: FR-13's session-expiry flow
+        // 401, not 403, exactly as every other member answers it: the session-expiry flow
         // branches on this single code, and an expired cookie on a live circuit arrives here too.
         var guard = new AccessGuard(new StubCurrentUser());
 
@@ -565,7 +572,7 @@ public class AccessGuardTests
     [Fact]
     public void A_driver_composes_nothing_and_is_refused()
     {
-        // FR-25 makes a driver a reader of the parcels they carry and never an author of one. The
+        // A driver is a reader of the parcels they carry and never an author of one. The
         // driver row id is present precisely so this is not passing for the missing-claim reason.
         var guard = new AccessGuard(
             new StubCurrentUser(Target, UserRole.Driver, driverId: new DriverId(4)));
@@ -576,11 +583,11 @@ public class AccessGuardTests
     }
 
     // =====================================================================================
-    // RequireReviewAuthor / RequireReviewOwner (story 7.2)
+    // RequireReviewAuthor / RequireReviewOwner
     //
-    // The pair FR-62 to FR-66 need, and the split between them is the product decision: the PRD
-    // retired FR-97, so an administrator authors nothing and moderates anything. That makes
-    // RequireReviewAuthor the second member whose answer deliberately contradicts AD-4 - the first
+    // The pair reviews need, and the split between them is the product decision: an administrator
+    // authors nothing and moderates anything. That makes RequireReviewAuthor the second member
+    // whose answer deliberately contradicts the admin override - the first
     // being RequireChatParticipant - and RequireReviewOwner one where the override applies in full.
     // Both arms are asserted here, because "an admin is refused by one and passes the other" is
     // exactly the kind of asymmetry a later edit smooths away.
@@ -589,7 +596,7 @@ public class AccessGuardTests
     [Fact]
     public void An_anonymous_caller_writing_a_review_is_unauthenticated_not_forbidden()
     {
-        // 401 for the reason every other member answers 401: FR-13's session-expiry flow branches
+        // 401 for the reason every other member answers 401: the session-expiry flow branches
         // on this single code, and an expired cookie on a live circuit reaches exactly here.
         var guard = new AccessGuard(new StubCurrentUser());
 
@@ -633,9 +640,9 @@ public class AccessGuardTests
     public void Nobody_but_a_client_authors_a_review(UserRole role)
     {
         // The admin row is the one a reader will take for a mistake, and it is the product
-        // decision: the PRD retired FR-97 because an administrator authoring customer feedback is
-        // manufacturing it rather than moderating it. A dispatcher runs the deliveries being judged
-        // and a driver is the party being judged.
+        // decision: an administrator does not author reviews, because authoring customer feedback
+        // is manufacturing it rather than moderating it. A dispatcher runs the deliveries being
+        // judged and a driver is the party being judged.
         var guard = new AccessGuard(
             new StubCurrentUser(Target, role, driverId: new DriverId(4), clientId: new ClientId(9)));
 
@@ -682,9 +689,9 @@ public class AccessGuardTests
     [Fact]
     public void An_admin_moderates_any_review_including_one_that_is_not_there()
     {
-        // AD-4 in full on this half of the pair, null argument included: an administrator passes by
-        // rule, which is what lets the service answer 404 for a review that is genuinely missing
-        // rather than 403 for one they may moderate.
+        // The admin override in full on this half of the pair, null argument included: an
+        // administrator passes by rule, which is what lets the service answer 404 for a review that
+        // is genuinely missing rather than 403 for one they may moderate.
         var guard = new AccessGuard(new StubCurrentUser(Target, UserRole.Admin));
 
         guard.RequireReviewOwner(new ClientId(9));
@@ -696,7 +703,7 @@ public class AccessGuardTests
     [InlineData(UserRole.Driver)]
     public void Neither_a_dispatcher_nor_a_driver_moderates_a_review(UserRole role)
     {
-        // FR-64 makes a dispatcher a reader of the collection and never a writer to it, and a
+        // A dispatcher is a reader of the collection and never a writer to it, and a
         // driver has no part in reviews at all. Both land in the member's total arm.
         var guard = new AccessGuard(
             new StubCurrentUser(Target, role, driverId: new DriverId(4), clientId: new ClientId(9)));
@@ -710,7 +717,7 @@ public class AccessGuardTests
     [Fact]
     public void An_anonymous_caller_asking_whose_shifts_they_may_see_is_unauthenticated()
     {
-        // 401, not 403, like every other member: FR-13's session-expiry flow branches on this one
+        // 401, not 403, like every other member: the session-expiry flow branches on this one
         // code, and an expired cookie on a live circuit arrives here.
         var guard = new AccessGuard(new StubCurrentUser());
 
@@ -724,7 +731,7 @@ public class AccessGuardTests
     [InlineData(UserRole.Dispatcher)]
     public void Dispatch_is_unrestricted_by_driver_when_reading_shifts(UserRole role)
     {
-        // AD-4 and FR-113: an admin is unrestricted by rule and a dispatcher because the roster of
+        // An admin is unrestricted by rule and a dispatcher because the roster of
         // shifts is the thing dispatch runs. Null is the unrestricted case - it reaches the
         // repository unchanged and adds no WHERE.
         var guard = new AccessGuard(new StubCurrentUser(Target, role, driverId: new DriverId(4)));
@@ -757,7 +764,8 @@ public class AccessGuardTests
     [Fact]
     public void A_client_may_not_read_shifts_at_all()
     {
-        // FR-115, and the reason this member exists rather than RequireScope being reused. That one
+        // Shifts are never visible to a client, and that is the reason this member exists rather
+        // than RequireScope being reused. That one
         // would hand a client the scope (null, clientId), whose driver half is null - which a shift
         // query reads as "unrestricted by driver" and answers with every shift in the system. The
         // client below carries a perfectly good client row id, so nothing about a broken claim is
@@ -786,7 +794,7 @@ public class AccessGuardTests
     [InlineData(UserRole.Dispatcher)]
     public void Dispatch_acts_on_any_drivers_shift_including_one_that_is_not_there(UserRole role)
     {
-        // FR-114, null argument included: dispatch passes by rule, which is what lets the service
+        // Null argument included: dispatch passes by rule, which is what lets the service
         // answer 404 for a shift that is genuinely missing rather than 403 for one they may correct.
         var guard = new AccessGuard(new StubCurrentUser(Target, role));
 
@@ -832,8 +840,8 @@ public class AccessGuardTests
     [Fact]
     public void A_client_may_not_act_on_a_shift()
     {
-        // FR-115 on the write side. The client carries both row ids, so it is the role that refuses
-        // them rather than a missing claim.
+        // The same refusal on the write side. The client carries both row ids, so it is the role
+        // that refuses them rather than a missing claim.
         var guard = new AccessGuard(
             new StubCurrentUser(
                 Target,

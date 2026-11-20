@@ -4,9 +4,9 @@ using DriveTrack.Integration.Tests.Support;
 namespace DriveTrack.Integration.Tests.Design;
 
 /// <summary>
-/// AD-28 and NFR-29 as a standing guard rather than a review convention.
+/// The design-token rule as a standing guard rather than a review convention.
 /// <para>
-/// The scaffold this story replaced held roughly seventy literal colours, sizes, radii and
+/// The original scaffold held roughly seventy literal colours, sizes, radii and
 /// shadows spread across four stylesheets, and every one of them arrived the same way: someone
 /// needed a value, typed it, and moved on. Reviewing for that does not scale, so the rule is
 /// asserted over the source. A declaration of a <em>visual</em> property - one that names a
@@ -39,7 +39,7 @@ public class DesignTokenTests
     /// <c>background</c> family, because <c>background-repeat</c>, <c>-position</c> and
     /// <c>-size</c> are geometry and must stay unscanned. It has to be here all the same: a
     /// <c>linear-gradient()</c> is a palette value wearing an image's property name, and the
-    /// scaffold's sidebar gradient - the story's headline offender - was written exactly that
+    /// scaffold's sidebar gradient - the worst offender - was written exactly that
     /// way. A <c>url()</c> is stripped before the check, so an inline SVG asset still passes.
     /// </para>
     /// <para>
@@ -118,7 +118,7 @@ public class DesignTokenTests
     /// palette value - one is relative geometry and the other a direction - so both are out of
     /// scope in the same way <c>width</c> and <c>z-index</c> are. This is what lets a fully
     /// tokenized <c>linear-gradient(180deg, var(--a), var(--b))</c> through, and it is why the
-    /// matrix lists <c>border-radius: 50%</c> as a non-offender. Absolute lengths stay caught.
+    /// <c>border-radius: 50%</c> is a non-offender. Absolute lengths stay caught.
     /// </summary>
     private static readonly Regex Proportion = new(
         @"^-?\d+(?:\.\d+)?(?:%|deg|grad|rad|turn)$",
@@ -269,7 +269,7 @@ public class DesignTokenTests
     /// </para>
     /// <para>
     /// The array stays rather than being deleted outright, because <see cref="UrlAssetOffences"/>
-    /// still consults it: an exemption a later story argues for has somewhere to be written down,
+    /// still consults it: an exemption a later change argues for has somewhere to be written down,
     /// and the test below makes writing one a deliberate act rather than a quiet one.
     /// </para>
     /// </summary>
@@ -297,7 +297,7 @@ public class DesignTokenTests
         TimeSpan.FromSeconds(5));
 
     // =====================================================================================
-    // The detector, asserted against the story's I/O matrix
+    // The detector, asserted against known offenders and non-offenders
     // =====================================================================================
 
     [Theory]
@@ -358,8 +358,8 @@ public class DesignTokenTests
     [Fact]
     public void There_is_something_to_scan()
     {
-        // Guards every assertion below: an empty file set makes them vacuously true, and the
-        // scan set is derived from directory layout, which a later story is free to change.
+        // Guards every assertion below: an empty file set makes them vacuously true, and the scan
+        // set is derived from directory layout, which a later change is free to make different.
         Assert.NotEmpty(MarkupFiles());
         Assert.NotEmpty(ScopedStylesheets());
         Assert.NotEmpty(ProjectStylesheets());
@@ -410,10 +410,10 @@ public class DesignTokenTests
     }
 
     /// <summary>
-    /// The exemption list is a hole in NFR-29, and the hole is now shut. Asserted rather than left
-    /// to the scan above, because the two fail differently: the scan says "this asset carries a
-    /// colour", which a new exemption silences, and this says "an exemption exists at all", which
-    /// nothing silences but deleting it.
+    /// The exemption list is a hole in the design-token rule, and the hole is now shut. Asserted
+    /// rather than left to the scan above, because the two fail differently: the scan says "this
+    /// asset carries a colour", which a new exemption silences, and this says "an exemption exists
+    /// at all", which nothing silences but deleting it.
     /// </summary>
     [Fact]
     public void No_url_asset_carries_a_literal_colour()
@@ -430,7 +430,7 @@ public class DesignTokenTests
     /// declaration to map, and between them the two tiers cannot drift apart.
     /// </summary>
     /// <summary>
-    /// NFR-23's action vocabulary has no <c>info</c> and the palette declares no hue for one, so
+    /// The action colour vocabulary has no <c>info</c> and the palette declares no hue for one, so
     /// <c>info</c> is not in <c>$theme-colors</c> and Bootstrap generates no <c>.btn-info</c>,
     /// <c>.bg-info</c>, <c>.text-info</c> or <c>.alert-info</c> at all.
     /// <para>
@@ -565,8 +565,8 @@ public class DesignTokenTests
     [Fact]
     public void An_inline_style_in_markup_is_scanned_like_a_stylesheet()
     {
-        // The markup path is a separate reader from the stylesheet one, so the matrix above
-        // does not cover it. Without this, `<div style="color:#333">` would be the one place a
+        // The markup path is a separate reader from the stylesheet one, so the cases above
+        // do not cover it. Without this, `<div style="color:#333">` would be the one place a
         // literal could still be written.
         var offences = MarkupOffences("""<div class="page" style="color:#333">text</div>""");
 
@@ -614,7 +614,7 @@ public class DesignTokenTests
     }
 
     [Theory]
-    // The tokens the story names explicitly: the three AD-28 action colours, the four FR-98 rating
+    // The tokens named explicitly: the three action colours, the four rating
     // colours, the four delivery-status pairs' text halves, and the one token only JavaScript
     // reads - which no stylesheet scan would ever notice going missing. The map-driven assertion
     // below covers the rest.
@@ -640,9 +640,9 @@ public class DesignTokenTests
     [Theory]
     // The bridge is a mapping, and until this existed a mapping could be inverted without a
     // single test noticing: every screen asserts the class string it writes, and `.btn-primary`
-    // is a perfectly valid class whichever token it happens to resolve to. Story A did invert
-    // three of them - `$primary` moved from edit to create - and the suite stayed green while
-    // every Create button in the app painted itself in the feedback colour.
+    // is a perfectly valid class whichever token it happens to resolve to. Inverting three of
+    // them - moving `$primary` from edit to create - would leave the suite green while every
+    // Create button in the app painted itself in the feedback colour.
     //
     // Read off the compiled bundle and compared against the token's own published value rather
     // than against a hex, so the pair cannot drift and the assertion does not need editing the
@@ -727,12 +727,11 @@ public class DesignTokenTests
     [Fact]
     public void Every_class_the_theme_publishes_has_a_consumer()
     {
-        // The other half of AD-28, and the half a palette quietly fails at. `_theme.scss` carries
-        // the vocabulary that is the same fact on more than one screen - the status labels, the
-        // rating bands, the badges, the nine type styles - and a class in it that nothing renders
-        // is a palette documenting a product the screens do not show. Spec A published all of this
-        // ahead of its consumers on purpose; this is what stops the next one being published and
-        // forgotten.
+        // The other half of the design-token rule, and the half a palette quietly fails at.
+        // `_theme.scss` carries the vocabulary that is the same fact on more than one screen - the
+        // status labels, the rating bands, the badges, the nine type styles - and a class in it
+        // that nothing renders is a palette documenting a product the screens do not show. This is
+        // what stops a class being published and forgotten.
         var theme = Preprocess(File.ReadAllText(Path.Combine(StylesDirectory, "_theme.scss")));
 
         var published = Regex.Matches(
@@ -769,7 +768,7 @@ public class DesignTokenTests
     {
         // The dimensions are tokens for the same reason the colours are: a sidebar written as
         // `250px` in one stylesheet and `nav-width` in another is two answers to how wide the
-        // navigation is, and the one that is wrong is whichever was edited second. NFR-29's scan
+        // navigation is, and the one that is wrong is whichever was edited second. The token scan
         // deliberately does not read `width` or `height` - they are geometry - so a figure the
         // palette has already named needs this guard rather than that one.
         var offenders = new List<string>();
@@ -854,7 +853,7 @@ public class DesignTokenTests
     [Fact]
     public void The_theme_ships_no_dark_colour_mode()
     {
-        // NFR-21: one light theme, no switch. `$enable-dark-mode: false` in the bridge drops
+        // One light theme, no switch. `$enable-dark-mode: false` in the bridge drops
         // Bootstrap's dark custom-property block and every component's dark variant.
         var css = CompiledTheme.Value;
 
@@ -922,7 +921,7 @@ public class DesignTokenTests
         Assert.False(File.Exists(Path.Combine(WebProject, "wwwroot", "app.css")));
         Assert.False(Directory.Exists(Path.Combine(WebProject, "wwwroot", "lib", "bootstrap", "css")));
 
-        // Same 5.3.3 as the vendored Sass, and Story 3.2's substrate for dialogs and the nav.
+        // Same 5.3.3 as the vendored Sass, and the substrate for dialogs and the nav.
         Assert.True(File.Exists(BootstrapScriptPath));
     }
 
@@ -1027,7 +1026,7 @@ public class DesignTokenTests
 
             // A proportion or an angle is geometry, not palette, so it is allowed even inside a
             // scanned property. Absolute lengths are not: a radius or a shadow figure written
-            // as `7px` is exactly what NFR-29 exists to catch.
+            // as `7px` is exactly what the design-token rule exists to catch.
             if (Proportion.IsMatch(piece))
             {
                 continue;
@@ -1065,7 +1064,7 @@ public class DesignTokenTests
     /// semicolons and percent-encoded parentheses inside a data URI would otherwise be parsed
     /// as declarations. That strip also carried every colour inside the asset out of the scan,
     /// which is how an inline SVG kept <c>fill='white'</c> and a percent-encoded
-    /// <c>rgba(...)</c> stroke - the matrix's own worked example of an offender - while the
+    /// <c>rgba(...)</c> stroke - a textbook offender - while the
     /// suite stayed green. So the assets are read here, from the raw source, before any of it
     /// is stripped.
     /// </para>
@@ -1246,7 +1245,7 @@ public class DesignTokenTests
 
     /// <summary>
     /// Every scoped stylesheet in the project. Deliberately not rooted at <c>Components/</c>:
-    /// a scoped stylesheet a later story puts anywhere else would otherwise be unscanned while
+    /// a scoped stylesheet a later change puts anywhere else would otherwise be unscanned while
     /// the vacuity guard kept passing.
     /// </summary>
     private static string[] ScopedStylesheets() =>
@@ -1255,7 +1254,7 @@ public class DesignTokenTests
     /// <summary>
     /// Every collocated Blazor module in the project. Same reasoning as
     /// <see cref="ScopedStylesheets"/>: rooted at the project rather than at <c>Components/</c>,
-    /// so a module a later story puts elsewhere is still scanned.
+    /// so a module a later change puts elsewhere is still scanned.
     /// </summary>
     private static string[] ComponentScripts() =>
         [.. ProjectFiles().Where(path => path.EndsWith(".razor.js", StringComparison.OrdinalIgnoreCase))];
@@ -1264,7 +1263,7 @@ public class DesignTokenTests
     /// The project's own Sass, at any depth. <c>_tokens.scss</c> is where the literals are
     /// supposed to live and <c>Styles/vendor/</c> is Bootstrap's own source; everything else
     /// under <c>Styles/</c> is ours to keep tokenized, including whatever subdirectory a later
-    /// story introduces.
+    /// change introduces.
     /// </summary>
     private static string[] ProjectStylesheets() =>
     [
@@ -1281,13 +1280,13 @@ public class DesignTokenTests
 
     /// <summary>
     /// Every hand-written file in the web project: build output, the compiled web root and
-    /// vendored third-party source are all excluded, so what remains is what this story is
+    /// vendored third-party source are all excluded, so what remains is what the rule is
     /// answerable for.
     /// <para>
     /// <c>Components/Illustrations/</c> is exempt, and only that folder. What lives there is
     /// pictures of the product - the landing page's map scene, the feature-card drawings, the phone
-    /// mock-up, the closing band's route - and the human decision recorded in the landing page's
-    /// illustrated spec (2026-10-27) is that a picture need not follow the design system: it draws
+    /// mock-up, the closing band's route - and the deliberate human decision is that a picture
+    /// need not follow the design system: it draws
     /// in the artboard's own colours, sizes and SVG, which the palette does not name and should not
     /// grow tokens for. Every illustration is <c>aria-hidden</c> decoration with nothing focusable
     /// inside, which <c>IllustrationTests</c> holds them to; the interface around them - the pages

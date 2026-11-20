@@ -5,7 +5,7 @@ using DriveTrack.Domain.Identity;
 namespace DriveTrack.Application.Tests.Chat;
 
 /// <summary>
-/// The validation rows of story 8.1's edge-case matrix, asserted against
+/// The chat message validation edge cases, asserted against
 /// <see cref="SendMessageCommandValidator"/>.
 /// <para>
 /// Asserted here rather than over the hub because that is where the rule lives and where it is
@@ -35,7 +35,7 @@ public class ChatValidationTests
     [InlineData("")]
     public void A_message_with_no_text_is_refused_naming_the_field(string? text)
     {
-        // FR-70. An empty box is a refusal to state rather than a value to guess at, which is why
+        // An empty box is a refusal to state rather than a value to guess at, which is why
         // the command's Text is nullable and why both shapes land on the same rule.
         Assert.Contains(nameof(SendMessageCommand.Text), Failures(text));
         Assert.Contains(nameof(ErrorCode.CHAT_MESSAGE_TEXT_REQUIRED), Keys(text));
@@ -45,7 +45,7 @@ public class ChatValidationTests
     public void A_message_of_nothing_but_spaces_is_refused_as_empty()
     {
         // The service trims before it validates, so what reaches this rule is the empty string.
-        // Stated as its own case because the matrix states it as its own row: a whitespace message
+        // Stated as its own case: a whitespace message
         // that passed would be a row in the table nobody can read and nobody wrote.
         Assert.Contains(nameof(ErrorCode.CHAT_MESSAGE_TEXT_REQUIRED), Keys("   ".Trim()));
     }
@@ -62,7 +62,7 @@ public class ChatValidationTests
     public void A_message_one_character_wider_than_the_column_is_refused_before_the_commit()
     {
         // The validator's limit is MessageConfiguration's, which is what turns a truncation
-        // PostgreSQL would raise into a 422 naming the field (NFR-4).
+        // PostgreSQL would raise into a 422 naming the field.
         var text = new string('я', SendMessageCommandValidator.TextMaximumLength + 1);
 
         Assert.Contains(nameof(SendMessageCommand.Text), Failures(text));

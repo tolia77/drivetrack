@@ -27,7 +27,7 @@ public class NotificationLogValidationTests
         int limit,
         bool valid)
     {
-        // NFR-27: a limit of two million is refused here rather than handed to the database, and a
+        // A limit of two million is refused here rather than handed to the database, and a
         // limit of zero is a refusal rather than "give me nothing". The twin of the delivery list's
         // theory, and the log is the list that most needed it: the table grows by a row per status
         // change per delivery and nothing prunes it.

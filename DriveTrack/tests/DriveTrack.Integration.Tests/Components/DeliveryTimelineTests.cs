@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace DriveTrack.Integration.Tests.Components;
 
 /// <summary>
-/// What the timeline panel actually renders (FR-105 to FR-108).
+/// What the timeline panel actually renders.
 /// <para>
 /// A source scan cannot make these claims. "A viewer who may not be told the actor's name is shown
 /// their role instead" and "the buttons are exactly the moves the lifecycle allows" are properties
@@ -17,7 +17,7 @@ namespace DriveTrack.Integration.Tests.Components;
 /// </para>
 /// <para>
 /// Rendering is static, so nothing here presses a button. What is asserted is what a viewer is
-/// offered — which is the half FR-12 is about, since pressing one is refused or allowed by
+/// offered — which is the half hiding is about, since pressing one is refused or allowed by
 /// <c>IAccessGuard</c> and the API suite asserts that.
 /// </para>
 /// </summary>
@@ -41,8 +41,8 @@ public class DeliveryTimelineTests
     [Fact]
     public async Task An_empty_timeline_says_it_is_empty_rather_than_rendering_nothing()
     {
-        // FR-84's rule reaching the panel: a blank rectangle is indistinguishable from a panel that
-        // failed to load, and a delivery nobody has touched yet is the ordinary case.
+        // The empty-state rule reaching the panel: a blank rectangle is indistinguishable from a
+        // panel that failed to load, and a delivery nobody has touched yet is the ordinary case.
         var html = await RenderAsync([]);
 
         Assert.Contains("Історія цієї доставки поки порожня.", html, StringComparison.Ordinal);
@@ -51,7 +51,7 @@ public class DeliveryTimelineTests
     [Fact]
     public async Task An_entry_names_both_statuses_with_the_localized_labels()
     {
-        // FR-105: the line reads as a move rather than as a destination, and both ends are the
+        // The line reads as a move rather than as a destination, and both ends are the
         // shared status vocabulary rather than a second copy of it.
         var html = await RenderAsync([Change("Тарас Шевченко", UserRole.Dispatcher)]);
 
@@ -62,7 +62,7 @@ public class DeliveryTimelineTests
     [Fact]
     public async Task A_note_only_entry_renders_its_note_and_no_status()
     {
-        // FR-107: an entry may carry only a note, and the panel must not invent a transition for it.
+        // An entry may carry only a note, and the panel must not invent a transition for it.
         // Read from the list alone: the dialog's head carries the delivery's current status.
         var html = SharedMarkup.ElementWithClass(
             await RenderAsync([Note("Залишено на рецепції")]),
@@ -77,9 +77,9 @@ public class DeliveryTimelineTests
     [Fact]
     public async Task A_withheld_actor_shows_a_role_and_no_personal_name()
     {
-        // FR-27 and FR-96 reaching the timeline. The service decided; this asserts the panel renders
-        // that decision rather than quietly dropping the actor altogether, which would make the
-        // history read as though nobody had done anything.
+        // Hidden driver details reaching the timeline. The service decided; this asserts the panel
+        // renders that decision rather than quietly dropping the actor altogether, which would make
+        // the history read as though nobody had done anything.
         var html = await RenderAsync([Change(actorName: null, UserRole.Dispatcher)]);
 
         Assert.DoesNotContain("Шевченко", html, StringComparison.Ordinal);
@@ -134,8 +134,9 @@ public class DeliveryTimelineTests
     [InlineData(DeliveryStatus.Failed)]
     public async Task The_select_offers_keep_and_exactly_the_moves_the_lifecycle_allows(DeliveryStatus status)
     {
-        // AD-10 read rather than restated: the select offers whatever Delivery.NextStatuses answers,
-        // so the screen cannot drift from the rule the service enforces.
+        // The transition table read rather than restated: the select offers whatever
+        // Delivery.NextStatuses answers, so the screen cannot drift from the rule the service
+        // enforces.
         //
         // Which statuses, not just how many. Counting alone would pass a panel that offered the one
         // wrong move from Pending - a driver would choose "Доставлено" and get a 409 for an option
@@ -165,9 +166,9 @@ public class DeliveryTimelineTests
     [Fact]
     public async Task A_terminal_delivery_offers_no_select_but_still_the_comment_box()
     {
-        // The I/O matrix's terminal row: Delivered has no move, so a select whose only option is
+        // The terminal case: Delivered has no move, so a select whose only option is
         // "keep" would be a control with nothing to decide. The comment and the submit stay,
-        // because FR-107's note is open whatever the status.
+        // because a note is open whatever the status.
         var html = await RenderAsync([], DeliveryStatus.Delivered, allowStatusChange: true);
 
         Assert.DoesNotContain("dt-timeline-next-status", html, StringComparison.Ordinal);
@@ -203,7 +204,7 @@ public class DeliveryTimelineTests
     [Fact]
     public async Task The_dialog_has_the_artboards_structure()
     {
-        // The acceptance criterion: the shared dialog's own head (title, dismiss), History, Add to
+        // The layout: the shared dialog's own head (title, dismiss), History, Add to
         // the timeline, and a footer holding Cancel and the one submit.
         var html = await RenderAsync(
             [Change("Тарас Шевченко", UserRole.Dispatcher)],
@@ -264,7 +265,7 @@ public class DeliveryTimelineTests
     [Fact]
     public void A_chosen_status_sends_one_change_carrying_the_status_and_the_comment()
     {
-        // FR-106: one entry, not a move followed by a separate note.
+        // One entry, not a move followed by a separate note.
         var command = Web.Components.Pages.DeliveryTimeline.CommandFor(
             DeliveryStatus.Failed,
             "Нікого немає вдома");
@@ -386,7 +387,7 @@ public class DeliveryTimelineTests
     public void A_history_that_moved_nothing_leaves_the_status_where_it_was()
     {
         // The fallback arm, and the reason the walk skips entries rather than reading the last one:
-        // FR-107 lets anyone append a note, so the newest entry is routinely one that carries no
+        // Anyone may append a note, so the newest entry is routinely one that carries no
         // status at all. Reading it as the current status would move the delivery backwards on
         // screen every time somebody said something about it.
         var notes = new[] { Note("Немає нікого вдома"), Note("Спробуємо завтра") };
@@ -403,7 +404,7 @@ public class DeliveryTimelineTests
     [Fact]
     public void The_newest_entry_that_moved_the_delivery_is_the_one_that_counts()
     {
-        // Oldest-first (FR-108), so the walk runs from the end - and it has to pass over the note
+        // Oldest-first, so the walk runs from the end - and it has to pass over the note
         // that was appended after the move to find it.
         IReadOnlyList<TimelineEntryView> history =
         [
@@ -420,7 +421,7 @@ public class DeliveryTimelineTests
     [Fact]
     public async Task Every_status_the_enum_declares_renders_a_label()
     {
-        // The other half of AD-10's closed set. Delivery.NextStatuses throws for a status nobody
+        // The other half of the closed status set. Delivery.NextStatuses throws for a status nobody
         // declared a transition for; the label component answers an empty span for one nobody
         // declared a label for, and that empty span reaches both delivery tables and every timeline
         // line. Walking the enum is what makes the two halves fail together.
@@ -460,14 +461,14 @@ public class DeliveryTimelineTests
     [InlineData(DeliveryStatus.Failed)]
     public async Task A_viewer_with_no_lifecycle_action_is_offered_no_select(DeliveryStatus status)
     {
-        // FR-90 at the component tier: a client sees the history and the note field and nothing to
+        // At the component tier, a client sees the history and the note field and nothing to
         // press. It hides rather than decides - IAccessGuard refuses the request either way - but
         // offering an action that could only ever be refused is worse than offering none.
         var html = await RenderAsync([], status, allowStatusChange: false);
 
         Assert.DoesNotContain("dt-timeline-next-status", html, StringComparison.Ordinal);
 
-        // And the comment box and its submit are still there, because FR-107 is open to everyone
+        // And the comment box and its submit are still there, because notes are open to everyone
         // who can see the delivery. Losing them with the select would be the easy mistake.
         Assert.Contains("<textarea", html, StringComparison.Ordinal);
         Assert.Contains("dt-timeline-submit", html, StringComparison.Ordinal);
@@ -476,8 +477,8 @@ public class DeliveryTimelineTests
     [Fact]
     public async Task Nothing_the_panel_renders_is_written_in_Latin()
     {
-        // NFR-14 on the rendered chrome rather than on the source: a key that failed to resolve
-        // hands back its own name, which is Latin here and nowhere else.
+        // Translation on the rendered chrome rather than on the source: a key that failed to
+        // resolve hands back its own name, which is Latin here and nowhere else.
         var html = await RenderAsync(
             [Change(actorName: null, UserRole.Driver), Note("Залишено на рецепції")],
             DeliveryStatus.InTransit,
@@ -550,7 +551,7 @@ public class DeliveryTimelineTests
     private static TimelineEntryView Change(string? actorName, UserRole role) =>
         new(1, actorName, role, DeliveryStatus.Pending, DeliveryStatus.InTransit, null, Noon);
 
-    /// <summary>A note-only entry: neither status, which is the shape FR-107 asks for.</summary>
+    /// <summary>A note-only entry: neither status, the shape of a standalone note.</summary>
     private static TimelineEntryView Note(string note) =>
         new(2, null, UserRole.Client, null, null, note, Noon);
 

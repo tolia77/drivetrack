@@ -19,7 +19,7 @@ namespace DriveTrack.Integration.Tests.Components;
 /// <para>
 /// Rendered over HTTP rather than through <c>ComponentRenderer</c>, because that is the only place
 /// these screens exist as themselves: they are <c>[ExcludeFromInteractiveRouting]</c> so their
-/// markup really is in the first response (AD-14), and their <c>EditForm</c>s want the form
+/// markup really is in the first response, and their <c>EditForm</c>s want the form
 /// mapping context only the real endpoint puts behind them.
 /// </para>
 /// </summary>
@@ -155,7 +155,7 @@ public class AnonymousScreenTests(PostgresFixture postgres)
             card.IndexOf($@"href=""{sibling}""", StringComparison.Ordinal) > card.IndexOf("</form>", StringComparison.Ordinal),
             $"The way from {route} to {sibling} is not in the card under the form.");
 
-        // NFR-24: the action carries a glyph AND its word.
+        // The action carries a glyph AND its word.
         var button = SharedMarkup.ElementWithClass(html, "button", submit);
 
         Assert.Contains("<svg", button, StringComparison.Ordinal);
@@ -343,7 +343,7 @@ public class AnonymousScreenTests(PostgresFixture postgres)
         await using var factory = await ApiFactory.CreateAsync(
             postgres.ConnectionString, cancellationToken, useProbeAuthentication: false);
 
-        // Through the same switch a visitor uses, which is the row of the matrix this also covers:
+        // Through the same switch a visitor uses, which this also covers:
         // the choice is honoured and the reader comes back to the screen they were on.
         using var client = factory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
         {
@@ -419,7 +419,7 @@ public class AnonymousScreenTests(PostgresFixture postgres)
 
         // A refusal that names no field, which is the banner's whole reason for existing:
         // AUTH_INVALID_CREDENTIALS cannot go under either box without telling an attacker which of
-        // the two was wrong (FR-4).
+        // the two was wrong.
         var refusedSignIn = await PostAsync(
             factory,
             "/sign-in",
@@ -526,8 +526,8 @@ public class AnonymousScreenTests(PostgresFixture postgres)
         var css = WithoutComments(SharedMarkup.ReadComponent("Account", file + ".razor.css"));
 
         // `max-width` rather than `width`, which is what lets the panel fill a viewport narrower
-        // than the bound instead of overflowing it. A figure rather than a token: NFR-29's scan only
-        // refuses the figures the palette names, and this is one screen's geometry.
+        // than the bound instead of overflowing it. A figure rather than a token: the token scan
+        // only refuses the figures the palette names, and this is one screen's geometry.
         Assert.Matches(
             new Regex(
                 @"\." + Regex.Escape(wrapper) + @"\s*\{[^}]*max-width:\s*" + Regex.Escape(width),

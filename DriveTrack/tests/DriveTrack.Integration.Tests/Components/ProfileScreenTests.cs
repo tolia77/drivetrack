@@ -10,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace DriveTrack.Integration.Tests.Components;
 
 /// <summary>
-/// FR-87, FR-88 and FR-92 as the one screen a user actually reaches them through.
+/// Profile, password and email changes as the one screen a user actually reaches them through.
 /// <para>
 /// Rendered rather than read as source, because no arrangement of words can tell a screen that
 /// offers a client their phone number from one that offers a dispatcher a box with nowhere to store
@@ -45,7 +45,7 @@ public class ProfileScreenTests
 
         Assert.Contains("<h1", body, StringComparison.Ordinal);
 
-        // NFR-24: the heading carries the glyph the navigation already uses for this destination.
+        // The heading carries the glyph the navigation already uses for this destination.
         // It was the last of the signed-in application screens whose <h1> had none. Outside that
         // set the claim does not hold and is not made here: SignIn, Register and Error still carry
         // a bare `dt-type-h1`, none of them being a destination the navigation names.
@@ -67,8 +67,8 @@ public class ProfileScreenTests
     [Fact]
     public async Task The_screen_offers_an_edit_a_password_change_and_an_address_change()
     {
-        // FR-87 / FR-88 / FR-92 are one thing a user came here to do, so they are one screen - but
-        // three dialogs, because they are three operations with three different refusals.
+        // Profile, password and email are one thing a user came here to do, so they are one screen
+        // - but three dialogs, because they are three operations with three different refusals.
         var html = await RenderAsync(Client());
 
         Assert.Equal(3, SharedMarkup.Occurrences(html, @"class=""dt-dialog"""));
@@ -88,7 +88,7 @@ public class ProfileScreenTests
     [Fact]
     public async Task The_screen_still_reads_out_the_profile_it_is_about_to_edit()
     {
-        // The read-out FR-5 shipped is not replaced by the editing: a user has to see what they are
+        // The profile read-out is not replaced by the editing: a user has to see what they are
         // changing, and a driver's licence number is still on the page.
         var html = await RenderAsync(Driver());
         var text = WebUtility.HtmlDecode(html);
@@ -102,9 +102,10 @@ public class ProfileScreenTests
     [Fact]
     public async Task Only_a_client_is_offered_a_phone_number()
     {
-        // DR-3 gives no role but a client a row to keep a number in. A box a dispatcher, a driver or
-        // an administrator could fill in would be refused on every save, which is worse than not
-        // offering it - so the negative half renders all three rather than standing on one.
+        // The role model gives no role but a client a row to keep a number in. A box a dispatcher,
+        // a driver or an administrator could fill in would be refused on every save, which is worse
+        // than not offering it - so the negative half renders all three rather than standing on
+        // one.
         //
         // What a static render can say about the box is that it is there. Whether it arrives
         // *filled* is ShowEditAsync's work, and a static render never reaches a click - so the
@@ -132,7 +133,7 @@ public class ProfileScreenTests
     [Fact]
     public async Task No_password_box_is_ever_pre_filled()
     {
-        // FR-8: only a hash is stored, so there is nothing to pre-fill them with - and a refused
+        // Only a hash is stored, so there is nothing to pre-fill them with - and a refused
         // change must not render the submitted password back either.
         var html = await RenderAsync(Client());
 
@@ -158,9 +159,10 @@ public class ProfileScreenTests
     [Fact]
     public async Task Every_word_the_screen_renders_of_its_own_is_Ukrainian()
     {
-        // NFR-14, read back from the rendered page rather than from the source: the heading, the
-        // dialog titles, the field labels and every action are the product's words. The read-out
-        // values are data - an email address is Latin by nature - so they are not in scope here.
+        // Translation, read back from the rendered page rather than from the source: the heading,
+        // the dialog titles, the field labels and every action are the product's words. The
+        // read-out values are data - an email address is Latin by nature - so they are not in scope
+        // here.
         var html = await RenderAsync(Client());
 
         var chrome = new List<string>();
@@ -187,7 +189,7 @@ public class ProfileScreenTests
         {
             var body = SharedMarkup.ElementWithClass(html, "button", action);
 
-            // NFR-24: an action carries a glyph and its text, never one without the other.
+            // An action carries a glyph and its text, never one without the other.
             Assert.Contains("<svg", body, StringComparison.Ordinal);
 
             chrome.Add(body);
@@ -230,9 +232,9 @@ public class ProfileScreenTests
     [Fact]
     public void The_edit_form_opens_carrying_the_stored_profile()
     {
-        // The other half of the same lift, and the half nothing observed until now. AD-23 makes the
-        // command say what the form shows, so a box the user leaves as they found it has to send the
-        // value that was already in it. Drop a line from Fill and every self-service save sends a
+        // The other half of the same lift, and the half nothing else observes. The edit command
+        // says what the form shows, so a box the user leaves as they found it has to send the value
+        // that was already in it. Drop a line from Fill and every self-service save sends a
         // present-null name, which ProfileStateValidator refuses 422 - while the ToProfileCommand
         // test above, handed string literals rather than anything a form produced, carries on
         // passing. A static render cannot reach the click that calls this, so this is where it is
@@ -245,7 +247,7 @@ public class ProfileScreenTests
         Assert.Equal("Петренко", form.LastName, StringComparer.Ordinal);
         Assert.Equal("+380441234567", form.PhoneNumber, StringComparer.Ordinal);
 
-        // Never pre-filled, by the same rule the render asserts about the markup (FR-8).
+        // Never pre-filled, by the same rule the render asserts about the markup.
         Assert.Null(form.CurrentPassword);
         Assert.Null(form.NewPassword);
         Assert.Null(form.NewPasswordConfirmation);
@@ -260,8 +262,8 @@ public class ProfileScreenTests
     [Fact]
     public void The_screen_takes_no_authorization_decision_of_its_own()
     {
-        // AD-2 / FR-12: RequireSelf inside IUserService is the only place a request is refused, and
-        // it is what gives an administrator the client's half of FR-92. A role on the page attribute
+        // RequireSelf inside IUserService is the only place a request is refused, and it is what
+        // lets an administrator change a client's email. A role on the page attribute
         // or an <AuthorizeView> here would be a second copy of that rule, worded differently, that
         // no test of the rule would ever read.
         var screen = SharedMarkup.ReadComponent("Account", "Profile.razor");

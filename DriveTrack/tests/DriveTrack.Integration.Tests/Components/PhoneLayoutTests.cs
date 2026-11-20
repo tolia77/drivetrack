@@ -321,8 +321,9 @@ public class PhoneLayoutTests
     /// <remarks>
     /// The wrapper is matched as one class among whatever else the element carries, rather than as
     /// the whole attribute: a screen that adds a spacing utility beside its own hook - or the
-    /// opt-in class this story puts there - has not moved the wrapper, and an assertion that failed
-    /// on it would be reporting a change that preserved what it guards. Bounded on both sides by
+    /// opt-in class the phone layout puts there - has not moved the wrapper, and an assertion that
+    /// failed on it would be reporting a change that preserved what it guards. Bounded on both
+    /// sides by
     /// <c>[\w-]</c> rather than by <c>\b</c>, because a word boundary sits happily in the middle of
     /// <c>dt-reviews-empty</c> and would let a differently-named element stand in for the one being
     /// looked for.

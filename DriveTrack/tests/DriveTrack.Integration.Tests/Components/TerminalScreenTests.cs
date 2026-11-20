@@ -19,7 +19,7 @@ namespace DriveTrack.Integration.Tests.Components;
 /// </para>
 /// <para>
 /// Rendered over HTTP rather than through <c>ComponentRenderer</c>: all three are
-/// <c>[ExcludeFromInteractiveRouting]</c> (AD-14) so their markup really is the first response, and
+/// <c>[ExcludeFromInteractiveRouting]</c> so their markup really is the first response, and
 /// <c>Error</c>'s cascading <c>HttpContext</c> — the only source of <c>RequestId</c> — exists
 /// nowhere else.
 /// </para>
@@ -144,7 +144,7 @@ public class TerminalScreenTests(PostgresFixture postgres)
 
         var back = SharedMarkup.ElementWithClass(html, "a", "btn-link");
 
-        // NFR-24: the glyph AND its word.
+        // The glyph AND its word.
         Assert.Contains("<svg", back, StringComparison.Ordinal);
         Assert.True(
             SharedMarkup.IsUkrainian(SharedMarkup.TextOf(WebUtility.HtmlDecode(back))),
@@ -157,7 +157,7 @@ public class TerminalScreenTests(PostgresFixture postgres)
         var html = await RenderAsync("/Error");
 
         // `.text-danger` is token-backed - `_bootstrap-bridge.scss` maps `$danger` to
-        // `$dt-action-destructive` - so NFR-29's scanner has nothing to say about it, and that is
+        // `$dt-action-destructive` - so the token scanner has nothing to say about it, and that is
         // exactly why this assertion has to exist somewhere else. The token behind the utility is
         // the colour the palette reserves for the button that deletes a record; a heading is not
         // an action, and the feedback family is what a failure reports in.
@@ -230,7 +230,7 @@ public class TerminalScreenTests(PostgresFixture postgres)
     [MemberData(nameof(Sources))]
     public void The_screen_stays_statically_rendered(string fileName)
     {
-        // Load-bearing on all three rather than tidy. With prerendering off (AD-14) an interactive
+        // Load-bearing on all three rather than tidy. With prerendering off an interactive
         // version answers the redirect or the exception that led here with the document shell and
         // none of the heading, the explanation or the route back until a circuit connects - and on
         // `Error` the circuit may be the thing that failed. It is also what makes that page's

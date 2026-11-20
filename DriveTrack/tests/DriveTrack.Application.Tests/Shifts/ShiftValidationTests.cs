@@ -6,13 +6,13 @@ using DriveTrack.Domain.Shifts;
 namespace DriveTrack.Application.Tests.Shifts;
 
 /// <summary>
-/// The validation rows of story 4.2's edge-case matrix, asserted against the three validators that
+/// The shift validation edge cases, asserted against the three validators that
 /// carry them.
 /// <para>
 /// Driven through <c>ValidatorExtensions.EnsureValidAsync</c> rather than through
 /// <c>IValidator.Validate</c>, because the seam is half of what is under test: it is what turns a
 /// failure into a <see cref="ValidationException"/> carrying an <see cref="ErrorCode"/> and a field
-/// list (AD-9, NFR-4).
+/// list.
 /// </para>
 /// <para>
 /// Asserted here rather than over HTTP because that is where the rules live and where it is
@@ -21,9 +21,9 @@ namespace DriveTrack.Application.Tests.Shifts;
 /// </para>
 /// <para>
 /// Both write validators are exercised, and that is not duplication for its own sake. They judge
-/// different things — a payload and AD-23's merged state — and the edit is the path where FR-111
-/// going missing has no other symptom: the create path would still refuse a backwards window, so a
-/// screen test would keep passing while <c>PUT</c> wrote one.
+/// different things — a payload and the merged state — and the edit is the path where the
+/// end-after-start rule going missing has no other symptom: the create path would still refuse a
+/// backwards window, so a screen test would keep passing while <c>PUT</c> wrote one.
 /// </para>
 /// </summary>
 public class ShiftValidationTests
@@ -43,7 +43,7 @@ public class ShiftValidationTests
     [Fact]
     public async Task A_shift_that_has_not_ended_is_accepted()
     {
-        // FR-110's open shift: null is a state the row may hold, not a missing value. A NotNull rule
+        // The open shift: null is a state the row may hold, not a missing value. A NotNull rule
         // here would make going on duty impossible to express.
         await new CreateShiftCommandValidator().EnsureValidAsync(
             Command(Start, endedAt: null),
@@ -53,7 +53,7 @@ public class ShiftValidationTests
     [Fact]
     public async Task A_window_that_ends_before_it_starts_is_refused_naming_the_end()
     {
-        // The matrix's "create with bad window" row. The field matters as much as the refusal: NFR-4
+        // A create with a bad window. The field matters as much as the refusal: the contract
         // promises error.fields keys a form can attach a message to, and on a create both instants
         // are on screen with the end being the one the dispatcher got wrong.
         var failure = await Refused(Command(Start, Start.AddHours(-1)));
@@ -83,14 +83,14 @@ public class ShiftValidationTests
     [Fact]
     public async Task An_edit_that_moves_only_the_start_is_judged_on_the_window_it_produces()
     {
-        // The matrix's "edit one field only" row, and the rule FR-111 is most easily regressed by.
+        // An edit of one field only, and the way the end-after-start rule is most easily regressed.
         // The payload carries one instant and nothing to compare it with, so a validator reading the
         // payload would accept it and store [T+9h, T+8h]: a shift that ends before it begins,
         // assembled out of two individually harmless halves.
         //
         // Both ends are named. A merged state can be reached from either side, so hanging the rule
         // off one property alone would tell half the callers that the box they never touched was
-        // wrong while leaving the box they did touch unflagged (NFR-4).
+        // wrong while leaving the box they did touch unflagged.
         var merged = new UpdateShiftCommand(
                 Optional<DateTimeOffset>.Present(Start.AddHours(9)),
                 Optional<DateTimeOffset>.Absent)
@@ -162,11 +162,11 @@ public class ShiftValidationTests
     [Fact]
     public void An_absent_field_leaves_the_stored_value_and_an_end_can_never_be_cleared()
     {
-        // FR-117 as a property of the merge rather than of any rule. `Optional<DateTimeOffset>` has
-        // two cases and only two - a real instant, or "leave it alone" - so there is no value a
-        // caller can put in this command that turns a closed shift back into an open one. An
-        // `Optional<DateTimeOffset?>` would have had a third, and this assertion is what would fail
-        // the day somebody widened the type.
+        // A closed shift stays closed, as a property of the merge rather than of any rule.
+        // `Optional<DateTimeOffset>` has two cases and only two - a real instant, or "leave it
+        // alone" - so there is no value a caller can put in this command that turns a closed shift
+        // back into an open one. An `Optional<DateTimeOffset?>` would have had a third, and this
+        // assertion is what would fail the day somebody widened the type.
         var stored = Stored(Start, Start.AddHours(8));
 
         var untouched = new UpdateShiftCommand(
@@ -189,7 +189,7 @@ public class ShiftValidationTests
     [Fact]
     public async Task The_default_page_is_accepted_and_anything_outside_the_bounds_is_not()
     {
-        // NFR-27: the page the screens and the controller both ask for is inside the bounds, and a
+        // The page the screens and the controller both ask for is inside the bounds, and a
         // limit of two million is a 422 naming the field rather than a query the database is run.
         var validator = new ListShiftsQueryValidator();
         var cancellationToken = TestContext.Current.CancellationToken;
