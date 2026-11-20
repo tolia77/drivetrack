@@ -42,7 +42,7 @@ public class AuthFailureRouteTests
     [Fact]
     public void The_route_view_redirect_asks_the_function_rather_than_deciding_for_itself()
     {
-        var source = SharedMarkup.ReadComponent("Account", "RedirectOnAuthFailure.razor");
+        var source = SharedMarkup.ReadComponent("Routing", "RedirectOnAuthFailure.razor");
 
         Assert.Contains("AuthFailureRoute.For(", source, StringComparison.Ordinal);
 
@@ -56,7 +56,7 @@ public class AuthFailureRouteTests
     {
         // With prerendering off and nothing rendered here, the protected component's
         // markup cannot reach the response while the redirect is being decided or after it.
-        var source = SharedMarkup.ReadComponent("Account", "RedirectOnAuthFailure.razor");
+        var source = SharedMarkup.ReadComponent("Routing", "RedirectOnAuthFailure.razor");
 
         var markup = StripNonMarkup(source);
         var tag = Regex.Match(markup, "<[A-Za-z]", RegexOptions.None, TimeSpan.FromSeconds(5));

@@ -1,0 +1,532 @@
+@page "/my-shifts"
+@* A driver going on and off duty, and the log of when they did.
+
+   One action, not two. Whether the driver is on duty is one predicate - an open shift exists - so
+   the screen offers exactly the transition that predicate allows, and a driver never meets a button
+   that can only be refused. The refusals still exist and still decide: SHIFT_ALREADY_OPEN and
+   SHIFT_NOT_OPEN are raised by IShiftService whatever this screen drew.
+
+   The rows are the caller's own, and that is the guard's answer rather than this screen's. There is
+   no driver column and no driver filter: IAccessGuard.RequireShiftScope narrows the list to the
+   caller's own driver row before the query is built, so a driver cannot be shown somebody else's
+   shift by a mistake made here.
+
+   The Roles argument routes a wrong role to /access-denied. A dispatcher is sent there on
+   purpose: their scope narrows nothing, so this screen would show them the whole roster under a
+   heading that says "mine" - which is the same reason MyDeliveries refuses them.
+
+   The @if blocks below are independent rather than if/else chains: an `else` at markup level reads
+   to the localization source scan as a rendered English word. *@
+@attribute [Authorize(Roles = "Driver")]
+@inject IShiftService Duty
+@inject ICurrentUser Caller
+@inject IStringLocalizer<UiText> Localizer
+@inherits PagedScreen<ListShiftsQuery, ShiftSummary, ShiftSort>
+
+<PageTitle>@Localizer["MyShiftsTitle"]</PageTitle>
+
+@* The screen's title, where the driver is right now, and the one transition that reading leaves
+   open - on one line, the shape the two delivery screens already settled. The duty badge is a fact
+   about the whole screen rather than about any row in the log below, and the action is the one act
+   this screen offers, so both belong beside the heading rather than in a row of their own.
+
+   The badge wears the pickers' wording ("на зміні") and not ShiftStateLabel's: this is a claim
+   about the caller, right now, where a row in the log says whether that shift is open or over. The
+   two vocabularies are kept apart on purpose. Two independent @@if blocks with literal keys, for
+   the reason every other block here is written that way. *@
+<div class="dt-page-head mb-4">
+    <h1 class="dt-type-h1">
+        <Icon Name="IconName.Shifts" />@Localizer["MyShiftsTitle"]
+    </h1>
+
+    @if (Open is not null)
+    {
+        <DtBadge>@Localizer["ShiftOpen"]</DtBadge>
+    }
+    @if (Open is null)
+    {
+        <DtBadge Class="dt-muted">@Localizer["ShiftClosed"]</DtBadge>
+    }
+
+    @* Exactly one of the two, decided by the same predicate the badge reads. Both are withheld from
+       a driver whose claims carry no driver row id: there is no row to attach a shift to, and
+       IAccessGuard refuses them anyway - the list read above has already said so in the banner. *@
+    @if (_driverId is not null && Open is null)
+    {
+        <button type="button" class="btn btn-primary dt-shift-start" @onclick="StartAsync">
+            <Icon Name="IconName.Confirm" />@Localizer["GoOnDuty"]
+        </button>
+    }
+    @if (_driverId is not null && Open is not null)
+    {
+        <button type="button" class="btn btn-secondary dt-shift-end" @onclick="EndAsync">
+            <Icon Name="IconName.Close" />@Localizer["GoOffDuty"]
+        </button>
+    }
+</div>
+
+@* The start and end refusals arrive here: already on duty, or not on duty at all. Resolved through
+   the same catalogue the REST envelope uses, so the two cannot disagree. Neither names a field, so
+   both stay here; a backwards window names both ends and is said under each box instead. *@
+<DtFailureBanner Failures="_failures" InlineFields="@InlineFields" />
+
+@* The driver's history a page at a time, newest first, sorted by the server over every one
+   of their shifts - so the first shift they ever worked is a page away rather than out of reach. *@
+@* `dt-table-cards` is where this screen opts into the shared collapse: below the phone breakpoint
+   the table's rows stop being rows and become cards. The collapse is stated once, in
+   `_theme.scss`, so nothing about it is written here or in this screen's own stylesheet - and
+   because it is a global rule rather than a scoped one, none of it needs a `::deep`.
+
+   The wrapper's own name stays beside it. `MyShiftsPage.razor.css` hangs this screen's per-cell label
+   rules off it, and the phone-layout suite reads it as the element the table has to be inside. *@
+<div class="dt-my-shifts dt-table-cards">
+    <DtDataTable TItem="ShiftSummary"
+                 Page="Listed"
+                 OnPage="GoToPageAsync"
+                 OnPageSize="ResizeAsync"
+                 CountOne="@Localizer["ShiftsCountOne"]"
+                 CountMany="@Localizer["ShiftsCountMany"]"
+                 IsLoading="Loading"
+                 EmptyText="@Localizer["ShiftsEmpty"]">
+        <HeaderTemplate>
+            <th scope="col" aria-sort="@SortState(ShiftSort.StartedAt)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(ShiftSort.StartedAt)">
+                    @Localizer["ShiftStartedAt"]<Icon Name="@SortGlyph(ShiftSort.StartedAt)" />
+                </button>
+            </th>
+            <th scope="col" aria-sort="@SortState(ShiftSort.EndedAt)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(ShiftSort.EndedAt)">
+                    @Localizer["ShiftEndedAt"]<Icon Name="@SortGlyph(ShiftSort.EndedAt)" />
+                </button>
+            </th>
+            <th scope="col">@Localizer["ShiftState"]</th>
+            @* The actions column keeps its name for a screen reader and drops it on screen, as the
+               two delivery screens' does: the buttons under it say what they do, and a column named
+               above them competes with them for the same width. *@
+            <th scope="col" class="dt-table-actions">
+                <span class="dt-visually-hidden">@Localizer["Actions"]</span>
+            </th>
+        </HeaderTemplate>
+        <RowTemplate Context="shift">
+            @* The per-cell name, carried by the cell rather than only by the column heading. Not
+               the same thing on both sides of the breakpoint: above it the span is dropped, where
+               the `<th>` already names the column and a second name in every cell would be that
+               name read twice a row; below it the head is gone and the span is painted, as
+               something a reader can see, and that is what replaces it. *@
+            <td>
+                <span class="dt-visually-hidden dt-shift-label">@Localizer["ShiftStartedAt"]</span>
+                @Moment(shift.StartedAt)
+            </td>
+            <td>
+                <span class="dt-visually-hidden dt-shift-label">@Localizer["ShiftEndedAt"]</span>
+                @if (shift.EndedAt is null)
+                {
+                    <span>@Localizer["ShiftStillOpen"]</span>
+                }
+                @if (shift.EndedAt is not null)
+                {
+                    <span>@Moment(shift.EndedAt.Value)</span>
+                }
+            </td>
+            <td>
+                <span class="dt-visually-hidden dt-shift-label">@Localizer["ShiftState"]</span>
+                <ShiftStateLabel IsOpen="shift.IsOpen" />
+            </td>
+            @* `dt-table-actions` rather than `dt-row-actions`, which was a class this screen styled
+               nowhere: the right-aligned, nowrapped actions column is DtDataTable's own rule, and
+               the cell has to wear the class its heading already wears to be reached by it. *@
+            <td class="dt-table-actions">
+                <span class="dt-visually-hidden dt-shift-label">@Localizer["Actions"]</span>
+                @* The handlers are built in code rather than written as lambdas here: a `=>` inside
+                   an attribute closes the tag as far as a source scan is concerned. *@
+                <button type="button" class="btn btn-secondary btn-sm dt-shift-edit"
+                        @onclick="EditHandler(shift)">
+                    <Icon Name="IconName.Edit" />@Localizer["Edit"]
+                </button>
+                <button type="button" class="btn btn-danger btn-sm dt-shift-delete"
+                        @onclick="DeleteHandler(shift)">
+                    <Icon Name="IconName.Delete" />@Localizer["Delete"]
+                </button>
+            </td>
+        </RowTemplate>
+    </DtDataTable>
+</div>
+
+@* The shared dialog. A driver may correct their own shifts - a shift they started an
+   hour late is theirs to fix - and the guard is what keeps it to their own. *@
+<DtDialog @ref="_formDialog" Title="@Localizer["ShiftForm"]" OnClosed="ClearFailures">
+    <ChildContent>
+        @* The same list as the one at the top of the page, and deliberately a second copy: a
+           DtDialog opens with showModal(), so a refusal rendered only up there is a message behind
+           an inert backdrop. *@
+        <DtFailureBanner Failures="_failures" InlineFields="@InlineFields" />
+
+        <EditForm id="my-shift-form" Model="_form" OnValidSubmit="SaveAsync">
+            @* Clearing a date field leaves a parse failure on the EditContext and OnValidSubmit
+               never fires, so without this the Save button would do nothing and say nothing. *@
+            <ValidationSummary />
+
+            <div class="mb-4">
+                <label class="form-label" for="my-shift-started-at">@Localizer["ShiftStartedAt"]</label>
+                <InputDate id="my-shift-started-at" class="form-control"
+                           Type="InputDateType.DateTimeLocal"
+                           ParsingErrorMessage="@Localizer["DateParseError"]"
+                           @bind-Value="_form.StartedAt" />
+                <DtFieldError Field="StartedAt" Failures="_failures" />
+            </div>
+            <div class="mb-4">
+                <label class="form-label" for="my-shift-ended-at">@Localizer["ShiftEndedAt"]</label>
+                <InputDate id="my-shift-ended-at" class="form-control"
+                           Type="InputDateType.DateTimeLocal"
+                           ParsingErrorMessage="@Localizer["DateParseError"]"
+                           @bind-Value="_form.EndedAt" />
+                @* The never-un-ended rule said in a sentence: emptying this box leaves a finished
+                   shift finished. A shift is ended by the action above, once, and never un-ended. *@
+                <DtFieldError Field="EndedAt" Failures="_failures" />
+                <div class="form-text">@Localizer["ShiftEndedAtHint"]</div>
+            </div>
+        </EditForm>
+    </ChildContent>
+    <Actions>
+        @* Disabled while a save is in flight: the circuit yields at the await, so a second click
+           would send the same correction again. *@
+        <button type="submit" form="my-shift-form" class="btn btn-secondary dt-shift-save"
+                disabled="@_saving">
+            <Icon Name="IconName.Confirm" />@Localizer["Save"]
+        </button>
+        <button type="button" class="btn btn-outline-secondary dt-shift-cancel" @onclick="CloseFormAsync">
+            <Icon Name="IconName.Close" />@Localizer["Cancel"]
+        </button>
+    </Actions>
+</DtDialog>
+
+@* A destructive action is confirmed through the shared prompt, a driver's own as
+   much as a dispatcher's. *@
+<DtConfirmDialog @ref="_deleteDialog"
+                 Title="@Localizer["DeleteShiftTitle"]"
+                 Message="@Localizer["DeleteShiftMessage"]"
+                 OnConfirmed="ConfirmDeleteAsync" />
+
+@code {
+
+    /// <summary>
+    /// Drops the refusals when the form is dismissed, however it was dismissed.
+    /// <para>
+    /// A refusal claimed by a box inside the dialog is subtracted from the banner outside it,
+    /// so leaving the list populated past the close would leave that sentence with nowhere on the
+    /// page to render - invisible, which is the outcome this whole change exists to prevent.
+    /// Hung off <c>OnClosed</c> rather than off the cancel handler because Escape and the backdrop
+    /// dismiss the dialog too, and the component routes all three through one event.
+    /// </para>
+    /// </summary>
+    private void ClearFailures() => _failures = [];
+    /// <summary>
+    /// The boxes this screen renders a <c>DtFieldError</c> for. Stated once and bound by every
+    /// banner on the page: the list repeated per banner is exactly the drift that loses a refusal,
+    /// and a screen carries the banner more than once because a dialog opened with showModal()
+    /// leaves the page behind it inert.
+    /// </summary>
+    private const string InlineFields = "StartedAt,EndedAt";
+
+    /// <summary>The caller's open shift, or null when they are off duty.</summary>
+    private ShiftSummary? _open;
+    private IReadOnlyList<ScreenFailure> _failures = [];
+    private ShiftForm _form = new();
+    private DriverId? _driverId;
+    private ShiftSummary? _pendingDeletion;
+    private DtDialog? _formDialog;
+    private DtConfirmDialog? _deleteDialog;
+
+    /// <summary>
+    /// True while a save is in flight, which is what disables the submit button for as long as it
+    /// lasts. The circuit yields at the await, so without it a second click would send the same
+    /// correction again.
+    /// </summary>
+    private bool _saving;
+
+    /// <summary>
+    /// The caller's open shift, or null when they are off duty.
+    /// <para>
+    /// Asked for on its own rather than read off the table: the table is a page of the history in
+    /// whatever order the reader chose, and the shift still running need not be on it. Open is
+    /// <c>EndedAt IS NULL</c> and the index allows at most one such row per driver, so the answer is
+    /// a page of one.
+    /// </para>
+    /// </summary>
+    private ShiftSummary? Open => _open;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // The circuit outlives the request that opened it, so the cookie can be gone by the time a
+        // screen calls a service. Raising the contract's own code here is what puts that case
+        // through the single session-expiry boundary instead of a per-screen redirect.
+        if (!Caller.IsAuthenticated)
+        {
+            throw new ForbiddenException(
+                ErrorCode.AUTH_UNAUTHENTICATED,
+                "The circuit has no authenticated caller: the session cookie is gone.");
+        }
+
+        // Read once, after the authenticated check: ICurrentUser throws for an anonymous caller, so
+        // asking outside that branch would take the screen down instead of refusing it.
+        _driverId = Caller.DriverId;
+
+        await base.OnInitializedAsync();
+    }
+
+    /// <inheritdoc />
+    protected override ShiftSort DefaultSort => ShiftSort.StartedAt;
+
+    /// <inheritdoc />
+    protected override bool DefaultDescending => true;
+
+    /// <inheritdoc />
+    protected override IReadOnlyCollection<ShiftSort> Sortable { get; } =
+    [
+        ShiftSort.StartedAt,
+        ShiftSort.EndedAt,
+    ];
+
+    /// <inheritdoc />
+    protected override ListShiftsQuery Compose(int offset, int limit, ShiftSort sort, bool descending) =>
+        new(offset, limit, null, sort.ToString(), descending);
+
+    /// <inheritdoc />
+    protected override (int Offset, int Limit, ShiftSort Sort, bool Descending) Paging(ListShiftsQuery view) =>
+        (view.Offset, view.Limit, ListSort.Parse<ShiftSort>(view.Sort) ?? DefaultSort, view.Descending);
+
+    /// <inheritdoc />
+    protected override ListShiftsQuery Repaged(
+        ListShiftsQuery view,
+        int offset,
+        int limit,
+        ShiftSort sort,
+        bool descending) =>
+        view with { Offset = offset, Limit = limit, Sort = sort.ToString(), Descending = descending };
+
+
+    /// <summary>The row's edit action, bound as a delegate so no lambda has to live in markup.</summary>
+    private Func<Task> EditHandler(ShiftSummary shift) => () => OpenEditAsync(shift);
+
+    /// <summary>The row's delete action, for the same reason.</summary>
+    private Func<Task> DeleteHandler(ShiftSummary shift) => () => OpenDeleteAsync(shift);
+
+    /// <inheritdoc />
+    protected override async Task<Paged<ShiftSummary>?> FetchAsync(ListShiftsQuery view)
+    {
+        try
+        {
+            // No driver in either query: the narrowing is the guard's, and naming one here would be
+            // a second place deciding whose rows a driver may see.
+            var page = await Duty.ListAsync(view, CircuitToken);
+
+            var open = await Duty.ListAsync(
+                new ListShiftsQuery(0, 1, null, OpenOnly: true),
+                CircuitToken);
+
+            _open = open.Items.Count > 0 ? open.Items[0] : null;
+
+            return page;
+        }
+        catch (DriveTrackException failure)
+        {
+            _failures = FailureKeys.For(failure);
+
+            return null;
+        }
+    }
+
+    private async Task StartAsync()
+    {
+        if (_driverId is not { } driverId)
+        {
+            return;
+        }
+
+        try
+        {
+            // No instant in the command: going on duty is stamped by the server's clock, so a
+            // driver cannot report having started an hour ago by pressing the button now.
+            await Duty.StartAsync(new StartShiftCommand(driverId), CircuitToken);
+
+            _failures = [];
+        }
+        catch (DriveTrackException failure)
+        {
+            _failures = FailureKeys.For(failure);
+
+            return;
+        }
+
+        // Outside the try: the shift has been opened, and a failed refresh afterwards must not be
+        // reported as a driver who never went on duty.
+        await LoadAsync();
+    }
+
+    private async Task EndAsync()
+    {
+        if (_driverId is not { } driverId)
+        {
+            return;
+        }
+
+        try
+        {
+            await Duty.EndAsync(new EndShiftCommand(driverId), CircuitToken);
+
+            _failures = [];
+        }
+        catch (DriveTrackException failure)
+        {
+            _failures = FailureKeys.For(failure);
+
+            return;
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task OpenEditAsync(ShiftSummary shift)
+    {
+        _failures = [];
+        _form = new ShiftForm
+        {
+            Id = shift.Id,
+
+            // Local time, because the control shows local time and the circuit runs on the server -
+            // the same reading every other screen gives a stored instant.
+            StartedAt = shift.StartedAt.ToLocalTime(),
+            EndedAt = shift.EndedAt?.ToLocalTime(),
+        };
+
+        if (_formDialog is not null)
+        {
+            await _formDialog.ShowAsync();
+        }
+    }
+
+    private async Task CloseFormAsync()
+    {
+        if (_formDialog is not null)
+        {
+            await _formDialog.CloseAsync();
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_form.Id is not { } shiftId)
+        {
+            return;
+        }
+
+        if (_saving)
+        {
+            return;
+        }
+
+        // Set before the await and cleared in the finally: the button is disabled from the moment
+        // the first click is handled until the server has answered, so a second click has nothing
+        // to act on.
+        _saving = true;
+
+        try
+        {
+            await Duty.UpdateAsync(shiftId, _form.AsUpdate(), CircuitToken);
+
+            _failures = [];
+
+            await CloseFormAsync();
+        }
+        catch (DriveTrackException failure)
+        {
+            _failures = FailureKeys.For(failure);
+
+            return;
+        }
+        finally
+        {
+            _saving = false;
+        }
+
+        // Outside the try, deliberately. The write has committed, so a failure refreshing the list
+        // afterwards is a failed read, and reporting it as a refused save would tell the driver
+        // their correction was not saved when it was.
+        await LoadAsync();
+    }
+
+    private async Task OpenDeleteAsync(ShiftSummary shift)
+    {
+        _failures = [];
+        _pendingDeletion = shift;
+
+        if (_deleteDialog is not null)
+        {
+            await _deleteDialog.ShowAsync();
+        }
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_pendingDeletion is not { } shift)
+        {
+            return;
+        }
+
+        _pendingDeletion = null;
+
+        try
+        {
+            await Duty.DeleteAsync(shift.Id, CircuitToken);
+
+            _failures = [];
+        }
+        catch (DriveTrackException failure)
+        {
+            _failures = FailureKeys.For(failure);
+
+            return;
+        }
+
+        await LoadAsync();
+    }
+
+    /// <summary>
+    /// An instant as this screen shows it. Local time against the current culture.
+    /// </summary>
+    private static string Moment(DateTimeOffset value) =>
+        value.ToLocalTime().ToString("g", System.Globalization.CultureInfo.CurrentCulture);
+
+    /// <summary>
+    /// What the dialog is editing. A screen-local shape rather than a command: a command's update
+    /// fields are <c>Optional&lt;T&gt;</c>, and two-way binding needs somewhere plain to write.
+    /// </summary>
+    private sealed class ShiftForm
+    {
+        /// <summary>The shift being corrected. Null means there is nothing to save.</summary>
+        public int? Id { get; set; }
+
+        /// <summary>When it started, in local time because that is what the control shows.</summary>
+        public DateTimeOffset? StartedAt { get; set; }
+
+        /// <summary>When it ended, or null while it is open.</summary>
+        public DateTimeOffset? EndedAt { get; set; }
+
+        /// <summary>
+        /// The correction this form describes.
+        /// <para>
+        /// An empty box is <em>absent</em> rather than a present null:
+        /// <c>Optional&lt;DateTimeOffset&gt;</c> has no case for a clear, so emptying the end box
+        /// leaves a finished shift finished instead of reopening it.
+        /// </para>
+        /// </summary>
+        public UpdateShiftCommand AsUpdate() =>
+            new(
+                StartedAt is { } start
+                    ? Optional<DateTimeOffset>.Present(start)
+                    : Optional<DateTimeOffset>.Absent,
+                EndedAt is { } end
+                    ? Optional<DateTimeOffset>.Present(end)
+                    : Optional<DateTimeOffset>.Absent);
+    }
+}

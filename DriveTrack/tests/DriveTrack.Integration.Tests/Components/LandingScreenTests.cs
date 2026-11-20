@@ -24,7 +24,7 @@ public class LandingScreenTests
     [Fact]
     public async Task An_anonymous_visitor_is_offered_every_entry_point_the_design_draws()
     {
-        var html = await ShellCaller.RenderAsync<Home>(role: null);
+        var html = await ShellCaller.RenderAsync<HomePage>(role: null);
 
         // The header: sign in, and create an account.
         var header = SharedMarkup.ElementWithClass(html, "header", "dt-landing-header");
@@ -77,7 +77,7 @@ public class LandingScreenTests
         UserRole role,
         string labelKey)
     {
-        var html = await ShellCaller.RenderAsync<Home>(role);
+        var html = await ShellCaller.RenderAsync<HomePage>(role);
         var destination = LandingRoute.For(role);
         var label = Catalogue(labelKey);
 
@@ -133,7 +133,7 @@ public class LandingScreenTests
     public async Task A_caller_whose_profile_cannot_be_read_keeps_the_way_in_and_loses_only_the_name(
         UserRole role)
     {
-        var html = await ShellCaller.RenderAsync<Home>(role, profileFails: true);
+        var html = await ShellCaller.RenderAsync<HomePage>(role, profileFails: true);
         var header = SharedMarkup.ElementWithClass(html, "header", "dt-landing-header");
 
         AssertActionWithIcon(WithoutPhoneMenu(header), LandingRoute.For(role));
@@ -152,7 +152,7 @@ public class LandingScreenTests
         // The design draws a public page with its own header and footer. Home names its own layout,
         // and that layout carries the page and the connection dock - which belongs to the circuit,
         // not to any screen - and no navigation shell.
-        var home = SharedMarkup.ReadComponent("Pages", "Home.razor");
+        var home = SharedMarkup.ReadComponent("Pages", "HomePage.razor");
 
         Assert.Contains("@layout LandingLayout", home, StringComparison.Ordinal);
 
@@ -168,7 +168,7 @@ public class LandingScreenTests
 
         // And the page itself draws no shell of its own: the brand borrows the shell's mark, which
         // is the only piece of it the landing page wears.
-        var html = await ShellCaller.RenderAsync<Home>(role: null);
+        var html = await ShellCaller.RenderAsync<HomePage>(role: null);
 
         Assert.DoesNotMatch(@"class=""dt-nav[\s""]", html);
         Assert.Contains("dt-nav__mark", html, StringComparison.Ordinal);
@@ -177,7 +177,7 @@ public class LandingScreenTests
     [Fact]
     public async Task Every_header_anchor_has_a_section_to_land_on_in_the_design_s_order()
     {
-        var html = await ShellCaller.RenderAsync<Home>(role: null);
+        var html = await ShellCaller.RenderAsync<HomePage>(role: null);
         var header = SharedMarkup.ElementWithClass(html, "nav", "dt-landing-sections");
 
         Assert.Equal(
@@ -204,7 +204,7 @@ public class LandingScreenTests
     public async Task Both_language_switches_post_to_the_endpoint_and_come_back_to_the_landing_page(
         UserRole? role)
     {
-        var html = await ShellCaller.RenderAsync<Home>(role);
+        var html = await ShellCaller.RenderAsync<HomePage>(role);
 
         var forms = Regex.Matches(
                 html,
@@ -246,7 +246,7 @@ public class LandingScreenTests
     public async Task Under_English_the_language_menu_marks_English_and_its_button_shows_the_English_code(
         UserRole? role)
     {
-        var html = await ShellCaller.RenderAsync<Home>(role, culture: new CultureInfo("en-US"));
+        var html = await ShellCaller.RenderAsync<HomePage>(role, culture: new CultureInfo("en-US"));
         var header = SharedMarkup.ElementWithClass(html, "header", "dt-landing-header");
 
         AssertLanguageMenuMarks(header, current: "en-US", other: "uk-UA", code: "EN", language: "Language");
@@ -281,7 +281,7 @@ public class LandingScreenTests
     [Fact]
     public async Task The_hero_stands_on_the_design_s_photograph_under_a_header_marked_for_it()
     {
-        var html = await ShellCaller.RenderAsync<Home>(role: null);
+        var html = await ShellCaller.RenderAsync<HomePage>(role: null);
 
         // The photograph is the hero's first child, so everything after it is drawn over it; it is
         // decoration, and its image says so twice - an empty alternative inside a hidden wrapper.
@@ -319,7 +319,7 @@ public class LandingScreenTests
     [Fact]
     public void The_header_is_pinned_and_turned_white_only_where_the_browser_can_drive_it_from_the_scroll()
     {
-        var css = WithoutComments(SharedMarkup.ReadComponent("Pages", "Home.razor.css"));
+        var css = WithoutComments(SharedMarkup.ReadComponent("Pages", "HomePage.razor.css"));
 
         // By default it lies over the top of the page, see-through, and scrolls away with the hero:
         // a browser without scroll-driven animations never shows it see-through over white.
@@ -329,7 +329,7 @@ public class LandingScreenTests
             RegexOptions.None,
             TimeSpan.FromSeconds(5));
 
-        Assert.True(header.Success, "Home.razor.css has no .dt-landing-header rule.");
+        Assert.True(header.Success, "HomePage.razor.css has no .dt-landing-header rule.");
         Assert.Contains("position: absolute;", header.Groups["body"].Value, StringComparison.Ordinal);
         Assert.Contains("background-color: transparent;", header.Groups["body"].Value, StringComparison.Ordinal);
 
@@ -358,7 +358,7 @@ public class LandingScreenTests
     [InlineData(UserRole.Client)]
     public async Task On_a_phone_the_header_s_menu_holds_the_sections_and_the_way_in(UserRole? role)
     {
-        var html = await ShellCaller.RenderAsync<Home>(role);
+        var html = await ShellCaller.RenderAsync<HomePage>(role);
         var header = SharedMarkup.ElementWithClass(html, "header", "dt-landing-header");
 
         // The glyph alone, as the phone artboard draws it, and named in words.
@@ -458,7 +458,7 @@ public class LandingScreenTests
     /// <summary>The landing page's phone block, comments removed.</summary>
     private static string PhoneBlock()
     {
-        var css = WithoutComments(SharedMarkup.ReadComponent("Pages", "Home.razor.css"));
+        var css = WithoutComments(SharedMarkup.ReadComponent("Pages", "HomePage.razor.css"));
 
         return css[css.IndexOf("@media (max-width: 640.98px)", StringComparison.Ordinal)..];
     }

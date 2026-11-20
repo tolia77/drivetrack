@@ -13,6 +13,7 @@ using DriveTrack.Infrastructure.Persistence;
 using DriveTrack.Integration.Tests.Fleet;
 using DriveTrack.Integration.Tests.Persistence;
 using DriveTrack.Integration.Tests.Support;
+using DriveTrack.Web.Components.Shared.Display;
 
 namespace DriveTrack.Integration.Tests.Deliveries;
 
@@ -200,7 +201,7 @@ public class DeliveryListTests(PostgresFixture postgres)
         // Typing exactly what the cell shows finds the row; the stored precision is not on screen.
         Assert.Equal(
             "50.45013; 30.52345",
-            Web.Components.Pages.LocationText.Describe(new LocationView(new MapLocation(50.450126, 30.523449), null)));
+            Web.Components.Shared.Display.LocationText.Describe(new LocationView(new MapLocation(50.450126, 30.523449), null)));
 
         var asShown = await PageAsync(client, dispatcher, "?pickup=" + Uri.EscapeDataString("50.45013; 30.52345"), cancellationToken);
         var asStored = await PageAsync(client, dispatcher, "?pickup=" + Uri.EscapeDataString("50.450126"), cancellationToken);

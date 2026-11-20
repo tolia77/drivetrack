@@ -6,11 +6,12 @@ using DriveTrack.Domain.Accounts;
 using DriveTrack.Domain.Drivers;
 using DriveTrack.Integration.Tests.Support;
 using DriveTrack.Web.Components.Pages;
+using DriveTrack.Web.Components.Pages.Chat;
 using DriveTrack.Web.Hubs;
 
 // Aliased because the screen's type name and this suite's own Chat namespace collide, and the
 // namespace wins: `Chat` alone reads as DriveTrack.Integration.Tests.Chat from here.
-using ChatScreen = DriveTrack.Web.Components.Pages.Chat;
+using ChatScreen = DriveTrack.Web.Components.Pages.Chat.ChatPage;
 
 namespace DriveTrack.Integration.Tests.Components;
 
@@ -246,7 +247,7 @@ public class ChatScreenTests
         // IAccessGuard.RequireChatParticipant, once, inside the service. A [Authorize(Roles = ...)]
         // here would be a second place that decision lived - and it would have to restate the one
         // asymmetry in the system, admin lockout, in a form no test reads.
-        var screen = SharedMarkup.ReadComponent("Pages", "Chat.razor");
+        var screen = SharedMarkup.ReadComponent("Pages", "Chat", "ChatPage.razor");
 
         Assert.Contains("@attribute [Authorize]", screen, StringComparison.Ordinal);
         Assert.Contains("if (!Caller.IsAuthenticated)", screen, StringComparison.Ordinal);
@@ -273,10 +274,10 @@ public class ChatScreenTests
         // Every part of the screen: the page, the line it renders per message, the roster row and
         // the day separator. Reading only the page would report a decision missing the moment one
         // moved into a component the page composes.
-        var screen = SharedMarkup.ReadComponent("Pages", "Chat.razor")
-            + SharedMarkup.ReadComponent("Pages", "ChatLine.razor")
-            + SharedMarkup.ReadComponent("Pages", "ChatRosterRow.razor")
-            + SharedMarkup.ReadComponent("Pages", "ChatDaySeparator.razor");
+        var screen = SharedMarkup.ReadComponent("Pages", "Chat", "ChatPage.razor")
+            + SharedMarkup.ReadComponent("Pages", "Chat", "ChatLine.razor")
+            + SharedMarkup.ReadComponent("Pages", "Chat", "ChatRosterRow.razor")
+            + SharedMarkup.ReadComponent("Pages", "Chat", "ChatDaySeparator.razor");
 
         foreach (var decision in new[]
                  {
@@ -313,7 +314,7 @@ public class ChatScreenTests
         // A double-click must not persist two rows: there is no dedupe anywhere downstream, so the
         // second would simply be a second message. The flag is set before the call and cleared in a
         // finally, so a refusal re-enables the button rather than leaving it dead.
-        var screen = SharedMarkup.ReadComponent("Pages", "Chat.razor");
+        var screen = SharedMarkup.ReadComponent("Pages", "Chat", "ChatPage.razor");
 
         Assert.Contains(@"disabled=""@_sending""", screen, StringComparison.Ordinal);
         Assert.Contains("_sending = true;", screen, StringComparison.Ordinal);
@@ -328,7 +329,7 @@ public class ChatScreenTests
         // background and announces nothing, so a driver at a doorstep goes on typing into a socket
         // that is gone and finds out when Send fails - by which time the message they meant to send
         // is a refusal banner instead of a line in the conversation.
-        var screen = SharedMarkup.ReadComponent("Pages", "Chat.razor");
+        var screen = SharedMarkup.ReadComponent("Pages", "Chat", "ChatPage.razor");
 
         // Declared without an initializer: a flag born true would hold the composer shut on the
         // first render, before a connection had been attempted at all.
@@ -385,13 +386,13 @@ public class ChatScreenTests
         // and nothing picked yet. Nested inside the conversation panel's `@if (_thread is not null)`
         // the dock could never render there - a dispatcher whose hub died before they chose anyone
         // would read a roster that looked perfectly live and open conversations that never loaded.
-        var screen = SharedMarkup.ReadComponent("Pages", "Chat.razor");
+        var screen = SharedMarkup.ReadComponent("Pages", "Chat", "ChatPage.razor");
 
         var dock = screen.IndexOf("@if (_hubDown)", StringComparison.Ordinal);
         var conversation = screen.IndexOf("@if (_thread is not null)", StringComparison.Ordinal);
 
-        Assert.True(dock >= 0, "Chat.razor renders no dock.");
-        Assert.True(conversation >= 0, "Chat.razor has no conversation branch.");
+        Assert.True(dock >= 0, "ChatPage.razor renders no dock.");
+        Assert.True(conversation >= 0, "ChatPage.razor has no conversation branch.");
 
         Assert.True(
             dock < conversation,
@@ -506,7 +507,7 @@ public class ChatScreenTests
         // A sent message appears when the server broadcasts the stored row back, so what is
         // on screen is what is in the database. The only place the conversation grows is the
         // callback the hub invokes.
-        var screen = SharedMarkup.ReadComponent("Pages", "Chat.razor");
+        var screen = SharedMarkup.ReadComponent("Pages", "Chat", "ChatPage.razor");
 
         Assert.Contains("[JSInvokable]", screen, StringComparison.Ordinal);
         Assert.Equal(1, SharedMarkup.Occurrences(screen, "_thread with"));

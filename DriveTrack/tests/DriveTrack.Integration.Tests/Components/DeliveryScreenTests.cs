@@ -15,12 +15,15 @@ using DriveTrack.Domain.Deliveries;
 using DriveTrack.Domain.Drivers;
 using DriveTrack.Integration.Tests.Support;
 using DriveTrack.Web.Components.Failures;
-using DriveTrack.Web.Components.Shared;
+using DriveTrack.Web.Components.Pages.Deliveries;
+using DriveTrack.Web.Components.Shared.DesignSystem;
+using DriveTrack.Web.Components.Shared.Display;
+using DriveTrack.Web.Components.Shared.Screens;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
-using DeliveryFilter = DriveTrack.Web.Components.Pages.Deliveries.DeliveryFilter;
-using DeliveryForm = DriveTrack.Web.Components.Pages.Deliveries.DeliveryForm;
-using RequestForm = DriveTrack.Web.Components.Pages.MyDeliveries.RequestForm;
+using DeliveryFilter = DriveTrack.Web.Components.Pages.Deliveries.DeliveriesPage.DeliveryFilter;
+using DeliveryForm = DriveTrack.Web.Components.Pages.Deliveries.DeliveriesPage.DeliveryForm;
+using RequestForm = DriveTrack.Web.Components.Pages.Deliveries.MyDeliveriesPage.RequestForm;
 
 namespace DriveTrack.Integration.Tests.Components;
 
@@ -292,7 +295,7 @@ public class DeliveryScreenTests
         // decides whether the dialog is rendered at all, and inverting it would put a request form
         // on a driver's page - markup IAccessGuard.RequireDeliveryComposer would refuse the moment
         // it was used, but markup that should never have been drawn.
-        Assert.Equal(offered, Web.Components.Pages.MyDeliveries.OffersRequest(role));
+        Assert.Equal(offered, Web.Components.Pages.Deliveries.MyDeliveriesPage.OffersRequest(role));
     }
 
     [Fact]
@@ -368,7 +371,7 @@ public class DeliveryScreenTests
         //
         // The two dispatch roles are false here and that is not a contradiction: they read their
         // deliveries on /deliveries, where the panel is opened with the flag set outright.
-        Assert.Equal(expected, Web.Components.Pages.MyDeliveries.OffersStatusChange(role));
+        Assert.Equal(expected, Web.Components.Pages.Deliveries.MyDeliveriesPage.OffersStatusChange(role));
     }
 
     [Fact]
@@ -564,18 +567,18 @@ public class DeliveryScreenTests
         };
 
         // The driver holding vehicle 5 shows that vehicle's capacity, not another's and not a dash.
-        Assert.Equal(1200m, Web.Components.Pages.Deliveries.CapacityOf(drivers, vehicles, driverId: 1));
+        Assert.Equal(1200m, Web.Components.Pages.Deliveries.DeliveriesPage.CapacityOf(drivers, vehicles, driverId: 1));
 
         // A driver without a vehicle is legal, and the capacity rule leaves them unchecked: there
         // is no figure to show, which is the one case the dash legitimately means.
-        Assert.Null(Web.Components.Pages.Deliveries.CapacityOf(drivers, vehicles, driverId: 2));
+        Assert.Null(Web.Components.Pages.Deliveries.DeliveriesPage.CapacityOf(drivers, vehicles, driverId: 2));
 
         // No driver named yet, and a driver the page never fetched: neither invents a capacity.
-        Assert.Null(Web.Components.Pages.Deliveries.CapacityOf(drivers, vehicles, driverId: null));
-        Assert.Null(Web.Components.Pages.Deliveries.CapacityOf(drivers, vehicles, driverId: 99));
+        Assert.Null(Web.Components.Pages.Deliveries.DeliveriesPage.CapacityOf(drivers, vehicles, driverId: null));
+        Assert.Null(Web.Components.Pages.Deliveries.DeliveriesPage.CapacityOf(drivers, vehicles, driverId: 99));
 
         // The driver holds a vehicle that fell outside the page of fleet rows the form fetched.
-        Assert.Null(Web.Components.Pages.Deliveries.CapacityOf(drivers, [], driverId: 1));
+        Assert.Null(Web.Components.Pages.Deliveries.DeliveriesPage.CapacityOf(drivers, [], driverId: 1));
     }
 
     [Fact]
@@ -851,7 +854,7 @@ public class DeliveryScreenTests
         //
         // Read from source rather than from the render, because the wiring is what is under test:
         // the rendered markup carries no trace of which column a click would sort by.
-        var page = SharedMarkup.ReadComponent("Pages", "Deliveries.razor");
+        var page = SharedMarkup.ReadComponent("Pages", "Deliveries", "DeliveriesPage.razor");
 
         var expected = new Dictionary<DeliverySort, string>
         {
@@ -906,8 +909,8 @@ public class DeliveryScreenTests
     }
 
     [Theory]
-    [InlineData("Deliveries.razor", "_form", "")]
-    [InlineData("MyDeliveries.razor", "_request", "request-")]
+    [InlineData("DeliveriesPage.razor", "_form", "")]
+    [InlineData("MyDeliveriesPage.razor", "_request", "request-")]
     public void Each_address_box_is_wired_to_the_point_it_is_labelled_with(
         string fileName,
         string model,
@@ -1400,8 +1403,8 @@ public class DeliveryScreenTests
     }
 
     [Theory]
-    [InlineData("Deliveries.razor", "Dispatcher,Admin")]
-    [InlineData("MyDeliveries.razor", "Driver,Client")]
+    [InlineData("DeliveriesPage.razor", "Dispatcher,Admin")]
+    [InlineData("MyDeliveriesPage.razor", "Driver,Client")]
     public void Each_screen_is_reserved_to_the_roles_that_have_a_use_for_it(string fileName, string roles)
     {
         // The attribute is what routes a wrong role to /access-denied instead of into an error
@@ -1647,7 +1650,7 @@ public class DeliveryScreenTests
         UserRole role,
         IReadOnlyList<DeliverySummary>? board = null,
         StubDeliveryService? service = null) =>
-        ComponentRenderer.RenderAsync<Web.Components.Pages.Deliveries>(
+        ComponentRenderer.RenderAsync<Web.Components.Pages.Deliveries.DeliveriesPage>(
             parameters: null,
             services =>
             {
@@ -1677,7 +1680,7 @@ public class DeliveryScreenTests
         IReadOnlyList<AssignedDeliverySummary>? rows = null,
         UserRole role = UserRole.Driver,
         StubDeliveryService? service = null) =>
-        ComponentRenderer.RenderAsync<Web.Components.Pages.MyDeliveries>(
+        ComponentRenderer.RenderAsync<Web.Components.Pages.Deliveries.MyDeliveriesPage>(
             parameters: null,
             services =>
             {
@@ -2075,7 +2078,7 @@ public class DeliveryScreenTests
     }
 
     /// <summary>The dispatch board with one of its headings within a test's reach.</summary>
-    internal sealed class ProbeBoard : Web.Components.Pages.Deliveries
+    internal sealed class ProbeBoard : Web.Components.Pages.Deliveries.DeliveriesPage
     {
         public static ProbeBoard? Last { get; private set; }
 

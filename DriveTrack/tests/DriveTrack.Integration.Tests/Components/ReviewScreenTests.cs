@@ -12,9 +12,10 @@ using DriveTrack.Domain.Drivers;
 using DriveTrack.Domain.Reviews;
 using DriveTrack.Integration.Tests.Support;
 using DriveTrack.Web.Components.Pages;
-using DriveTrack.Web.Components.Shared;
+using DriveTrack.Web.Components.Pages.Reviews;
+using DriveTrack.Web.Components.Shared.Display;
 using Microsoft.Extensions.DependencyInjection;
-using ReviewsScreen = DriveTrack.Web.Components.Pages.Reviews;
+using ReviewsScreen = DriveTrack.Web.Components.Pages.Reviews.ReviewsPage;
 
 namespace DriveTrack.Integration.Tests.Components;
 

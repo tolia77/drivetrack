@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 using DriveTrack.Integration.Tests.Support;
-using DriveTrack.Web.Components.Shared;
+using DriveTrack.Web.Components.Shared.DesignSystem;
 using Microsoft.AspNetCore.Components;
 
 namespace DriveTrack.Integration.Tests.Components;

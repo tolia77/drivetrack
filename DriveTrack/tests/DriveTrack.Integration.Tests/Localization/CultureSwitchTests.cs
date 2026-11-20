@@ -13,7 +13,7 @@ using DriveTrack.Integration.Tests.Persistence;
 using DriveTrack.Integration.Tests.Support;
 using DriveTrack.Web.Components.Failures;
 using DriveTrack.Web.Components.Layout;
-using DriveTrack.Web.Components.Shared;
+using DriveTrack.Web.Components.Shared.DesignSystem;
 using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace DriveTrack.Integration.Tests.Localization;

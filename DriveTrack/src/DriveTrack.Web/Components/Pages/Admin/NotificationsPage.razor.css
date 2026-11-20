@@ -1,0 +1,71 @@
+/*
+    The notification log's own cells, and the one thing it asks of the table it does not own: below
+    the phone breakpoint the rows stop being rows and become cards.
+
+    The collapse itself is not here. It is stated once in `_theme.scss`, as the `dt-table-cards`
+    class this screen's wrapper opts into - see `NotificationsPage.razor`. What is left in this file is
+    the part that is genuinely this screen's: the name each cell carries, which is what replaces the
+    column heading the collapse drops.
+
+    Every palette value here is a `--dt-*` reference. What is literal is geometry the
+    palette does not name - the breakpoint itself, which a media query cannot read from a custom
+    property at all.
+*/
+
+/*
+    The name of the cell, carried by the cell rather than by a column heading.
+
+    Not rendered at all above the breakpoint: up there the `<th>` names the column, the cell is
+    announced under it, and a second name inside every cell would be that name read twice on every
+    row. Below the breakpoint the head is gone and this is what replaces it - see the media query,
+    where the span also gives up `dt-visually-hidden` and becomes something a reader can see.
+
+    No `::deep` on either of its two rules: the span is written in this screen's own `RowTemplate`,
+    so it carries this component's scope. The rules that reach the table, its head and its rows did
+    need one and no longer live here - `dt-table-cards` states them globally, where nothing is
+    scoped and there is no `::deep` left to get wrong.
+*/
+.dt-notification-label {
+    display: none;
+}
+
+/*
+    Below the breakpoint, the label takes the dropped heading's place.
+
+    Stated desktop-first with the phone as the exception, because that is the direction
+    `_theme.scss` states the shell in and the two have to switch on the same edge. The theme writes
+    that edge as `$dt-breakpoint-phone-max`; this file is plain CSS rather than Sass and cannot read
+    a Sass variable, and a custom property is not legal in a media query either, so the figure is
+    written out - and deliberately not approximated as `min-width: 641px`, which would leave a
+    sliver of widths where the shell is a sidebar and the rows are already cards.
+*/
+@media (max-width: 640.98px) {
+    /*
+        `display` alone would not reveal it: `dt-visually-hidden` also pulls the span out of the
+        flow, shrinks it to a pixel, hides the overflow and masks what is left, so every one of
+        those has to be handed back here. Without them a card would show a bare provider error
+        string with nothing left saying what had produced it.
+
+        A face of its own, so it reads as the name of the value rather than as a second value: the
+        same quietened label ramp the column headings wear. Full width so it takes the line above
+        the value, in the actions cell as well - that one is a flex row, and without this the name
+        of the column would sit on the line beside the buttons it names.
+
+        Anchored on the wrapper without a `::deep`, which is what keeps the reveal on this screen's
+        own spans and off any other table it might one day hold.
+    */
+    .dt-notifications .dt-notification-label {
+        display: block;
+        position: static;
+        width: 100%;
+        height: auto;
+        overflow: visible;
+        clip: auto;
+        clip-path: none;
+        white-space: normal;
+        color: var(--dt-ink-muted);
+        font-size: var(--dt-label-font-size);
+        line-height: var(--dt-label-line-height);
+        font-weight: var(--dt-label-font-weight);
+    }
+}

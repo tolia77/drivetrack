@@ -36,7 +36,7 @@ public class SubFlowStylesheetTests
     [Fact]
     public void The_timeline_panels_controls_clear_the_thumb_floor_on_a_phone()
     {
-        var css = WithoutComments(SharedMarkup.ReadComponent("Pages", "DeliveryTimeline.razor.css"));
+        var css = WithoutComments(SharedMarkup.ReadComponent("Pages", "Deliveries", "DeliveryTimeline.razor.css"));
 
         var query = PhoneQuery.Match(css);
 

@@ -935,7 +935,7 @@ public class ShiftManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task The_open_only_list_answers_the_running_shift_and_nothing_else()
     {
-        // ListShiftsQuery.OpenOnly against the real repository - the query MyShifts.razor asks to
+        // ListShiftsQuery.OpenOnly against the real repository - the query MyShiftsPage.razor asks to
         // find the shift it offers to end. The newest row is a closed one rostered ahead, so a filter
         // that was ignored would answer it on a page of one instead of the open shift.
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -961,7 +961,7 @@ public class ShiftManagementTests(PostgresFixture postgres)
         await ShiftApi.RecordedAsync(
             client, dispatcher, resting.DriverId, ahead, ahead.AddHours(8), cancellationToken);
 
-        // The page MyShifts.razor asks for: ListShiftsQuery(0, 1, null, OpenOnly: true).
+        // The page MyShiftsPage.razor asks for: ListShiftsQuery(0, 1, null, OpenOnly: true).
         const string openOnly = "?offset=0&limit=1&open=true";
 
         // Without the filter the rostered window is the newest row, which is what makes the
@@ -994,7 +994,7 @@ public class ShiftManagementTests(PostgresFixture postgres)
     {
         // The write side of driver ownership, which every other driver-side row here is silent
         // about: the rest are reads or refusals, so tightening RequireShiftOwner to dispatch alone
-        // would leave the suite green while MyShifts.razor shipped edit and delete buttons that
+        // would leave the suite green while MyShiftsPage.razor shipped edit and delete buttons that
         // could only ever 403.
         //
         // The create is here too, because the guard on it is the same member: a shift a driver

@@ -213,10 +213,10 @@ public class AnonymousScreenTests(PostgresFixture postgres)
         // One form written once: the landing page's header draws the same component, and the rules
         // both wear are the theme's, because a scoped rule could not reach it.
         Assert.Contains(@"<DtLanguageMenu ReturnUrl=""@ReturnUrl"" />", markup, StringComparison.Ordinal);
-        Assert.Contains(@"<DtLanguageMenu ReturnUrl=""/"" />", SharedMarkup.ReadComponent("Pages", "Home.razor"), StringComparison.Ordinal);
+        Assert.Contains(@"<DtLanguageMenu ReturnUrl=""/"" />", SharedMarkup.ReadComponent("Pages", "HomePage.razor"), StringComparison.Ordinal);
         Assert.DoesNotContain(
             ".dt-landing-menu",
-            WithoutComments(SharedMarkup.ReadComponent("Pages", "Home.razor.css")),
+            WithoutComments(SharedMarkup.ReadComponent("Pages", "HomePage.razor.css")),
             StringComparison.Ordinal);
         Assert.Contains(".dt-landing-menu-button", Theme(), StringComparison.Ordinal);
 

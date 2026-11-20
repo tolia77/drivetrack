@@ -8,7 +8,7 @@ using DriveTrack.Domain.Accounts;
 using DriveTrack.Domain.Clients;
 using DriveTrack.Domain.Drivers;
 using DriveTrack.Integration.Tests.Support;
-using DriveTrack.Web.Components.Account;
+using DriveTrack.Web.Components.Pages.Accounts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DriveTrack.Integration.Tests.Components;
@@ -270,7 +270,7 @@ public class ProfileScreenTests
         // lets an administrator change a client's email. A role on the page attribute
         // or an <AuthorizeView> here would be a second copy of that rule, worded differently, that
         // no test of the rule would ever read.
-        var screen = SharedMarkup.ReadComponent("Account", "Profile.razor");
+        var screen = SharedMarkup.ReadComponent("Pages", "Accounts", "ProfilePage.razor");
 
         Assert.Contains("@attribute [Authorize]", screen, StringComparison.Ordinal);
 
@@ -326,7 +326,7 @@ public class ProfileScreenTests
             PhoneNumber: null);
 
     private static Task<string> RenderAsync(UserProfile profile) =>
-        ComponentRenderer.RenderAsync<Web.Components.Account.Profile>(
+        ComponentRenderer.RenderAsync<Web.Components.Pages.Accounts.ProfilePage>(
             parameters: null,
             configureServices: services =>
             {

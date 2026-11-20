@@ -1290,7 +1290,7 @@ $dt-breakpoint-phone-max: $dt-breakpoint-phone - 0.02px;
 
 // The landing page's header lies over its hero's photograph and turns white as the page
 // scrolls, so its menu buttons take their inks from the `--landing-head-*` properties
-// Home.razor.css sets and animates on that header - light on the photograph, the white
+// HomePage.razor.css sets and animates on that header - light on the photograph, the white
 // header's own once scrolled. Keyed on the header's hook rather than on the buttons, because
 // the sign-in frame's header draws the same language button on white and must not follow.
 // The hover is a solid dark-ground step rather than the design's translucent white, which

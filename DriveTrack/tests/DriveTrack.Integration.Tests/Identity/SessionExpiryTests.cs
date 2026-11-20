@@ -121,7 +121,7 @@ public class SessionExpiryTests
         // What is left for a source assertion: that the markup asks SessionExpiry which notice to
         // show rather than deciding for itself, and that the expired branch carries the link back.
         var boundary = File.ReadAllText(
-            Path.Combine(ComponentsDirectory, "Shared", "SessionExpiryBoundary.razor"));
+            Path.Combine(ComponentsDirectory, "Routing", "SessionExpiryBoundary.razor"));
 
         Assert.Contains("SessionExpiry.NoticeKey(failure)", boundary, StringComparison.Ordinal);
         Assert.Contains("notice == SessionExpiry.ExpiredNoticeKey", boundary, StringComparison.Ordinal);
@@ -135,7 +135,7 @@ public class SessionExpiryTests
         // An ErrorBoundary latches and MainLayout keeps this one for the life of the circuit, so
         // without recovering it a single failure would replace every later screen's content too.
         var boundary = File.ReadAllText(
-            Path.Combine(ComponentsDirectory, "Shared", "SessionExpiryBoundary.razor"));
+            Path.Combine(ComponentsDirectory, "Routing", "SessionExpiryBoundary.razor"));
 
         Assert.Contains("Navigation.LocationChanged += Recover", boundary, StringComparison.Ordinal);
         Assert.Contains("Navigation.LocationChanged -= Recover", boundary, StringComparison.Ordinal);
@@ -148,7 +148,7 @@ public class SessionExpiryTests
         // The other end of the chain. The circuit outlives the request that opened it, so a screen
         // has to turn "there is no caller any more" into the contract's own code rather than into a
         // null reference or a redirect of its own.
-        var profile = File.ReadAllText(Path.Combine(ComponentsDirectory, "Account", "Profile.razor"));
+        var profile = File.ReadAllText(Path.Combine(ComponentsDirectory, "Pages", "Accounts", "ProfilePage.razor"));
 
         Assert.Contains("!Caller.IsAuthenticated", profile, StringComparison.Ordinal);
         Assert.Contains("ErrorCode.AUTH_UNAUTHENTICATED", profile, StringComparison.Ordinal);

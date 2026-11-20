@@ -9,8 +9,9 @@ using DriveTrack.Domain.Clients;
 using DriveTrack.Domain.Deliveries;
 using DriveTrack.Domain.Drivers;
 using DriveTrack.Integration.Tests.Support;
+using DriveTrack.Web.Components.Pages.Dashboard;
 using Microsoft.Extensions.DependencyInjection;
-using DashboardScreen = DriveTrack.Web.Components.Pages.Dashboard;
+using DashboardScreen = DriveTrack.Web.Components.Pages.Dashboard.DashboardPage;
 
 namespace DriveTrack.Integration.Tests.Components;
 

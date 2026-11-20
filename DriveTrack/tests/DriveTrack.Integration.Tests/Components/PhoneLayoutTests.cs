@@ -206,7 +206,7 @@ public class PhoneLayoutTests
     [Fact]
     public void The_landing_grids_can_shrink_and_the_hero_scene_fits_its_column()
     {
-        var stylesheets = new[] { SharedMarkup.ReadComponent("Pages", "Home.razor.css") }
+        var stylesheets = new[] { SharedMarkup.ReadComponent("Pages", "HomePage.razor.css") }
             .Concat(Directory.GetFiles(
                     Path.Combine(SharedMarkup.ComponentsDirectory, "Illustrations"),
                     "*.razor.css")

@@ -25,9 +25,7 @@ public class ChatAssetTests
 
     private static string ChatModulePath { get; } = Path.Combine(
         RepositoryLayout.ProjectDirectory("DriveTrack.Web"),
-        "Components",
-        "Pages",
-        "Chat.razor.js");
+        "Components", "Pages", "Chat", "ChatPage.razor.js");
 
     [Fact]
     public void The_vendored_client_is_on_disk_and_is_not_empty()
@@ -116,10 +114,10 @@ public class ChatAssetTests
     {
         // The served route and the string the component hands to import() have to be the same path.
         // They are written in two files and nothing else compares them.
-        var screen = SharedMarkup.ReadComponent("Pages", "Chat.razor");
+        var screen = SharedMarkup.ReadComponent("Pages", "Chat", "ChatPage.razor");
 
         Assert.Contains(
-            "private const string ModulePath = \"./Components/Pages/Chat.razor.js\";",
+            "private const string ModulePath = \"./Components/Pages/Chat/ChatPage.razor.js\";",
             screen,
             StringComparison.Ordinal);
     }
@@ -144,7 +142,7 @@ public class ChatAssetTests
         // read would throw inside the interop call rather than do nothing.
         Assert.Contains("document.getElementById(elementId)", module, StringComparison.Ordinal);
 
-        var screen = SharedMarkup.ReadComponent("Pages", "Chat.razor");
+        var screen = SharedMarkup.ReadComponent("Pages", "Chat", "ChatPage.razor");
 
         // Called through one helper, from both places the list grows: the join that loads a
         // conversation, and the broadcast that appends to one already open.
@@ -186,7 +184,7 @@ public class ChatAssetTests
 
         // Replayed through the same callback a broadcast arrives on, which is only safe because
         // that callback drops a line it is already showing.
-        var screen = SharedMarkup.ReadComponent("Pages", "Chat.razor");
+        var screen = SharedMarkup.ReadComponent("Pages", "Chat", "ChatPage.razor");
 
         Assert.Contains(
             "_thread.Messages.Any(line => line.Id == message.Id)",
@@ -278,15 +276,15 @@ public class ChatAssetTests
         // Asked before the append, so the answer is about where the reader was rather than where
         // the new line left them - after it, the list is always taller than it was and the answer is
         // always "no".
-        var screen = SharedMarkup.ReadComponent("Pages", "Chat.razor");
+        var screen = SharedMarkup.ReadComponent("Pages", "Chat", "ChatPage.razor");
 
         var asked = screen.IndexOf("await IsAtBottomAsync();", StringComparison.Ordinal);
         var appended = screen.IndexOf("_thread with", StringComparison.Ordinal);
 
-        Assert.True(asked >= 0, "Chat.razor never asks where the reader is before appending a line.");
+        Assert.True(asked >= 0, "ChatPage.razor never asks where the reader is before appending a line.");
         Assert.True(
             asked < appended,
-            "Chat.razor asks where the reader is after appending the line, so the answer is always "
+            "ChatPage.razor asks where the reader is after appending the line, so the answer is always "
                 + "the bottom it just moved.");
     }
 
@@ -341,7 +339,7 @@ public class ChatAssetDeliveryTests(PostgresFixture postgres)
 {
     [Theory]
     [InlineData("lib/signalr/signalr.js")]
-    [InlineData("Components/Pages/Chat.razor.js")]
+    [InlineData("Components/Pages/Chat/ChatPage.razor.js")]
     public async Task The_vendored_asset_is_served(string path)
     {
         var cancellationToken = TestContext.Current.CancellationToken;

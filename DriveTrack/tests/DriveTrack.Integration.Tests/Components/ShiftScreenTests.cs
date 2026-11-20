@@ -8,10 +8,11 @@ using DriveTrack.Domain.Accounts;
 using DriveTrack.Domain.Clients;
 using DriveTrack.Domain.Drivers;
 using DriveTrack.Integration.Tests.Support;
+using DriveTrack.Web.Components.Pages.Shifts;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
-using MyShiftsScreen = DriveTrack.Web.Components.Pages.MyShifts;
-using ShiftsScreen = DriveTrack.Web.Components.Pages.Shifts;
+using MyShiftsScreen = DriveTrack.Web.Components.Pages.Shifts.MyShiftsPage;
+using ShiftsScreen = DriveTrack.Web.Components.Pages.Shifts.ShiftsPage;
 
 namespace DriveTrack.Integration.Tests.Components;
 
@@ -98,12 +99,12 @@ public class ShiftScreenTests
         // show them the whole roster under a heading that says otherwise.
         Assert.Contains(
             @"@attribute [Authorize(Roles = ""Dispatcher,Admin"")]",
-            SharedMarkup.ReadComponent("Pages", "Shifts.razor"),
+            SharedMarkup.ReadComponent("Pages", "Shifts", "ShiftsPage.razor"),
             StringComparison.Ordinal);
 
         Assert.Contains(
             @"@attribute [Authorize(Roles = ""Driver"")]",
-            SharedMarkup.ReadComponent("Pages", "MyShifts.razor"),
+            SharedMarkup.ReadComponent("Pages", "Shifts", "MyShiftsPage.razor"),
             StringComparison.Ordinal);
     }
 

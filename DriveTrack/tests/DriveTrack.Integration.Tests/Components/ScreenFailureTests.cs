@@ -5,7 +5,8 @@ using DriveTrack.Application.Common.Locations;
 using DriveTrack.Application.Deliveries;
 using DriveTrack.Integration.Tests.Support;
 using DriveTrack.Web.Components.Failures;
-using DriveTrack.Web.Components.Shared;
+using DriveTrack.Web.Components.Shared.DesignSystem;
+using DriveTrack.Web.Components.Shared.Display;
 using ValidationException = DriveTrack.Application.Common.Errors.ValidationException;
 
 namespace DriveTrack.Integration.Tests.Components;
@@ -343,12 +344,12 @@ public class ScreenFailureTests
 
         Assert.Equal(1, SharedMarkup.Occurrences(picker, @"Failures=""Search.Failures"""));
 
-        var board = SharedMarkup.ReadComponent("Pages", "Deliveries.razor");
+        var board = SharedMarkup.ReadComponent("Pages", "Deliveries", "DeliveriesPage.razor");
 
         Assert.Equal(1, SharedMarkup.Occurrences(board, @"Search=""_form.PickupSearch"""));
         Assert.Equal(1, SharedMarkup.Occurrences(board, @"Search=""_form.DropoffSearch"""));
 
-        var mine = SharedMarkup.ReadComponent("Pages", "MyDeliveries.razor");
+        var mine = SharedMarkup.ReadComponent("Pages", "Deliveries", "MyDeliveriesPage.razor");
 
         Assert.Equal(1, SharedMarkup.Occurrences(mine, @"Search=""_request.PickupSearch"""));
         Assert.Equal(1, SharedMarkup.Occurrences(mine, @"Search=""_request.DropoffSearch"""));
@@ -396,8 +397,8 @@ public class ScreenFailureTests
         // what the banner subtracts. A screen still cannot resolve a message for itself.
         Assert.Equal(
             [
-                Path.Combine("Shared", "DtFailureBanner.razor"),
-                Path.Combine("Shared", "DtFieldError.razor"),
+                Path.Combine("Shared", "DesignSystem", "DtFailureBanner.razor"),
+                Path.Combine("Shared", "DesignSystem", "DtFieldError.razor"),
             ],
             offenders);
     }

@@ -79,13 +79,13 @@ public class ShellRoutingTests
     }
 
     [Theory]
-    [InlineData("NotFound.razor", "/not-found")]
-    [InlineData("AccessDenied.razor", "/access-denied")]
+    [InlineData("NotFoundPage.razor", "/not-found")]
+    [InlineData("AccessDeniedPage.razor", "/access-denied")]
     // The third surface, which spent every round of this suite outside the theory because it had
     // nothing to assert: the scaffold's error page had two headings, no link and no way back at
     // all. It is the exact dead end the other two rows exist to forbid, and the only reason
     // nothing caught it is that nobody named the file here.
-    [InlineData("Error.razor", "/Error")]
+    [InlineData("ErrorPage.razor", "/Error")]
     public void A_dead_end_page_has_a_heading_and_a_way_out(string fileName, string route)
     {
         var page = SharedMarkup.ReadComponent("Pages", fileName);
@@ -109,7 +109,7 @@ public class ShellRoutingTests
     {
         // Without [AllowAnonymous] the page is subject to the same decision that sent the caller
         // here, and the redirect loops.
-        var page = SharedMarkup.ReadComponent("Pages", "AccessDenied.razor");
+        var page = SharedMarkup.ReadComponent("Pages", "Errors", "AccessDeniedPage.razor");
 
         Assert.Contains("@attribute [AllowAnonymous]", page, StringComparison.Ordinal);
 
@@ -125,7 +125,7 @@ public class ShellRoutingTests
     {
         // A hardcoded `profile` here would be a second answer to a question LandingRoute
         // already owns, and the two would diverge the first time a role got a dashboard.
-        var home = SharedMarkup.ReadComponent("Pages", "Home.razor");
+        var home = SharedMarkup.ReadComponent("Pages", "HomePage.razor");
 
         Assert.Contains("LandingRoute.For(Caller.Role)", home, StringComparison.Ordinal);
         Assert.DoesNotContain(@"href=""profile""", home, StringComparison.Ordinal);

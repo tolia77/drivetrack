@@ -333,7 +333,7 @@ public class SessionCookieTests(PostgresFixture postgres)
     [Fact]
     public async Task The_sign_in_page_renders_an_unticked_remember_me_checkbox()
     {
-        // The box itself, as the browser receives it. Without this, deleting it from SignIn.razor
+        // The box itself, as the browser receives it. Without this, deleting it from SignInPage.razor
         // would leave every case green: the remembered case would post a field no page offers.
         var cancellationToken = TestContext.Current.CancellationToken;
 
@@ -483,7 +483,7 @@ public class SessionCookieTests(PostgresFixture postgres)
             TimeSpan.FromDays(7) + TimeSpan.FromMinutes(1));
     }
 
-    /// <summary>The rendered "Remember me" input element, found by the id SignIn.razor gives it.</summary>
+    /// <summary>The rendered "Remember me" input element, found by the id SignInPage.razor gives it.</summary>
     private static string RememberMeInput(string html)
     {
         var match = System.Text.RegularExpressions.Regex.Match(
@@ -521,7 +521,7 @@ public class SessionCookieTests(PostgresFixture postgres)
     /// arrived in - attributes included, because the attributes are what is under test.
     /// </summary>
     /// <remarks>
-    /// The form rather than a hand-built <c>SignInAsync</c>: <c>SignIn.razor</c> is the only
+    /// The form rather than a hand-built <c>SignInAsync</c>: <c>SignInPage.razor</c> is the only
     /// production path that writes this header, and a replica of it would be asserting against the
     /// test's own idea of the cookie handler's options.
     /// </remarks>
