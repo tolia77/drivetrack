@@ -18,7 +18,7 @@ namespace DriveTrack.Application.Deliveries;
 /// </para>
 /// <para>
 /// "Dispatcher or admin" is written <c>RequireRole(UserRole.Dispatcher)</c> throughout, because
-/// admin satisfies every check by rule inside the guard. <see cref="DeleteAsync"/> is the
+/// An admin satisfies every check by rule inside the guard. <see cref="DeleteAsync"/> is the
 /// exception and says <c>RequireRole(UserRole.Admin)</c> outright: deletion is reserved to an
 /// administrator, so a dispatcher is refused there and nowhere else.
 /// </para>
