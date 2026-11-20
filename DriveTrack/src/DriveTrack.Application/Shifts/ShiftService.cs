@@ -4,7 +4,8 @@ using DriveTrack.Application.Authorization;
 using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Errors;
 using DriveTrack.Application.Common.Paging;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Accounts;
+using DriveTrack.Domain.Drivers;
 using DriveTrack.Domain.Shifts;
 using FluentValidation;
 

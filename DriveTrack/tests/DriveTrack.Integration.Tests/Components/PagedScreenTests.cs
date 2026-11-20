@@ -1,7 +1,7 @@
 using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Paging;
 using DriveTrack.Integration.Tests.Support;
-using DriveTrack.Web.Components.Shared;
+using DriveTrack.Web.Components.Shared.Screens;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 

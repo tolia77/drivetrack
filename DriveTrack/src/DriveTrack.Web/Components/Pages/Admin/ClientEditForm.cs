@@ -7,7 +7,7 @@ namespace DriveTrack.Web.Components.Pages.Admin;
 /// What the client edit dialog is bound to, and the two decisions that dialog takes: which stored
 /// values a freshly opened form carries, and which of them the update command sends.
 /// <para>
-/// Both live in a class rather than in <c>Clients.razor</c>'s <c>@code</c> block for the reason
+/// Both live in a class rather than in <c>ClientsPage.razor</c>'s <c>@code</c> block for the reason
 /// <see cref="PasswordBox"/> does, and the reason is sharper here than usual: the test harness takes
 /// a static first render only, so no test can click Edit, and until this lift nothing in the tree
 /// observed either decision. Dropping the address out of <see cref="Fill"/> would have sent a

@@ -1,13 +1,12 @@
 using DriveTrack.Application.Abstractions.Persistence;
+using DriveTrack.Domain.Accounts;
 using DriveTrack.Domain.Chat;
 using DriveTrack.Domain.Drivers;
-using DriveTrack.Domain.Identity;
 using DriveTrack.Domain.Shifts;
 using DriveTrack.Domain.Vehicles;
 using DriveTrack.Integration.Tests.Deliveries;
-using DriveTrack.Integration.Tests.Identity;
 using DriveTrack.Integration.Tests.Support;
-using DriveTrack.Web.Api;
+using DriveTrack.Web.Api.Json;
 using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.EntityFrameworkCore;

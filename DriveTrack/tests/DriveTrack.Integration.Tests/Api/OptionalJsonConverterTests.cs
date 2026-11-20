@@ -1,6 +1,6 @@
 using System.Text.Json;
 using DriveTrack.Application.Common;
-using DriveTrack.Web.Api;
+using DriveTrack.Web.Api.Json;
 
 namespace DriveTrack.Integration.Tests.Api;
 

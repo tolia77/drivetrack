@@ -3,9 +3,13 @@ using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Locations;
 using DriveTrack.Application.Deliveries;
 using DriveTrack.Application.Deliveries.Proof;
+using DriveTrack.Domain.Accounts;
 using DriveTrack.Domain.Deliveries;
-using DriveTrack.Domain.Identity;
 using DriveTrack.Integration.Tests.Support;
+using DriveTrack.Web.Components.Pages.Deliveries;
+using DriveTrack.Web.Components.Pages.Deliveries.Proof;
+using DriveTrack.Web.Components.Shared.DesignSystem;
+using DriveTrack.Web.Components.Shared.Display;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -80,7 +84,7 @@ public class ProofScreenTests
         // browser renders as a broken image.
         Assert.Equal(
             "/proof-assets/42",
-            Web.Components.Pages.ProofView.Source(new ProofAssetView(42, ProofAssetKind.Photo, "image/png")));
+            Web.Components.Pages.Deliveries.Proof.ProofView.Source(new ProofAssetView(42, ProofAssetKind.Photo, "image/png")));
     }
 
     [Theory]
@@ -101,7 +105,7 @@ public class ProofScreenTests
         // action the guard could only ever refuse.
         Assert.Equal(
             expected,
-            Web.Components.Pages.MyDeliveries.OffersProofCapture(role, hasProof));
+            Web.Components.Pages.Deliveries.MyDeliveriesPage.OffersProofCapture(role, hasProof));
     }
 
     [Theory]
@@ -118,7 +122,7 @@ public class ProofScreenTests
         // is carried as an empty stream with its real declared size, so the refusal is the 422 the
         // contract names; opening it first would throw IOException out of the browser file API and
         // become a 500 for a file the contract has a 422 for.
-        var upload = Web.Components.Pages.ProofCapture.Photo(new StubBrowserFile(size));
+        var upload = Web.Components.Pages.Deliveries.Proof.ProofCapture.Photo(new StubBrowserFile(size));
 
         Assert.Equal(ProofAssetKind.Photo, upload.Kind);
 
@@ -150,7 +154,7 @@ public class ProofScreenTests
         Assert.Contains("вул. Хрещатик, 22", text, StringComparison.Ordinal);
         Assert.Contains("Дві коробки", text, StringComparison.Ordinal);
         Assert.Contains(
-            Web.Components.Pages.CellText.Window(Parcel.WindowEarliestAt, Parcel.WindowLatestAt),
+            Web.Components.Shared.Display.CellText.Window(Parcel.WindowEarliestAt, Parcel.WindowLatestAt),
             text,
             StringComparison.Ordinal);
 
@@ -208,7 +212,7 @@ public class ProofScreenTests
         // draws is the empty one. Written the other way round, the whole suite stays green while a
         // driver meets a solid frame inviting nothing and a dashed one over a signature already
         // given.
-        Assert.Equal(expected, Web.Components.Shared.DtSignaturePad.Modifier(signed));
+        Assert.Equal(expected, Web.Components.Shared.DesignSystem.DtSignaturePad.Modifier(signed));
     }
 
     [Fact]
@@ -338,7 +342,7 @@ public class ProofScreenTests
         // CaptureProofCommandValidator's, and it names the ceiling in the same sentence the REST
         // surface answers with. A panel that threw the sixth file away here would be a
         // second, stricter definition of a valid proof.
-        Assert.Equal(offered, Web.Components.Pages.ProofCapture.OffersAnotherPhoto(chosen));
+        Assert.Equal(offered, Web.Components.Pages.Deliveries.Proof.ProofCapture.OffersAnotherPhoto(chosen));
     }
 
     [Theory]
@@ -354,7 +358,7 @@ public class ProofScreenTests
         //
         // It decides what the pill says and nothing else. The files are still sent, and
         // CaptureProofCommandValidator is still what turns them down.
-        Assert.Equal(over, Web.Components.Pages.ProofCapture.IsOverTheLimit(chosen));
+        Assert.Equal(over, Web.Components.Pages.Deliveries.Proof.ProofCapture.IsOverTheLimit(chosen));
     }
 
     [Fact]
@@ -474,7 +478,7 @@ public class ProofScreenTests
     /// </summary>
     /// <param name="summary">The row the capture is about, or null for a panel given none.</param>
     private static Task<string> RenderCaptureAsync(AssignedDeliverySummary? summary) =>
-        ComponentRenderer.RenderAsync<Web.Components.Pages.ProofCapture>(
+        ComponentRenderer.RenderAsync<Web.Components.Pages.Deliveries.Proof.ProofCapture>(
             new Dictionary<string, object?>(StringComparer.Ordinal)
             {
                 ["DeliveryId"] = 1,
@@ -483,7 +487,7 @@ public class ProofScreenTests
             services => services.AddSingleton<IProofOfDeliveryService>(new StubProofService(null)));
 
     private static Task<string> RenderProofAsync(string? capturedByName) =>
-        ComponentRenderer.RenderAsync<Web.Components.Pages.ProofView>(
+        ComponentRenderer.RenderAsync<Web.Components.Pages.Deliveries.Proof.ProofView>(
             new Dictionary<string, object?>(StringComparer.Ordinal)
             {
                 ["DeliveryId"] = 1,

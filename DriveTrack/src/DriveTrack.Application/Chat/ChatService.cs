@@ -5,9 +5,9 @@ using DriveTrack.Application.Authorization;
 using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Errors;
 using DriveTrack.Application.Drivers;
+using DriveTrack.Domain.Accounts;
 using DriveTrack.Domain.Chat;
 using DriveTrack.Domain.Drivers;
-using DriveTrack.Domain.Identity;
 using FluentValidation;
 
 namespace DriveTrack.Application.Chat;

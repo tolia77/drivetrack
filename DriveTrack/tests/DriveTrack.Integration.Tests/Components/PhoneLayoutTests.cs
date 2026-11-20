@@ -87,7 +87,7 @@ public class PhoneLayoutTests
         // written in this screen's own RowTemplate and already carries this scope. That is the
         // rule that replaces the dropped head, so an unanchored copy of it would leak the reveal
         // onto every other table this screen might one day hold.
-        var css = SharedMarkup.ReadComponent("Pages", directory, screen + ".razor.css");
+        var css = SharedMarkup.ReadComponent("Pages", directory, screen + "Page.razor.css");
 
         Assert.Contains($".{wrapper} .{label}", css, StringComparison.Ordinal);
 
@@ -206,7 +206,7 @@ public class PhoneLayoutTests
     [Fact]
     public void The_landing_grids_can_shrink_and_the_hero_scene_fits_its_column()
     {
-        var stylesheets = new[] { SharedMarkup.ReadComponent("Pages", "Home.razor.css") }
+        var stylesheets = new[] { SharedMarkup.ReadComponent("Pages", "HomePage.razor.css") }
             .Concat(Directory.GetFiles(
                     Path.Combine(SharedMarkup.ComponentsDirectory, "Illustrations"),
                     "*.razor.css")

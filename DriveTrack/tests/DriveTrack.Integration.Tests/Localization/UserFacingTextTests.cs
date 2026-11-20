@@ -173,9 +173,7 @@ public class UserFacingTextTests
         // translated - nobody wants a Ukrainian explanation of the ASPNETCORE_ENVIRONMENT variable.
         var errorPage = File.ReadAllText(Path.Combine(
             RepositoryLayout.ProjectDirectory("DriveTrack.Web"),
-            "Components",
-            "Pages",
-            "Error.razor"));
+            "Components", "Pages", "Errors", "ErrorPage.razor"));
 
         Assert.DoesNotContain("Development Mode", errorPage, StringComparison.Ordinal);
         Assert.DoesNotContain("ASPNETCORE_ENVIRONMENT", errorPage, StringComparison.Ordinal);

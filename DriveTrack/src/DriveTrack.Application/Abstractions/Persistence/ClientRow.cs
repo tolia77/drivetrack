@@ -1,7 +1,6 @@
 using DriveTrack.Application.Accounts.Clients;
 using DriveTrack.Application.Common;
 using DriveTrack.Domain.Clients;
-using DriveTrack.Domain.Identity;
 
 namespace DriveTrack.Application.Abstractions.Persistence;
 

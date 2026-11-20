@@ -5,7 +5,7 @@ using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Errors;
 using DriveTrack.Application.Common.Paging;
 using DriveTrack.Application.Deliveries;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Accounts;
 using DriveTrack.Domain.Vehicles;
 using FluentValidation;
 

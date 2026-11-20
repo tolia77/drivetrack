@@ -1,9 +1,9 @@
 using System.Text.RegularExpressions;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Accounts;
 using DriveTrack.Integration.Tests.Support;
-using DriveTrack.Web.Account;
 using DriveTrack.Web.Components.Layout;
 using DriveTrack.Web.Components.Pages;
+using DriveTrack.Web.Components.Routing;
 
 namespace DriveTrack.Integration.Tests.Components;
 
@@ -576,7 +576,7 @@ public class NavigationTests
     {
         // The landing page's way in, asserted against LandingRoute's own answer rather than against
         // "/profile", so it keeps testing the right thing on the day a role gets a dashboard.
-        var html = await ShellCaller.RenderAsync<Home>(role);
+        var html = await ShellCaller.RenderAsync<HomePage>(role);
         var links = Hrefs(html);
 
         Assert.Contains(LandingRoute.For(role), links);
@@ -587,7 +587,7 @@ public class NavigationTests
     [Fact]
     public async Task The_landing_page_offers_an_anonymous_visitor_both_entry_points_with_icons()
     {
-        var html = await ShellCaller.RenderAsync<Home>(role: null);
+        var html = await ShellCaller.RenderAsync<HomePage>(role: null);
         var links = Hrefs(html);
 
         Assert.Contains("sign-in", links);

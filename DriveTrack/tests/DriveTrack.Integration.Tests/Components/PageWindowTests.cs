@@ -1,4 +1,5 @@
-using DriveTrack.Web.Components.Shared;
+
+using DriveTrack.Web.Components.Shared.Screens;
 
 namespace DriveTrack.Integration.Tests.Components;
 

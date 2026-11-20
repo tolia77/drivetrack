@@ -4,11 +4,14 @@ using DriveTrack.Application.Authorization;
 using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Paging;
 using DriveTrack.Application.Notifications;
+using DriveTrack.Domain.Accounts;
+using DriveTrack.Domain.Clients;
 using DriveTrack.Domain.Deliveries;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Drivers;
 using DriveTrack.Domain.Notifications;
 using DriveTrack.Integration.Tests.Support;
-using DriveTrack.Web.Components.Shared;
+using DriveTrack.Web.Components.Pages.Admin;
+using DriveTrack.Web.Components.Shared.Screens;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DriveTrack.Integration.Tests.Components;
@@ -145,7 +148,7 @@ public class NotificationScreenTests
         // The state that exists so a fetch does not look like a broken screen, read off the first
         // render pass - which is the only moment it exists, because by quiescence the rows have
         // arrived and the flag is false again.
-        var html = await ComponentRenderer.RenderFirstPassAsync<Web.Components.Pages.Admin.Notifications>(
+        var html = await ComponentRenderer.RenderFirstPassAsync<Web.Components.Pages.Admin.NotificationsPage>(
             parameters: null,
             configureServices: services =>
             {
@@ -211,7 +214,7 @@ public class NotificationScreenTests
         // than the validator's would make the real service refuse every administrator.
         var log = new StubLog(Attempts);
 
-        await ComponentRenderer.RenderAsync<Web.Components.Pages.Admin.Notifications>(
+        await ComponentRenderer.RenderAsync<Web.Components.Pages.Admin.NotificationsPage>(
             parameters: null,
             configureServices: services =>
             {
@@ -318,7 +321,7 @@ public class NotificationScreenTests
         // IAccessGuard.RequireRole(Admin) inside NotificationLogService is the only
         // place this screen's audience is decided. A role on the page attribute would be a second
         // copy of that rule, worded differently, in a place no test of the rule would read.
-        var screen = SharedMarkup.ReadComponent("Pages", "Admin", "Notifications.razor");
+        var screen = SharedMarkup.ReadComponent("Pages", "Admin", "NotificationsPage.razor");
 
         Assert.Contains("@attribute [Authorize]", screen, StringComparison.Ordinal);
 
@@ -349,7 +352,7 @@ public class NotificationScreenTests
     internal static Task<string> RenderLogAsync() => RenderAsync(Attempts);
 
     private static Task<string> RenderAsync(IReadOnlyList<NotificationAttemptSummary> attempts) =>
-        ComponentRenderer.RenderAsync<Web.Components.Pages.Admin.Notifications>(
+        ComponentRenderer.RenderAsync<Web.Components.Pages.Admin.NotificationsPage>(
             parameters: null,
             configureServices: services =>
             {

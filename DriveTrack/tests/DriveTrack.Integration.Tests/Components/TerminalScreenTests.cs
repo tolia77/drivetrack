@@ -78,9 +78,9 @@ public class TerminalScreenTests(PostgresFixture postgres)
     /// <summary>The same three by their file under <c>Components/Pages</c>.</summary>
     public static TheoryData<string> Sources() => new()
     {
-        "AccessDenied.razor",
-        "NotFound.razor",
-        "Error.razor",
+        "AccessDeniedPage.razor",
+        "NotFoundPage.razor",
+        "ErrorPage.razor",
     };
 
     [Theory]
@@ -209,7 +209,7 @@ public class TerminalScreenTests(PostgresFixture postgres)
         // published and resolves to the same value as `action-destructive`, so swapping the rule
         // to it repaints the heading in the delete-button colour with every other assertion here
         // still green.
-        var css = WithoutComments(SharedMarkup.ReadComponent("Pages", "Error.razor.css"));
+        var css = WithoutComments(SharedMarkup.ReadComponent("Pages", "Errors", "ErrorPage.razor.css"));
 
         Assert.Matches(
             new Regex(

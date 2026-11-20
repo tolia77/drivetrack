@@ -5,8 +5,10 @@ using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Errors;
 using DriveTrack.Application.Common.Paging;
 using DriveTrack.Application.Deliveries;
+using DriveTrack.Domain.Accounts;
+using DriveTrack.Domain.Clients;
 using DriveTrack.Domain.Deliveries;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Drivers;
 using DriveTrack.Domain.Reviews;
 using FluentValidation;
 

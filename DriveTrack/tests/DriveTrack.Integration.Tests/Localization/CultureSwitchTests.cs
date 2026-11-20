@@ -7,13 +7,13 @@ using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Errors;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Accounts;
 using DriveTrack.Integration.Tests.Components;
 using DriveTrack.Integration.Tests.Persistence;
 using DriveTrack.Integration.Tests.Support;
-using DriveTrack.Web.Account;
+using DriveTrack.Web.Components.Failures;
 using DriveTrack.Web.Components.Layout;
-using DriveTrack.Web.Components.Shared;
+using DriveTrack.Web.Components.Shared.DesignSystem;
 using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace DriveTrack.Integration.Tests.Localization;

@@ -1,4 +1,6 @@
-using DriveTrack.Domain.Identity;
+
+using DriveTrack.Domain.Accounts;
+using DriveTrack.Domain.Clients;
 
 namespace DriveTrack.Application.Accounts.Clients;
 

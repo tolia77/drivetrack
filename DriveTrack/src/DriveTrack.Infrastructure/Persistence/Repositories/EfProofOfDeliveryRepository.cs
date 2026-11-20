@@ -1,6 +1,8 @@
 using DriveTrack.Application.Abstractions.Persistence;
 using DriveTrack.Application.Authorization;
+using DriveTrack.Domain.Clients;
 using DriveTrack.Domain.Deliveries;
+using DriveTrack.Domain.Drivers;
 using Microsoft.EntityFrameworkCore;
 
 namespace DriveTrack.Infrastructure.Persistence.Repositories;

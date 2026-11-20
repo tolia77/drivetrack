@@ -4,11 +4,15 @@ using DriveTrack.Application.Authorization;
 using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Paging;
 using DriveTrack.Application.Vehicles;
+using DriveTrack.Domain.Accounts;
+using DriveTrack.Domain.Clients;
 using DriveTrack.Domain.Deliveries;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Drivers;
 using DriveTrack.Domain.Reviews;
 using DriveTrack.Integration.Tests.Support;
-using DriveTrack.Web.Components.Shared;
+using DriveTrack.Web.Components.Pages.Vehicles;
+using DriveTrack.Web.Components.Shared.DesignSystem;
+using DriveTrack.Web.Components.Shared.Display;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -50,11 +54,11 @@ public class ComponentLibraryTests
     /// </summary>
     public static TheoryData<string, string, string> DualModeDialogs() => new()
     {
-        { "Pages/Vehicles.razor", "dt-vehicle-save", "_form.Id is null" },
-        { "Pages/Drivers.razor", "dt-driver-save", "_form.Id is null" },
-        { "Pages/Deliveries.razor", "dt-delivery-save", "_form.Id is null" },
-        { "Pages/Shifts.razor", "dt-shift-save", "_form.Id is null" },
-        { "Pages/Reviews.razor", "dt-review-save", "_editingId is null" },
+        { "Pages/Vehicles/VehiclesPage.razor", "dt-vehicle-save", "_form.Id is null" },
+        { "Pages/Drivers/DriversPage.razor", "dt-driver-save", "_form.Id is null" },
+        { "Pages/Deliveries/DeliveriesPage.razor", "dt-delivery-save", "_form.Id is null" },
+        { "Pages/Shifts/ShiftsPage.razor", "dt-shift-save", "_form.Id is null" },
+        { "Pages/Reviews/ReviewsPage.razor", "dt-review-save", "_editingId is null" },
     };
 
     /// <summary>The four delivery statuses and the class each one's face declares.</summary>
@@ -100,8 +104,8 @@ public class ComponentLibraryTests
                  })
         {
             Assert.True(
-                File.Exists(Path.Combine(SharedMarkup.SharedDirectory, expected)),
-                $"Components/Shared/{expected} is missing.");
+                File.Exists(Path.Combine(SharedMarkup.DesignSystemDirectory, expected)),
+                $"Components/Shared/DesignSystem/{expected} is missing.");
         }
     }
 
@@ -137,7 +141,7 @@ public class ComponentLibraryTests
         // The shape as well as the fill hangs off this class - the design
         // says the green and the red "differ by shape and word; they are not colour-blind safe on
         // hue alone" - so a label that lost the class would lose the distinction and keep the word.
-        var html = await ComponentRenderer.RenderAsync<Web.Components.Shared.DeliveryStatusLabel>(
+        var html = await ComponentRenderer.RenderAsync<Web.Components.Shared.Display.DeliveryStatusLabel>(
             new Dictionary<string, object?> { ["Status"] = status });
 
         Assert.Contains($"dt-status {modifier}", html, StringComparison.Ordinal);
@@ -157,7 +161,7 @@ public class ComponentLibraryTests
         // The same shape a delivery status wears, deliberately - a reader
         // learns one vocabulary - and never Bootstrap's badge, which carried the state in its hue
         // alone and looked exactly like the duty marker beside it on the same screen.
-        var html = await ComponentRenderer.RenderAsync<Web.Components.Pages.ShiftStateLabel>(
+        var html = await ComponentRenderer.RenderAsync<Web.Components.Shared.Display.ShiftStateLabel>(
             new Dictionary<string, object?> { ["IsOpen"] = isOpen });
 
         Assert.Contains($"dt-status {modifier}", html, StringComparison.Ordinal);
@@ -174,7 +178,7 @@ public class ComponentLibraryTests
         // rather than like a missing decision. Delivery.NextStatuses fails this way for the same
         // reason.
         await Assert.ThrowsAnyAsync<ArgumentOutOfRangeException>(() =>
-            ComponentRenderer.RenderAsync<Web.Components.Shared.DeliveryStatusLabel>(
+            ComponentRenderer.RenderAsync<Web.Components.Shared.Display.DeliveryStatusLabel>(
                 new Dictionary<string, object?> { ["Status"] = (DeliveryStatus)99 }));
     }
 
@@ -281,7 +285,7 @@ public class ComponentLibraryTests
         // its window is marked beside the window on the dispatch board and on a driver's or
         // client's own list, and both used to write Bootstrap's red badge - which is the same
         // chrome the Failed status wore two columns away.
-        foreach (var file in new[] { "Pages/Deliveries.razor", "Pages/MyDeliveries.razor" })
+        foreach (var file in new[] { "Pages/Deliveries/DeliveriesPage.razor", "Pages/Deliveries/MyDeliveriesPage.razor" })
         {
             var markup = SharedMarkup.ReadComponent(file.Split('/'));
 
@@ -336,7 +340,7 @@ public class ComponentLibraryTests
         // regex matches would still be there. A statically rendered screen holds a new form, which
         // is exactly the state OpenCreateAsync is supposed to produce - so the button on it is the
         // create button, or the screen has stopped saying which mode it is in.
-        var html = await ComponentRenderer.RenderAsync<Web.Components.Pages.Vehicles>(
+        var html = await ComponentRenderer.RenderAsync<Web.Components.Pages.Vehicles.VehiclesPage>(
             parameters: null,
             configureServices: services =>
             {
@@ -362,8 +366,8 @@ public class ComponentLibraryTests
     }
 
     [Theory]
-    [InlineData("Pages/Admin/Clients.razor", "dt-client-save")]
-    [InlineData("Pages/MyShifts.razor", "dt-shift-save")]
+    [InlineData("Pages/Admin/ClientsPage.razor", "dt-client-save")]
+    [InlineData("Pages/Shifts/MyShiftsPage.razor", "dt-shift-save")]
     public void An_edit_only_dialog_saves_with_the_edit_action_and_nothing_else(string file, string hook)
     {
         // The other half of the same rule, and the reason it is a separate case: these two dialogs

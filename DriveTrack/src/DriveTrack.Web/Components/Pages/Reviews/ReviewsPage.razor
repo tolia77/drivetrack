@@ -1,0 +1,807 @@
+@page "/reviews"
+@attribute [Authorize]
+@inject IReviewService Verdicts
+@inject IDeliveryService Parcels
+@inject ICurrentUser Caller
+@inject IStringLocalizer<UiText> Localizer
+@inherits PagedScreen<ListReviewsQuery, object, ReviewSort>
+
+@* Reviews, and the three different screens the one route is for.
+
+   A client sees what they wrote and a way to write another. A dispatcher sees every review and no
+   way to touch one. An administrator sees every review and moderates them. A driver sees a
+   sentence saying this is not theirs - they are the party being judged, and every review route
+   refuses them.
+
+   [Authorize] carries no roles on purpose, and this is the capability where a Roles argument would
+   be most wrong: the five routes behind this screen are reserved to three different sets of
+   callers, so one attribute could only ever state one of them, wrongly. Who may do
+   what is IAccessGuard's answer inside IReviewService, and it runs whether or not a button was
+   rendered.
+
+   Independent @if blocks and one literal localizer key per string, for the two reasons the shell
+   components already state: an `else` at markup level reads to the localization scan as a rendered
+   English word, and a key composed at run time is a key the closed-catalogue test cannot see.
+
+   The role predicates are ReviewViews' rather than expressions here, so a rule about who sees what
+   is a thing a test can read back rather than a condition buried in markup. *@
+
+<PageTitle>@Localizer["ReviewsTitle"]</PageTitle>
+
+@* The screen's title and, for a client, the one action that opens an empty form - on one line, the
+   shape the four fleet screens and the two delivery ones already settled. *@
+<div class="dt-page-head mb-4">
+    <h1 class="dt-type-h1">
+        <Icon Name="IconName.Reviews" />@Localizer["ReviewsTitle"]
+    </h1>
+
+    @* Offered only when there is something to review. An action whose form opens on an empty picker
+       posts no delivery and is answered "no such delivery" - a true sentence about a question the
+       client did not ask. The gate travels with the action into the head, as MyDeliveries wraps its
+       own head action: the head holds the title and whatever the role in front of it may do, and
+       for the three roles that may do nothing it holds the title alone. The hint below says the
+       same thing the picker's own hint says, because it is the same rule: a finished delivery of
+       theirs that they have not already written about. *@
+    @if (_authors && _reviewable.Count > 0)
+    {
+        <button type="button" class="btn btn-primary dt-review-create" @onclick="OpenCreateAsync">
+            <Icon Name="IconName.Create" />@Localizer["WriteReview"]
+        </button>
+    }
+</div>
+
+@* The message is the localized string for the code the service threw, resolved through the
+   same catalogue the REST envelope uses. Nothing an exception carries reaches this page.
+
+   Stood down while the form is open, because the dialog renders the same list. Two
+   role="alert" regions holding one refusal is one refusal announced twice; exactly one of them is
+   in the DOM at any moment, and which one it is follows where the reader is. *@
+@if (!_formOpen)
+{
+    <DtFailureBanner Failures="_failures" InlineFields="@InlineFields" />
+}
+
+@* The sibling of the action above rather than a second copy of it: never both, and neither while
+   the lists are still loading - the action waits for a delivery to put in its picker and this waits
+   for `!Loading`, so the first pass shows a bare head and the sentence appears once the answer is
+   in. Saying "there is nothing to review" before looking would be a claim the screen cannot yet
+   make. It stays below the head because it is a sentence rather than a control - a paragraph inside
+   the heading row would sit on the line beside the title. *@
+@if (_authors && !Loading && _reviewable.Count == 0)
+{
+    <p class="dt-review-nothing-to-review">@Localizer["ReviewDeliveryHint"]</p>
+}
+
+@* `dt-table-cards` is where this screen opts into the shared collapse: below the phone breakpoint
+   the two tables' rows stop being rows and become cards. The collapse is stated once, in
+   `_theme.scss`, so nothing about it is written here or in this screen's own stylesheet - and
+   because it is a global rule rather than a scoped one, none of it needs a `::deep`.
+
+   The wrapper's own name stays beside it. `ReviewsPage.razor.css` hangs this screen's per-cell label
+   rules off it, and the phone-layout suite reads it as the element the table has to be inside.
+
+   One wrapper around both tables rather than one each. No role is ever shown both, and the two
+   take identical treatment, so a second wrapper would be a second opt-in and a second copy of the
+   label rule, and the place a divergence between the author's cards and the moderator's would
+   start. *@
+<div class="dt-reviews dt-table-cards">
+    @* The author's own list. A separate table from the moderation one below rather than the
+       same table with columns hidden, because the two are different types - AuthoredReviewSummary
+       has no party field at all, so a driver's identity cannot reach this table however it is later
+       edited. *@
+    @if (_authors)
+    {
+        <DtDataTable TItem="AuthoredReviewSummary"
+                     Page="_minePage"
+                     OnPage="GoToPageAsync"
+                     OnPageSize="ResizeAsync"
+                     CountOne="@Localizer["ReviewsCountOne"]"
+                     CountMany="@Localizer["ReviewsCountMany"]"
+                     IsLoading="Loading"
+                     EmptyText="@Localizer["ReviewsEmpty"]">
+            <HeaderTemplate>
+                <th scope="col" aria-sort="@SortState(ReviewSort.Delivery)">
+                    <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(ReviewSort.Delivery)">
+                        @Localizer["ReviewDelivery"]<Icon Name="@SortGlyph(ReviewSort.Delivery)" />
+                    </button>
+                </th>
+                <th scope="col" aria-sort="@SortState(ReviewSort.Rating)">
+                    <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(ReviewSort.Rating)">
+                        @Localizer["ReviewRating"]<Icon Name="@SortGlyph(ReviewSort.Rating)" />
+                    </button>
+                </th>
+                <th scope="col">@Localizer["ReviewText"]</th>
+                <th scope="col" aria-sort="@SortState(ReviewSort.CreatedAt)">
+                    <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(ReviewSort.CreatedAt)">
+                        @Localizer["CreatedAt"]<Icon Name="@SortGlyph(ReviewSort.CreatedAt)" />
+                    </button>
+                </th>
+                @* The actions column keeps its name for a screen reader and drops it on screen, as
+                   every other table in the product does: the buttons under it say what they do, and
+                   a column named above them competes with them for the same width. *@
+                <th scope="col" class="dt-table-actions">
+                    <span class="dt-visually-hidden">@Localizer["Actions"]</span>
+                </th>
+            </HeaderTemplate>
+            <RowTemplate Context="review">
+                @* The per-cell name, carried by the cell rather than only by the column heading. Not
+                   the same thing on both sides of the breakpoint: above it the span is dropped,
+                   where the `<th>` already names the column and a second name in every cell would
+                   be that name read twice a row; below it the head is gone and the span is painted,
+                   as something a reader can see, and that is what replaces it. *@
+                <td>
+                    <span class="dt-visually-hidden dt-review-label">@Localizer["ReviewDelivery"]</span>
+                    @review.DeliveryId
+                </td>
+                <td>
+                    <span class="dt-visually-hidden dt-review-label">@Localizer["ReviewRating"]</span>
+                    @* The band is Domain's own reading of the number, carried on the row, and
+                       the shared display is only what that band looks like. No threshold here, and
+                       no colour - the `dt-rating--*` modifier resolves to a --dt-rating-* token in
+                       _theme.scss. *@
+                    <DtRatingDisplay Rating="review.Rating" Band="review.Band" />
+                </td>
+                <td>
+                    <span class="dt-visually-hidden dt-review-label">@Localizer["ReviewText"]</span>
+                    @review.Text
+                </td>
+                <td>
+                    <span class="dt-visually-hidden dt-review-label">@Localizer["CreatedAt"]</span>
+                    @Moment(review.CreatedAt)
+                </td>
+                @* `dt-table-actions` rather than a class of this screen's own: the right-aligned,
+                   nowrapped actions column is DtDataTable's own rule, and the cell has to wear the
+                   class its heading already wears to be reached by it. *@
+                <td class="dt-table-actions">
+                    <span class="dt-visually-hidden dt-review-label">@Localizer["Actions"]</span>
+                    @* The handler is built in C# rather than written as a lambda in the attribute: a
+                       `=>` here would close the tag as far as the localization markup scan is
+                       concerned, and everything after it would be read as rendered English. *@
+                    <button type="button" class="btn btn-secondary btn-sm dt-review-edit" @onclick="EditMine(review)">
+                        <Icon Name="IconName.Edit" />@Localizer["Edit"]
+                    </button>
+                    <button type="button" class="btn btn-danger btn-sm dt-review-delete" @onclick="Remove(review.Id)">
+                        <Icon Name="IconName.Delete" />@Localizer["Delete"]
+                    </button>
+                </td>
+            </RowTemplate>
+        </DtDataTable>
+    }
+
+    @* Every review, with both parties named. A dispatcher gets the table and no actions,
+       which is the same rule the guard states - they read the collection and never write to it -
+       rendered rather than restated. *@
+    @if (_readsEvery)
+    {
+        <DtDataTable TItem="ReviewSummary"
+                     Page="_allPage"
+                     OnPage="GoToPageAsync"
+                     OnPageSize="ResizeAsync"
+                     CountOne="@Localizer["ReviewsCountOne"]"
+                     CountMany="@Localizer["ReviewsCountMany"]"
+                     IsLoading="Loading"
+                     EmptyText="@Localizer["ReviewsEmpty"]">
+            <HeaderTemplate>
+                <th scope="col" aria-sort="@SortState(ReviewSort.Delivery)">
+                    <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(ReviewSort.Delivery)">
+                        @Localizer["ReviewDelivery"]<Icon Name="@SortGlyph(ReviewSort.Delivery)" />
+                    </button>
+                </th>
+                <th scope="col" aria-sort="@SortState(ReviewSort.Client)">
+                    <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(ReviewSort.Client)">
+                        @Localizer["Client"]<Icon Name="@SortGlyph(ReviewSort.Client)" />
+                    </button>
+                </th>
+                <th scope="col" aria-sort="@SortState(ReviewSort.Driver)">
+                    <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(ReviewSort.Driver)">
+                        @Localizer["Driver"]<Icon Name="@SortGlyph(ReviewSort.Driver)" />
+                    </button>
+                </th>
+                <th scope="col" aria-sort="@SortState(ReviewSort.Rating)">
+                    <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(ReviewSort.Rating)">
+                        @Localizer["ReviewRating"]<Icon Name="@SortGlyph(ReviewSort.Rating)" />
+                    </button>
+                </th>
+                <th scope="col">@Localizer["ReviewText"]</th>
+                <th scope="col" aria-sort="@SortState(ReviewSort.CreatedAt)">
+                    <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(ReviewSort.CreatedAt)">
+                        @Localizer["CreatedAt"]<Icon Name="@SortGlyph(ReviewSort.CreatedAt)" />
+                    </button>
+                </th>
+                @* Only for the role that has any. A dispatcher reads the collection and writes to
+                   none of it, so an unconditional heading here would label a column of permanently
+                   empty cells; the cell below carries the same predicate, so header and row stay the
+                   same width for whoever is reading. *@
+                @if (_moderates)
+                {
+                    <th scope="col" class="dt-table-actions">
+                        <span class="dt-visually-hidden">@Localizer["Actions"]</span>
+                    </th>
+                }
+            </HeaderTemplate>
+            <RowTemplate Context="review">
+                <td>
+                    <span class="dt-visually-hidden dt-review-label">@Localizer["ReviewDelivery"]</span>
+                    @review.DeliveryId
+                </td>
+                <td>
+                    <span class="dt-visually-hidden dt-review-label">@Localizer["Client"]</span>
+                    @if (review.Client is null)
+                    {
+                        <span>@Localizer["NoClient"]</span>
+                    }
+                    @if (review.Client is not null)
+                    {
+                        <span>@review.Client.Name</span>
+                    }
+                </td>
+                <td>
+                    <span class="dt-visually-hidden dt-review-label">@Localizer["Driver"]</span>
+                    @if (review.Driver is null)
+                    {
+                        <span>@Localizer["NoDriver"]</span>
+                    }
+                    @if (review.Driver is not null)
+                    {
+                        <span>@review.Driver.Name</span>
+                    }
+                </td>
+                <td>
+                    <span class="dt-visually-hidden dt-review-label">@Localizer["ReviewRating"]</span>
+                    <DtRatingDisplay Rating="review.Rating" Band="review.Band" />
+                </td>
+                <td>
+                    <span class="dt-visually-hidden dt-review-label">@Localizer["ReviewText"]</span>
+                    @review.Text
+                </td>
+                <td>
+                    <span class="dt-visually-hidden dt-review-label">@Localizer["CreatedAt"]</span>
+                    @Moment(review.CreatedAt)
+                </td>
+                @* Editing and deleting another's review are an administrator's. Offering a
+                   dispatcher an action that could only ever fail is worse than not offering it -
+                   and this hides, the guard decides. The cell goes with the buttons rather than
+                   staying behind empty, because the heading above is conditional on the same
+                   predicate - and the per-cell name goes with the cell, or a dispatcher's card
+                   would carry a line headed "Дії" with nothing at all underneath it. *@
+                @if (_moderates)
+                {
+                    <td class="dt-table-actions">
+                        <span class="dt-visually-hidden dt-review-label">@Localizer["Actions"]</span>
+                        <button type="button" class="btn btn-secondary btn-sm dt-review-edit" @onclick="EditAny(review)">
+                            <Icon Name="IconName.Edit" />@Localizer["Edit"]
+                        </button>
+                        <button type="button" class="btn btn-danger btn-sm dt-review-delete" @onclick="Remove(review.Id)">
+                            <Icon Name="IconName.Delete" />@Localizer["Delete"]
+                        </button>
+                    </td>
+                }
+            </RowTemplate>
+        </DtDataTable>
+    }
+</div>
+
+@* A driver. Said plainly rather than shown as an empty table, which would read as "nobody has
+   written anything" instead of "this is not yours". Outside the wrapper, because the wrapper is
+   an anchor for rules about a table and this is the screen for the one role that gets none. *@
+@if (!_authors && !_readsEvery)
+{
+    <p class="dt-review-refused">@Localizer["ReviewsNotAvailable"]</p>
+}
+
+@* The one dialog every screen opens, rather than a modal of this screen's own. One heading
+   for both writing and editing - a title composed at run time would be a key no test can see, and
+   the catalogue is closed against the keys components literally ask for. *@
+<DtDialog @ref="_formDialog" Title="@Localizer["ReviewForm"]" OnClosed="CloseForm">
+    <ChildContent>
+        @* The same list as the one at the top of the page, and deliberately a second copy. A
+           DtDialog opens with showModal(), so everything outside it is inert behind the backdrop: a
+           refusal rendered only up there is a message nobody can see, and the form would simply
+           fail to close.
+
+           It replaces that one rather than joining it: the copy above stands down while this is
+           open, so a refused save is one live region announcing once. *@
+        @* REVIEW_DELIVERY_NOT_COMPLETED names no field, so it stays here; the scale and the text
+           each state their own refusal under themselves. *@
+        @if (_formOpen)
+        {
+            <DtFailureBanner Failures="_failures" InlineFields="@InlineFields" />
+        }
+
+        @* Only when writing a new one. A review is keyed one-to-one on its delivery, so moving an
+           existing one is deleting it and writing another - there is nothing here to change. *@
+        @if (_editingId is null)
+        {
+            <div class="mb-4">
+                <label class="form-label" for="review-delivery">@Localizer["ReviewDelivery"]</label>
+                <DtSelect Id="review-delivery" @bind-Value="_form.DeliveryId">
+                    @foreach (var delivery in _reviewable)
+                    {
+                        <option value="@delivery.Id">@Localizer["ReviewDelivery"] @delivery.Id</option>
+                    }
+                </DtSelect>
+                @* The review rule's two halves, said once: only a finished delivery, and only one
+                   review each. The list above is already narrowed to both, so this explains why a
+                   client who expected to see a parcel here does not. *@
+                <div class="form-text">@Localizer["ReviewDeliveryHint"]</div>
+            </div>
+        }
+
+        <div class="mb-4">
+            <label class="form-label" for="review-rating">@Localizer["ReviewRating"]</label>
+            @* The options are the scale's own values, so the control cannot offer a number the
+               column would refuse. It opens on RatingScale.Default. *@
+            <DtSelect Id="review-rating" @bind-Value="_form.Rating">
+                @foreach (var value in Scale)
+                {
+                    <option value="@value">@value</option>
+                }
+            </DtSelect>
+            <DtFieldError Field="Rating" Failures="_failures" />
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label" for="review-text">@Localizer["ReviewText"]</label>
+            <textarea id="review-text" class="form-control" rows="4"
+                      maxlength="@CreateReviewCommandValidator.TextMaximumLength"
+                      @bind="_form.Text"></textarea>
+            <DtFieldError Field="Text" Failures="_failures" />
+        </div>
+    </ChildContent>
+    <Actions>
+        @* Disabled while a save is in flight: the circuit yields at the await, so a second click
+           would post the same verdict twice. *@
+        <button type="button" class="dt-review-save @SaveVariant" disabled="@_saving"
+                @onclick="SaveAsync">
+            <Icon Name="@SaveGlyph" />@Localizer["Save"]
+        </button>
+        <button type="button" class="btn btn-outline-secondary dt-review-cancel" @onclick="CloseFormAsync">
+            <Icon Name="IconName.Close" />@Localizer["Cancel"]
+        </button>
+    </Actions>
+</DtDialog>
+
+@* Every delete is confirmed, the author's own as much as the moderator's. One
+   prompt for both, because it is one destructive action - which is the whole reason the
+   confirmation is a shared component rather than a convention each screen remembers. *@
+<DtConfirmDialog @ref="_deleteDialog"
+                 Title="@Localizer["DeleteReviewTitle"]"
+                 Message="@Localizer["DeleteReviewMessage"]"
+                 OnConfirmed="DeleteAsync" />
+
+@code {
+    /// <summary>
+    /// The boxes this screen renders a <c>DtFieldError</c> for. Stated once and bound by every
+    /// banner on the page: the list repeated per banner is exactly the drift that loses a refusal,
+    /// and a screen carries the banner more than once because a dialog opened with showModal()
+    /// leaves the page behind it inert.
+    /// </summary>
+    private const string InlineFields = "Rating,Text";
+
+    /// <summary>
+    /// The values the rating control offers: the scale itself, so the form cannot present a number
+    /// the check constraint would refuse.
+    /// </summary>
+    private static readonly int[] Scale =
+        [.. Enumerable.Range(RatingScale.Minimum, RatingScale.Maximum - RatingScale.Minimum + 1)];
+
+    private readonly ReviewForm _form = new();
+
+    private DtDialog? _formDialog;
+    private DtConfirmDialog? _deleteDialog;
+
+    /// <summary>The author's page, when the caller is a client: the one table they are shown.</summary>
+    private Paged<AuthoredReviewSummary>? _minePage;
+
+    /// <summary>The moderation page, when the caller runs dispatch or the system.</summary>
+    private Paged<ReviewSummary>? _allPage;
+    private IReadOnlyList<AssignedDeliverySummary> _reviewable = [];
+    private IReadOnlyList<ScreenFailure> _failures = [];
+
+    /// <summary>
+    /// The save action's variant, which follows the mode the dialog is in: creating a record is a
+    /// create action and takes the create colour, and changing one that already exists is an edit.
+    /// <para>
+    /// One dialog serves both modes, so the button is the only thing on screen that can say which
+    /// one the reader is in - and the palette gives the two actions different colours precisely so
+    /// that it does. Resolved here rather than as a ternary in the attribute, for the reason
+    /// <c>DtDialog</c> resolves its panel class into a property.
+    /// </para>
+    /// <para>
+    /// Only the variant: the hook stays written out on the button itself, so the source still shows
+    /// which control this is - and it is the hook a test names, because asserting the mode by the
+    /// variant would be a test that passes the day somebody paints a delete button teal.
+    /// </para>
+    /// </summary>
+    private string SaveVariant => _editingId is null
+        ? "btn btn-primary"
+        : "btn btn-secondary";
+
+    /// <summary>
+    /// The glyph beside it, following the same mode: the create mark when the dialog is making a
+    /// record and the confirm mark when it is saving changes to one. The icon and the colour move
+    /// together, because colour is never allowed to be the only signal.
+    /// </summary>
+    private IconName SaveGlyph => _editingId is null ? IconName.Create : IconName.Confirm;
+
+    private int? _editingId;
+    private int? _pendingDelete;
+
+    private bool _authors;
+    private bool _readsEvery;
+    private bool _moderates;
+
+    /// <summary>
+    /// True while a save is in flight, which is what disables the save button for as long as it
+    /// lasts. The circuit yields at the await, so without it a second click would post the same
+    /// verdict twice.
+    /// </summary>
+    private bool _saving;
+
+    /// <summary>
+    /// Whether the write dialog is on screen, which decides where a refusal is rendered.
+    /// <para>
+    /// Kept here rather than read off the element, because the page needs it while it renders:
+    /// exactly one <c>role="alert"</c> region may be in the DOM, or one refusal is announced twice.
+    /// Cleared through <c>DtDialog.OnClosed</c>, so Escape and the backdrop count as
+    /// closing it just as the cancel action does.
+    /// </para>
+    /// </summary>
+    private bool _formOpen;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // The circuit outlives the request that opened it, so the cookie can be gone by the time a
+        // screen calls a service. Raising the contract's own code here is what puts that case
+        // through the single session-expiry boundary instead of a per-screen redirect.
+        if (!Caller.IsAuthenticated)
+        {
+            throw new ForbiddenException(
+                ErrorCode.AUTH_UNAUTHENTICATED,
+                "The circuit has no authenticated caller: the session cookie is gone.");
+        }
+
+        // Read once, after the authenticated check: ICurrentUser.Role throws for an anonymous
+        // caller, so asking outside that branch would take the screen down instead of refusing it.
+        var role = Caller.Role;
+
+        _authors = ReviewViews.Authors(role);
+        _readsEvery = ReviewViews.ReadsEveryReview(role);
+        _moderates = ReviewViews.Moderates(role);
+
+        await LoadReviewableAsync();
+
+        await base.OnInitializedAsync();
+    }
+
+    /// <summary>
+    /// A driver reads no review and is shown a sentence instead of a table, so there is nothing to
+    /// list; every other role reads exactly one of the two tables.
+    /// </summary>
+    protected override bool ReadyToList => _authors || _readsEvery;
+
+    /// <summary>Newest first: the review a moderator or an author opens the screen for is the latest.</summary>
+    protected override ReviewSort DefaultSort => ReviewSort.CreatedAt;
+
+    /// <inheritdoc />
+    protected override bool DefaultDescending => true;
+
+    /// <summary>
+    /// The author's table sorts by its three ordered columns; the moderation table adds the two
+    /// party names, which the author's list does not carry.
+    /// </summary>
+    protected override IReadOnlyCollection<ReviewSort> Sortable => _readsEvery
+        ? [ReviewSort.Delivery, ReviewSort.Client, ReviewSort.Driver, ReviewSort.Rating, ReviewSort.CreatedAt]
+        : [ReviewSort.Delivery, ReviewSort.Rating, ReviewSort.CreatedAt];
+
+    /// <inheritdoc />
+    protected override ListReviewsQuery Compose(int offset, int limit, ReviewSort sort, bool descending) =>
+        new(offset, limit, sort.ToString(), descending);
+
+    /// <inheritdoc />
+    protected override (int Offset, int Limit, ReviewSort Sort, bool Descending) Paging(ListReviewsQuery view) =>
+        (view.Offset, view.Limit, ListSort.Parse<ReviewSort>(view.Sort) ?? DefaultSort, view.Descending);
+
+    /// <inheritdoc />
+    protected override ListReviewsQuery Repaged(
+        ListReviewsQuery view,
+        int offset,
+        int limit,
+        ReviewSort sort,
+        bool descending) =>
+        view with { Offset = offset, Limit = limit, Sort = sort.ToString(), Descending = descending };
+
+    /// <summary>
+    /// The role's one table. The two are different row types - the author's carries no party at all
+    /// - so the page travels untyped through the shared paging and is split again in
+    /// <see cref="OnListed" />.
+    /// </summary>
+    protected override async Task<Paged<object>?> FetchAsync(ListReviewsQuery view)
+    {
+        try
+        {
+            if (_authors)
+            {
+                return (await Verdicts.ListMineAsync(view, CircuitToken)).Map(review => (object)review);
+            }
+
+            return (await Verdicts.ListAsync(view, CircuitToken)).Map(review => (object)review);
+        }
+        catch (DriveTrackException failure)
+        {
+            _failures = FailureKeys.For(failure);
+
+            return null;
+        }
+    }
+
+    /// <inheritdoc />
+    protected override void OnListed(Paged<object> page)
+    {
+        if (_authors)
+        {
+            _minePage = page.Map(row => (AuthoredReviewSummary)row);
+        }
+
+        if (_readsEvery)
+        {
+            _allPage = page.Map(row => (ReviewSummary)row);
+        }
+    }
+
+    /// <summary>After a write: the picker's reviewable deliveries and the page on screen, both read again.</summary>
+    private async Task ReloadAsync()
+    {
+        await LoadReviewableAsync();
+        await LoadAsync();
+    }
+
+    /// <summary>
+    /// The deliveries the write form may offer, read unpaged: a delivery already reviewed has to be
+    /// left out whichever page of the table its review sits on, and a finished delivery has to be
+    /// offered whichever page of the caller's deliveries it would sit on.
+    /// </summary>
+    private async Task LoadReviewableAsync()
+    {
+        if (!_authors)
+        {
+            return;
+        }
+
+        try
+        {
+            _reviewable = await ReviewableAsync(await Verdicts.ListAllMineAsync(CircuitToken));
+        }
+        catch (DriveTrackException failure)
+        {
+            _failures = FailureKeys.For(failure);
+        }
+    }
+
+    /// <summary>
+    /// The caller's own deliveries they may still review: finished, and not already reviewed.
+    /// <para>
+    /// Both halves are the client's convenience rather than the rule. The service refuses an
+    /// unfinished delivery with <c>REVIEW_DELIVERY_NOT_COMPLETED</c> and the unique index refuses a
+    /// second review with a 409, whatever this list offered — which is what makes it safe to narrow
+    /// here without a second authorization decision living on a screen.
+    /// </para>
+    /// </summary>
+    private async Task<IReadOnlyList<AssignedDeliverySummary>> ReviewableAsync(
+        IReadOnlyList<AuthoredReviewSummary> written)
+    {
+        var reviewed = written.Select(review => review.DeliveryId).ToHashSet();
+
+        var own = await Parcels.ListAllMineAsync(CircuitToken);
+
+        return
+        [
+            .. own.Where(delivery =>
+                delivery.Status is DeliveryStatus.Delivered or DeliveryStatus.Failed
+                && !reviewed.Contains(delivery.Id)),
+        ];
+    }
+
+    private Func<Task> EditMine(AuthoredReviewSummary review) =>
+        () => OpenEditAsync(review.Id, review.Rating, review.Text);
+
+    private Func<Task> EditAny(ReviewSummary review) =>
+        () => OpenEditAsync(review.Id, review.Rating, review.Text);
+
+    private Func<Task> Remove(int id) => () => OpenDeleteAsync(id);
+
+    private async Task OpenCreateAsync()
+    {
+        _editingId = null;
+        _failures = [];
+
+        // Preselected rather than left blank: an unset picker submits no delivery, and "no
+        // delivery" is a 404 from the scoped read - a true answer to a question the client did not
+        // mean to ask.
+        _form.Reset(_reviewable.Count > 0 ? _reviewable[0].Id : null);
+
+        _formOpen = true;
+
+        if (_formDialog is not null)
+        {
+            await _formDialog.ShowAsync();
+        }
+    }
+
+    private async Task OpenEditAsync(int id, int rating, string text)
+    {
+        _editingId = id;
+        _failures = [];
+
+        _form.Fill(rating, text);
+
+        _formOpen = true;
+
+        if (_formDialog is not null)
+        {
+            await _formDialog.ShowAsync();
+        }
+    }
+
+    private async Task OpenDeleteAsync(int id)
+    {
+        _pendingDelete = id;
+        _failures = [];
+
+        if (_deleteDialog is not null)
+        {
+            await _deleteDialog.ShowAsync();
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_saving)
+        {
+            return;
+        }
+
+        // Set before the await and cleared in the finally: the button is disabled from the moment
+        // the first click is handled until the server has answered, so a second click has nothing
+        // to act on.
+        _saving = true;
+
+        try
+        {
+            if (_editingId is { } id)
+            {
+                // Both fields are sent because both are on the form. Absent would mean
+                // "leave it alone", which is not what a filled-in form says.
+                await Verdicts.UpdateAsync(
+                    id,
+                    new UpdateReviewCommand(
+                        Optional<int>.Present(_form.Rating),
+                        Optional<string>.Present(_form.Text)),
+                    CircuitToken);
+            }
+
+            if (_editingId is null)
+            {
+                await Verdicts.CreateAsync(
+                    new CreateReviewCommand(_form.DeliveryId ?? 0, _form.Rating, _form.Text),
+                    CircuitToken);
+            }
+        }
+        catch (DriveTrackException failure)
+        {
+            _failures = FailureKeys.For(failure);
+
+            return;
+        }
+        finally
+        {
+            _saving = false;
+        }
+
+        // Cleared on the way out, not only when a dialog opens: the banner is rendered at page
+        // level as well as inside the dialog, so a refused attempt that is then corrected and
+        // accepted would otherwise leave the failure standing on the page behind the closed
+        // dialog, contradicting the row the user can see was written.
+        _failures = [];
+
+        // Outside the try, because the write has already committed by now: a refetch that failed
+        // inside it would be caught and rendered as though the write had been refused, which is the
+        // one thing the user must not be told.
+        await CloseFormAsync();
+        await ReloadAsync();
+    }
+
+    private async Task DeleteAsync()
+    {
+        if (_pendingDelete is not { } id)
+        {
+            return;
+        }
+
+        try
+        {
+            await Verdicts.DeleteAsync(id, CircuitToken);
+        }
+        catch (DriveTrackException failure)
+        {
+            _failures = FailureKeys.For(failure);
+
+            return;
+        }
+
+        // Cleared here too: a refused delete followed by a confirmed one would otherwise leave the
+        // refusal standing above a table the row is already gone from.
+        _failures = [];
+        _pendingDelete = null;
+
+        await ReloadAsync();
+    }
+
+    private async Task CloseFormAsync()
+    {
+        if (_formDialog is not null)
+        {
+            await _formDialog.CloseAsync();
+        }
+    }
+
+    /// <summary>
+    /// Raised once for every dismissal — the cancel action, Escape or the backdrop — which is why
+    /// the flag is cleared here and not in <see cref="CloseFormAsync"/>: a dialog dismissed by the
+    /// platform would otherwise leave the page with no live region at all.
+    /// </summary>
+    /// <summary>
+    /// Stands the dialog's banner down, and drops the refusals with it.
+    /// <para>
+    /// The list has to go too, not just the flag. A refusal claimed by the scale or the text is
+    /// subtracted from the page-level banner this restores, so leaving it populated would leave
+    /// that sentence with nowhere on the page to render.
+    /// </para>
+    /// </summary>
+    private void CloseForm()
+    {
+        _formOpen = false;
+        _failures = [];
+    }
+
+    /// <summary>
+    /// An instant as this screen shows it. Local time against the current culture; the
+    /// circuit runs interactively on the server, so <c>ToLocalTime</c> resolves against the host -
+    /// the same reading every other screen in the product gives a stored instant.
+    /// </summary>
+    private static string Moment(DateTimeOffset value) =>
+        value.ToLocalTime().ToString("g", System.Globalization.CultureInfo.CurrentCulture);
+
+    /// <summary>
+    /// What the dialog is bound to. A form object rather than the command itself: a command is what
+    /// is sent once the boxes are filled, and a half-filled box is not a value the contract has to
+    /// be able to carry.
+    /// </summary>
+    private sealed class ReviewForm
+    {
+        /// <summary>The delivery being reviewed. Null only before the first delivery is offered.</summary>
+        public int? DeliveryId { get; set; }
+
+        /// <summary>The score. Opens on the scale's default rather than on zero, which is off it.</summary>
+        public int Rating { get; set; } = RatingScale.Default;
+
+        /// <summary>The comment.</summary>
+        public string? Text { get; set; }
+
+        /// <summary>Clears the form for a new review, aimed at the delivery given.</summary>
+        public void Reset(int? deliveryId)
+        {
+            DeliveryId = deliveryId;
+            Rating = RatingScale.Default;
+            Text = null;
+        }
+
+        /// <summary>Fills the form from a stored review.</summary>
+        public void Fill(int rating, string text)
+        {
+            DeliveryId = null;
+            Rating = rating;
+            Text = text;
+        }
+    }
+}

@@ -1,0 +1,211 @@
+using DriveTrack.Application.Common;
+using DriveTrack.Application.Common.Errors;
+using Microsoft.AspNetCore.Http;
+
+namespace DriveTrack.Web.Api.Envelope;
+
+/// <summary>
+/// The one status table. Equivalent failures return the same status code everywhere, which
+/// is only true if there is exactly one place that decides, so every writer in this folder asks
+/// here and nothing maps a status inline.
+/// </summary>
+internal static class ErrorContract
+{
+    /// <summary>
+    /// The HTTP status for a contract code.
+    /// <para>
+    /// The throwing default arm makes this switch exhaustive to the compiler, so CS8509 can never
+    /// fire here: the gate on a member added without a status is
+    /// <c>ErrorContractTests.Every_error_code_has_a_status</c>, which calls this for every declared
+    /// member. Throwing rather than returning 500 is what makes that gate possible - a plausible
+    /// fallback would pass the test and answer the wrong status in production.
+    /// </para>
+    /// </summary>
+    public static int StatusFor(ErrorCode code) => code switch
+    {
+        ErrorCode.COMMON_UNEXPECTED_ERROR => StatusCodes.Status500InternalServerError,
+        ErrorCode.COMMON_NOT_FOUND => StatusCodes.Status404NotFound,
+        ErrorCode.COMMON_VALIDATION_FAILED => StatusCodes.Status422UnprocessableEntity,
+        ErrorCode.COMMON_CONFLICT => StatusCodes.Status409Conflict,
+
+        // Every refusal a validator states about one field of the request. They travel as
+        // field keys inside COMMON_VALIDATION_FAILED, which is itself 422, so the arm and the
+        // envelope agree whichever way the failure is reached.
+        ErrorCode.COMMON_FIELD_REQUIRED => StatusCodes.Status422UnprocessableEntity,
+        ErrorCode.COMMON_PAGING_OFFSET_INVALID => StatusCodes.Status422UnprocessableEntity,
+        ErrorCode.COMMON_PAGING_LIMIT_INVALID => StatusCodes.Status422UnprocessableEntity,
+        ErrorCode.COMMON_SORT_INVALID => StatusCodes.Status422UnprocessableEntity,
+        ErrorCode.COMMON_COORDINATE_OUT_OF_RANGE => StatusCodes.Status422UnprocessableEntity,
+        ErrorCode.AUTH_UNAUTHENTICATED => StatusCodes.Status401Unauthorized,
+        ErrorCode.AUTH_FORBIDDEN => StatusCodes.Status403Forbidden,
+
+        // 401, not 403: no usable credentials were established, and the caller's next move is to
+        // present some. The status comes from the code, never from the exception type - which is
+        // why a ForbiddenException carrying this code still answers 401.
+        ErrorCode.AUTH_INVALID_CREDENTIALS => StatusCodes.Status401Unauthorized,
+
+        // A genuine collision with a row that already exists, like every other 409 here.
+        ErrorCode.AUTH_EMAIL_ALREADY_IN_USE => StatusCodes.Status409Conflict,
+
+        // Four refusals on the content of the request.
+        ErrorCode.AUTH_EMAIL_INVALID => StatusCodes.Status422UnprocessableEntity,
+        ErrorCode.AUTH_PHONE_NUMBER_INVALID => StatusCodes.Status422UnprocessableEntity,
+        ErrorCode.AUTH_PASSWORD_TOO_WEAK => StatusCodes.Status422UnprocessableEntity,
+        ErrorCode.AUTH_PASSWORD_CONFIRMATION_MISMATCH => StatusCodes.Status422UnprocessableEntity,
+
+        // 422 rather than 401 for the reason the code itself sets out: the caller is
+        // signed in and it is one field of their request that was refused. A 401 here would reach
+        // the session-expiry boundary as an expired session and send them back to sign-in.
+        ErrorCode.AUTH_CURRENT_PASSWORD_INCORRECT => StatusCodes.Status422UnprocessableEntity,
+
+        // Three more refusals on the content, stated per field rather than per request.
+        ErrorCode.AUTH_FIRST_NAME_TOO_LONG => StatusCodes.Status422UnprocessableEntity,
+        ErrorCode.AUTH_LAST_NAME_TOO_LONG => StatusCodes.Status422UnprocessableEntity,
+        ErrorCode.AUTH_PASSWORD_TOO_LONG => StatusCodes.Status422UnprocessableEntity,
+
+        // Three genuine collisions with the current state of another row.
+        // Each is a refusal the caller can act on - free the vehicle, unassign the driver, choose
+        // another plate - which is why they are distinct codes rather than one COMMON_CONFLICT.
+        ErrorCode.FLEET_VEHICLE_ALREADY_ASSIGNED => StatusCodes.Status409Conflict,
+        ErrorCode.FLEET_VEHICLE_IN_USE => StatusCodes.Status409Conflict,
+        ErrorCode.FLEET_LICENSE_PLATE_IN_USE => StatusCodes.Status409Conflict,
+
+        // The fleet's own field refusals: a value the caller sent, not a collision with a row.
+        ErrorCode.FLEET_MODEL_TOO_LONG => StatusCodes.Status422UnprocessableEntity,
+        ErrorCode.FLEET_LICENSE_PLATE_TOO_LONG => StatusCodes.Status422UnprocessableEntity,
+        ErrorCode.FLEET_CAPACITY_NOT_POSITIVE => StatusCodes.Status422UnprocessableEntity,
+        ErrorCode.FLEET_CAPACITY_TOO_LARGE => StatusCodes.Status422UnprocessableEntity,
+        ErrorCode.FLEET_MILEAGE_NEGATIVE => StatusCodes.Status422UnprocessableEntity,
+        ErrorCode.FLEET_LICENSE_NUMBER_TOO_LONG => StatusCodes.Status422UnprocessableEntity,
+
+        // A delivery named a party that is not there. 404 rather than 422, because the
+        // failure is a row that does not exist and not a value that is malformed - and distinct
+        // from COMMON_NOT_FOUND, because the resource the caller addressed does exist. A dispatcher
+        // told "driver not found" knows to pick another driver; one told "not found" does not know
+        // whether the delivery itself is gone.
+        ErrorCode.DELIVERY_DRIVER_NOT_FOUND => StatusCodes.Status404NotFound,
+        ErrorCode.DELIVERY_CLIENT_NOT_FOUND => StatusCodes.Status404NotFound,
+
+        // The capacity rule, and a 409 for the same reason the three fleet codes are: the request collides
+        // with the current state of another row - the vehicle the driver holds - and the caller's
+        // next move is to change one of the two figures.
+        ErrorCode.DELIVERY_EXCEEDS_VEHICLE_CAPACITY => StatusCodes.Status409Conflict,
+
+        // The delivery capability's field refusals, every one of them a value the payload carried.
+        // DELIVERY_WINDOW_ENDS_BEFORE_IT_STARTS is 422 rather than 409 for the reason
+        // SHIFT_ENDED_BEFORE_STARTED is: the two instants are both in the request, so it is the
+        // content that is wrong and not the state of a row.
+        ErrorCode.DELIVERY_PACKAGE_DETAILS_TOO_LONG => StatusCodes.Status422UnprocessableEntity,
+        ErrorCode.DELIVERY_NOTES_TOO_LONG => StatusCodes.Status422UnprocessableEntity,
+        ErrorCode.DELIVERY_PACKAGE_WEIGHT_NOT_POSITIVE => StatusCodes.Status422UnprocessableEntity,
+        ErrorCode.DELIVERY_PACKAGE_WEIGHT_TOO_LARGE => StatusCodes.Status422UnprocessableEntity,
+        ErrorCode.DELIVERY_WINDOW_ENDS_BEFORE_IT_STARTS => StatusCodes.Status422UnprocessableEntity,
+        ErrorCode.DELIVERY_NOTE_TOO_LONG => StatusCodes.Status422UnprocessableEntity,
+        ErrorCode.DELIVERY_STATUS_UNKNOWN => StatusCodes.Status422UnprocessableEntity,
+        ErrorCode.DELIVERY_RECIPIENT_NAME_TOO_LONG => StatusCodes.Status422UnprocessableEntity,
+        ErrorCode.DELIVERY_PROOF_SIGNATURE_REQUIRED => StatusCodes.Status422UnprocessableEntity,
+        ErrorCode.DELIVERY_PROOF_PHOTO_REQUIRED => StatusCodes.Status422UnprocessableEntity,
+        ErrorCode.DELIVERY_PROOF_TOO_MANY_PHOTOS => StatusCodes.Status422UnprocessableEntity,
+        ErrorCode.DELIVERY_PLACE_QUERY_TOO_SHORT => StatusCodes.Status422UnprocessableEntity,
+
+        // A refused status transition, "never a validation error" written as a status: the request named a
+        // status that exists and a delivery that exists, and what refused it is where that delivery
+        // currently is. A 422 here would mean the payload was malformed, and a caller acting on
+        // that would keep re-sending a correct request with different spelling.
+        ErrorCode.DELIVERY_INVALID_STATUS_TRANSITION => StatusCodes.Status409Conflict,
+
+        // The proof rules, and 409 for the same reason a refused transition is one: the request was
+        // well formed and what refused it is the state of the delivery - it has no proof and no
+        // note, or it already has a proof and a proof is never replaced. A 422 would tell a driver
+        // to re-spell a payload that was correct.
+        ErrorCode.DELIVERY_PROOF_REQUIRED => StatusCodes.Status409Conflict,
+        ErrorCode.DELIVERY_PROOF_ALREADY_CAPTURED => StatusCodes.Status409Conflict,
+
+        // The upload limits, and 422 because these two really are about the content of the request: the file
+        // is the wrong sort of file, or it is too big. Both travel as field keys inside
+        // COMMON_VALIDATION_FAILED, so the status the validator's own code carries is the one that
+        // reaches the caller - these arms exist because the status map is total, and because a future
+        // path that threw one of them directly must not answer 500.
+        ErrorCode.DELIVERY_PROOF_ASSET_TYPE_NOT_ALLOWED => StatusCodes.Status422UnprocessableEntity,
+        ErrorCode.DELIVERY_PROOF_ASSET_TOO_LARGE => StatusCodes.Status422UnprocessableEntity,
+
+        // 404 for the reason DELIVERY_DRIVER_NOT_FOUND is one: a thread is keyed on a
+        // driver row, so a driver that does not exist is a conversation that does not exist rather
+        // than an empty one. Distinct from COMMON_NOT_FOUND because the missing row is the one the
+        // caller named, and a dispatcher told that can pick another driver.
+        ErrorCode.CHAT_THREAD_NOT_FOUND => StatusCodes.Status404NotFound,
+
+        // The two refusals on the content of the message. Both travel as field keys inside
+        // COMMON_VALIDATION_FAILED, so the status the validator's own code carries is the one that
+        // reaches a caller - these arms exist because the status map is total, and because a future path
+        // that threw one of them directly must not answer 500.
+        ErrorCode.CHAT_MESSAGE_TEXT_REQUIRED => StatusCodes.Status422UnprocessableEntity,
+        ErrorCode.CHAT_MESSAGE_TEXT_TOO_LONG => StatusCodes.Status422UnprocessableEntity,
+
+        // The four review refusals, all on the content of the request.
+        //
+        // The first is the one worth arguing. A review of an unfinished delivery looks like the
+        // status refusals above - the row's state is what says no - but it is not the same failure:
+        // there, the caller addressed a delivery and asked it to move, and the delivery refused;
+        // here, the caller is opening a new row and the delivery is a *value in their payload* that
+        // names the wrong one. A 409 would tell a client to try the same request again later, when
+        // what they should do is pick a different delivery.
+        //
+        // The other three travel as field keys inside COMMON_VALIDATION_FAILED, so the status the
+        // validator's own code carries is the one that reaches a caller - these arms exist because
+        // the status map is total, and because a future path throwing one of them directly must not
+        // answer 500.
+        ErrorCode.REVIEW_DELIVERY_NOT_COMPLETED => StatusCodes.Status422UnprocessableEntity,
+        ErrorCode.REVIEW_RATING_OUT_OF_RANGE => StatusCodes.Status422UnprocessableEntity,
+        ErrorCode.REVIEW_TEXT_REQUIRED => StatusCodes.Status422UnprocessableEntity,
+        ErrorCode.REVIEW_TEXT_TOO_LONG => StatusCodes.Status422UnprocessableEntity,
+
+        // The three shift refusals.
+        //
+        // The first two are 409 for the reason a refused transition is one: the payload named a driver
+        // who exists and it is the state of their shifts that refuses the request - they are already
+        // on duty, or they are not on duty at all. A 422 would tell a driver to re-spell a request
+        // that was correct, when what they should do is press the other button. The first is also
+        // the friendly twin of PERSISTENCE_UNIQUE_VIOLATION below: the index raises that one when
+        // two requests race, and equivalent failures share a status only because both answer 409.
+        ErrorCode.SHIFT_ALREADY_OPEN => StatusCodes.Status409Conflict,
+        ErrorCode.SHIFT_NOT_OPEN => StatusCodes.Status409Conflict,
+
+        // The third really is about the content: a window that runs backwards is two values the
+        // caller sent. It travels as a field key inside COMMON_VALIDATION_FAILED, so the status the
+        // validator's own code carries is the one that reaches a caller - this arm exists because
+        // the status map is total, and because a future path throwing it directly must not answer 500.
+        ErrorCode.SHIFT_ENDED_BEFORE_STARTED => StatusCodes.Status422UnprocessableEntity,
+        ErrorCode.SHIFT_OPEN_START_IN_FUTURE => StatusCodes.Status422UnprocessableEntity,
+        ErrorCode.SHIFT_OVERLAPS_EXISTING => StatusCodes.Status409Conflict,
+
+        // The persistence translation splits the two constraint kinds where the wire contract folds
+        // them together, and the split is the more specific rule: a unique violation is a genuine conflict with another row, a check
+        // violation is a value the caller should not have sent. That split is what keeps the one-status
+        // rule honest - a rating of 6 is 422 whether the validator or the database catches it.
+        ErrorCode.PERSISTENCE_UNIQUE_VIOLATION => StatusCodes.Status409Conflict,
+        ErrorCode.PERSISTENCE_CHECK_VIOLATION => StatusCodes.Status422UnprocessableEntity,
+
+        _ => throw new ArgumentOutOfRangeException(
+            nameof(code),
+            code,
+            "No status is mapped for this error code. The status map is total: add an arm here "
+                + "and a resource key in ErrorMessages.resx when minting a code."),
+    };
+
+    /// <summary>
+    /// The contract code for a status the framework produced on its own - a router 404, an
+    /// authorization 403, a status set by an action with no value. Everything unrecognised is
+    /// <c>COMMON_UNEXPECTED_ERROR</c>, because an unmodelled failure is a defect, not a client error.
+    /// </summary>
+    public static ErrorCode DefaultCodeFor(int statusCode) => statusCode switch
+    {
+        StatusCodes.Status401Unauthorized => ErrorCode.AUTH_UNAUTHENTICATED,
+        StatusCodes.Status403Forbidden => ErrorCode.AUTH_FORBIDDEN,
+        StatusCodes.Status404NotFound => ErrorCode.COMMON_NOT_FOUND,
+        StatusCodes.Status409Conflict => ErrorCode.COMMON_CONFLICT,
+        StatusCodes.Status400BadRequest => ErrorCode.COMMON_VALIDATION_FAILED,
+        StatusCodes.Status422UnprocessableEntity => ErrorCode.COMMON_VALIDATION_FAILED,
+        _ => ErrorCode.COMMON_UNEXPECTED_ERROR,
+    };
+}

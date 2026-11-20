@@ -1,4 +1,5 @@
-using DriveTrack.Domain.Identity;
+
+using DriveTrack.Domain.Drivers;
 
 namespace DriveTrack.Application.Shifts;
 

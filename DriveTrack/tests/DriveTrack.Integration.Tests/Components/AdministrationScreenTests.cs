@@ -5,7 +5,9 @@ using DriveTrack.Application.Accounts.Dispatchers;
 using DriveTrack.Application.Authorization;
 using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Paging;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Accounts;
+using DriveTrack.Domain.Clients;
+using DriveTrack.Domain.Drivers;
 using DriveTrack.Integration.Tests.Support;
 using DriveTrack.Web.Components.Pages.Admin;
 using Microsoft.AspNetCore.Components;
@@ -315,11 +317,11 @@ public class AdministrationScreenTests
         // <AuthorizeView> here would be a second copy of that rule, worded differently, that no
         // test of the rule would ever read.
         //
-        // What this does not pin, and cannot: Clients.razor reads ICurrentUser.Role in C# to hide
+        // What this does not pin, and cannot: ClientsPage.razor reads ICurrentUser.Role in C# to hide
         // buttons a dispatcher's write would only fail on. That is a rendering decision the guard
         // still overrules, and it is invisible to a source scan by construction - so read this as
         // "no authorization construct in the markup", not as "no mention of a role anywhere".
-        foreach (var name in new[] { "Clients.razor", "Dispatchers.razor" })
+        foreach (var name in new[] { "ClientsPage.razor", "DispatchersPage.razor" })
         {
             var screen = SharedMarkup.ReadComponent("Pages", "Admin", name);
 
@@ -335,7 +337,7 @@ public class AdministrationScreenTests
         }
 
         // And no component anywhere reintroduced the pattern. Razor comments are stripped first:
-        // Home.razor explains in prose why it uses ICurrentUser instead, and an explanation of a
+        // HomePage.razor explains in prose why it uses ICurrentUser instead, and an explanation of a
         // rule is not a breach of it.
         var offenders = Directory
             .GetFiles(SharedMarkup.ComponentsDirectory, "*.razor", SearchOption.AllDirectories)
@@ -646,12 +648,12 @@ public class AdministrationScreenTests
             .Select(match => match.Groups["body"].Value);
 
     internal static Task<string> RenderClientsAsync(UserRole role = UserRole.Admin) =>
-        RenderAsync<Web.Components.Pages.Admin.Clients>(
+        RenderAsync<Web.Components.Pages.Admin.ClientsPage>(
             role,
             services => services.AddSingleton<IClientAdministrationService>(new StubClients()));
 
     internal static Task<string> RenderDispatchersAsync() =>
-        RenderAsync<Web.Components.Pages.Admin.Dispatchers>(
+        RenderAsync<Web.Components.Pages.Admin.DispatchersPage>(
             UserRole.Admin,
             services => services.AddSingleton<IDispatcherAdministrationService>(new StubDispatchers()));
 

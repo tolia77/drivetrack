@@ -1,4 +1,5 @@
-using DriveTrack.Domain.Identity;
+
+using DriveTrack.Domain.Accounts;
 
 namespace DriveTrack.Web.Components.Layout;
 
@@ -95,7 +96,7 @@ internal static class NavDestinations
     /// Not in <see cref="Personal"/>, and the distinction is the whole point of this table. A
     /// dispatcher and an admin are party to no delivery, so their scope narrows nothing and the
     /// screen would show them the whole board under a heading that says "mine" - which is why
-    /// <c>MyDeliveries.razor</c> carries <c>[Authorize(Roles = "Driver,Client")]</c> and would send
+    /// <c>MyDeliveriesPage.razor</c> carries <c>[Authorize(Roles = "Driver,Client")]</c> and would send
     /// them to /access-denied. Offering a link that can only ever refuse is worse than not
     /// offering it: this table decides what is worth showing, and that is not.
     /// </para>

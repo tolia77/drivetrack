@@ -1,6 +1,6 @@
 @inject IStringLocalizer<UiText> Localizer
 
-<Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(Pages.NotFound)">
+<Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(Pages.Errors.NotFoundPage)">
     <Found Context="routeData">
         @* The route view's NotAuthorized branch is a convenience, not the decision. It keeps
            an anonymous visitor off a signed-in screen; whether a caller may perform an operation is

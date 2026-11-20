@@ -1,5 +1,5 @@
 using System.Reflection;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Accounts;
 using DriveTrack.Integration.Tests.Architecture;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;

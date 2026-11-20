@@ -5,7 +5,8 @@ using DriveTrack.Application.Common.Locations;
 using DriveTrack.Application.Deliveries;
 using DriveTrack.Application.Deliveries.Proof;
 using DriveTrack.Integration.Tests.Support;
-using DriveTrack.Web.Components.Shared;
+using DriveTrack.Web.Components.Pages.Deliveries.Proof;
+using DriveTrack.Web.Components.Shared.Screens;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DriveTrack.Integration.Tests.Components;
@@ -36,12 +37,12 @@ public class CircuitCancellationTests
     /// load-bearing, and two kinds of screen sit outside the rule for two different reasons:
     /// <list type="bullet">
     /// <item><description>
-    /// <c>Components/Pages/Chat.razor</c> is interactive but injects no capability at all — it does
+    /// <c>Components/Pages/Chat/ChatPage.razor</c> is interactive but injects no capability at all — it does
     /// its work over the SignalR module through <c>IJSRuntime</c>, so there is no token to scope
     /// and a base class would give it nothing to cancel.
     /// </description></item>
     /// <item><description>
-    /// <c>Components/Account/SignIn.razor</c> and <c>Components/Account/Register.razor</c> do call a
+    /// <c>Components/Pages/Accounts/SignInPage.razor</c> and <c>Components/Pages/Accounts/RegisterPage.razor</c> do call a
     /// capability that takes a token, but they carry <c>[ExcludeFromInteractiveRouting]</c> and
     /// render statically so that the form POST can reach <c>HttpContext.SignInAsync</c>.
     /// There is no circuit behind them and no component lifetime to scope to, so they hand over
@@ -59,24 +60,24 @@ public class CircuitCancellationTests
     /// </summary>
     private static readonly string[] ExpectedScreens =
     [
-        "DriveTrack.Web.Components.Account.Profile",
+        "DriveTrack.Web.Components.Pages.Accounts.ProfilePage",
         "DriveTrack.Web.Components.Layout.NavMenu",
-        "DriveTrack.Web.Components.Pages.Admin.Clients",
-        "DriveTrack.Web.Components.Pages.Admin.Dispatchers",
-        "DriveTrack.Web.Components.Pages.Admin.Notifications",
-        "DriveTrack.Web.Components.Pages.Dashboard",
-        "DriveTrack.Web.Components.Pages.Deliveries",
-        "DriveTrack.Web.Components.Pages.DeliveryTimeline",
-        "DriveTrack.Web.Components.Pages.Drivers",
-        "DriveTrack.Web.Components.Pages.Home",
-        "DriveTrack.Web.Components.Pages.MyDeliveries",
-        "DriveTrack.Web.Components.Pages.MyShifts",
-        "DriveTrack.Web.Components.Pages.ProofCapture",
-        "DriveTrack.Web.Components.Pages.ProofView",
-        "DriveTrack.Web.Components.Pages.Reviews",
-        "DriveTrack.Web.Components.Pages.Shifts",
-        "DriveTrack.Web.Components.Pages.Vehicles",
-        "DriveTrack.Web.Components.Shared.DtLocationPicker",
+        "DriveTrack.Web.Components.Pages.Admin.ClientsPage",
+        "DriveTrack.Web.Components.Pages.Admin.DispatchersPage",
+        "DriveTrack.Web.Components.Pages.Admin.NotificationsPage",
+        "DriveTrack.Web.Components.Pages.Dashboard.DashboardPage",
+        "DriveTrack.Web.Components.Pages.Deliveries.DeliveriesPage",
+        "DriveTrack.Web.Components.Pages.Deliveries.DeliveryTimeline",
+        "DriveTrack.Web.Components.Pages.Drivers.DriversPage",
+        "DriveTrack.Web.Components.Pages.HomePage",
+        "DriveTrack.Web.Components.Pages.Deliveries.MyDeliveriesPage",
+        "DriveTrack.Web.Components.Pages.Shifts.MyShiftsPage",
+        "DriveTrack.Web.Components.Pages.Deliveries.Proof.ProofCapture",
+        "DriveTrack.Web.Components.Pages.Deliveries.Proof.ProofView",
+        "DriveTrack.Web.Components.Pages.Reviews.ReviewsPage",
+        "DriveTrack.Web.Components.Pages.Shifts.ShiftsPage",
+        "DriveTrack.Web.Components.Pages.Vehicles.VehiclesPage",
+        "DriveTrack.Web.Components.Shared.DesignSystem.DtLocationPicker",
     ];
 
     /// <summary>
@@ -87,8 +88,8 @@ public class CircuitCancellationTests
     /// </summary>
     private static readonly string[] StaticallyRenderedForms =
     [
-        "Account/Register.razor",
-        "Account/SignIn.razor",
+        "Pages/Accounts/RegisterPage.razor",
+        "Pages/Accounts/SignInPage.razor",
     ];
 
     private static string ComponentsDirectory { get; } = Path.Combine(
@@ -280,7 +281,7 @@ public class CircuitCancellationTests
         // renderer never also calls IDisposable.Dispose - so the base's cancellation is reachable
         // only because DisposeAsync invokes it by hand. Deleting that one line breaks exactly this
         // screen and nothing else, which is why it is asserted on its own as well as in the sweep.
-        var panel = new Web.Components.Pages.ProofCapture();
+        var panel = new Web.Components.Pages.Deliveries.Proof.ProofCapture();
 
         Assert.False(panel.CircuitToken.IsCancellationRequested);
 
@@ -298,7 +299,7 @@ public class CircuitCancellationTests
         // OperationCanceledException where a real one raises it, and the render has to finish.
         // ComponentBase discards a lifecycle task that ended cancelled - this asserts the screen
         // does nothing to stop it, which is what a catch-all or a disposed token would.
-        var html = await ComponentRenderer.RenderAsync<Web.Components.Pages.ProofView>(
+        var html = await ComponentRenderer.RenderAsync<Web.Components.Pages.Deliveries.Proof.ProofView>(
             new Dictionary<string, object?>(StringComparer.Ordinal)
             {
                 ["DeliveryId"] = 1,
@@ -326,7 +327,7 @@ public class CircuitCancellationTests
         // not of ProofView; the type-level sweep is what generalises it.
         var capability = new RecordingProofService();
 
-        await ComponentRenderer.RenderAsync<Web.Components.Pages.ProofView>(
+        await ComponentRenderer.RenderAsync<Web.Components.Pages.Deliveries.Proof.ProofView>(
             new Dictionary<string, object?>(StringComparer.Ordinal)
             {
                 ["DeliveryId"] = 1,
@@ -354,7 +355,7 @@ public class CircuitCancellationTests
         // press Submit. This is the same move ProofScreenTests makes for the predicate that decides
         // who is offered capture - the decision is lifted to where a test can reach it, and the
         // catch is wired to that decision and nothing else.
-        var panel = new Web.Components.Pages.ProofCapture();
+        var panel = new Web.Components.Pages.Deliveries.Proof.ProofCapture();
 
         await panel.DisposeAsync();
 
@@ -373,7 +374,7 @@ public class CircuitCancellationTests
         // The other half, and the one that keeps the fix honest: the asset store's whole reason for
         // the blanket arm is an unreachable or unconfigured object store, and narrowing it must not
         // have cost that. The panel is alive here, which is the state a real capture runs in.
-        var panel = new Web.Components.Pages.ProofCapture();
+        var panel = new Web.Components.Pages.Deliveries.Proof.ProofCapture();
 
         Assert.True(panel.Reports(new InvalidOperationException("The object store is not configured.")));
 

@@ -1,7 +1,7 @@
 using DriveTrack.Application.Abstractions.Persistence;
 using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Errors;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Accounts;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 

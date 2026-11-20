@@ -1,8 +1,10 @@
 using System.Globalization;
 using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Errors;
+using DriveTrack.Domain.Accounts;
+using DriveTrack.Domain.Clients;
 using DriveTrack.Domain.Deliveries;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Drivers;
 using DriveTrack.Domain.Reviews;
 using DriveTrack.Domain.Vehicles;
 using DriveTrack.Integration.Tests.Support;

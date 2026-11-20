@@ -3,8 +3,11 @@ using DriveTrack.Application.Accounts.Dispatchers;
 using DriveTrack.Application.Authorization;
 using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Paging;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Accounts;
+using DriveTrack.Domain.Clients;
+using DriveTrack.Domain.Drivers;
 using DriveTrack.Integration.Tests.Support;
+using DriveTrack.Web.Components.Pages.Admin;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DriveTrack.Integration.Tests.Components;
@@ -41,7 +44,7 @@ public class SubmitGuardTests
     /// marks the missing C# check, not the shape of the attribute.
     /// </para>
     /// </summary>
-    private const string MarkupOnlyGuard = "Pages/ProofCapture.razor";
+    private const string MarkupOnlyGuard = "Pages/Deliveries/Proof/ProofCapture.razor";
 
     /// <summary>
     /// Every submit control in the product, the handler behind it and the flag that disables it: the
@@ -62,22 +65,22 @@ public class SubmitGuardTests
     /// </summary>
     private static readonly (string File, string Handler, string Flag, string Marker)[] Roster =
     [
-        ("Pages/Chat.razor", "SendAsync", "_sending", "dt-chat-send"),
+        ("Pages/Chat/ChatPage.razor", "SendAsync", "_sending", "dt-chat-send"),
         (MarkupOnlyGuard, "CaptureAsync", "_saving", "dt-proof-submit"),
-        ("Pages/Deliveries.razor", "SaveAsync", "_saving", @"form=""delivery-form"""),
-        ("Pages/Vehicles.razor", "SaveAsync", "_saving", @"form=""vehicle-form"""),
-        ("Pages/Drivers.razor", "SaveAsync", "_saving", @"form=""driver-form"""),
-        ("Account/Profile.razor", "SaveProfileAsync", "_savingProfile", "dt-profile-save"),
-        ("Account/Profile.razor", "SavePasswordAsync", "_savingPassword", "dt-password-save"),
-        ("Account/Profile.razor", "SaveEmailAsync", "_savingEmail", "dt-email-save"),
-        ("Pages/MyDeliveries.razor", "SubmitRequestAsync", "_saving", "dt-request-submit"),
-        ("Pages/Reviews.razor", "SaveAsync", "_saving", "dt-review-save"),
-        ("Pages/Shifts.razor", "SaveAsync", "_saving", "dt-shift-save"),
-        ("Pages/MyShifts.razor", "SaveAsync", "_saving", "dt-shift-save"),
-        ("Pages/Admin/Clients.razor", "SaveAsync", "_saving", "dt-client-save"),
-        ("Pages/Admin/Dispatchers.razor", "CreateAsync", "_creating", "dt-dispatcher-create"),
-        ("Pages/Admin/Dispatchers.razor", "SaveAsync", "_saving", "dt-dispatcher-save"),
-        ("Pages/DeliveryTimeline.razor", "SubmitAsync", "_submitting", "dt-timeline-submit"),
+        ("Pages/Deliveries/DeliveriesPage.razor", "SaveAsync", "_saving", @"form=""delivery-form"""),
+        ("Pages/Vehicles/VehiclesPage.razor", "SaveAsync", "_saving", @"form=""vehicle-form"""),
+        ("Pages/Drivers/DriversPage.razor", "SaveAsync", "_saving", @"form=""driver-form"""),
+        ("Pages/Accounts/ProfilePage.razor", "SaveProfileAsync", "_savingProfile", "dt-profile-save"),
+        ("Pages/Accounts/ProfilePage.razor", "SavePasswordAsync", "_savingPassword", "dt-password-save"),
+        ("Pages/Accounts/ProfilePage.razor", "SaveEmailAsync", "_savingEmail", "dt-email-save"),
+        ("Pages/Deliveries/MyDeliveriesPage.razor", "SubmitRequestAsync", "_saving", "dt-request-submit"),
+        ("Pages/Reviews/ReviewsPage.razor", "SaveAsync", "_saving", "dt-review-save"),
+        ("Pages/Shifts/ShiftsPage.razor", "SaveAsync", "_saving", "dt-shift-save"),
+        ("Pages/Shifts/MyShiftsPage.razor", "SaveAsync", "_saving", "dt-shift-save"),
+        ("Pages/Admin/ClientsPage.razor", "SaveAsync", "_saving", "dt-client-save"),
+        ("Pages/Admin/DispatchersPage.razor", "CreateAsync", "_creating", "dt-dispatcher-create"),
+        ("Pages/Admin/DispatchersPage.razor", "SaveAsync", "_saving", "dt-dispatcher-save"),
+        ("Pages/Deliveries/DeliveryTimeline.razor", "SubmitAsync", "_submitting", "dt-timeline-submit"),
     ];
 
     /// <summary>
@@ -99,11 +102,11 @@ public class SubmitGuardTests
     /// </summary>
     private static readonly string[] PostedOverHttpRatherThanACircuit =
     [
-        "Account/Register.razor",
-        "Account/SignIn.razor",
+        "Pages/Accounts/RegisterPage.razor",
+        "Pages/Accounts/SignInPage.razor",
         "Layout/NavMenu.razor",
-        "Pages/Home.razor",
-        "Shared/DtLanguageMenu.razor",
+        "Pages/HomePage.razor",
+        "Shared/DesignSystem/DtLanguageMenu.razor",
     ];
 
     public static TheoryData<string, string, string, string> Controls()
@@ -302,7 +305,7 @@ public class SubmitGuardTests
         //
         // The dispatcher screen, because it is the one carrying two independent flags on two
         // dialogs: if a shared or inverted flag ever crept in, both controls would show it here.
-        var html = await ComponentRenderer.RenderAsync<Web.Components.Pages.Admin.Dispatchers>(
+        var html = await ComponentRenderer.RenderAsync<Web.Components.Pages.Admin.DispatchersPage>(
             parameters: null,
             configureServices: services =>
             {

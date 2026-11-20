@@ -1,11 +1,11 @@
 using DriveTrack.Application.Abstractions.Persistence;
 using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Errors;
+using DriveTrack.Domain.Accounts;
 using DriveTrack.Domain.Deliveries;
-using DriveTrack.Domain.Identity;
 using DriveTrack.Integration.Tests.Persistence;
 using DriveTrack.Integration.Tests.Support;
-using DriveTrack.Web.Api;
+using DriveTrack.Web.Api.Envelope;
 using Microsoft.EntityFrameworkCore;
 
 namespace DriveTrack.Integration.Tests.Deliveries;

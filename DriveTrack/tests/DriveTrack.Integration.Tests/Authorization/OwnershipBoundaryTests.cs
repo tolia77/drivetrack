@@ -4,11 +4,11 @@ using System.Text.Json;
 using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Errors;
 using DriveTrack.Domain.Deliveries;
+using DriveTrack.Domain.Drivers;
 using DriveTrack.Integration.Tests.Deliveries;
-using DriveTrack.Integration.Tests.Fleet;
-using DriveTrack.Integration.Tests.Identity;
 using DriveTrack.Integration.Tests.Persistence;
 using DriveTrack.Integration.Tests.Reviews;
+using DriveTrack.Integration.Tests.Support;
 
 namespace DriveTrack.Integration.Tests.Authorization;
 

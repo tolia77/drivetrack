@@ -2,9 +2,12 @@ using System.Text.RegularExpressions;
 using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Paging;
 using DriveTrack.Application.Deliveries;
+using DriveTrack.Domain.Accounts;
 using DriveTrack.Domain.Deliveries;
-using DriveTrack.Domain.Identity;
 using DriveTrack.Integration.Tests.Support;
+using DriveTrack.Web.Components.Pages.Deliveries;
+using DriveTrack.Web.Components.Shared.DesignSystem;
+using DriveTrack.Web.Components.Shared.Display;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DriveTrack.Integration.Tests.Components;
@@ -256,7 +259,7 @@ public class DeliveryTimelineTests
     [Fact]
     public void Keep_sends_a_note_carrying_the_comment()
     {
-        var command = Web.Components.Pages.DeliveryTimeline.CommandFor(null, "Залишено на рецепції");
+        var command = Web.Components.Pages.Deliveries.DeliveryTimeline.CommandFor(null, "Залишено на рецепції");
 
         var note = Assert.IsType<AddDeliveryNoteCommand>(command);
 
@@ -267,7 +270,7 @@ public class DeliveryTimelineTests
     public void A_chosen_status_sends_one_change_carrying_the_status_and_the_comment()
     {
         // One entry, not a move followed by a separate note.
-        var command = Web.Components.Pages.DeliveryTimeline.CommandFor(
+        var command = Web.Components.Pages.Deliveries.DeliveryTimeline.CommandFor(
             DeliveryStatus.Failed,
             "Нікого немає вдома");
 
@@ -282,11 +285,11 @@ public class DeliveryTimelineTests
     {
         // After a 409 the delivery may be somewhere the chosen move does not start from; left
         // selected, the next submit would be refused for a choice the select no longer shows.
-        Assert.Null(Web.Components.Pages.DeliveryTimeline.KeptChoice(
+        Assert.Null(Web.Components.Pages.Deliveries.DeliveryTimeline.KeptChoice(
             DeliveryStatus.Delivered,
             Delivery.NextStatuses(DeliveryStatus.Failed)));
 
-        Assert.Null(Web.Components.Pages.DeliveryTimeline.KeptChoice(
+        Assert.Null(Web.Components.Pages.Deliveries.DeliveryTimeline.KeptChoice(
             DeliveryStatus.InTransit,
             []));
     }
@@ -296,11 +299,11 @@ public class DeliveryTimelineTests
     {
         Assert.Equal(
             DeliveryStatus.Failed,
-            Web.Components.Pages.DeliveryTimeline.KeptChoice(
+            Web.Components.Pages.Deliveries.DeliveryTimeline.KeptChoice(
                 DeliveryStatus.Failed,
                 Delivery.NextStatuses(DeliveryStatus.InTransit)));
 
-        Assert.Null(Web.Components.Pages.DeliveryTimeline.KeptChoice(
+        Assert.Null(Web.Components.Pages.Deliveries.DeliveryTimeline.KeptChoice(
             null,
             Delivery.NextStatuses(DeliveryStatus.InTransit)));
     }
@@ -310,8 +313,8 @@ public class DeliveryTimelineTests
     {
         // Compared against the Icon component's own render rather than a transcribed path, so the
         // assertion is about which glyph the entry chose, not about the glyph's geometry.
-        var create = await IconAsync(Web.Components.Shared.IconName.Create);
-        var edit = await IconAsync(Web.Components.Shared.IconName.Edit);
+        var create = await IconAsync(Web.Components.Shared.DesignSystem.IconName.Create);
+        var edit = await IconAsync(Web.Components.Shared.DesignSystem.IconName.Edit);
 
         Assert.NotEqual(create, edit);
 
@@ -380,8 +383,8 @@ public class DeliveryTimelineTests
             Note("Залишено на рецепції"),
         ];
 
-        Assert.Equal(0, Web.Components.Pages.DeliveryTimeline.CurrentEntry(history));
-        Assert.Equal(-1, Web.Components.Pages.DeliveryTimeline.CurrentEntry([Note("Спробуємо завтра")]));
+        Assert.Equal(0, Web.Components.Pages.Deliveries.DeliveryTimeline.CurrentEntry(history));
+        Assert.Equal(-1, Web.Components.Pages.Deliveries.DeliveryTimeline.CurrentEntry([Note("Спробуємо завтра")]));
     }
 
     [Fact]
@@ -395,11 +398,11 @@ public class DeliveryTimelineTests
 
         Assert.Equal(
             DeliveryStatus.Failed,
-            Web.Components.Pages.DeliveryTimeline.LatestStatus(notes, DeliveryStatus.Failed));
+            Web.Components.Pages.Deliveries.DeliveryTimeline.LatestStatus(notes, DeliveryStatus.Failed));
 
         Assert.Equal(
             DeliveryStatus.Pending,
-            Web.Components.Pages.DeliveryTimeline.LatestStatus([], DeliveryStatus.Pending));
+            Web.Components.Pages.Deliveries.DeliveryTimeline.LatestStatus([], DeliveryStatus.Pending));
     }
 
     [Fact]
@@ -416,7 +419,7 @@ public class DeliveryTimelineTests
 
         Assert.Equal(
             DeliveryStatus.Failed,
-            Web.Components.Pages.DeliveryTimeline.LatestStatus(history, DeliveryStatus.Pending));
+            Web.Components.Pages.Deliveries.DeliveryTimeline.LatestStatus(history, DeliveryStatus.Pending));
     }
 
     [Fact]
@@ -432,7 +435,7 @@ public class DeliveryTimelineTests
 
         foreach (var status in statuses)
         {
-            var html = await ComponentRenderer.RenderAsync<Web.Components.Shared.DeliveryStatusLabel>(
+            var html = await ComponentRenderer.RenderAsync<Web.Components.Shared.Display.DeliveryStatusLabel>(
                 new Dictionary<string, object?> { ["Status"] = status });
 
             var label = SharedMarkup.TextOf(html);
@@ -506,7 +509,7 @@ public class DeliveryTimelineTests
             ["AllowStatusChange"] = allowStatusChange,
         };
 
-        return ComponentRenderer.RenderAsync<Web.Components.Pages.DeliveryTimeline>(
+        return ComponentRenderer.RenderAsync<Web.Components.Pages.Deliveries.DeliveryTimeline>(
             parameters,
             services => services.AddSingleton<IDeliveryService>(new StubTimeline(entries)));
     }
@@ -531,14 +534,14 @@ public class DeliveryTimelineTests
                 Regex.Replace(match.Groups["text"].Value, @"\s+", " ", RegexOptions.None, TimeSpan.FromSeconds(5)).Trim()))
             .ToArray();
 
-    private static Task<string> IconAsync(Web.Components.Shared.IconName name) =>
-        ComponentRenderer.RenderAsync<Web.Components.Shared.Icon>(
+    private static Task<string> IconAsync(Web.Components.Shared.DesignSystem.IconName name) =>
+        ComponentRenderer.RenderAsync<Web.Components.Shared.DesignSystem.Icon>(
             new Dictionary<string, object?> { ["Name"] = name });
 
     /// <summary>The rendered dot of one shared entry.</summary>
     private static async Task<string> DotAsync(DeliveryStatus? previous, DeliveryStatus? next) =>
         SharedMarkup.ElementWithClass(
-            await ComponentRenderer.RenderAsync<Web.Components.Shared.DtTimelineEntry>(
+            await ComponentRenderer.RenderAsync<Web.Components.Shared.DesignSystem.DtTimelineEntry>(
                 new Dictionary<string, object?>
                 {
                     ["PreviousStatus"] = previous,

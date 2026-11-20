@@ -5,14 +5,17 @@ using DriveTrack.Application.Common.Locations;
 using DriveTrack.Application.Common.Paging;
 using DriveTrack.Application.Deliveries;
 using DriveTrack.Application.Reviews;
+using DriveTrack.Domain.Accounts;
+using DriveTrack.Domain.Clients;
 using DriveTrack.Domain.Deliveries;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Drivers;
 using DriveTrack.Domain.Reviews;
 using DriveTrack.Integration.Tests.Support;
 using DriveTrack.Web.Components.Pages;
-using DriveTrack.Web.Components.Shared;
+using DriveTrack.Web.Components.Pages.Reviews;
+using DriveTrack.Web.Components.Shared.Display;
 using Microsoft.Extensions.DependencyInjection;
-using ReviewsScreen = DriveTrack.Web.Components.Pages.Reviews;
+using ReviewsScreen = DriveTrack.Web.Components.Pages.Reviews.ReviewsPage;
 
 namespace DriveTrack.Integration.Tests.Components;
 

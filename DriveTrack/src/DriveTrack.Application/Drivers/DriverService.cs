@@ -7,8 +7,9 @@ using DriveTrack.Application.Common.Paging;
 using DriveTrack.Application.Reviews;
 using DriveTrack.Application.Shifts;
 using DriveTrack.Application.Vehicles;
+using DriveTrack.Domain.Accounts;
+using DriveTrack.Domain.Clients;
 using DriveTrack.Domain.Drivers;
-using DriveTrack.Domain.Identity;
 using FluentValidation;
 
 namespace DriveTrack.Application.Drivers;

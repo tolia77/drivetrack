@@ -5,8 +5,8 @@ using DriveTrack.Application.Authorization;
 using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Errors;
 using DriveTrack.Application.Common.Paging;
+using DriveTrack.Domain.Accounts;
 using DriveTrack.Domain.Clients;
-using DriveTrack.Domain.Identity;
 using FluentValidation;
 
 namespace DriveTrack.Application.Accounts.Clients;

@@ -2,7 +2,6 @@ using DriveTrack.Application.Authorization;
 using DriveTrack.Application.Common;
 using DriveTrack.Application.Deliveries;
 using DriveTrack.Domain.Deliveries;
-using DriveTrack.Domain.Identity;
 
 namespace DriveTrack.Application.Abstractions.Persistence;
 

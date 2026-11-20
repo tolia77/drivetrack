@@ -4,8 +4,12 @@ using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Paging;
 using DriveTrack.Application.Drivers;
 using DriveTrack.Application.Vehicles;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Accounts;
+using DriveTrack.Domain.Clients;
+using DriveTrack.Domain.Drivers;
 using DriveTrack.Integration.Tests.Support;
+using DriveTrack.Web.Components.Pages.Drivers;
+using DriveTrack.Web.Components.Pages.Vehicles;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DriveTrack.Integration.Tests.Components;
@@ -387,7 +391,7 @@ public class FleetScreenTests
         // boundary. It is a convenience and not the decision - IAccessGuard settles
         // that, and the API suites assert it - but nothing else pins the attribute, and its
         // absence is invisible in a diff. Read from source, in the style ShellRoutingTests uses.
-        var page = SharedMarkup.ReadComponent("Pages", drivers ? "Drivers.razor" : "Vehicles.razor");
+        var page = SharedMarkup.ReadComponent("Pages", drivers ? "DriversPage.razor" : "VehiclesPage.razor");
 
         Assert.Contains(
             "@attribute [Authorize(Roles = \"Dispatcher,Admin\")]",
@@ -407,7 +411,7 @@ public class FleetScreenTests
     [Fact]
     public void The_choices_are_the_free_vehicles_when_no_driver_is_being_edited()
     {
-        var choices = Web.Components.Pages.Drivers.ChoicesFor(StubVehicleService.Free, driver: null);
+        var choices = Web.Components.Pages.Drivers.DriversPage.ChoicesFor(StubVehicleService.Free, driver: null);
 
         Assert.Equal(new[] { 7, 9 }, choices.Select(choice => choice.Id).ToArray());
     }
@@ -419,7 +423,7 @@ public class FleetScreenTests
         // a select whose current value is not among its options reads back as null - so a
         // dispatcher editing only the licence number would send vehicleId: null and release the
         // vehicle without asking for it.
-        var choices = Web.Components.Pages.Drivers.ChoicesFor(
+        var choices = Web.Components.Pages.Drivers.DriversPage.ChoicesFor(
             StubVehicleService.Free,
             StubDriverService.WithVehicle);
 
@@ -436,7 +440,7 @@ public class FleetScreenTests
     {
         Assert.Equal(
             new[] { 7, 9 },
-            Web.Components.Pages.Drivers
+            Web.Components.Pages.Drivers.DriversPage
                 .ChoicesFor(StubVehicleService.Free, StubDriverService.WithoutVehicle)
                 .Select(choice => choice.Id)
                 .ToArray());
@@ -447,7 +451,7 @@ public class FleetScreenTests
 
         Assert.Equal(
             new[] { 7, 9 },
-            Web.Components.Pages.Drivers
+            Web.Components.Pages.Drivers.DriversPage
                 .ChoicesFor(StubVehicleService.Free, alreadyFree)
                 .Select(choice => choice.Id)
                 .ToArray());
@@ -458,12 +462,12 @@ public class FleetScreenTests
     // -------------------------------------------------------------------------------------
 
     internal static Task<string> RenderDriversAsync() =>
-        ComponentRenderer.RenderAsync<Web.Components.Pages.Drivers>(
+        ComponentRenderer.RenderAsync<Web.Components.Pages.Drivers.DriversPage>(
             parameters: null,
             configureServices: Register);
 
     internal static Task<string> RenderVehiclesAsync() =>
-        ComponentRenderer.RenderAsync<Web.Components.Pages.Vehicles>(
+        ComponentRenderer.RenderAsync<Web.Components.Pages.Vehicles.VehiclesPage>(
             parameters: null,
             configureServices: Register);
 

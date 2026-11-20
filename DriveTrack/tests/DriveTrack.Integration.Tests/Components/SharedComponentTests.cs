@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 using DriveTrack.Integration.Tests.Support;
-using DriveTrack.Web.Components.Shared;
+using DriveTrack.Web.Components.Shared.DesignSystem;
 
 namespace DriveTrack.Integration.Tests.Components;
 
@@ -163,8 +163,8 @@ public class SharedComponentTests
                  })
         {
             Assert.True(
-                File.Exists(Path.Combine(SharedMarkup.SharedDirectory, expected)),
-                $"Components/Shared/{expected} is missing.");
+                File.Exists(Path.Combine(SharedMarkup.DesignSystemDirectory, expected)),
+                $"Components/Shared/DesignSystem/{expected} is missing.");
         }
     }
 

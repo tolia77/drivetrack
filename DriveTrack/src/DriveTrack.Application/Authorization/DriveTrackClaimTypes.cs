@@ -1,3 +1,7 @@
+using DriveTrack.Domain.Accounts;
+using DriveTrack.Domain.Clients;
+using DriveTrack.Domain.Drivers;
+
 namespace DriveTrack.Application.Authorization;
 
 /// <summary>
@@ -19,7 +23,7 @@ public static class DriveTrackClaimTypes
     /// <summary>The user row's id, as an invariant integer string.</summary>
     public const string UserId = "drivetrack/user-id";
 
-    /// <summary>The single role, as a <see cref="Domain.Identity.UserRole"/> member name.</summary>
+    /// <summary>The single role, as a <see cref="Domain.Accounts.UserRole"/> member name.</summary>
     public const string Role = "drivetrack/role";
 
     /// <summary>The driver row's id. Absent unless the user is a driver.</summary>

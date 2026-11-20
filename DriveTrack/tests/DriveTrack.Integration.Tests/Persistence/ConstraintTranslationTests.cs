@@ -3,7 +3,6 @@ using DriveTrack.Application.Common.Errors;
 using DriveTrack.Domain.Clients;
 using DriveTrack.Domain.Common;
 using DriveTrack.Domain.Deliveries;
-using DriveTrack.Domain.Identity;
 using DriveTrack.Domain.Reviews;
 using DriveTrack.Integration.Tests.Support;
 using Microsoft.EntityFrameworkCore;

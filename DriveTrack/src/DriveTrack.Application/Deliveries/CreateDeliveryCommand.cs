@@ -1,5 +1,7 @@
 using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Locations;
+using DriveTrack.Domain.Clients;
+using DriveTrack.Domain.Drivers;
 
 namespace DriveTrack.Application.Deliveries;
 

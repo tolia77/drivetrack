@@ -1,6 +1,7 @@
 using DriveTrack.Application.Abstractions.Outbound;
 using DriveTrack.Application.Abstractions.Persistence;
 using DriveTrack.Application.Notifications;
+using DriveTrack.Domain.Clients;
 using DriveTrack.Domain.Common;
 using DriveTrack.Domain.Deliveries;
 using DriveTrack.Domain.Notifications;

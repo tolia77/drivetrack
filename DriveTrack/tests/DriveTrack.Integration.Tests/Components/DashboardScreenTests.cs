@@ -4,11 +4,14 @@ using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Errors;
 using DriveTrack.Application.Common.Locations;
 using DriveTrack.Application.Dashboard;
+using DriveTrack.Domain.Accounts;
+using DriveTrack.Domain.Clients;
 using DriveTrack.Domain.Deliveries;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Drivers;
 using DriveTrack.Integration.Tests.Support;
+using DriveTrack.Web.Components.Pages.Dashboard;
 using Microsoft.Extensions.DependencyInjection;
-using DashboardScreen = DriveTrack.Web.Components.Pages.Dashboard;
+using DashboardScreen = DriveTrack.Web.Components.Pages.Dashboard.DashboardPage;
 
 namespace DriveTrack.Integration.Tests.Components;
 

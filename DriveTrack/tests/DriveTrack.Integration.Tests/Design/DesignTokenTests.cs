@@ -557,7 +557,7 @@ public class DesignTokenTests
     public void The_signature_pad_strokes_with_the_ink_the_palette_declares_for_it()
     {
         var module = File.ReadAllText(
-            Path.Combine(WebProject, "Components", "Shared", "DtSignaturePad.razor.js"));
+            Path.Combine(WebProject, "Components", "Shared", "DesignSystem", "DtSignaturePad.razor.js"));
 
         Assert.Contains("--dt-signature-ink", module, StringComparison.Ordinal);
     }

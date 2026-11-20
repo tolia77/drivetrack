@@ -1,5 +1,6 @@
+using DriveTrack.Domain.Clients;
 using DriveTrack.Domain.Common;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Drivers;
 using DriveTrack.Domain.Reviews;
 
 namespace DriveTrack.Domain.Deliveries;

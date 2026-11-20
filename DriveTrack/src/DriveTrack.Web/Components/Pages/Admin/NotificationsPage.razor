@@ -1,0 +1,249 @@
+@page "/notifications"
+@attribute [Authorize]
+@inject INotificationLogService Log
+@inject ICurrentUser Caller
+@inject IStringLocalizer<UiText> Localizer
+@inherits PagedScreen<ListNotificationAttemptsQuery, NotificationAttemptSummary, NotificationSort>
+
+@* The row an administrator can read.
+
+   The original swallowed a failed notification silently, and this screen is the other half of the
+   remediation - a table with a home is only a remediation if somebody can open it. Every attempt is
+   here, the ones that worked as well as the ones that did not: recording only failures would leave
+   "no row" meaning either "nothing was owed" or "it worked", which is the ambiguity somebody opens
+   this page to resolve.
+
+   [Authorize] carries no roles, like every other screen here. Who may read this is decided by
+   IAccessGuard inside INotificationLogService - RequireRole(Admin), named outright - and a role on
+   the attribute would be a second copy of that rule in a place no test of the rule would read.
+
+   Independent @if blocks and one literal localizer key per string, for the two reasons the shell
+   components already state: an `else` at markup level reads to the localization scan as a rendered
+   English word, and a key composed at run time is a key the closed-catalogue test cannot see. *@
+
+<PageTitle>@Localizer["NotificationsTitle"]</PageTitle>
+
+@* The screen's title, in the heading row every other screen carries. This one holds nothing
+   beside it: the log is read and nothing on it can be acted on, so there is no action to sit next
+   to the heading.
+
+   The wrapper is written all the same, and it does change the spacing: `.dt-page-head h1` zeroes
+   the heading's own 0.5rem margin and `mb-4` replaces it with `$dt-space-4`, which this project's
+   `$dt-spacers` puts at 1rem - so the gap under the title doubles. That is the point rather than
+   a side effect. The gap is now the one every other screen's title sits above, and one heading
+   shape across the product is worth more than this screen keeping its own. *@
+<div class="dt-page-head mb-4">
+    <h1 class="dt-type-h1">
+        <Icon Name="IconName.Notifications" />@Localizer["NotificationsTitle"]
+    </h1>
+</div>
+
+<DtFailureBanner Failures="_failures" />
+
+@* The log a page at a time, newest first, sorted by the server over the whole history - so
+   the oldest attempt is a page away rather than out of reach, and the pager says how many there are. *@
+@* `dt-table-cards` is where this screen opts into the shared collapse: below the phone breakpoint
+   the table's rows stop being rows and become cards. The collapse is stated once, in
+   `_theme.scss`, so nothing about it is written here or in this screen's own stylesheet - and
+   because it is a global rule rather than a scoped one, none of it needs a `::deep`.
+
+   The wrapper's own name stays beside it. `NotificationsPage.razor.css` hangs this screen's per-cell
+   label rules off it, and the phone-layout suite reads it as the element the table has to be
+   inside. Six columns, with the one a reader opens the screen for - the error - last, so it is the
+   value furthest off the edge of a handset. *@
+<div class="dt-notifications dt-table-cards">
+    <DtDataTable TItem="NotificationAttemptSummary"
+                 Page="Listed"
+                 OnPage="GoToPageAsync"
+                 OnPageSize="ResizeAsync"
+                 CountOne="@Localizer["NotificationsCountOne"]"
+                 CountMany="@Localizer["NotificationsCountMany"]"
+                 IsLoading="Loading"
+                 EmptyText="@Localizer["NotificationsEmpty"]">
+        <HeaderTemplate>
+            @* Every column with an order of its own is a sort control; the error is free text read
+               rather than compared, so its heading stays a heading. *@
+            <th scope="col" aria-sort="@SortState(NotificationSort.Delivery)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(NotificationSort.Delivery)">
+                    @Localizer["NotificationDelivery"]<Icon Name="@SortGlyph(NotificationSort.Delivery)" />
+                </button>
+            </th>
+            <th scope="col" aria-sort="@SortState(NotificationSort.Kind)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(NotificationSort.Kind)">
+                    @Localizer["NotificationKind"]<Icon Name="@SortGlyph(NotificationSort.Kind)" />
+                </button>
+            </th>
+            <th scope="col" aria-sort="@SortState(NotificationSort.Recipient)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(NotificationSort.Recipient)">
+                    @Localizer["NotificationRecipient"]<Icon Name="@SortGlyph(NotificationSort.Recipient)" />
+                </button>
+            </th>
+            <th scope="col" aria-sort="@SortState(NotificationSort.Outcome)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(NotificationSort.Outcome)">
+                    @Localizer["NotificationOutcome"]<Icon Name="@SortGlyph(NotificationSort.Outcome)" />
+                </button>
+            </th>
+            <th scope="col" aria-sort="@SortState(NotificationSort.AttemptedAt)">
+                <button type="button" class="btn btn-link btn-sm" @onclick="SortHandler(NotificationSort.AttemptedAt)">
+                    @Localizer["NotificationAttemptedAt"]<Icon Name="@SortGlyph(NotificationSort.AttemptedAt)" />
+                </button>
+            </th>
+            <th scope="col">@Localizer["NotificationError"]</th>
+        </HeaderTemplate>
+        <RowTemplate Context="attempt">
+            @* The per-cell name, carried by the cell rather than only by the column heading. Not
+               the same thing on both sides of the breakpoint: above it the span is dropped, where
+               the `<th>` already names the column and a second name in every cell would be that
+               name read twice a row; below it the head is gone and the span is painted, as
+               something a reader can see, and that is what replaces it. *@
+            <td class="dt-notification-delivery">
+                <span class="dt-visually-hidden dt-notification-label">@Localizer["NotificationDelivery"]</span>
+                @attempt.DeliveryId
+            </td>
+            <td>
+                @* The enum member is what the database stores and the wire carries;
+                   what a reader sees is a word. There is one kind today, so there is one
+                   block - a second joins it the day a second kind is written.
+
+                   The cell's own name goes inside that block with the word it names: a kind this
+                   screen has no word for yet leaves the cell empty, and a phone card showing a
+                   heading with nothing under it is worse than a card with one line fewer. *@
+                @if (attempt.Kind == NotificationKind.StatusChange)
+                {
+                    <span class="dt-visually-hidden dt-notification-label">@Localizer["NotificationKind"]</span>
+                    <span>@Localizer["NotificationKindStatusChange"]</span>
+                }
+            </td>
+            <td class="dt-notification-recipient">
+                <span class="dt-visually-hidden dt-notification-label">@Localizer["NotificationRecipient"]</span>
+                @attempt.Recipient
+            </td>
+            <td>
+                <span class="dt-visually-hidden dt-notification-label">@Localizer["NotificationOutcome"]</span>
+                @* Sent and Failed are a status, not a badge: a closed two-value vocabulary with an
+                   outcome, which is the same shape a shift's running/finished is - so they wear the
+                   shared StatusLabel and its delivered and failed faces, and the tint comes from the
+                   palette's own status steps rather than from a rule written beside this table.
+
+                   A label apiece rather than one element whose face is computed, for the reason every
+                   other vocabulary on this product states: a key composed at run time is a key the
+                   closed-catalogue test cannot see. The `dt-notification-*` classes stay as the hooks
+                   the suite counts the two outcomes by. *@
+                @if (attempt.Outcome == NotificationOutcome.Sent)
+                {
+                    <DtStatusLabel Face="DtStatusFace.Delivered" Class="dt-notification-sent">@Localizer["NotificationSent"]</DtStatusLabel>
+                }
+                @if (attempt.Outcome == NotificationOutcome.Failed)
+                {
+                    <DtStatusLabel Face="DtStatusFace.Failed" Class="dt-notification-failed">@Localizer["NotificationFailed"]</DtStatusLabel>
+                }
+            </td>
+            <td>
+                <span class="dt-visually-hidden dt-notification-label">@Localizer["NotificationAttemptedAt"]</span>
+                @* Routed through a method rather than formatted in markup: the localization scan
+                   strips a Razor expression only up to its first closing bracket, so a
+                   `.ToString(...)` tail would be left behind in the text node and read as a
+                   rendered English word. *@
+                @Attempted(attempt)
+            </td>
+            @* The reason, which only a refused attempt has - and a successful attempt is the
+               common row rather than the exception, so the name goes inside the same condition as
+               the value it names. Written otherwise, every card for an attempt that worked would
+               paint a heading reading "Помилка" over a blank line. *@
+            <td class="dt-notification-error">
+                @if (attempt.Error is not null)
+                {
+                    <span class="dt-visually-hidden dt-notification-label">@Localizer["NotificationError"]</span>
+                    @attempt.Error
+                }
+            </td>
+        </RowTemplate>
+    </DtDataTable>
+</div>
+
+@code {
+    private IReadOnlyList<ScreenFailure> _failures = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        // The circuit outlives the request that opened it, so the cookie can be gone by the time a
+        // screen calls a service. Raising the contract's own code here is what puts that case
+        // through the single session-expiry boundary instead of a per-screen redirect.
+        if (!Caller.IsAuthenticated)
+        {
+            throw new ForbiddenException(
+                ErrorCode.AUTH_UNAUTHENTICATED,
+                "The circuit has no authenticated caller: the session cookie is gone.");
+        }
+
+        await base.OnInitializedAsync();
+    }
+
+    /// <inheritdoc />
+    protected override NotificationSort DefaultSort => NotificationSort.AttemptedAt;
+
+    /// <summary>Newest first: the attempt an administrator opens the log to find is the latest one.</summary>
+    protected override bool DefaultDescending => true;
+
+    /// <inheritdoc />
+    protected override IReadOnlyCollection<NotificationSort> Sortable { get; } =
+    [
+        NotificationSort.Delivery,
+        NotificationSort.Kind,
+        NotificationSort.Recipient,
+        NotificationSort.Outcome,
+        NotificationSort.AttemptedAt,
+    ];
+
+    /// <inheritdoc />
+    protected override ListNotificationAttemptsQuery Compose(
+        int offset,
+        int limit,
+        NotificationSort sort,
+        bool descending) =>
+        new(offset, limit, sort.ToString(), descending);
+
+    /// <inheritdoc />
+    protected override (int Offset, int Limit, NotificationSort Sort, bool Descending) Paging(
+        ListNotificationAttemptsQuery view) =>
+        (view.Offset, view.Limit, ListSort.Parse<NotificationSort>(view.Sort) ?? DefaultSort, view.Descending);
+
+    /// <inheritdoc />
+    protected override ListNotificationAttemptsQuery Repaged(
+        ListNotificationAttemptsQuery view,
+        int offset,
+        int limit,
+        NotificationSort sort,
+        bool descending) =>
+        view with { Offset = offset, Limit = limit, Sort = sort.ToString(), Descending = descending };
+
+    /// <summary>
+    /// The attempt's instant in local time (storage is at offset zero, and the conversion
+    /// happens here, in the presentation layer, and nowhere else).
+    /// </summary>
+    private static string Attempted(NotificationAttemptSummary attempt) =>
+        attempt.AttemptedAt.ToLocalTime().ToString("g", System.Globalization.CultureInfo.CurrentCulture);
+
+    /// <inheritdoc />
+    protected override async Task<Paged<NotificationAttemptSummary>?> FetchAsync(
+        ListNotificationAttemptsQuery view)
+    {
+        try
+        {
+            var page = await Log.ListAsync(view, CircuitToken);
+
+            _failures = [];
+
+            return page;
+        }
+        catch (DriveTrackException failure)
+        {
+            // A dispatcher who typed the address reaches the guard's refusal here rather than a
+            // blank page, and it resolves through the same catalogue the REST envelope uses, so the
+            // two cannot disagree.
+            _failures = FailureKeys.For(failure);
+
+            return null;
+        }
+    }
+}
