@@ -70,12 +70,10 @@
     justify-content: space-between;
     gap: var(--dt-space-3);
     /*
-        Tighter than the body below it. The head carries one line - a title and the
-        dismiss beside it - so the `space-5` it used to open with made a band of
-        empty panel above the first thing a reader is there to read, on a surface
-        whose height is already capped at 86vh.
+        The body's padding on every side, so the title, the form and the actions share one edge
+        and the panel is inset by the same amount whichever way it is read.
     */
-    padding: var(--dt-space-3) var(--dt-space-5);
+    padding: var(--dt-space-5);
     border-bottom: var(--dt-border-width) solid var(--dt-border);
 }
 
@@ -87,13 +85,12 @@
     A hit area a thumb can find, which is what `touch-target` is declared for. The button carries
     only a glyph, so without a floor it would be as small as the glyph is.
 
-    The floor is taller than the title's line, and left alone it set the height of the whole head:
-    a 2.75rem box plus the padding made a band twice the height of the one line it holds. The
-    negative block margin hands the difference back, so the row is as tall as the title and the
-    hit area overhangs into the head's own padding - still the full target, no longer the thing
-    the head is sized by. The inline-end margin does the same at the edge, putting the glyph on
-    the body's right edge instead of a target's width inside it. Both offsets are derived tokens
-    (`dialog-dismiss-overhang-*`), so they follow the title line, the control and the target.
+    The floor is taller than the title's line, and left alone it set the height of the whole head.
+    A negative margin hands the difference back, so the row is as tall as the title and the hit
+    area overhangs into the head's padding - still the full target, no longer the thing the head
+    is sized by. The same margin at the inline end keeps the button as far from the right edge as
+    from the top, because the head's padding is the same on both. `dialog-dismiss-overhang` is
+    derived from the title line and the target, so it follows both.
 */
 .dt-dialog-dismiss {
     position: relative;
@@ -103,8 +100,8 @@
     justify-content: center;
     min-width: var(--dt-touch-target);
     min-height: var(--dt-touch-target);
-    margin-block: var(--dt-dialog-dismiss-overhang-block);
-    margin-inline-end: var(--dt-dialog-dismiss-overhang-inline);
+    margin-block: var(--dt-dialog-dismiss-overhang);
+    margin-inline-end: var(--dt-dialog-dismiss-overhang);
     padding: 0;
     color: var(--dt-ink-muted);
 }
@@ -170,8 +167,8 @@
     flex-wrap: wrap-reverse;
     justify-content: flex-start;
     gap: var(--dt-space-2);
-    /* Even above and below: the buttons sit centred in the band rather than riding high in it. */
-    padding: var(--dt-space-3) var(--dt-space-5);
+    /* The same inset as the head and the body, on every side. */
+    padding: var(--dt-space-5);
     border-top: var(--dt-border-width) solid var(--dt-border);
 }
 
