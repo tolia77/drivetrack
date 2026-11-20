@@ -29,16 +29,37 @@ internal static class SharedMarkup
     public static string ComponentsDirectory { get; } = Path.Combine(
         RepositoryLayout.ProjectDirectory("DriveTrack.Web"), "Components");
 
-    /// <summary>The <c>Components/Shared/</c> directory the shared vocabulary lives in.</summary>
+    /// <summary>The <c>Components/Shared/</c> directory: the design system, display parts and screen plumbing.</summary>
     public static string SharedDirectory { get; } = Path.Combine(ComponentsDirectory, "Shared");
 
-    /// <summary>A file under <c>Components/Shared/</c>, read whole.</summary>
-    public static string ReadShared(string fileName) =>
-        File.ReadAllText(Path.Combine(SharedDirectory, fileName));
+    /// <summary>The <c>Components/Shared/DesignSystem/</c> directory the shared vocabulary lives in.</summary>
+    public static string DesignSystemDirectory { get; } = Path.Combine(SharedDirectory, "DesignSystem");
 
-    /// <summary>A file under <c>Components/</c>, read whole.</summary>
-    public static string ReadComponent(params string[] segments) =>
-        File.ReadAllText(Path.Combine([ComponentsDirectory, .. segments]));
+    /// <summary>A file anywhere under <c>Components/Shared/</c>, found by name and read whole.</summary>
+    public static string ReadShared(string fileName) => File.ReadAllText(Find(SharedDirectory, fileName));
+
+    /// <summary>
+    /// A file under <c>Components/</c>, read whole. The segments are tried as a path first; when no
+    /// file is there, the last segment is looked up by name, so a test names the file it means
+    /// rather than the folder it happens to live in.
+    /// </summary>
+    public static string ReadComponent(params string[] segments)
+    {
+        var path = Path.Combine([ComponentsDirectory, .. segments]);
+
+        return File.ReadAllText(File.Exists(path) ? path : Find(ComponentsDirectory, segments[^1]));
+    }
+
+    /// <summary>The one file named <paramref name="fileName"/> under <paramref name="root"/>.</summary>
+    public static string Find(string root, string fileName)
+    {
+        var matches = Directory.GetFiles(root, fileName, SearchOption.AllDirectories);
+
+        return matches.Length == 1
+            ? matches[0]
+            : throw new FileNotFoundException(
+                $"Expected exactly one {fileName} under {root}, found {matches.Length}.", fileName);
+    }
 
     /// <summary>Every file under <c>Components/Shared/</c> that is a component rather than a stylesheet.</summary>
     public static string[] SharedComponents() =>

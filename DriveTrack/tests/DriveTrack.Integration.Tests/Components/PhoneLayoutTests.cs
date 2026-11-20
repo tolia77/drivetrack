@@ -87,7 +87,7 @@ public class PhoneLayoutTests
         // written in this screen's own RowTemplate and already carries this scope. That is the
         // rule that replaces the dropped head, so an unanchored copy of it would leak the reveal
         // onto every other table this screen might one day hold.
-        var css = SharedMarkup.ReadComponent("Pages", directory, screen + ".razor.css");
+        var css = SharedMarkup.ReadComponent("Pages", directory, screen + "Page.razor.css");
 
         Assert.Contains($".{wrapper} .{label}", css, StringComparison.Ordinal);
 

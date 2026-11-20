@@ -479,7 +479,7 @@ public class AnonymousScreenTests(PostgresFixture postgres)
         string wrapper,
         string submit)
     {
-        var screen = SharedMarkup.ReadComponent("Account", file + ".razor");
+        var screen = SharedMarkup.ReadComponent("Pages", "Accounts", file + "Page.razor");
 
         // The key `SubmitGuardTests` reads these two files by, and the only part of that
         // arrangement worth restating here. That class records the exemption *before* it looks for
@@ -523,7 +523,7 @@ public class AnonymousScreenTests(PostgresFixture postgres)
         string wrapper,
         string width)
     {
-        var css = WithoutComments(SharedMarkup.ReadComponent("Account", file + ".razor.css"));
+        var css = WithoutComments(SharedMarkup.ReadComponent("Pages", "Accounts", file + "Page.razor.css"));
 
         // `max-width` rather than `width`, which is what lets the panel fill a viewport narrower
         // than the bound instead of overflowing it. A figure rather than a token: the token scan
