@@ -5,19 +5,18 @@
 @inject IStringLocalizer<UiText> Localizer
 @inherits PagedScreen<ListDispatchersQuery, DispatcherAccount, DispatcherSort>
 
-@* FR-49 / FR-50: dispatcher accounts, and the first surface in the system that can make one - until
+@* Dispatcher accounts, and the first surface in the system that can make one - until
    now the startup seeder was the only thing that could.
 
    Every operation here is admin-only, and that is settled by IAccessGuard inside the service rather
-   than by a role on the attribute (AD-2). The navigation offers this destination to an administrator
+   than by a role on the attribute. The navigation offers this destination to an administrator
    and to nobody else, which is a convenience on top of the same decision, not a second copy of it. *@
 
 <PageTitle>@Localizer["DispatchersTitle"]</PageTitle>
 
 @* The screen's title and the one action that opens an empty form, on one line - the shape every
    other screen with a create action settled. The action is about the roster rather than about any
-   dispatcher in it, so it belongs beside the heading that names the roster; before this it sat in
-   a bare `<p>` of its own, a loose row the dispatch-board story logged as the last divergence.
+   dispatcher in it, so it belongs beside the heading that names the roster.
 
    The hook stays `dt-dispatcher-new` even though every other screen's reads `-create`: the create
    *dialog's* confirm button already owns that name here, and renaming either is a suite failure by
@@ -34,8 +33,8 @@
 
 @* One list for both dialogs, because they share _failures: a per-dialog list would leave a name
    refusal showing twice, inline in the dialog that raised it and again in the other's banner. The
-   edit dialog has no address box and no rule can name one from it (FR-92 sends a dispatcher to
-   their own profile for that), so claiming Email here hides nothing. *@
+   edit dialog has no address box and no rule can name one from it (a dispatcher changes it from
+   their own profile), so claiming Email here hides nothing. *@
 <DtFailureBanner Failures="_failures" InlineFields="@InlineFields" />
 
 @* `dt-table-cards` is where this screen opts into the shared collapse: below the phone breakpoint
@@ -134,11 +133,11 @@
             <input id="new-dispatcher-email" class="form-control" @bind="_createForm.Email" />
             <DtFieldError Field="Email" Failures="_failures" />
             @* This is where an administrator sets the address, and the edit dialog below has no
-               email field - but not because the address is fixed. FR-92 gives a dispatcher their own
+               email field - but not because the address is fixed. A dispatcher has their own
                /profile to change it from, which is the route this screen points them at. An
-               administrator is not locked out of it either: AD-4 makes RequireSelf read as
+               administrator is not locked out of it either: RequireSelf reads as
                "themselves, or an admin", so POST /api/users/{id}/email answers an administrator for
-               any account. What FR-92 does not ask for is a second place in this screen to do it
+               any account. What is not needed is a second place in this screen to do it
                from, which is why the field is here and not below. *@
             <div class="form-text">@Localizer["EmailAtCreationHint"]</div>
         </div>
@@ -210,7 +209,7 @@
     /// <summary>
     /// Drops the refusals when the form is dismissed, however it was dismissed.
     /// <para>
-    /// FR-83. A refusal claimed by a box inside the dialog is subtracted from the banner outside it,
+    /// A refusal claimed by a box inside the dialog is subtracted from the banner outside it,
     /// so leaving the list populated past the close would leave that sentence with nowhere on the
     /// page to render - invisible, which is the outcome this whole change exists to prevent.
     /// Hung off <c>OnClosed</c> rather than off the cancel handler because Escape and the backdrop
@@ -220,7 +219,7 @@
     private void ClearFailures() => _failures = [];
     /// <summary>
     /// The boxes this screen renders a <c>DtFieldError</c> for. Stated once and bound by every
-    /// banner on the page: the list repeated per banner is exactly the drift FR-83 is broken by,
+    /// banner on the page: the list repeated per banner is exactly the drift that loses a refusal,
     /// and a screen carries the banner more than once because a dialog opened with showModal()
     /// leaves the page behind it inert.
     /// </summary>
@@ -410,7 +409,7 @@
                     Optional<string?>.Present(_editForm.FirstName),
                     Optional<string?>.Present(_editForm.LastName),
 
-                    // FR-50: an empty box leaves the existing password signing in.
+                    // An empty box leaves the existing password signing in.
                     PasswordBox.ToOptional(_editForm.Password)),
                 CircuitToken);
         }
@@ -485,7 +484,7 @@
         public string? Password { get; set; }
     }
 
-    /// <summary>What the edit dialog is bound to. No email: story 7.3 owns that (FR-87).</summary>
+    /// <summary>What the edit dialog is bound to. No email: that changes through the profile.</summary>
     private sealed class DispatcherEditForm
     {
         public string? FirstName { get; set; }

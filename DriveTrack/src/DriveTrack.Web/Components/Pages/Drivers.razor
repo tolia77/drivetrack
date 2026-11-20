@@ -1,7 +1,7 @@
 @page "/drivers"
-@* FR-35 to FR-39, FR-45: the dispatcher's driver roster.
+@* The dispatcher's driver roster.
 
-   The Roles argument is what routes a wrong role to /access-denied (FR-79) rather than into an
+   The Roles argument is what routes a wrong role to /access-denied rather than into an
    error boundary. It is still a convenience, not the decision: IAccessGuard.RequireRole inside
    IDriverService settles whether this caller may do any of this, and it runs whether or not the
    screen was ever rendered.
@@ -10,7 +10,7 @@
    is interactive by inheritance and @bind works without [SupplyParameterFromForm].
 
    The @if blocks below are independent rather than if/else chains: an `else` at markup level reads
-   to NFR-14's source scan as a rendered English word, and the conditions exclude each other
+   to the localization source scan as a rendered English word, and the conditions exclude each other
    anyway. *@
 @attribute [Authorize(Roles = "Dispatcher,Admin")]
 @* Named for what they are rather than for the capability: a member called `Drivers` on a
@@ -37,7 +37,7 @@
     </button>
 </div>
 
-@* NFR-3: the message is the localized string for the code the service threw, resolved through the
+@* The message is the localized string for the code the service threw, resolved through the
    same catalogue the REST envelope uses. Nothing an exception carries reaches this page. *@
 <DtFailureBanner Failures="_failures" InlineFields="@InlineFields" />
 
@@ -47,8 +47,8 @@
 <div class="row g-4 mb-4">
     <div class="col-sm">
         <label class="form-label" for="drivers-search">@Localizer["Search"]</label>
-        @* FR-36, answered by the server over the whole roster - name, email, licence number and
-           vehicle - and written into the address as it is typed, replacing the history entry
+        @* The search, answered by the server over the whole roster - name, email, licence number
+           and vehicle - and written into the address as it is typed, replacing the history entry
            rather than adding one per keystroke. *@
         <input id="drivers-search" type="search" class="form-control"
                @bind="_search" @bind:event="oninput" @bind:after="SearchChangedAsync" />
@@ -144,13 +144,13 @@
             </td>
             <td>
                 <span class="dt-visually-hidden dt-driver-label">@Localizer["Rating"]</span>
-                @* FR-98: the aggregate, derived on demand and never stored. Null and zero are
+                @* The aggregate, derived on demand and never stored. Null and zero are
                    different claims - nobody has said anything, versus everybody said the worst
                    thing - and the shared display is what keeps the two apart: a driver with no
                    reviews gets words and no stars rather than a number, and wears none of the three
                    band colours, because the absence of a verdict is not a verdict. The band is
                    Domain's reading of the number, through ReviewViews; no threshold and no colour
-                   is written here (AD-18, AD-28). *@
+                   is written here. *@
                 <DtRatingDisplay Rating="driver.Rating" />
             </td>
             @* `dt-table-actions` rather than a class of this screen's own: the right-aligned,
@@ -174,7 +174,7 @@
     </DtDataTable>
 </div>
 
-@* FR-85: the one dialog every screen opens, rather than a modal of this screen's own. *@
+@* The one dialog every screen opens, rather than a modal of this screen's own. *@
 @* One heading for both create and edit. A title composed at run time would be a key no test can
    see, and the catalogue is closed against the keys components literally ask for. *@
 <DtDialog @ref="_formDialog" Title="@Localizer["DriverForm"]" OnClosed="ClearFailures">
@@ -187,7 +187,7 @@
 
            InlineFields is computed rather than written out: the address and the password are
            create-only boxes, and claiming one this render does not show would be the one way a
-           refusal could go missing (FR-83). *@
+           refusal could go missing. *@
         <DtFailureBanner Failures="_failures" InlineFields="@InlineFields" />
 
         <EditForm id="driver-form" Model="_form" OnValidSubmit="SaveAsync">
@@ -195,9 +195,9 @@
                EditContext and stops OnValidSubmit firing at all, so without this the Save
                button would do nothing and say nothing. ValidationSummary rather than per-field
                ValidationMessage: a `For="@(() => ...)"` lambda inside an attribute is the
-               construct NFR-14's source scan misreads. *@
+               construct the localization source scan misreads. *@
             <ValidationSummary />
-            @* FR-37 names the driver's name among the things a dispatcher may change, so these two
+            @* A driver's name is among the things a dispatcher may change, so these two
                are on both the create and the edit form. *@
             <div class="mb-4">
                 <label class="form-label" for="driver-first-name">@Localizer["FirstName"]</label>
@@ -210,8 +210,8 @@
                 <DtFieldError Field="LastName" Failures="_failures" />
             </div>
 
-            @* The address and the password are create-only. FR-37 does not name them, and AD-24
-               keeps this screen's reach into an account to what a requirement asks for. *@
+            @* The address and the password are create-only: a dispatcher may not change them, and
+               this screen reaches into an account no further than that. *@
             @if (_form.Id is null)
             {
                 <div class="mb-4">
@@ -236,10 +236,10 @@
 
             <div class="mb-4">
                 <label class="form-label" for="driver-vehicle">@Localizer["Vehicle"]</label>
-                @* FR-45 and FR-38 in one control: the choices are the vehicles nobody holds, and the
-                   empty option is an explicit "no vehicle" - which is how a dispatcher releases an
-                   assignment. The original had no such choice, so an assigned vehicle stayed
-                   assigned for good. *@
+                @* Assigning and releasing in one control: the choices are the vehicles nobody
+                   holds, and the empty option is an explicit "no vehicle" - which is how a
+                   dispatcher releases an assignment. The original had no such choice, so an
+                   assigned vehicle stayed assigned for good. *@
                 <DtSelect Id="driver-vehicle" @bind-Value="_form.VehicleId">
                     <option value="">@Localizer["NoVehicle"]</option>
                     @foreach (var vehicle in _vehicleChoices)
@@ -262,7 +262,7 @@
     </Actions>
 </DtDialog>
 
-@* FR-81: a destructive action is confirmed through the shared prompt, never performed on the click
+@* A destructive action is confirmed through the shared prompt, never performed on the click
    that asked for it. *@
 <DtConfirmDialog @ref="_deleteDialog"
                  Title="@Localizer["DeleteDriverTitle"]"
@@ -274,7 +274,7 @@
     /// <summary>
     /// Drops the refusals when the form is dismissed, however it was dismissed.
     /// <para>
-    /// FR-83. A refusal claimed by a box inside the dialog is subtracted from the banner outside it,
+    /// A refusal claimed by a box inside the dialog is subtracted from the banner outside it,
     /// so leaving the list populated past the close would leave that sentence with nowhere on the
     /// page to render - invisible, which is the outcome this whole change exists to prevent.
     /// Hung off <c>OnClosed</c> rather than off the cancel handler because Escape and the backdrop
@@ -285,7 +285,7 @@
     /// <summary>
     /// The boxes the dialog is rendering, which is what both banners subtract. Computed rather than
     /// written out because the address and the password are create-only: claiming a field this
-    /// render does not show would hide a refusal with nowhere else to appear (FR-83).
+    /// render does not show would hide a refusal with nowhere else to appear.
     /// </summary>
     private string InlineFields => _form.Id is null
         ? "FirstName,LastName,Email,Password,LicenseNumber"
@@ -298,8 +298,8 @@
     /// create action and takes the create colour, and changing one that already exists is an edit.
     /// <para>
     /// One dialog serves both modes, so the button is the only thing on screen that can say which
-    /// one the reader is in - and AD-28 gives the two actions different colours precisely so that
-    /// it does. Resolved here rather than as a ternary in the attribute, for the reason
+    /// one the reader is in - and the palette gives the two actions different colours precisely so
+    /// that it does. Resolved here rather than as a ternary in the attribute, for the reason
     /// <c>DtDialog</c> resolves its panel class into a property.
     /// </para>
     /// <para>
@@ -342,7 +342,7 @@
     {
         // The circuit outlives the request that opened it, so the cookie can be gone by the time a
         // screen calls a service. Raising the contract's own code here is what puts that case
-        // through FR-13's single boundary instead of a per-screen redirect.
+        // through the single session-expiry boundary instead of a per-screen redirect.
         if (!Caller.IsAuthenticated)
         {
             throw new ForbiddenException(
@@ -398,7 +398,7 @@
         await Roster.ListAsync(view, CircuitToken);
 
     /// <summary>
-    /// FR-36's search box changed: page one of what it now matches, replacing the history entry. The
+    /// The search box changed: page one of what it now matches, replacing the history entry. The
     /// match itself - name, email, licence number and vehicle - is the server's, over every driver.
     /// </summary>
     private Task SearchChangedAsync() =>
@@ -416,7 +416,7 @@
     /// rendering opens no edit dialog - so until this lived here the rule was protected by a
     /// comment and nothing else.
     /// </remarks>
-    /// <param name="unassigned">Every vehicle no driver holds (FR-45).</param>
+    /// <param name="unassigned">Every vehicle no driver holds.</param>
     /// <param name="driver">The driver being edited, or null while creating one.</param>
     internal static IReadOnlyList<VehicleChoice> ChoicesFor(
         IReadOnlyList<VehicleSummary> unassigned,
@@ -542,7 +542,7 @@
                         Optional<string>.Present(_form.LastName),
                         Optional<string>.Present(_form.LicenseNumber),
                         // Always present: this screen states the assignment it means, and an
-                        // explicit null is FR-38's release.
+                        // explicit null is the release.
                         Optional<int?>.Present(_form.VehicleId)),
                     CircuitToken);
             }

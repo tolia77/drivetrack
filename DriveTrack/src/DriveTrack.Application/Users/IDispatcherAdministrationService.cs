@@ -3,9 +3,8 @@ using DriveTrack.Domain.Identity;
 namespace DriveTrack.Application.Users;
 
 /// <summary>
-/// Dispatcher accounts (FR-49, FR-50). The original's <c>/dispatchers</c> endpoints, and the first
-/// way in the system to create a dispatcher at all — until now the startup seeder was the only
-/// thing that could.
+/// Dispatcher accounts. The original's <c>/dispatchers</c> endpoints, and the one way in the
+/// system to create a dispatcher besides the startup seeder.
 /// <para>
 /// Every method is <c>RequireRole(Admin)</c>: a dispatcher administers deliveries, not colleagues.
 /// </para>
@@ -17,15 +16,15 @@ namespace DriveTrack.Application.Users;
 /// </summary>
 public interface IDispatcherAdministrationService
 {
-    /// <summary>Opens a dispatcher account and returns it (FR-49).</summary>
+    /// <summary>Opens a dispatcher account and returns it.</summary>
     /// <exception cref="Common.ConflictException">Another account already holds that email.</exception>
     Task<DispatcherAccount> CreateAsync(
         CreateDispatcherCommand command,
         CancellationToken cancellationToken);
 
     /// <summary>
-    /// One page of the dispatcher roster, sorted over every dispatcher, with the size of the roster
-    /// (FR-49, NFR-27). Administrators only.
+    /// One page of the dispatcher roster, sorted over every dispatcher, with the size of the roster.
+    /// Administrators only.
     /// </summary>
     /// <exception cref="Common.ForbiddenException">The caller does not run the system.</exception>
     /// <exception cref="Common.ValidationException">
@@ -35,15 +34,15 @@ public interface IDispatcherAdministrationService
         ListDispatchersQuery query,
         CancellationToken cancellationToken);
 
-    /// <summary>One dispatcher (FR-49).</summary>
+    /// <summary>One dispatcher.</summary>
     /// <exception cref="Common.NotFoundException">
     /// No account has that id, or the account is not a dispatcher.
     /// </exception>
     Task<DispatcherAccount> GetAsync(UserId userId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Edits a dispatcher's name and password (FR-50). A command that leaves the password absent
-    /// leaves the stored password exactly as it is (AD-23).
+    /// Edits a dispatcher's name and password. A command that leaves the password absent
+    /// leaves the stored password exactly as it is.
     /// </summary>
     Task<DispatcherAccount> UpdateAsync(
         UserId userId,
@@ -51,7 +50,7 @@ public interface IDispatcherAdministrationService
         CancellationToken cancellationToken);
 
     /// <summary>
-    /// Deletes a dispatcher's account (FR-50). The timeline entries, chat messages and proofs they
+    /// Deletes a dispatcher's account. The timeline entries, chat messages and proofs they
     /// touched survive with a null actor reference rather than being erased or made undeletable.
     /// </summary>
     Task DeleteAsync(UserId userId, CancellationToken cancellationToken);

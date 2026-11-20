@@ -1,7 +1,7 @@
 namespace DriveTrack.Integration.Tests.Support;
 
 /// <summary>
-/// A clock that stands still at a chosen instant (AD-13).
+/// A clock that stands still at a chosen instant.
 /// <para>
 /// The reason the token issuer takes a <c>TimeProvider</c> at all is so a lifetime rule can be
 /// tested by moving a clock rather than by waiting an hour. This is the smallest thing that

@@ -8,16 +8,16 @@ namespace DriveTrack.Web.Components.Shared;
 /// The decisions the reviews screen and the driver roster take about a rating, lifted out of
 /// markup so they can be read back.
 /// <para>
-/// AD-18 is why the class names are here rather than in a <c>class="@(...)"</c> expression: a
+/// This is why the class names are here rather than in a <c>class="@(...)"</c> expression: a
 /// threshold written into markup is a product rule living where no test of the rule would look.
 /// <see cref="RatingScale.Band"/> in Domain decides which band a number falls in; this only says
 /// which class each band wears, and the class resolves to a <c>--dt-rating-*</c> token. No literal
-/// colour, and no second copy of "four and above is good" (AD-28, NFR-29).
+/// colour, and no second copy of "four and above is good".
 /// </para>
 /// <para>
 /// The role predicates say what the screen draws, never what a caller may do.
 /// <c>IAccessGuard</c> inside <c>IReviewService</c> refuses whatever this decided to render, and it
-/// runs whether or not a button was ever put on the page (FR-12). They are lifted out of markup for
+/// runs whether or not a button was ever put on the page. They are lifted out of markup for
 /// the same reason the class names are: a static render dispatches no events, so a rule written
 /// inside an <c>@if</c> is a rule no test in this solution can reach.
 /// </para>
@@ -68,7 +68,7 @@ internal static class ReviewViews
     /// <summary>
     /// A rating as a reader sees it: whole numbers without a decimal part, averages to one place.
     /// <para>
-    /// Formatted against the current culture rather than the invariant one (NFR-15), so 3.5 reads
+    /// Formatted against the current culture rather than the invariant one, so 3.5 reads
     /// as <c>3,5</c> the way every other number on a Ukrainian screen does.
     /// </para>
     /// </summary>
@@ -77,19 +77,19 @@ internal static class ReviewViews
         Rounded(rating).ToString("0.#", CultureInfo.CurrentCulture);
 
     /// <summary>
-    /// True when this caller writes reviews — a client, and nobody else (FR-62).
+    /// True when this caller writes reviews — a client, and nobody else.
     /// <para>
     /// The screen agrees with <c>IAccessGuard.RequireReviewAuthor</c> rather than deciding
-    /// anything. An administrator is the row a reader will take for a mistake: the PRD retired
-    /// FR-97, so they moderate reviews and never author one, and offering them a compose action
+    /// anything. An administrator is the row a reader will take for a mistake: they moderate
+    /// reviews and never author one, and offering them a compose action
     /// would be offering one that can only refuse.
     /// </para>
     /// </summary>
-    /// <param name="role">The caller's single role (AD-4).</param>
+    /// <param name="role">The caller's single role.</param>
     public static bool Authors(UserRole role) => role == UserRole.Client;
 
     /// <summary>
-    /// True when this caller reads the whole collection with both parties named (FR-64): a
+    /// True when this caller reads the whole collection with both parties named: a
     /// dispatcher or an administrator.
     /// </summary>
     /// <param name="role">The caller's single role.</param>
@@ -97,7 +97,7 @@ internal static class ReviewViews
         role is UserRole.Dispatcher or UserRole.Admin;
 
     /// <summary>
-    /// True when this caller may change somebody else's review (FR-65, FR-66): an administrator
+    /// True when this caller may change somebody else's review: an administrator
     /// only. A dispatcher reads the collection and never writes to it.
     /// </summary>
     /// <param name="role">The caller's single role.</param>

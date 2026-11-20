@@ -54,11 +54,11 @@ public class AuthenticationTests(PostgresFixture postgres)
 
         Assert.Equal(email, session.GetProperty("email").GetString());
 
-        // AD-21: the role crosses the wire as its member name, never as an ordinal.
+        // The role crosses the wire as its member name, never as an ordinal.
         Assert.Equal("Client", session.GetProperty("role").GetString());
         Assert.False(string.IsNullOrWhiteSpace(session.GetProperty("accessToken").GetString()));
 
-        // AD-22: the typed id is a compile-time device, not a wire shape.
+        // The typed id is a compile-time device, not a wire shape.
         var userId = session.GetProperty("userId").GetInt32();
 
         Assert.True(userId > 0);
@@ -222,12 +222,12 @@ public class AuthenticationTests(PostgresFixture postgres)
 
         Assert.Equal(nameof(ErrorCode.COMMON_VALIDATION_FAILED), error.GetProperty("code").GetString());
 
-        // NFR-4: the key is the name the caller sent, so a form can attach the message to the input.
+        // The key is the name the caller sent, so a form can attach the message to the input.
         var message = error.GetProperty("fields").GetProperty("phoneNumber")[0].GetString();
 
         Assert.False(string.IsNullOrWhiteSpace(message));
 
-        // NFR-14: what arrives is the Ukrainian sentence, not the code the validator named.
+        // What arrives is the Ukrainian sentence, not the code the validator named.
         Assert.DoesNotContain(nameof(ErrorCode.AUTH_PHONE_NUMBER_INVALID), message, StringComparison.Ordinal);
     }
 
@@ -258,7 +258,7 @@ public class AuthenticationTests(PostgresFixture postgres)
         using var client = factory.CreateClient();
 
         // Present, so the validator is satisfied, and below Identity's policy, so the store refuses
-        // it - the row that proves both halves answer with the same code (NFR-2).
+        // it - the row that proves both halves answer with the same code.
         using var response = await client.PostAsJsonAsync(
             new Uri("/api/auth/register", UriKind.Relative),
             Payload(UniqueEmail(), password: "abc", passwordConfirmation: "abc"),
@@ -321,7 +321,7 @@ public class AuthenticationTests(PostgresFixture postgres)
         Assert.Equal(userId, profile.GetProperty("userId").GetInt32());
         Assert.Equal("Client", profile.GetProperty("role").GetString());
 
-        // FR-5: the licence number is a driver's field, so a client's profile carries null.
+        // The licence number is a driver's field, so a client's profile carries null.
         Assert.Equal(JsonValueKind.Null, profile.GetProperty("licenseNumber").ValueKind);
     }
 
@@ -355,8 +355,8 @@ public class AuthenticationTests(PostgresFixture postgres)
     [Fact]
     public async Task The_seeded_admin_reads_any_profile()
     {
-        // AD-4's override, end to end: the admin holds one role row like everybody else and passes
-        // the check by rule inside the guard.
+        // The admin override, end to end: the admin holds one role row like everybody else and
+        // passes the check by rule inside the guard.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await CreateAsync(cancellationToken);
         using var client = factory.CreateClient();
@@ -446,8 +446,9 @@ public class AuthenticationTests(PostgresFixture postgres)
     [Fact]
     public async Task The_sign_in_form_issues_the_cookie_and_lands_on_the_roles_route()
     {
-        // FR-7 through the adapter that actually decides it. A circuit cannot write Set-Cookie, so
-        // this page renders statically and its POST is the only path that issues a session.
+        // The role's landing screen, through the adapter that actually decides it. A circuit cannot
+        // write Set-Cookie, so this page renders statically and its POST is the only path that
+        // issues a session.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await CreateAsync(cancellationToken);
         using var client = factory.CreateClient();
@@ -510,7 +511,7 @@ public class AuthenticationTests(PostgresFixture postgres)
     [Fact]
     public async Task The_register_form_issues_the_cookie_and_lands_on_the_roles_route()
     {
-        // FR-1 through the screen rather than the endpoint: registration signs the new client in on
+        // Registration through the screen rather than the endpoint: it signs the new client in on
         // the spot, and the cookie half of that is the part the JSON tests never touch.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await CreateAsync(cancellationToken);
@@ -595,7 +596,7 @@ public class AuthenticationTests(PostgresFixture postgres)
     [Fact]
     public async Task Signing_out_clears_the_session_cookie_and_leaves_the_browser_anonymous()
     {
-        // FR-6. The cookie is stateless, so what sign-out can promise is that the browser stops
+        // Sign-out. The cookie is stateless, so what sign-out can promise is that the browser stops
         // holding one - this drives the flow the way a browser would, cookie jar and all.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await CreateAsync(cancellationToken);
@@ -697,9 +698,9 @@ public class AuthenticationTests(PostgresFixture postgres)
     [Fact]
     public async Task An_expired_bearer_token_is_refused_with_the_envelope()
     {
-        // AD-13 is why the issuer takes a TimeProvider at all: back-date the host's clock and the
-        // token it signs is already past its expiry against the clock the handler validates with,
-        // so the configured lifetime is exercised without waiting an hour for it.
+        // The injected clock is why the issuer takes a TimeProvider at all: back-date the host's
+        // clock and the token it signs is already past its expiry against the clock the handler
+        // validates with, so the configured lifetime is exercised without waiting an hour for it.
         var cancellationToken = TestContext.Current.CancellationToken;
         var clock = new FixedTimeProvider(DateTimeOffset.UtcNow.AddHours(-2));
 
@@ -810,8 +811,8 @@ public class AuthenticationTests(PostgresFixture postgres)
     [Fact]
     public void A_role_with_no_landing_screen_is_a_failure_not_a_default()
     {
-        // FR-7's map is total for the same reason the status map is: a fifth role added without a
-        // screen must fail loudly rather than quietly sending someone to the home page.
+        // The landing map is total for the same reason the status map is: a fifth role added
+        // without a screen must fail loudly rather than quietly sending someone to the home page.
         Assert.Throws<ArgumentOutOfRangeException>(() => LandingRoute.For((UserRole)99));
     }
 
@@ -822,15 +823,16 @@ public class AuthenticationTests(PostgresFixture postgres)
     [InlineData(UserRole.Client, "/profile")]
     public void Each_role_lands_on_its_own_first_screen(UserRole role, string expected)
     {
-        // FR-7, row by row. The two roles that run dispatch land on the day at a glance; a driver
-        // and a client keep their profile until they have a dashboard of their own.
+        // The landing screen, row by row. The two roles that run dispatch land on the day at a
+        // glance; a driver and a client keep their profile until they have a dashboard of their
+        // own.
         Assert.Equal(expected, LandingRoute.For(role));
     }
 
     [Fact]
     public async Task The_shell_offers_sign_out_when_signed_in_and_the_anonymous_entry_points_otherwise()
     {
-        // FR-12. The nav is the only user-reachable path to POST /sign-out, and the sign-out flow
+        // The nav is the only user-reachable path to POST /sign-out, and the sign-out flow
         // test builds its own request rather than following a link - so the control could be dropped,
         // or the two AuthorizeView arms swapped, with every other assertion in this file still green.
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -956,7 +958,7 @@ public class AuthenticationTests(PostgresFixture postgres)
     [Fact]
     public async Task The_landing_page_is_anonymous()
     {
-        // FR-99: the one screen a visitor with no account can reach.
+        // The landing page: the one screen a visitor with no account can reach.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await CreateAsync(cancellationToken);
         using var client = factory.CreateClient();

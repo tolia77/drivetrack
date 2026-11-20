@@ -4,7 +4,7 @@ using DriveTrack.Integration.Tests.Support;
 namespace DriveTrack.Integration.Tests.Components;
 
 /// <summary>
-/// AD-14 and FR-78/79/80 pinned against regression: the shell's render mode, and the three
+/// Pinned against regression: the shell's render mode, and the three
 /// dead-end surfaces a routed application needs before it has any screens at all.
 /// </summary>
 public class ShellRoutingTests
@@ -14,8 +14,9 @@ public class ShellRoutingTests
     [Fact]
     public void The_shell_keeps_the_one_render_mode_with_prerendering_off()
     {
-        // AD-14. Prerendering off is what makes FR-80's claim true: with it on, a protected page
-        // renders once statically before the circuit exists, and that pass is a response body.
+        // Prerendering off is what keeps protected content out of the response: with it on, a
+        // protected page renders once statically before the circuit exists, and that pass is a
+        // response body.
         var shell = SharedMarkup.ReadComponent("App.razor");
 
         Assert.Contains("new InteractiveServerRenderMode(prerender: false)", shell, StringComparison.Ordinal);
@@ -36,7 +37,7 @@ public class ShellRoutingTests
     [Fact]
     public void Neither_authorization_fragment_can_render_the_protected_component()
     {
-        // FR-80. A route view or an @Body inside either fragment would put the protected screen's
+        // A route view or an @Body inside either fragment would put the protected screen's
         // markup into the response of the very request that refused it.
         var routes = SharedMarkup.ReadComponent("Routes.razor");
 
@@ -99,7 +100,7 @@ public class ShellRoutingTests
         Assert.Contains("href=", page, StringComparison.Ordinal);
         Assert.Contains(@"@Localizer[""BackToHome""]", page, StringComparison.Ordinal);
 
-        // And it is labelled, not a bare arrow (NFR-24).
+        // And it is labelled, not a bare arrow.
         Assert.Contains("<Icon Name=\"IconName.Back\" />", page, StringComparison.Ordinal);
     }
 
@@ -122,9 +123,8 @@ public class ShellRoutingTests
     [Fact]
     public void The_landing_page_sends_a_signed_in_caller_where_their_role_lands()
     {
-        // FR-99. The hardcoded `profile` this replaces was a second answer to a question
-        // LandingRoute already owns, and the two would have diverged the first time a role got a
-        // dashboard.
+        // A hardcoded `profile` here would be a second answer to a question LandingRoute
+        // already owns, and the two would diverge the first time a role got a dashboard.
         var home = SharedMarkup.ReadComponent("Pages", "Home.razor");
 
         Assert.Contains("LandingRoute.For(Caller.Role)", home, StringComparison.Ordinal);
@@ -138,7 +138,7 @@ public class ShellRoutingTests
             @"id=""dt-landing-account-menu""[^>]*popover[^>]*>\s*<a\b[^>]*href=""/profile""",
             home);
 
-        // NFR-24: every glyph on the page is a named one from the shared set, and there are
+        // Every glyph on the page is a named one from the shared set, and there are
         // twenty-five in the source. The brand mark twice, header and footer. The header's language
         // menu is DtLanguageMenu's, and what it draws is its own. The account menu: the button's
         // chevron and its fallback profile glyph, and its two items. The phone's menu: its button's

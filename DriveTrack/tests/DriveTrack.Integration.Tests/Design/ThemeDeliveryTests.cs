@@ -6,11 +6,11 @@ using DriveTrack.Integration.Tests.Support;
 namespace DriveTrack.Integration.Tests.Design;
 
 /// <summary>
-/// AD-28 delivered rather than merely declared.
+/// The design tokens delivered rather than merely declared.
 /// <para>
 /// Every other assertion about the theme reads it off the developer's disk: that
 /// <c>wwwroot/css/app.css</c> exists, that its text carries the right custom properties, that
-/// <c>App.razor</c>'s source links it. None of that is the claim the story actually makes. The
+/// <c>App.razor</c>'s source links it. None of that is the actual claim. The
 /// stylesheet is build output - gitignored, produced by the Sass step, and reaching the browser
 /// only by way of the static web asset manifest and <c>MapStaticAssets</c>. Comment out that one
 /// call and every disk-reading test stays green while the application serves an unstyled page.

@@ -12,11 +12,11 @@ using Microsoft.Extensions.DependencyInjection;
 namespace DriveTrack.Integration.Tests.Components;
 
 /// <summary>
-/// FR-28's screen, rendered.
+/// The notification log screen, rendered.
 /// <para>
 /// Rendered rather than read as source, because no arrangement of words can tell a table that shows
 /// its rows from one that shows a blank rectangle — which is exactly what the baseline's lists did
-/// while loading and while empty (FR-82, NFR-22). The three states are asserted one apiece, and the
+/// while loading and while empty. The three states are asserted one apiece, and the
 /// loading one is read off the component's first render pass, which is the only moment it exists.
 /// </para>
 /// </summary>
@@ -81,7 +81,7 @@ public class NotificationScreenTests
     [Fact]
     public async Task Every_attempt_reaches_the_shared_table_with_its_outcome_and_its_error()
     {
-        // FR-28's whole point: the row an administrator can read, and enough of it to act on. A
+        // The whole point: the row an administrator can read, and enough of it to act on. A
         // screen that showed the recipient and swallowed the reason would be the original's log
         // line with a table around it.
         var html = await RenderAsync(Attempts);
@@ -111,7 +111,7 @@ public class NotificationScreenTests
             "The newest attempt is not the first row on the screen.");
 
         // One of each outcome, each as a word rather than as the enum member the column holds
-        // (AD-18, AD-21). The member names are the thing that must not be on the screen.
+        // The member names are the thing that must not be on the screen.
         Assert.Equal(1, SharedMarkup.Occurrences(html, "dt-notification-sent"));
         Assert.Equal(1, SharedMarkup.Occurrences(html, "dt-notification-failed"));
 
@@ -123,7 +123,7 @@ public class NotificationScreenTests
     [Fact]
     public async Task An_empty_log_says_so_in_this_screens_own_words()
     {
-        // NFR-22: the empty state is a row that says there is nothing, not an absence of rows. And
+        // The empty state is a row that says there is nothing, not an absence of rows. And
         // it is this screen's sentence rather than the table's default, because "nothing here" and
         // "nothing has been sent yet" are different pieces of news.
         var html = await RenderAsync([]);
@@ -159,9 +159,9 @@ public class NotificationScreenTests
     [Fact]
     public async Task Every_word_the_screen_renders_of_its_own_is_Ukrainian()
     {
-        // NFR-14, read back from the rendered page rather than from the source: a key that resolved
-        // to its own name would read as Latin here and nowhere else. The rows themselves are data -
-        // an email address is Latin by nature - so they are deliberately not in scope.
+        // Translation, read back from the rendered page rather than from the source: a key that
+        // resolved to its own name would read as Latin here and nowhere else. The rows themselves
+        // are data - an email address is Latin by nature - so they are deliberately not in scope.
         var html = await RenderAsync(Attempts);
 
         var chrome = new List<string>
@@ -188,7 +188,7 @@ public class NotificationScreenTests
     [Fact]
     public async Task A_long_log_is_paged_and_the_pager_names_the_whole_of_it()
     {
-        // NFR-27 bounds the read, and the pager is the other half of bounding it: the log grows by
+        // Paging bounds the read, and the pager is the other half of bounding it: the log grows by
         // a row per status change per delivery, and the older attempts are pages away rather than
         // off the screen with nothing saying so. The total is the server's, so "з 120" is a count
         // of the whole log, not of the page.
@@ -244,7 +244,7 @@ public class NotificationScreenTests
 
         Assert.Contains("<h1", body, StringComparison.Ordinal);
 
-        // NFR-24: the heading carries the glyph the navigation already uses for this destination.
+        // The heading carries the glyph the navigation already uses for this destination.
         Assert.Contains("<svg", body, StringComparison.Ordinal);
 
         // And nothing beside it. The log is read; there is no attempt on it that can be retried,
@@ -313,7 +313,7 @@ public class NotificationScreenTests
     [Fact]
     public void The_screen_takes_no_authorization_decision_of_its_own()
     {
-        // FR-12 / AD-2: IAccessGuard.RequireRole(Admin) inside NotificationLogService is the only
+        // IAccessGuard.RequireRole(Admin) inside NotificationLogService is the only
         // place this screen's audience is decided. A role on the page attribute would be a second
         // copy of that rule, worded differently, in a place no test of the rule would read.
         var screen = SharedMarkup.ReadComponent("Pages", "Admin", "Notifications.razor");

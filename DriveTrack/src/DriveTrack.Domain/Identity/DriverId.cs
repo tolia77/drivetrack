@@ -6,7 +6,7 @@ namespace DriveTrack.Domain.Identity;
 /// The identity of a driver row — deliberately not the identity of the driver's user.
 /// <para>
 /// A driver row id and a user id are different numbers (see the surrogate key on
-/// <c>Driver</c>), which is what makes AD-22's compile-time separation load-bearing rather
+/// <c>Driver</c>), which is what makes the compile-time separation load-bearing rather
 /// than decorative.
 /// </para>
 /// </summary>

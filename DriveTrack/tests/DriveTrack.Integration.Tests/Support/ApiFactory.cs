@@ -45,25 +45,25 @@ internal sealed class ApiFactory : WebApplicationFactory<Program>
     public TestDatabase Database => _database;
 
     /// <summary>
-    /// Creates the host's database first, because <c>Program.cs</c> migrates at start-up (AD-20) and
+    /// Creates the host's database first, because <c>Program.cs</c> migrates at start-up and
     /// would abort against a database that does not exist.
     /// </summary>
     /// <param name="adminConnectionString">Connection string of the container's own database.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <param name="useProbeAuthentication">
     /// True - the default - registers the probe scheme last, which makes it the default and is what
-    /// keeps the Epic 1 envelope tests asserting against a principal they control. The identity
+    /// keeps the envelope tests asserting against a principal they control. The identity
     /// suite passes false so the real cookie and JWT schemes, and the path selector between them,
     /// are the ones under test.
     /// </param>
     /// <param name="clock">
-    /// A clock for the host to issue tokens against (AD-13). Null takes the real one; a back-dated
+    /// A clock for the host to issue tokens against. Null takes the real one; a back-dated
     /// <see cref="FixedTimeProvider"/> is how token expiry is exercised without waiting for it.
     /// </param>
     /// <param name="configureServices">
     /// Registrations applied last, after everything else this factory adds, so they win the
     /// resolve. This is how a fake <c>IGeocoder</c> or <c>IEmailSender</c> takes the place of the
-    /// real adapter: AD-12's ports are the two things in this system that reach outside the
+    /// real adapter: the outbound ports are the two things in this system that reach outside the
     /// process, and a suite that let them do it would be asserting against somebody else's uptime.
     /// </param>
     /// <param name="settings">
@@ -94,7 +94,7 @@ internal sealed class ApiFactory : WebApplicationFactory<Program>
         // appsettings.json exactly as the container does.
         builder.UseContentRoot(RepositoryLayout.ProjectDirectory("DriveTrack.Web"));
 
-        // AD-19: the connection string, the JWT settings and the first administrator all arrive as
+        // The connection string, the JWT settings and the first administrator all arrive as
         // configuration, here as they do in compose. The signing key is not optional - startup
         // aborts without one - so every host in this suite supplies it, and the failing case is
         // asserted deliberately in InfrastructureRegistrationTests.

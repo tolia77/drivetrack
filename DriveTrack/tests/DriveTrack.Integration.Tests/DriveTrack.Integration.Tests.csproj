@@ -9,14 +9,14 @@
   <ItemGroup>
     <PackageReference Include="xunit.v3" Version="4.0.0" />
     <PackageReference Include="Testcontainers.PostgreSql" Version="4.14.0" />
-    <!-- NFR-1 is an HTTP contract, so it is asserted over HTTP against the real Program.cs. -->
+    <!-- The response envelope is an HTTP contract, so it is asserted over HTTP against the real Program.cs. -->
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.4" />
     <!--
-      FR-73 to FR-76 live in a hub, and the hub is where chat's authorization is enforced: a test
+      Chat lives in a hub, and the hub is where chat's authorization is enforced: a test
       that called ChatHub's methods directly would assert against a class rather than against a
       caller who had to negotiate, authenticate and be added to a group before hearing anything.
-      NFR-17 names messaging as the feature the original never tested, and this is the client that
-      makes testing it possible.
+      Messaging is the feature the original never tested, and this is the client that makes
+      testing it possible.
 
       Test-only. The server half is the shared framework DriveTrack.Web already targets, and
       ChatAssetTests pins that the Web project takes no SignalR package of its own.
@@ -25,7 +25,7 @@
   </ItemGroup>
 
   <!--
-    References all four source projects so AD-1's layering can be asserted from
+    References all four source projects so the project layering can be asserted from
     compiled assembly metadata rather than from strings.
   -->
   <ItemGroup>
@@ -36,9 +36,9 @@
   </ItemGroup>
 
   <!--
-    NFR-29 / AD-28: "an automated check fails the build on any literal colour, font family or
-    size, spacing figure, radius or shadow in a component". A test that only runs when someone
-    runs tests is a review convention with extra steps - the criterion says *the build*, so the
+    The design-token rule: "an automated check fails the build on any literal colour, font family
+    or size, spacing figure, radius or shadow in a component". A test that only runs when someone
+    runs tests is a review convention with extra steps - the rule says *the build*, so the
     guard runs here.
 
     Only the design class, and only through the class filter: it is pure file scanning plus a
@@ -77,9 +77,9 @@
     </Exec>
 
     <Error Condition=" '$(_DesignTokenGateExit)' != '0' "
-           Code="NFR29"
+           Code="DESIGNTOKENS"
            File="$(MSBuildProjectFullPath)"
-           Text="The design token contract is broken (NFR-29 / AD-28). A component may only express a visual value as a token reference.$(_NewLine)$(_DesignTokenGateOutput)" />
+           Text="The design token contract is broken. A component may only express a visual value as a token reference.$(_NewLine)$(_DesignTokenGateOutput)" />
   </Target>
 
 </Project>

@@ -572,13 +572,13 @@ namespace DriveTrack.Infrastructure.Persistence.Migrations
             // ----------------------------------------------------------------------------
             // Foreign keys onto the Identity user table, written by hand.
             //
-            // Every one of these five columns holds a strongly-typed UserId (AD-22) stored as
+            // Every one of these five columns holds a strongly-typed UserId stored as
             // an integer, while IdentityUser<int> fixes the principal key as a plain int. EF
             // Core refuses a relationship whose foreign key and principal key have different
             // CLR types, so it cannot generate these. Giving up the typed id to satisfy the
             // tooling would give up the one thing it is for - a user id and a driver row id
             // being impossible to confuse - so the constraints are declared here instead.
-            // Under AD-20 the migration is the schema authority anyway; this is the authority
+            // The migration is the schema authority anyway; this is the authority
             // speaking directly. What is not negotiable is that all five exist: an undeclared
             // foreign key is the defect this rewrite was written to retire.
             // ----------------------------------------------------------------------------
@@ -590,14 +590,14 @@ namespace DriveTrack.Infrastructure.Persistence.Migrations
                     FOREIGN KEY (user_id) REFERENCES asp_net_users (id) ON DELETE CASCADE;
                 """);
 
-            // Same for a driver row (FR-39: deleting the user must not raise).
+            // Same for a driver row (deleting the user must not raise).
             migrationBuilder.Sql("""
                 ALTER TABLE drivers
                     ADD CONSTRAINT fk_drivers_asp_net_users_user_id
                     FOREIGN KEY (user_id) REFERENCES asp_net_users (id) ON DELETE CASCADE;
                 """);
 
-            // AD-20's actor rule: set null, never restrict and never cascade. Restrict would
+            // The actor rule: set null, never restrict and never cascade. Restrict would
             // make every user who has ever acted permanently undeletable - the exact "deleting
             // a driver raises a database error" defect this rewrite exists to fix - and cascade
             // would erase the history. The snapshotted name and role on the row are what keep
@@ -610,7 +610,7 @@ namespace DriveTrack.Infrastructure.Persistence.Migrations
 
             // The sender of a chat message, on the same reasoning: cascade would delete half a
             // conversation to close one account, and restrict would make closing it impossible.
-            // There is no snapshot here - the spine permits that denormalization only on the
+            // There is no snapshot here - that denormalization is permitted only on the
             // timeline - so an orphaned line reads as unattributed rather than as someone else.
             migrationBuilder.Sql("""
                 ALTER TABLE messages
@@ -627,20 +627,20 @@ namespace DriveTrack.Infrastructure.Persistence.Migrations
                 """);
 
             // ----------------------------------------------------------------------------
-            // AD-27: the timeline is append-only, guarded at the schema level.
+            // The timeline is append-only, guarded at the schema level.
             //
             // EF model configuration cannot enforce this - that is a code claim wearing schema
-            // clothing, which AD-20 forbids - and a REVOKE would be theatre here, because the
+            // clothing - and a REVOKE would be theatre here, because the
             // application connects as the database owner in compose.dev.yaml and an owner can
             // re-grant to itself. A raising trigger is the guard that actually holds.
             //
             // It tells an edit from a cascade by trigger depth. A statement issued directly
             // fires this trigger at pg_trigger_depth() = 1; the same statement issued by a
             // foreign key's referential-integrity trigger fires it at depth 2. Raising only at
-            // depth 1 or less therefore permits DR-9's cascade from the delivery and the
+            // depth 1 or less therefore permits the cascade from the delivery and the
             // set-null of actor_user_id above, while rejecting every direct UPDATE and DELETE.
             //
-            // ERRCODE 23514 is deliberate: story 1.3 translates check violations into a typed
+            // ERRCODE 23514 is deliberate: the commit path translates check violations into a typed
             // exception, so a stray write surfaces as a conflict rather than a 500. CONSTRAINT
             // and TABLE travel with it so that translation has a stable name to key on - left
             // out, PostgresException.ConstraintName is null and the only thing a caller can

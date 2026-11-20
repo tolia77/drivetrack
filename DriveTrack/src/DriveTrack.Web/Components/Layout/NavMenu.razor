@@ -6,18 +6,18 @@
 @inherits CircuitScopedComponent
 @implements IAsyncDisposable
 
-@* FR-77 / FR-12 / NFR-25: the shell every screen shares.
+@* The shell every screen shares.
 
    The role decides which destinations are worth offering, and that decision is a table
-   (NavDestinations) rather than a chain of conditionals here - so Epic 4 adds a row instead of
-   editing this markup. What stays here is how a destination renders, one independent @if block
+   (NavDestinations) rather than a chain of conditionals here - so a new screen adds a row instead
+   of editing this markup. What stays here is how a destination renders, one independent @if block
    apiece, each with its own literal localizer key: LocalizationTests harvests only the literal
    indexer occurrences it can see in markup, so a key composed at run time would read as unused and
    fail the closed-catalogue test.
 
-   FR-12 again, because it is the part worth repeating: hiding a link is a convenience. Whether a
-   caller may perform an operation is settled by IAccessGuard inside the service, which runs
-   whether or not the link was ever rendered.
+   The authorization point again, because it is the part worth repeating: hiding a link is a
+   convenience. Whether a caller may perform an operation is settled by IAccessGuard inside the
+   service, which runs whether or not the link was ever rendered.
 
    The frame is NavigationShell's - brand, links, spacer, foot - and every rule that paints it lives
    in `_theme.scss` rather than beside this file. A scoped stylesheet is stamped with the scope
@@ -50,12 +50,12 @@
 }
 
 <nav class="dt-nav" aria-label="@Localizer["NavigationMenu"]">
-    @* NFR-25: the mark and the wordmark travel together, on every screen. *@
+    @* The mark and the wordmark travel together, on every screen. *@
     <a class="dt-nav__brand" href="@Landing">
         <span class="dt-nav__mark dt-icon-only"><Icon Name="IconName.Location" /></span>DriveTrack
     </a>
 
-    @* NFR-22: below the phone breakpoint the links and the foot are behind this control.
+    @* Below the phone breakpoint the links and the foot are behind this control.
 
        A disclosure rather than a button with a handler, and that is not a style choice. Three
        components render inside MainLayout with no circuit behind them - NotFound, AccessDenied and
@@ -254,7 +254,7 @@
                 }
             </div>
 
-            @* NFR-14: the language switch, offered to every caller including an anonymous one. The
+            @* The language switch, offered to every caller including an anonymous one. The
                form, the endpoint it posts to and why it is a form at all live in the component;
                what stays here is where it comes back to, which is the screen the caller is on. *@
             <DtLanguageSwitch ReturnUrl="@ReturnUrl" />

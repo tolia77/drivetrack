@@ -5,7 +5,7 @@ namespace DriveTrack.Integration.Tests.Support;
 
 /// <summary>
 /// A host environment for the tests that call <c>AddInfrastructure</c> without a host.
-/// Production by default, because that is the branch where AD-19's diagnostics are off and the
+/// Production by default, because that is the branch where diagnostics are off and the
 /// one a test should have to opt out of deliberately.
 /// </summary>
 internal sealed class TestHostEnvironment : IHostEnvironment

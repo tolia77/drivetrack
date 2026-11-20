@@ -54,7 +54,7 @@ internal static class AdministrationApi
             .GetString()!;
     }
 
-    /// <summary>Whether those credentials are accepted, without asserting either way (FR-8, FR-50).</summary>
+    /// <summary>Whether those credentials are accepted, without asserting either way.</summary>
     public static async Task<bool> CanSignInAsync(
         HttpClient client,
         string email,
@@ -69,7 +69,7 @@ internal static class AdministrationApi
         return response.StatusCode == HttpStatusCode.OK;
     }
 
-    /// <summary>The seeded administrator's token (FR-9).</summary>
+    /// <summary>The seeded administrator's token.</summary>
     public static Task<string> AdminTokenAsync(HttpClient client, CancellationToken cancellationToken) =>
         SignInAsync(client, TestConfiguration.AdminEmail, TestConfiguration.AdminPassword, cancellationToken);
 
@@ -91,7 +91,7 @@ internal static class AdministrationApi
             .GetInt32();
     }
 
-    /// <summary>Opens a client account through the public registration endpoint (FR-1).</summary>
+    /// <summary>Opens a client account through the public registration endpoint.</summary>
     public static async Task<(int UserId, string Email)> RegisterClientAsync(
         HttpClient client,
         CancellationToken cancellationToken,
@@ -122,8 +122,8 @@ internal static class AdministrationApi
     }
 
     /// <summary>
-    /// Opens a dispatcher account through the endpoint this story ships, because there is no other
-    /// way to make one - which is itself half of FR-49.
+    /// Opens a dispatcher account through the administration endpoint, because there is no other
+    /// way to make one - which is itself half of what that endpoint promises.
     /// </summary>
     public static async Task<(int UserId, string Email)> CreateDispatcherAsync(
         HttpClient client,
@@ -207,7 +207,7 @@ internal static class AdministrationApi
 
         Assert.Equal(expected.ToString(), error.GetProperty("code").GetString());
 
-        // NFR-14: what arrives is the Ukrainian sentence, not the code the service named.
+        // What arrives is the Ukrainian sentence, not the code the service named.
         var message = error.GetProperty("message").GetString();
 
         Assert.False(string.IsNullOrWhiteSpace(message));

@@ -7,13 +7,13 @@ namespace DriveTrack.Application.Abstractions;
 /// <summary>
 /// An account as this layer knows it: the identity fields plus the single role, and the subtype row
 /// id when the role has one. Application never sees <c>ApplicationUser</c> or any other Identity
-/// type (AD-1, AD-17) — the whole of ASP.NET Core Identity is behind this record and the port below.
+/// type — the whole of ASP.NET Core Identity is behind this record and the port below.
 /// </summary>
 /// <param name="Id">The user row's id.</param>
 /// <param name="FirstName">Given name.</param>
 /// <param name="LastName">Family name.</param>
 /// <param name="Email">The address the account signs in with.</param>
-/// <param name="Role">The single role (AD-4).</param>
+/// <param name="Role">The single role.</param>
 /// <param name="DriverId">The driver row id, or null when the user is not a driver.</param>
 /// <param name="ClientId">The client row id, or null when the user is not a client.</param>
 public sealed record UserAccount(
@@ -31,7 +31,7 @@ public sealed record UserAccount(
 
 /// <summary>
 /// The identity fields of an account that does not exist yet. The password travels separately and
-/// only ever reaches storage through Identity's <c>IPasswordHasher</c> (FR-8), which is why it is
+/// only ever reaches storage through Identity's <c>IPasswordHasher</c>, which is why it is
 /// not a property of this record.
 /// </summary>
 /// <param name="FirstName">Given name.</param>
@@ -40,11 +40,11 @@ public sealed record UserAccount(
 public sealed record NewUserAccount(string FirstName, string LastName, string Email);
 
 /// <summary>
-/// The Identity port (AD-1, AD-5). It joins the repository roster on <see cref="IUnitOfWork"/>, so
+/// The Identity port. It joins the repository roster on <see cref="IUnitOfWork"/>, so
 /// a user, its role row and its subtype row are staged against one context inside one transaction
 /// and land together or not at all.
 /// <para>
-/// AD-6's rules hold here as they do for every other repository: materialized results, no
+/// The repository rules hold here as they do for every other repository: materialized results, no
 /// <c>IQueryable</c>, a cancellation token on every I/O method, and nothing Identity-shaped
 /// crossing back into Application.
 /// </para>
@@ -58,7 +58,7 @@ public interface IUserAccountRepository
     Task<UserAccount?> GetByIdAsync(UserId id, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Loads the account behind a client row, or null when there is none (FR-28).
+    /// Loads the account behind a client row, or null when there is none.
     /// <para>
     /// A client's address lives on the Identity account and nowhere else — neither <c>Client</c>
     /// nor <c>Delivery</c> carries one — so notifying the client of a delivery means starting from
@@ -87,7 +87,7 @@ public interface IUserAccountRepository
 
     /// <summary>
     /// Creates the account with its single role, hashing <paramref name="password"/> through
-    /// Identity (FR-8). The returned record carries the database-assigned id, which the caller
+    /// Identity. The returned record carries the database-assigned id, which the caller
     /// needs for the subtype row's foreign key.
     /// </summary>
     /// <exception cref="Common.ConflictException">The email is already in use.</exception>
@@ -100,7 +100,7 @@ public interface IUserAccountRepository
 
     /// <summary>
     /// Stages the account for deletion, so it lands with the rest of the operation at
-    /// <see cref="IUnitOfWork.CommitAsync"/> (FR-39).
+    /// <see cref="IUnitOfWork.CommitAsync"/>.
     /// <para>
     /// Deleting the account rather than only the subtype row is the point: an account still holding
     /// role <c>Driver</c> with no driver row behind it is signable-in and carries a null driver
@@ -119,13 +119,13 @@ public interface IUserAccountRepository
 
     /// <summary>
     /// Ensures a role row exists for <paramref name="role"/>. Idempotent, and the only reason the
-    /// role vocabulary needs a write path at all: the startup seeder (FR-9) creates the four rows
+    /// role vocabulary needs a write path at all: the startup seeder creates the four rows
     /// once and nothing else ever adds one.
     /// </summary>
     Task EnsureRoleAsync(UserRole role, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Every account holding <paramref name="role"/>, ordered by name (FR-46, FR-49).
+    /// Every account holding <paramref name="role"/>, ordered by name.
     /// <para>
     /// Unpaged, for the readers that need the whole set: a picker that must offer every client, or
     /// a lookup of names across a whole roster. The paged administration tables read through
@@ -167,7 +167,7 @@ public interface IUserAccountRepository
 
     /// <summary>
     /// One page of the dispatcher accounts, sorted in SQL over every one of them, and how many there
-    /// are (FR-49, NFR-27). Surname order when no column is named; every order ends on the id.
+    /// are. Surname order when no column is named; every order ends on the id.
     /// </summary>
     /// <param name="query">The page and the direction. Already validated.</param>
     /// <param name="sort">The column, already parsed; null for surname order.</param>
@@ -178,11 +178,11 @@ public interface IUserAccountRepository
         CancellationToken cancellationToken);
 
     /// <summary>
-    /// Renames an account, staged for the caller's commit (FR-37, FR-46, FR-50).
+    /// Renames an account, staged for the caller's commit.
     /// <para>
     /// Deliberately narrow: the two name fields and nothing else. The address is
-    /// <see cref="SetEmailAsync"/>'s, the credentials are <see cref="SetPasswordAsync"/>'s, and AD-4
-    /// gives an account one role for its whole life — a general "update the user" method here would
+    /// <see cref="SetEmailAsync"/>'s, the credentials are <see cref="SetPasswordAsync"/>'s, and an
+    /// account holds one role for its whole life — a general "update the user" method here would
     /// be the seam through which a second writer of any of them appeared.
     /// </para>
     /// </summary>
@@ -194,7 +194,7 @@ public interface IUserAccountRepository
         CancellationToken cancellationToken);
 
     /// <summary>
-    /// Replaces the stored password (FR-8, FR-46, FR-50). The plaintext reaches storage only
+    /// Replaces the stored password. The plaintext reaches storage only
     /// through Identity's hasher, and Identity's own strength policy runs here, so a weak password
     /// is refused by the same rule and reported with the same code as at registration.
     /// <para>
@@ -207,7 +207,7 @@ public interface IUserAccountRepository
     Task SetPasswordAsync(UserId userId, string password, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Replaces the address the account signs in with (FR-92), staged for the caller's commit.
+    /// Replaces the address the account signs in with, staged for the caller's commit.
     /// <para>
     /// Deliberately narrow, for the reason <see cref="UpdateNameAsync"/> is: the address, the user name
     /// that mirrors it, and nothing else. A general "update the user" method here would be the seam

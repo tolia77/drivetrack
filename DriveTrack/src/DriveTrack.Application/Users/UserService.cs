@@ -8,7 +8,7 @@ using FluentValidation;
 namespace DriveTrack.Application.Users;
 
 /// <summary>
-/// AD-3's pipeline, three times over: authenticate (the adapter has already done that and handed
+/// The fixed operation pipeline, three times over: authenticate (the adapter has already done that and handed
 /// this layer an <see cref="ICurrentUser"/>) → load → guard → validate → act → commit → map.
 /// </summary>
 public sealed class UserService(
@@ -55,7 +55,7 @@ public sealed class UserService(
         // The friendly answer. The race backstop behind it is user_name_index, unique on the
         // normalized user name - which is the email, because registration sets UserName = Email. It
         // surfaces as PERSISTENCE_UNIQUE_VIOLATION, also a 409, so two callers registering the same
-        // address at the same instant get the same status either way (NFR-2).
+        // address at the same instant get the same status either way.
         if (await unitOfWork.Users.EmailExistsAsync(email, cancellationToken))
         {
             throw new ConflictException(
@@ -80,7 +80,7 @@ public sealed class UserService(
         // Read inside the transaction: CreateAsync has already flushed the user row it stamped.
         var securityStamp = await unitOfWork.Users.FindSecurityStampAsync(account.Id, cancellationToken);
 
-        // AD-5: the user row, its role row and the client row reach the database here or nowhere.
+        // The user row, its role row and the client row reach the database here or nowhere.
         await unitOfWork.CommitAsync(cancellationToken);
 
         // The client row's own key is assigned by the commit above, so the token can carry it.
@@ -138,7 +138,7 @@ public sealed class UserService(
     {
         await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
 
-        // AD-3: load, then guard. The row is read before the decision so a future rule can be about
+        // Load, then guard. The row is read before the decision so a future rule can be about
         // the row; nothing about it is disclosed unless the guard passes.
         var account = await unitOfWork.Users.GetByIdAsync(userId, cancellationToken);
 
@@ -149,7 +149,7 @@ public sealed class UserService(
             throw NotFoundException.For("user", userId.Value);
         }
 
-        // FR-5 and FR-87: the licence number and the phone number are the two fields a subtype row
+        // The licence number and the phone number are the two fields a subtype row
         // contributes, one for drivers and one for clients.
         var licenseNumber = await LicenseNumberAsync(unitOfWork, account, cancellationToken);
         var client = await ClientOrNullAsync(unitOfWork, account, cancellationToken);
@@ -188,7 +188,7 @@ public sealed class UserService(
         var licenseNumber = await LicenseNumberAsync(unitOfWork, account, cancellationToken);
         var client = await ClientOrNullAsync(unitOfWork, account, cancellationToken);
 
-        // AD-23. The payload is merged onto what is stored, and the *merged* record is what the
+        // The payload is merged onto what is stored, and the *merged* record is what the
         // validator judges - so a body carrying only a first name is not a phone number the caller
         // failed to send, it is one they left alone.
         //
@@ -216,7 +216,7 @@ public sealed class UserService(
             client.PhoneNumber = merged.PhoneNumber!;
         }
 
-        // AD-5: the renamed user and the edited client row reach the database here or nowhere.
+        // The renamed user and the edited client row reach the database here or nowhere.
         await unitOfWork.CommitAsync(cancellationToken);
 
         return new UserProfile(
@@ -256,7 +256,7 @@ public sealed class UserService(
                 userId, command.CurrentPassword!, cancellationToken))
         {
             // 422, not 401. The caller is signed in and it is one field of their request that was
-            // wrong; a 401 would reach FR-13's boundary as an expired session and sign them out.
+            // wrong; a 401 would reach the session-expiry boundary as an expired session and sign them out.
             // Qualified: FluentValidation declares a ValidationException of its own, and the one
             // that carries an ErrorCode is the only one the adapter can turn into a 422.
             throw new Common.ValidationException(
@@ -265,14 +265,14 @@ public sealed class UserService(
                 []);
         }
 
-        // FR-8: the plaintext reaches storage only through Identity's hasher, and Identity's own
+        // The plaintext reaches storage only through Identity's hasher, and Identity's own
         // strength policy runs in there - so a weak new password is refused by the same rule and
         // reported with the same code as at registration.
         await unitOfWork.Users.SetPasswordAsync(userId, command.NewPassword!, cancellationToken);
 
         // SetPasswordAsync clears the stored hash before it computes the new one, so a refusal must
-        // leave without committing. The exception propagates and the scope is disposed unwritten
-        // (NFR-9); this line is only reached when the hash exists.
+        // leave without committing. The exception propagates and the scope is disposed unwritten;
+        // this line is only reached when the hash exists.
         await unitOfWork.CommitAsync(cancellationToken);
     }
 
@@ -306,7 +306,7 @@ public sealed class UserService(
         var licenseNumber = await LicenseNumberAsync(unitOfWork, account, cancellationToken);
         var client = await ClientOrNullAsync(unitOfWork, account, cancellationToken);
 
-        // FR-92's uniqueness rule is asked in one place, by this path and by the administrator's.
+        // The email uniqueness rule is asked in one place, by this path and by the administrator's.
         var email = await EmailChange.ApplyAsync(
             unitOfWork, account, requested.Email!, cancellationToken);
 
@@ -328,7 +328,7 @@ public sealed class UserService(
     /// </summary>
     private static string? Trim(string? value) => value?.Trim();
 
-    /// <summary>The driving licence number for a driver, and null for every other role (FR-5).</summary>
+    /// <summary>The driving licence number for a driver, and null for every other role.</summary>
     private static async Task<string?> LicenseNumberAsync(
         IUnitOfWork unitOfWork,
         UserAccount account,
@@ -345,8 +345,8 @@ public sealed class UserService(
     }
 
     /// <summary>
-    /// The client row behind an account, or null when the account is not a client. DR-3 makes the
-    /// row part of what a client account is, so it is also the answer to "may this caller have a
+    /// The client row behind an account, or null when the account is not a client. The row is
+    /// part of what a client account is, so it is also the answer to "may this caller have a
     /// phone number at all".
     /// </summary>
     private static async Task<Client?> ClientOrNullAsync(

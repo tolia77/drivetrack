@@ -4,9 +4,9 @@ using DriveTrack.Domain.Vehicles;
 namespace DriveTrack.Application.Vehicles;
 
 /// <summary>
-/// What a dispatcher sends to change a vehicle (FR-42).
+/// What a dispatcher sends to change a vehicle.
 /// <para>
-/// AD-23: every field is an <see cref="Optional{T}"/>, so "leave the plate alone" and "send the
+/// Every field is an <see cref="Optional{T}"/>, so "leave the plate alone" and "send the
 /// plate" are two different requests.
 /// </para>
 /// <para>
@@ -32,7 +32,7 @@ public sealed record UpdateVehicleCommand(
     /// The command with every absent field filled in from the row it will be applied to: the state
     /// the vehicle will hold afterwards.
     /// <para>
-    /// AD-23 makes this the thing the validator reads. Validating the payload instead would let an
+    /// Distinguishing absent from null makes this the thing the validator reads. Validating the payload instead would let an
     /// update that omits the model be judged as though the model were empty, and refuse a change to
     /// the capacity because of a field the caller never mentioned.
     /// </para>

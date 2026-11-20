@@ -31,8 +31,8 @@ namespace DriveTrack.Integration.Tests.Authorization;
 /// <para>
 /// <b><see cref="EndpointRow.Allowed"/> is about this request, not about the route template.</b>
 /// <c>PATCH /api/users/{id}</c> admits its own user, so against a missing id the set is
-/// <c>{Admin}</c> — the administrator passes by AD-4's override. Ownership, which the role matrix
-/// cannot reach by construction, is <c>OwnershipBoundaryTests</c>'s subject.
+/// <c>{Admin}</c> — the administrator passes by the admin override. Ownership, which the role
+/// matrix cannot reach by construction, is <c>OwnershipBoundaryTests</c>'s subject.
 /// </para>
 /// </summary>
 internal static class EndpointMatrix
@@ -47,11 +47,11 @@ internal static class EndpointMatrix
     /// <summary>Every caller-facing REST endpoint the host publishes.</summary>
     public static readonly IReadOnlyList<EndpointRow> Rows =
     [
-        // ---- FR-1, FR-4: the two anonymous entry points, and the only two. -------------------
+        // ---- Register and sign in: the two anonymous entry points, and the only two. ---------
         Public("POST", "api/auth/register", _ => Json(HttpMethod.Post, "/api/auth/register", new { })),
         Public("POST", "api/auth/sign-in", _ => Json(HttpMethod.Post, "/api/auth/sign-in", new { })),
 
-        // ---- FR-5, FR-87, FR-88, FR-92: a caller's own account (RequireSelf). ----------------
+        // ---- A caller's own account (RequireSelf). -------------------------------------------
         Row("GET", "api/users/{id:int}", [UserRole.Admin],
             _ => Json(HttpMethod.Get, "/api/users/" + Missing, null)),
         Row("PATCH", "api/users/{id:int}", [UserRole.Admin],
@@ -61,7 +61,7 @@ internal static class EndpointMatrix
         Row("POST", "api/users/{id:int}/email", [UserRole.Admin],
             _ => Json(HttpMethod.Post, "/api/users/" + Missing + "/email", new { })),
 
-        // ---- FR-46 to FR-48: the client roster. Reads are dispatch's, writes are an admin's. --
+        // ---- The client roster. Reads are dispatch's, writes are an admin's. -----------------
         Row("GET", "api/clients", [UserRole.Admin, UserRole.Dispatcher],
             _ => Json(HttpMethod.Get, "/api/clients", null)),
         Row("GET", "api/clients/{id:int}", [UserRole.Admin, UserRole.Dispatcher],
@@ -71,7 +71,7 @@ internal static class EndpointMatrix
         Row("DELETE", "api/clients/{id:int}", [UserRole.Admin],
             _ => Json(HttpMethod.Delete, "/api/clients/" + Missing, null)),
 
-        // ---- FR-49, FR-50: dispatcher accounts, admin only throughout. -----------------------
+        // ---- Dispatcher accounts, admin only throughout. -------------------------------------
         Row("POST", "api/dispatchers", [UserRole.Admin],
             _ => Json(HttpMethod.Post, "/api/dispatchers", new { })),
         Row("GET", "api/dispatchers", [UserRole.Admin],
@@ -83,7 +83,7 @@ internal static class EndpointMatrix
         Row("DELETE", "api/dispatchers/{id:int}", [UserRole.Admin],
             _ => Json(HttpMethod.Delete, "/api/dispatchers/" + Missing, null)),
 
-        // ---- FR-35 to FR-39: the driver roster. ----------------------------------------------
+        // ---- The driver roster. --------------------------------------------------------------
         Row("GET", "api/drivers", [UserRole.Admin, UserRole.Dispatcher],
             _ => Json(HttpMethod.Get, "/api/drivers", null)),
         Row("GET", "api/drivers/{id:int}", [UserRole.Admin, UserRole.Dispatcher],
@@ -95,7 +95,7 @@ internal static class EndpointMatrix
         Row("DELETE", "api/drivers/{id:int}", [UserRole.Admin, UserRole.Dispatcher],
             _ => Json(HttpMethod.Delete, "/api/drivers/" + Missing, null)),
 
-        // ---- FR-40 to FR-45: the fleet. ------------------------------------------------------
+        // ---- The fleet. ----------------------------------------------------------------------
         Row("GET", "api/vehicles", [UserRole.Admin, UserRole.Dispatcher],
             _ => Json(HttpMethod.Get, "/api/vehicles", null)),
         Row("GET", "api/vehicles/unassigned", [UserRole.Admin, UserRole.Dispatcher],
@@ -109,11 +109,11 @@ internal static class EndpointMatrix
         Row("DELETE", "api/vehicles/{id:int}", [UserRole.Admin, UserRole.Dispatcher],
             _ => Json(HttpMethod.Delete, "/api/vehicles/" + Missing, null)),
 
-        // ---- FR-28: the notification log. ----------------------------------------------------
+        // ---- The notification log. -----------------------------------------------------------
         Row("GET", "api/notifications", [UserRole.Admin],
             _ => Json(HttpMethod.Get, "/api/notifications", null)),
 
-        // ---- FR-14 to FR-27, FR-89 to FR-91, FR-104 to FR-108, FR-119, FR-122: deliveries. ---
+        // ---- Deliveries, their timeline and their proof. -------------------------------------
         Row("GET", "api/deliveries", [UserRole.Admin, UserRole.Dispatcher],
             _ => Json(HttpMethod.Get, "/api/deliveries", null)),
 
@@ -131,7 +131,7 @@ internal static class EndpointMatrix
         Row("POST", "api/deliveries", [UserRole.Admin, UserRole.Dispatcher],
             _ => Json(HttpMethod.Post, "/api/deliveries", new { })),
 
-        // FR-89: a client's own request, and nobody else's. Dispatch and an administrator compose
+        // A client's own request, and nobody else's. Dispatch and an administrator compose
         // for somebody else, so the guard answers null and DeliveryService refuses it outright.
         Row("POST", "api/deliveries/requests", [UserRole.Client],
             _ => Json(HttpMethod.Post, "/api/deliveries/requests", new { })),
@@ -140,7 +140,7 @@ internal static class EndpointMatrix
         Row("DELETE", "api/deliveries/{id:int}", [UserRole.Admin],
             _ => Json(HttpMethod.Delete, "/api/deliveries/" + Missing, null)),
 
-        // FR-34: the assigned driver, or dispatch. A null assignment never equals a driver's row
+        // The assigned driver, or dispatch. A null assignment never equals a driver's row
         // id, so at a missing delivery the set is dispatch's alone.
         Row("POST", "api/deliveries/{id:int}/status", [UserRole.Admin, UserRole.Dispatcher],
             _ => Json(
@@ -163,7 +163,7 @@ internal static class EndpointMatrix
         Row("GET", "api/deliveries/{id:int}/proof", [.. Roles],
             _ => Json(HttpMethod.Get, "/api/deliveries/" + Missing + "/proof", null)),
 
-        // ---- FR-62 to FR-67: reviews. Three different sets of callers across five routes. -----
+        // ---- Reviews. Three different sets of callers across five routes. --------------------
         Row("GET", "api/reviews", [UserRole.Admin, UserRole.Dispatcher],
             _ => Json(HttpMethod.Get, "/api/reviews", null)),
         Row("GET", "api/reviews/mine", [UserRole.Client],
@@ -178,7 +178,7 @@ internal static class EndpointMatrix
         Row("DELETE", "api/reviews/{id:int}", [UserRole.Admin],
             _ => Json(HttpMethod.Delete, "/api/reviews/" + Missing, null)),
 
-        // ---- FR-109 to FR-117: shifts. A client has no part in any of them (FR-115). ----------
+        // ---- Shifts. A client has no part in any of them. ------------------------------------
         Row("GET", "api/shifts", [UserRole.Admin, UserRole.Dispatcher, UserRole.Driver],
             _ => Json(HttpMethod.Get, "/api/shifts", null)),
         Row("GET", "api/shifts/{id:int}", [UserRole.Admin, UserRole.Dispatcher],
@@ -212,7 +212,7 @@ internal static class EndpointMatrix
         Row("DELETE", "api/shifts/{id:int}", [UserRole.Admin, UserRole.Dispatcher],
             _ => Json(HttpMethod.Delete, "/api/shifts/" + Missing, null)),
 
-        // ---- FR-122 / AD-26: the one route stored bytes leave by. Not a controller, and easy to
+        // ---- Proof assets: the one route stored bytes leave by. Not a controller, and easy to
         // miss for exactly that reason - it is a minimal API mounted outside /api.
         Row("GET", "proof-assets/{assetId:int}", [.. Roles],
             _ => Json(HttpMethod.Get, "/proof-assets/" + Missing, null)),
@@ -259,7 +259,7 @@ internal static class EndpointMatrix
     /// </summary>
     /// <remarks>
     /// It never reaches the store. The delivery id is a missing one, so an allowed caller is
-    /// answered 404 inside the first, uncommitted scope — before a key is even minted (AD-26) — and
+    /// answered 404 inside the first, uncommitted scope — before a key is even minted — and
     /// a refused caller never gets that far.
     /// </remarks>
     private static HttpRequestMessage Capture(string path)

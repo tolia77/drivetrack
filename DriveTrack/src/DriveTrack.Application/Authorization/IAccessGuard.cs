@@ -3,7 +3,7 @@ using DriveTrack.Domain.Identity;
 namespace DriveTrack.Application.Authorization;
 
 /// <summary>
-/// The single place a business authorization decision is made (AD-2).
+/// The single place a business authorization decision is made.
 /// <para>
 /// Every public method on an Application service calls this, except the closed allowlist in
 /// <see cref="PublicEntryPoints"/>; <c>GuardCoverageTests</c> fails the build when a method does
@@ -15,7 +15,7 @@ namespace DriveTrack.Application.Authorization;
 /// passed check.
 /// </para>
 /// <para>
-/// One member per question, and no more (NFR-6). <c>RequireSelf</c> answers "is this the caller's
+/// One member per question, and no more. <c>RequireSelf</c> answers "is this the caller's
 /// own row"; <c>RequireRole</c> answers "is this caller one of these people"; <c>RequireScope</c>
 /// answers "which rows of a collection may this caller be shown"; <c>RequireAssignedDriver</c>
 /// answers "is this the driver carrying this parcel, or dispatch"; <c>RequireChatParticipant</c>
@@ -25,22 +25,20 @@ namespace DriveTrack.Application.Authorization;
 /// row"; <c>RequireReviewOwner</c> answers "may this caller change <em>this</em> review";
 /// <c>RequireShiftScope</c> answers "whose shifts may this caller be shown"; and
 /// <c>RequireShiftOwner</c> answers "may this caller act on <em>this</em> driver's shift". Each
-/// arrived with the first capability that had a caller for it — the scope with story 5.1, the
-/// assignment with 5.3, the conversation with 8.1, the composer with 7.4, the two review members
-/// with 7.2, the two shift members with 4.2 — and none is a rewording of another. None of
+/// exists because a capability has a caller for it, and none is a rewording of another. None of
 /// <c>RequireSelf</c>, <c>RequireRole</c> and <c>RequireScope</c> can express "the assigned driver,
 /// or dispatch, but never the client whose delivery it is", and writing that as a role test inside
 /// a service would be a second place authorization lived.
 /// </para>
 /// <para>
-/// AD-4's "admin satisfies every check" lives inside the implementation, once, so every member
+/// The rule that an admin satisfies every check lives inside the implementation, once, so every member
 /// inherits it and none restates it — with exactly two exceptions, recorded here because they are
 /// the kind of asymmetry a reader will otherwise take for a bug.
-/// <see cref="RequireChatParticipant"/> refuses an administrator. The PRD decides it as product
+/// <see cref="RequireChatParticipant"/> refuses an administrator. That is a product decision
 /// ("admins moderate rather than dispatch"), and a fifth member is what lets the exception be
 /// written once, in one body, instead of as a role test scattered through a capability.
-/// <see cref="RequireReviewAuthor"/> refuses one too, for the same kind of product reason: the PRD
-/// retired FR-97 because an administrator authoring customer feedback is not moderation. Every
+/// <see cref="RequireReviewAuthor"/> refuses one too, for the same kind of product reason: an
+/// administrator authoring customer feedback is not moderation. Every
 /// other member — <see cref="RequireReviewOwner"/> included, which is the moderation half — still
 /// grants the override.
 /// </para>
@@ -62,7 +60,7 @@ public interface IAccessGuard
     /// <see cref="UserRole.Admin"/>.
     /// <para>
     /// <c>RequireRole(Dispatcher)</c> therefore reads as "a dispatcher or an admin", which is what
-    /// FR-48 asks for and what the original's <c>require_role("dispatcher")</c> meant. The override
+    /// dispatch operations need and what the original's <c>require_role("dispatcher")</c> meant. The override
     /// is not repeated at the call site, because it is not a property of any one capability.
     /// </para>
     /// </summary>
@@ -74,7 +72,7 @@ public interface IAccessGuard
     void RequireRole(UserRole role);
 
     /// <summary>
-    /// Answers which rows of a collection this caller may be shown — AD-3's scope predicate, and
+    /// Answers which rows of a collection this caller may be shown — the scope predicate, and
     /// the reason a collection repository method takes a scope and has no overload that omits it.
     /// <para>
     /// The guard decides, not the service: "a driver sees only their own deliveries" is an
@@ -82,9 +80,9 @@ public interface IAccessGuard
     /// second place authorization lived. A service takes the answer to the repository unchanged.
     /// </para>
     /// <para>
-    /// AD-4 applies here as it does to the other two members: an admin is unrestricted by rule,
+    /// The admin override applies here as it does to the other two members: an admin is unrestricted by rule,
     /// decided inside the implementation and nowhere else. A dispatcher is unrestricted because
-    /// dispatch is the role the whole collection exists for (FR-18).
+    /// dispatch is the role the whole collection exists for.
     /// </para>
     /// </summary>
     /// <returns>
@@ -100,12 +98,11 @@ public interface IAccessGuard
     AccessScope RequireScope();
 
     /// <summary>
-    /// Requires that the caller is the driver a delivery is assigned to, or runs dispatch (FR-26,
-    /// FR-34).
+    /// Requires that the caller is the driver a delivery is assigned to, or runs dispatch.
     /// <para>
-    /// The one predicate behind AD-10's single write path. A delivery's status may be advanced by
+    /// The one predicate behind the status's single write path. A delivery's status may be advanced by
     /// the driver carrying it and by the people who dispatch it, and by nobody else — a client may
-    /// never change the status of their own delivery (FR-90), which is exactly why
+    /// never change the status of their own delivery, which is exactly why
     /// <see cref="RequireScope"/> cannot express this: a client's scope admits their own row.
     /// </para>
     /// <para>
@@ -126,7 +123,7 @@ public interface IAccessGuard
     void RequireAssignedDriver(DriverId? assignedDriverId);
 
     /// <summary>
-    /// Answers "may this caller compose a delivery, and for which client row" (FR-89, FR-104).
+    /// Answers "may this caller compose a delivery, and for which client row".
     /// <para>
     /// Two call sites share it because they share one rule. A client composing a request of their
     /// own is the caller the answer names; a dispatcher or an administrator composes for somebody
@@ -137,7 +134,7 @@ public interface IAccessGuard
     /// </para>
     /// <para>
     /// None of the members above expresses it. <c>RequireRole(UserRole.Client)</c> reads as "a
-    /// client <em>or</em> an admin" by AD-4's design, and an admin carries no client row id — so a
+    /// client <em>or</em> an admin" by design, and an admin carries no client row id — so a
     /// service using it would have to decide what a missing client id means, which is an
     /// authorization decision living outside this interface. <c>RequireScope</c> hands a driver a
     /// scope and therefore cannot refuse one, and its answer is about which rows may be
@@ -145,7 +142,7 @@ public interface IAccessGuard
     /// and the row a request is attached to is a client row.
     /// </para>
     /// <para>
-    /// AD-4 applies as it does everywhere but <see cref="RequireChatParticipant"/>: an
+    /// The admin override applies as it does everywhere but <see cref="RequireChatParticipant"/>: an
     /// administrator passes by rule. A client whose claims carry no client row id is refused rather
     /// than widened, exactly as <see cref="RequireScope"/> refuses them — the only other answer
     /// available, <c>null</c>, is dispatch's answer and would let an account with a broken claim
@@ -167,13 +164,13 @@ public interface IAccessGuard
     /// <summary>
     /// Requires that the caller is a participant in a driver's conversation — or, when
     /// <paramref name="thread"/> is null, that they are the kind of caller who has a roster of
-    /// conversations at all (FR-68 to FR-76, AD-15).
+    /// conversations at all.
     /// <para>
     /// A dispatcher passes for every thread and for the roster; a driver passes for exactly the
     /// thread keyed on their own driver row and for nothing else. <b>A client and an administrator
-    /// pass nothing.</b> That is the one place AD-4's override deliberately stops: the PRD records
-    /// admin lockout from chat as a product decision — "admins moderate rather than dispatch" — and
-    /// not as an omission, so the admin arm is absent from the implementation on purpose.
+    /// pass nothing.</b> That is the one place the admin override deliberately stops: admin
+    /// lockout from chat is a product decision — "admins moderate rather than dispatch" — and
+    /// not an omission, so the admin arm is absent from the implementation on purpose.
     /// </para>
     /// <para>
     /// The two questions share one member because they share one rule. The comparison is
@@ -200,10 +197,10 @@ public interface IAccessGuard
     void RequireChatParticipant(DriverId? thread);
 
     /// <summary>
-    /// Answers "may this caller write reviews, and as which client row" (FR-62, FR-67).
+    /// Answers "may this caller write reviews, and as which client row".
     /// <para>
     /// A client, and nobody else. This is the second member whose answer deliberately contradicts
-    /// AD-4: the PRD retired FR-97 because an administrator authoring customer feedback is not
+    /// the admin override: an administrator authoring customer feedback is not
     /// moderation — it is manufacturing it — so an admin is refused here and granted everything in
     /// <see cref="RequireReviewOwner"/>, which is where moderation actually lives. A dispatcher is
     /// refused for the plainer reason that they run the deliveries being judged. A driver is
@@ -211,14 +208,14 @@ public interface IAccessGuard
     /// </para>
     /// <para>
     /// <c>RequireRole(UserRole.Client)</c> cannot express it: it reads as "a client <em>or</em> an
-    /// admin" by AD-4's design, which is the one answer that is wrong here — and an admin carries
+    /// admin" by design, which is the one answer that is wrong here — and an admin carries
     /// no client row id, so a service using it would have to decide what a missing id means, which
     /// is an authorization decision living outside this interface.
     /// </para>
     /// <para>
     /// It serves two call sites, which is the test of a question rather than a convenience:
     /// authoring a review, and reading back the reviews the caller authored — where the answer is
-    /// also the scope the list is narrowed by (AD-3).
+    /// also the scope the list is narrowed by.
     /// </para>
     /// </summary>
     /// <returns>The client row the caller writes reviews as.</returns>
@@ -230,16 +227,15 @@ public interface IAccessGuard
     ClientId RequireReviewAuthor();
 
     /// <summary>
-    /// Requires that the caller may change a review: its author, or an administrator moderating
-    /// (FR-65, FR-66).
+    /// Requires that the caller may change a review: its author, or an administrator moderating.
     /// <para>
-    /// AD-4 applies in full here, and that is the point of the pair: an administrator authors
+    /// The admin override applies in full here, and that is the point of the pair: an administrator authors
     /// nothing and edits or deletes anything, which is what moderation is. A dispatcher passes
     /// nothing — they read the collection and never write to it.
     /// </para>
     /// <para>
     /// <see cref="RequireSelf"/> cannot express it, because a review's owner is a
-    /// <see cref="ClientId"/> rather than a <see cref="UserId"/> and AD-22 keeps the two from being
+    /// <see cref="ClientId"/> rather than a <see cref="UserId"/> and the two identity types are never
     /// compared. <see cref="RequireScope"/> cannot, because it hands a dispatcher the unrestricted
     /// scope and so cannot refuse one.
     /// </para>
@@ -259,18 +255,18 @@ public interface IAccessGuard
 
     /// <summary>
     /// Answers which drivers' shifts this caller may be shown — "every driver" for dispatch, "their
-    /// own and no others" for a driver, and nothing at all for a client (FR-112 to FR-115).
+    /// own and no others" for a driver, and nothing at all for a client.
     /// <para>
     /// <see cref="RequireScope"/> cannot express it, and this is the one member where reusing it
     /// would be a disclosure rather than a wording problem: a client's scope is
     /// <c>(null, clientId)</c>, whose driver half is null — which a shift query reads as
-    /// <em>unrestricted by driver</em> and would answer with every shift the system holds. FR-115
-    /// gives a client no part in shifts at all, so the honest answer is a refusal rather than a
+    /// <em>unrestricted by driver</em> and would answer with every shift the system holds. A
+    /// client has no part in shifts at all, so the honest answer is a refusal rather than a
     /// narrowing.
     /// </para>
     /// <para>
-    /// AD-4 applies: an administrator is unrestricted by rule, and a dispatcher stands beside them
-    /// because FR-113 gives dispatch the whole roster of shifts.
+    /// The admin override applies: an administrator is unrestricted by rule, and a dispatcher stands
+    /// beside them because dispatch sees the whole roster of shifts.
     /// </para>
     /// </summary>
     /// <returns>
@@ -285,8 +281,7 @@ public interface IAccessGuard
     DriverId? RequireShiftScope();
 
     /// <summary>
-    /// Requires that the caller may act on one driver's shift: that driver, or dispatch (FR-112,
-    /// FR-114).
+    /// Requires that the caller may act on one driver's shift: that driver, or dispatch.
     /// <para>
     /// The write-side half of the pair, and the same shape as
     /// <see cref="RequireAssignedDriver"/> — which already answers "this driver, or dispatch, never

@@ -145,7 +145,7 @@ internal static class SessionValidation
         return await sessions.IsCurrentAsync(new UserId(userId), stamp, cancellationToken);
     }
 
-    /// <summary>AD-13: the injected clock, never the machine's.</summary>
+    /// <summary>The injected clock, never the machine's.</summary>
     private static TimeProvider Clock(HttpContext context) =>
         context.RequestServices.GetRequiredService<TimeProvider>();
 

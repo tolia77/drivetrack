@@ -1,7 +1,7 @@
 namespace DriveTrack.Application.Notifications;
 
 /// <summary>
-/// NFR-27's paging over the notification log, expressed as a request rather than as two loose
+/// Paging over the notification log, expressed as a request rather than as two loose
 /// integers — the same shape <c>ListDeliveriesQuery</c> takes, because the rule is the same rule.
 /// <para>
 /// The log is the list that most needed one: the table grows by a row per status change per
@@ -15,7 +15,7 @@ namespace DriveTrack.Application.Notifications;
 /// </para>
 /// <para>
 /// Nor is there a scope. The caller does not get to say whose rows it wants: the log is an
-/// administrator's whole view, decided by <c>IAccessGuard.RequireRole</c> inside the service (AD-2).
+/// administrator's whole view, decided by <c>IAccessGuard.RequireRole</c> inside the service.
 /// </para>
 /// </summary>
 /// <param name="Offset">Rows to skip. Zero is the first page.</param>

@@ -4,7 +4,7 @@ using FluentValidation;
 namespace DriveTrack.Application.Deliveries;
 
 /// <summary>
-/// FR-14, FR-16, FR-100 and FR-102's rules for a new delivery, applied to the state the row will
+/// The rules for a new delivery, applied to the state the row will
 /// hold.
 /// <para>
 /// Two of these rules are also check constraints — <c>ck_deliveries_package_weight_kg</c> and
@@ -12,7 +12,7 @@ namespace DriveTrack.Application.Deliveries;
 /// backstop and surfaces through <c>PostgresConstraintTranslator</c> as
 /// <c>PERSISTENCE_CHECK_VIOLATION</c> with no field list at all, because SQLSTATE 23514 carries a
 /// constraint name and not a property. The validator is what turns the same refusal into a 422 the
-/// form can attach to the input that produced it (NFR-4).
+/// form can attach to the input that produced it.
 /// </para>
 /// <para>
 /// The lengths match the columns (<c>package_details</c> and <c>delivery_notes</c> 1000) and the
@@ -70,7 +70,7 @@ public sealed class CreateDeliveryCommandValidator : AbstractValidator<CreateDel
             .MaximumLength(PackageDetailsMaximumLength)
                 .WithMessage(nameof(ErrorCode.DELIVERY_PACKAGE_DETAILS_TOO_LONG));
 
-        // Bounded only. No format rule and no required note: FR-17 makes notes free text, and a
+        // Bounded only. No format rule and no required note: notes are free text, and a
         // guess about their shape is how a legitimate instruction gets refused.
         RuleFor(command => command.DeliveryNotes)
             .MaximumLength(DeliveryNotesMaximumLength)
@@ -81,7 +81,7 @@ public sealed class CreateDeliveryCommandValidator : AbstractValidator<CreateDel
             .LessThanOrEqualTo(PackageWeightMaximum)
                 .WithMessage(nameof(ErrorCode.DELIVERY_PACKAGE_WEIGHT_TOO_LARGE));
 
-        // FR-100: either bound may stand alone and both may be absent; only an inverted pair is
+        // Either bound may stand alone and both may be absent; only an inverted pair is
         // refused, which is exactly what the check constraint says. The message names the latest
         // bound because that is the field a dispatcher would move to fix it.
         RuleFor(command => command.WindowLatestAt)
@@ -90,7 +90,7 @@ public sealed class CreateDeliveryCommandValidator : AbstractValidator<CreateDel
     }
 
     /// <summary>
-    /// FR-100's window rule, in one place because <see cref="UpdateDeliveryCommandValidator"/> has
+    /// The window rule, in one place because <see cref="UpdateDeliveryCommandValidator"/> has
     /// to apply exactly the same one: a window a create would refuse must not be reachable through
     /// an edit, and a window a create would accept must not be refused by one.
     /// </summary>

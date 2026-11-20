@@ -16,13 +16,13 @@ namespace DriveTrack.Integration.Tests.Authorization;
 /// component's <c>[Authorize]</c> as endpoint metadata, so a refused <c>GET</c> is answered before
 /// the component is ever instantiated: every one of the twelve protected routes answers the cookie
 /// handler's <c>302</c> to <c>/access-denied</c> when the caller is signed in and to <c>/sign-in</c>
-/// when they are not (FR-79, FR-80), which was confirmed route by route and is what
+/// when they are not, which was confirmed route by route and is what
 /// <see cref="AssertSentToAsync"/> pins.
 /// </para>
 /// <para>
 /// <c>Routes.razor</c> also carries a <c>NotAuthorized</c> fragment that redirects from inside the
 /// circuit, and that path answers <c>200</c> with a navigation instead. It is unreachable while
-/// prerendering is off (AD-14), so these tests deliberately do <em>not</em> accept it: a route that
+/// prerendering is off, so these tests deliberately do <em>not</em> accept it: a route that
 /// started answering that way has changed how a refusal reaches the caller, and this suite is
 /// meant to say so rather than to absorb it.
 /// </para>
@@ -98,9 +98,9 @@ public class ScreenBoundaryTests(PostgresFixture postgres)
         }
 
         // The other two families carry no role list at all, and for the bare-[Authorize] family
-        // that is a pinned product decision rather than an omission: the service is the refusal
-        // (AD-2), and adding Roles= here would be a second, coarser copy of a rule the capability
-        // already states precisely.
+        // that is a pinned product decision rather than an omission: the service is the refusal,
+        // and adding Roles= here would be a second, coarser copy of a rule the capability already
+        // states precisely.
         Assert.Empty(declared);
     }
 
@@ -161,8 +161,8 @@ public class ScreenBoundaryTests(PostgresFixture postgres)
     {
         // That the row names something real, rather than that the naming is right. Three checks,
         // and it is worth being exact about their reach: the Application type and method exist, the
-        // method is not on AD-2's anonymous allowlist, and IAccessGuard declares a member of the
-        // named name.
+        // method is not on the guard's anonymous allowlist, and IAccessGuard declares a member of
+        // the named name.
         //
         // What this does NOT check is that the method calls that member - naming the wrong guard on
         // a row would keep this green. Doing better needs the IL walk in GuardCoverageTests, which
@@ -238,8 +238,8 @@ public class ScreenBoundaryTests(PostgresFixture postgres)
         Assert.NotNull(location);
         Assert.Contains(destination, location, StringComparison.Ordinal);
 
-        // FR-80: the protected component's markup must not reach the response while the decision is
-        // being made or after it has gone against the caller. Prerendering is off (AD-14) and
+        // The protected component's markup must not reach the response while the decision is
+        // being made or after it has gone against the caller. Prerendering is off and
         // neither authorization fragment renders a route view, so there is nothing to leak - and a
         // body with a heading in it is exactly what a regression here would produce.
         var body = await response.Content.ReadAsStringAsync(cancellationToken);

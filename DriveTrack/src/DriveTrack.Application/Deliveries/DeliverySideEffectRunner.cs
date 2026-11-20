@@ -6,9 +6,9 @@ namespace DriveTrack.Application.Deliveries;
 
 /// <summary>
 /// The work <see cref="IDeliverySideEffects"/> queued, performed on the worker's own thread and on
-/// the token the worker hands it (AD-12, FR-28, FR-94, FR-95).
+/// the token the worker hands it.
 /// <para>
-/// AD-5 gives an operation one scope and one commit, and the scope that wrote the delivery was
+/// An operation gets one scope and one commit, and the scope that wrote the delivery was
 /// spent and disposed before this ran — so every job opens its own. The address job opens
 /// <em>two</em>: one to read the coordinates and one to write the result, with the network call
 /// between them and no transaction held across it. A pooled connection sitting idle-in-transaction
@@ -17,11 +17,12 @@ namespace DriveTrack.Application.Deliveries;
 /// </para>
 /// <para>
 /// The two failures this is actually about are contained where they happen: a geocoder that would
-/// not answer leaves the address absent and the screen falls back to the coordinates (DR-11), and a
-/// send that failed leaves a <see cref="NotificationAttempt"/> row saying so, which is FR-28's whole
+/// not answer leaves the address absent and the screen falls back to the coordinates, and a
+/// send that failed leaves a <see cref="NotificationAttempt"/> row saying so, which is the whole
 /// remediation. Anything else — a scope that would not open, a commit that failed — is a storage
 /// failure and is allowed out, so the worker logs it. Swallowing it here would leave no row and no
-/// log line anywhere, which is the silent failure FR-28 exists to end, in a narrower form.
+/// log line anywhere, which is the silent failure the notification log exists to end, in a narrower
+/// form.
 /// </para>
 /// </summary>
 public sealed class DeliverySideEffectRunner(
@@ -34,7 +35,8 @@ public sealed class DeliverySideEffectRunner(
     /// <remarks>
     /// The column is 1000 characters and a mail library's failure message can be longer. Truncating
     /// rather than letting the insert fail is the difference between a record that is slightly
-    /// clipped and no record at all — and no record at all is exactly the state FR-28 exists to end.
+    /// clipped and no record at all — and no record at all is exactly the state the notification
+    /// log exists to end.
     /// </remarks>
     internal const int ErrorMaximumLength = 1000;
 
@@ -71,7 +73,7 @@ public sealed class DeliverySideEffectRunner(
     }
 
     /// <summary>
-    /// FR-94 and FR-95: fills in whichever of the two points has no address, and leaves the other
+    /// Fills in whichever of the two points has no address, and leaves the other
     /// exactly as it was.
     /// </summary>
     /// <remarks>
@@ -79,7 +81,7 @@ public sealed class DeliverySideEffectRunner(
     /// the first network call, so no transaction is held open across it; the write scope reloads the
     /// row, because the seconds in between are seconds a dispatcher can spend moving a point, and
     /// writing back the entity that was loaded before the lookups would put the old point's address
-    /// beside the new coordinates — the one thing DR-11 forbids.
+    /// beside the new coordinates — the one thing the address cache must never do.
     /// </remarks>
     private async Task ResolveAddressesAsync(int deliveryId, CancellationToken cancellationToken)
     {
@@ -153,7 +155,7 @@ public sealed class DeliverySideEffectRunner(
     /// string instead of throwing: the two lookups are independent questions, and one provider
     /// failure must not throw away the other's answer. Every exception is caught because the
     /// distinction between a socket failure, a refusal and a timeout is not one this method can act
-    /// on — DR-11 has already decided that the answer to all of them is an absent address.
+    /// on — the address is only a cache, so the answer to all of them is an absent address.
     /// </remarks>
     private async Task<string?> DescribeAsync(Location location, CancellationToken cancellationToken)
     {
@@ -184,7 +186,7 @@ public sealed class DeliverySideEffectRunner(
     /// <remarks>
     /// Both conditions are about the seconds between the lookup and this write. The coordinates must
     /// still be the coordinates that were looked up, or the address describes where the point used
-    /// to be (DR-11); and the address must still be absent, or something already answered this
+    /// to be; and the address must still be absent, or something already answered this
     /// question and this job has nothing to add.
     /// </remarks>
     private Location? Filled(Location stored, Location geocoded, string? address)
@@ -199,9 +201,9 @@ public sealed class DeliverySideEffectRunner(
             return null;
         }
 
-        // DR-11: the coordinates are untouched and remain authoritative. The record is immutable, so
-        // the cache is refilled with `with` rather than by assigning through it. AD-13's clock, not
-        // the machine's, records when.
+        // The coordinates are untouched and remain authoritative. The record is immutable, so
+        // the cache is refilled with `with` rather than by assigning through it. The injected
+        // clock, not the machine's, records when.
         return stored with
         {
             Address = Truncate(address, AddressMaximumLength),
@@ -210,7 +212,7 @@ public sealed class DeliverySideEffectRunner(
     }
 
     /// <summary>
-    /// FR-28: the client is told their delivery moved, and the attempt is recorded whether it
+    /// The client is told their delivery moved, and the attempt is recorded whether it
     /// worked or not.
     /// </summary>
     /// <remarks>
@@ -227,8 +229,8 @@ public sealed class DeliverySideEffectRunner(
 
         var delivery = await unitOfWork.Deliveries.GetByIdAsync(job.DeliveryId, cancellationToken);
 
-        // FR-28's "no client" case, which is not an error: a delivery may legally have none
-        // (FR-16), and there is nobody to write to and nobody the row would be about.
+        // The "no client" case, which is not an error: a delivery may legally have none,
+        // and there is nobody to write to and nobody the row would be about.
         if (delivery?.ClientId is not { } clientId)
         {
             return;
@@ -247,9 +249,9 @@ public sealed class DeliverySideEffectRunner(
             Kind = NotificationKind.StatusChange,
             Recipient = account.Email,
 
-            // AD-13, and it is what makes the log readable: the order the screen sorts by is this
-            // column, so a fixed clock in a test produces a deterministic order rather than one that
-            // depends on how fast the worker got round to the job.
+            // The injected clock, and it is what makes the log readable: the order the screen sorts
+            // by is this column, so a fixed clock in a test produces a deterministic order rather
+            // than one that depends on how fast the worker got round to the job.
             AttemptedAt = timeProvider.GetUtcNow(),
             Outcome = NotificationOutcome.Sent,
         };
@@ -264,7 +266,7 @@ public sealed class DeliverySideEffectRunner(
         {
             // Every exception, deliberately. A transport raises whatever its own library raises -
             // a socket failure, a protocol refusal, a timeout - and the distinction between them is
-            // not one this method can act on. What FR-28 asks for is that the attempt is recorded
+            // not one this method can act on. What matters is that the attempt is recorded
             // and that the status change it followed is left alone, and both are true of all of them.
             attempt.Outcome = NotificationOutcome.Failed;
             attempt.Error = Truncate(exception.Message, ErrorMaximumLength);

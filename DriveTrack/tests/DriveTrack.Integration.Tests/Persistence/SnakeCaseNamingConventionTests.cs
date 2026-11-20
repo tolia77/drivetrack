@@ -6,11 +6,10 @@ using Microsoft.EntityFrameworkCore.Metadata;
 namespace DriveTrack.Integration.Tests.Persistence;
 
 /// <summary>
-/// The naming policy every entity from story 1.2 onward inherits (Consistency Conventions:
-/// tables plural snake_case). The model AppDbContext ships today is empty, so nothing else in
-/// the suite would notice if the policy stopped working; this builds a model with a
-/// PascalCase entity and asserts the names it actually produces. No database is involved —
-/// building a model does not open a connection.
+/// The naming policy every entity inherits (tables plural snake_case). The model AppDbContext ships
+/// today is empty, so nothing else in the suite would notice if the policy stopped working; this
+/// builds a model with a PascalCase entity and asserts the names it actually produces. No database
+/// is involved — building a model does not open a connection.
 /// </summary>
 public class SnakeCaseNamingConventionTests
 {

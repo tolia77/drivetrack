@@ -60,7 +60,7 @@
 
     /// <summary>
     /// A glyph from the one icon set drawn before the title, or null for a title alone. Ignored
-    /// without a <see cref="Title"/>: a mark with no words beside it is a guess (NFR-24).
+    /// without a <see cref="Title"/>: a mark with no words beside it is a guess.
     /// </summary>
     [Parameter]
     public IconName? Icon { get; set; }
@@ -71,7 +71,7 @@
 
     /// <summary>
     /// The screen's own hook on this card, so a test can name one panel among three. Classes only -
-    /// a card is not a place to put a style, and NFR-29 would catch it if it were.
+    /// a card is not a place to put a style, and the design-token scan would catch it if it were.
     /// </summary>
     [Parameter]
     public string? Class { get; set; }

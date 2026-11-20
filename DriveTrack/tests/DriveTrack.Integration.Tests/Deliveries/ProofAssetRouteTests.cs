@@ -11,16 +11,16 @@ namespace DriveTrack.Integration.Tests.Deliveries;
 /// <para>
 /// It is the only endpoint in the product that accepts either credential, and the only one outside
 /// <c>/api</c> that answers an envelope when it refuses. Both are decisions nothing else can check.
-/// AD-22 makes <c>/api/*</c> bearer-only and a Blazor circuit holds no token, so an
+/// Authentication makes <c>/api/*</c> bearer-only and a Blazor circuit holds no token, so an
 /// <c>&lt;img&gt;</c> could never fetch an asset from there; and a cookie handler left on its
 /// default behaviour answers an unauthenticated image request with the HTML sign-in page at status
 /// 200, which a browser renders as a broken image and no log anywhere explains.
 /// </para>
 /// <para>
-/// The last test is the DR-14 claim, and it is deliberately about the whole response rather than
-/// about one field: there is no presigned URL, no bucket name and no storage key anywhere a client
-/// can see, because the only thing that decides who may read an asset is this route asking the
-/// capability again.
+/// The last test is the images-outside-the-row claim, and it is deliberately about the whole
+/// response rather than about one field: there is no presigned URL, no bucket name and no storage
+/// key anywhere a client can see, because the only thing that decides who may read an asset is this
+/// route asking the capability again.
 /// </para>
 /// </summary>
 public class ProofAssetRouteTests(PostgresFixture postgres)
@@ -63,9 +63,9 @@ public class ProofAssetRouteTests(PostgresFixture postgres)
     [Fact]
     public async Task A_cookie_caller_gets_the_bytes_from_the_same_route()
     {
-        // The half AD-22 cannot serve. The scheme is chosen by the credential the caller actually
-        // presented rather than by the path, which is what "accepts either scheme" has to mean for a
-        // URL a browser loads with a cookie and an API client loads with a token.
+        // The half a bearer-only /api cannot serve. The scheme is chosen by the credential the
+        // caller actually presented rather than by the path, which is what "accepts either scheme"
+        // has to mean for a URL a browser loads with a cookie and an API client loads with a token.
         var cancellationToken = TestContext.Current.CancellationToken;
         var store = new FakeAssetStore();
 
@@ -194,9 +194,10 @@ public class ProofAssetRouteTests(PostgresFixture postgres)
     [Fact]
     public async Task No_response_anywhere_carries_a_storage_key_or_an_absolute_store_url()
     {
-        // DR-14 as a property of the wire rather than of one DTO. A URL would move the FR-122
-        // decision from the capability to whoever holds the link, and a storage key would let a
-        // caller address the bucket directly the moment it was ever reachable.
+        // Images outside the row, as a property of the wire rather than of one DTO. A URL would
+        // move the who-may-read decision from the capability to whoever holds the link, and a
+        // storage key would let a caller address the bucket directly the moment it was ever
+        // reachable.
         var cancellationToken = TestContext.Current.CancellationToken;
         var store = new FakeAssetStore();
 

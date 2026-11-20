@@ -10,11 +10,11 @@ using Microsoft.EntityFrameworkCore;
 namespace DriveTrack.Infrastructure.Persistence.Repositories;
 
 /// <summary>
-/// The Identity port over the unit of work's own context and its scoped managers (AD-5).
+/// The Identity port over the unit of work's own context and its scoped managers.
 /// <para>
 /// Nothing Identity-shaped leaves this file: <c>ApplicationUser</c>, <c>IdentityResult</c> and the
 /// managers all stop here, and Application sees <see cref="UserAccount"/> and the five typed
-/// failures (AD-1, AD-8, AD-17).
+/// failures.
 /// </para>
 /// </summary>
 internal sealed class EfUserAccountRepository(AppDbContext context, ScopedIdentity identity)
@@ -45,7 +45,7 @@ internal sealed class EfUserAccountRepository(AppDbContext context, ScopedIdenti
         ClientId clientId,
         CancellationToken cancellationToken)
     {
-        // Two reads rather than a join, and the reason is the typed id (AD-22). UserId reaches the
+        // Two reads rather than a join, and the reason is the typed id. UserId reaches the
         // database through a value converter, so comparing a whole typed id translates - which is
         // how every other query here is written - while reaching through to its `.Value` inside an
         // expression tree does not. Materializing the client first turns the second comparison into
@@ -118,7 +118,7 @@ internal sealed class EfUserAccountRepository(AppDbContext context, ScopedIdenti
             Email = account.Email,
         };
 
-        // FR-8: the password reaches storage only through Identity's IPasswordHasher. This is the
+        // The password reaches storage only through Identity's IPasswordHasher. This is the
         // one call in the system that turns a plaintext password into a stored value.
         Throw(await identity.Users.CreateAsync(user, password));
 
@@ -134,10 +134,10 @@ internal sealed class EfUserAccountRepository(AppDbContext context, ScopedIdenti
         // number and placement of saves is decided here, and this is the only one.
         //
         // It is a flush inside the unit of work's transaction, not a commit: the scope still owns
-        // the transaction, and disposing it without committing still leaves nothing behind (NFR-9).
+        // the transaction, and disposing it without committing still leaves nothing behind.
         await FlushAsync(cancellationToken);
 
-        // AD-4: exactly one role row, and the unique index on asp_net_user_roles.user_id is what
+        // Exactly one role row, and the unique index on asp_net_user_roles.user_id is what
         // makes a second one impossible rather than merely unusual. Staged, not saved - it reaches
         // the database with the subtype row at IUnitOfWork.CommitAsync.
         Throw(await identity.Users.AddToRoleAsync(user, role.ToString()));
@@ -168,13 +168,13 @@ internal sealed class EfUserAccountRepository(AppDbContext context, ScopedIdenti
 
         // Staged, not saved. identity.Users has AutoSaveChanges off, so the store marks the entity
         // Deleted and returns success without touching the database; the DELETE goes out with
-        // everything else the operation wrote at IUnitOfWork.CommitAsync (AD-5).
+        // everything else the operation wrote at IUnitOfWork.CommitAsync.
         //
         // The role row, the driver row, its shifts and its chat messages follow by the cascades the
-        // schema declares, and the driver's deliveries are set to a null driver (FR-39). The client
+        // schema declares, and the driver's deliveries are set to a null driver. The client
         // side is the same shape: the client row cascades from asp_net_users, its reviews cascade
         // from clients, its deliveries' client_id goes null, and the timeline, message and proof
-        // actor references go null (FR-47, FR-50). None of that is restated here: a cascade written
+        // actor references go null. None of that is restated here: a cascade written
         // twice is a cascade that can disagree with itself.
         Throw(await identity.Users.DeleteAsync(user));
     }
@@ -219,7 +219,7 @@ internal sealed class EfUserAccountRepository(AppDbContext context, ScopedIdenti
         // One untracked read for the whole roster. Joined through the role rows rather than
         // filtered in memory, and the subtype ids are left-joined in the same statement rather than
         // read per user: the role is the WHERE clause's own answer, so MapAsync's per-row role and
-        // subtype reads would only ask again what this query already established. DR-3 gives a user
+        // subtype reads would only ask again what this query already established. A user has
         // at most one driver row and one client row, so neither join multiplies a row.
         var rows = await (
             from user in context.Users.AsNoTracking()
@@ -287,8 +287,8 @@ internal sealed class EfUserAccountRepository(AppDbContext context, ScopedIdenti
                 })
             .ToListAsync(cancellationToken);
 
-        // The role is the driver row's own answer: DR-3 gives a driver row only to a Driver
-        // account, so a role read here would only confirm what the join already established.
+        // The role is the driver row's own answer: only a Driver account has a driver row,
+        // so a role read here would only confirm what the join already established.
         return
         [
             .. rows.Select(row => new UserAccount(
@@ -333,7 +333,7 @@ internal sealed class EfUserAccountRepository(AppDbContext context, ScopedIdenti
                 })
             .ToListAsync(cancellationToken);
 
-        // As ListByDriverIdsAsync: a client row belongs only to a Client account (DR-3).
+        // As ListByDriverIdsAsync: a client row belongs only to a Client account.
         return
         [
             .. rows.Select(row => new UserAccount(
@@ -399,7 +399,7 @@ internal sealed class EfUserAccountRepository(AppDbContext context, ScopedIdenti
             cancellationToken);
 
         // Mapped here rather than through MapAsync: the role is the WHERE clause's own answer and a
-        // dispatcher has no subtype row (DR-3), so a per-row role read would only ask the database
+        // dispatcher has no subtype row, so a per-row role read would only ask the database
         // to confirm what this query already established.
         return page.Map(user => new UserAccount(
             new UserId(user.Id),
@@ -427,7 +427,7 @@ internal sealed class EfUserAccountRepository(AppDbContext context, ScopedIdenti
         // stamp the same method has just replaced. A second Identity update-path call in the same
         // unit of work therefore builds `WHERE concurrency_stamp = <the stamp we invented>`, matches
         // no row, and the commit fails as a concurrency conflict on a row nobody else touched. Since
-        // this story can change a name and a password in one operation, one such call per unit of
+        // an account edit can change a name and a password in one operation, one such call per unit of
         // work is the budget, and SetPasswordAsync below spends it.
         //
         // Nothing is lost by staging directly: the commit writes these columns with the loaded stamp
@@ -448,7 +448,7 @@ internal sealed class EfUserAccountRepository(AppDbContext context, ScopedIdenti
 
         // AddPasswordAsync is the call that matters: it runs Identity's strength policy and its
         // IPasswordHasher, so a weak password is refused by the same rule and reported with the same
-        // code as at registration (FR-8), and only the hash is ever stored.
+        // code as at registration, and only the hash is ever stored.
         //
         // It also rolls the security stamp, and that is what ends the account's cookie sessions: the
         // cookie carries the stamp it was issued with, and the Web adapter's revalidation refuses
@@ -466,7 +466,7 @@ internal sealed class EfUserAccountRepository(AppDbContext context, ScopedIdenti
         // the refusal must therefore abandon the unit of work rather than commit it - committing
         // would store the null and leave an account nobody can sign in to. Every caller here does
         // abandon it, because the exception propagates out of the service and the scope is disposed
-        // without a commit, which rolls the transaction back (NFR-9).
+        // without a commit, which rolls the transaction back.
         user.PasswordHash = null;
 
         Throw(await identity.Users.AddPasswordAsync(user, password));
@@ -596,7 +596,7 @@ internal sealed class EfUserAccountRepository(AppDbContext context, ScopedIdenti
     }
 
     /// <summary>
-    /// The role a user's single role row names. AD-4 makes one role, drawn from the four, a
+    /// The role a user's single role row names. One role, drawn from the four, a
     /// schema-level invariant. A row that breaks it is a defect, not a caller error, so it leaves as
     /// the 500 envelope rather than being smoothed over into a plausible-looking profile.
     /// </summary>
@@ -605,7 +605,7 @@ internal sealed class EfUserAccountRepository(AppDbContext context, ScopedIdenti
             ? role
             : throw new InvalidOperationException(
                 "User " + userId.ToString(CultureInfo.InvariantCulture)
-                    + " holds no recognised role. AD-4 requires exactly one.");
+                    + " holds no recognised role; exactly one is required.");
 
     /// <summary>Reads the single role row and the subtype row id for a loaded user.</summary>
     private async Task<UserAccount> MapAsync(ApplicationUser user, CancellationToken cancellationToken)
@@ -648,7 +648,7 @@ internal sealed class EfUserAccountRepository(AppDbContext context, ScopedIdenti
     }
 
     /// <summary>
-    /// Turns an <c>IdentityResult</c> failure into one of AD-8's typed failures. Identity's own
+    /// Turns an <c>IdentityResult</c> failure into one of the typed failures. Identity's own
     /// error codes are the input, the contract's codes are the output, and the mapping lives here
     /// so no caller ever inspects an <c>IdentityError</c>.
     /// </summary>

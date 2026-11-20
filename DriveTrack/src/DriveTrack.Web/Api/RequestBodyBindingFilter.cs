@@ -9,7 +9,7 @@ namespace DriveTrack.Web.Api;
 /// field of a type the command cannot hold. Registered globally, beside
 /// <see cref="EnvelopeResultFilter"/>.
 /// <para>
-/// AD-7's first suppression (<c>SuppressModelStateInvalidFilter</c>, <c>Program.cs</c>) means a
+/// The wire contract's first suppression (<c>SuppressModelStateInvalidFilter</c>, <c>Program.cs</c>) means a
 /// failed body binding does not short-circuit: the argument is simply omitted, the action runs with
 /// a null command, and the <c>ArgumentNullException.ThrowIfNull</c> that opens every Application
 /// write method becomes an unmodelled failure - 500 <c>COMMON_UNEXPECTED_ERROR</c> for what is
@@ -30,13 +30,13 @@ namespace DriveTrack.Web.Api;
 /// - no role, no policy - so the attribute can only ever answer 401; the product's every 403 is
 /// <c>IAccessGuard</c>'s, raised <em>inside</em> an Application service, which is downstream of
 /// this refusal. An authenticated caller who may not perform the operation therefore meets this
-/// 422 first, and that is the only available answer: there is no command to hand the service. AD-3
-/// is not weakened by it - what that rule protects is an unauthorized caller learning something
+/// 422 first, and that is the only available answer: there is no command to hand the service. The
+/// pipeline order is not weakened by it - what that rule protects is an unauthorized caller learning something
 /// about stored state, and "your JSON does not parse" is a fact about the caller's own bytes. Both
 /// directions are pinned in <c>RequestBodyBindingTests</c>.
 /// </para>
 /// <para>
-/// AD-9 is untouched: this reports an adapter-level binding failure and nothing else. It never
+/// Validation in the core is untouched: this reports an adapter-level binding failure and nothing else. It never
 /// inspects a bound command's values and never runs a validator - what a well-formed payload
 /// <em>means</em> is still the service's question.
 /// </para>
@@ -91,10 +91,10 @@ internal sealed class RequestBodyBindingFilter : IActionFilter
     /// <summary>
     /// The offending properties, read off the model state the suppression left behind.
     /// <para>
-    /// NFR-4 wants the caller's own name for the input, and the JSON path the input formatter
+    /// The caller needs its own name for the input, and the JSON path the input formatter
     /// recorded is the only place in the pipeline that holds it - <c>$.mileage</c> for a wrong-typed
     /// <c>mileage</c>. Only the path is taken: the framework's prose, the parser's message and the
-    /// exception behind it stay off the wire (NFR-3, NFR-14), and
+    /// exception behind it stay off the wire, and
     /// <see cref="EnvelopeWriter"/> resolves the message from the catalogue instead.
     /// </para>
     /// <para>

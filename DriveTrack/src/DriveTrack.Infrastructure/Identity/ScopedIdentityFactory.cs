@@ -11,10 +11,10 @@ namespace DriveTrack.Infrastructure.Identity;
 /// The <c>UserManager</c> and <c>RoleManager</c> for one persistence scope, built over that scope's
 /// own context.
 /// <para>
-/// <b>Why this exists at all.</b> AD-5 requires a user, its role row and its subtype row to land in
+/// <b>Why this exists at all.</b> A user, its role row and its subtype row must land in
 /// one transaction. <c>UserManager.CreateAsync</c> normally calls <c>SaveChangesAsync</c> on its
 /// store, which would commit the account independently of the subtype row and reproduce exactly the
-/// orphaned-account failure AD-5 names. Constructing the stores here with
+/// orphaned-account failure the unit-of-work rule exists to prevent. Constructing the stores here with
 /// <c>AutoSaveChanges = false</c> is the single flag that stops Identity being a second persistence
 /// authority: from then on nothing inside Identity decides when a write reaches the database.
 /// </para>
@@ -46,7 +46,7 @@ public sealed class ScopedIdentityFactory(IServiceScopeFactory scopeFactory)
 
             var userStore = new UserStore<ApplicationUser, IdentityRole<int>, DbContext, int>(context, describer)
             {
-                // AD-5. The whole point of this class.
+                // The whole point of this class.
                 AutoSaveChanges = false,
             };
 

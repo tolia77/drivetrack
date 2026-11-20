@@ -72,7 +72,7 @@ public class FleetScreenTests
 
     /// <summary>
     /// An <c>option</c> and its value. The value is optional in the pattern because the renderer
-    /// minimizes an empty attribute to a bare <c>value</c> — which is exactly the option FR-38's
+    /// minimizes an empty attribute to a bare <c>value</c> — which is exactly the option the
     /// "no vehicle" choice is, so a pattern that required the quotes would skip the one option this
     /// suite most needs to see.
     /// </summary>
@@ -84,18 +84,18 @@ public class FleetScreenTests
     [Fact]
     public async Task The_roster_shows_a_drivers_standing_and_says_nothing_where_there_is_none()
     {
-        // FR-98 at the surface the acceptance criterion names. Two drivers, and the distinction the
+        // The driver rating on the roster. Two drivers, and the distinction the
         // whole nullable field exists for: one has an average, the other has no reviews at all and
         // gets the "no value" text rather than a zero - which is a rating, and the worst one the
         // scale has.
         var html = await RenderDriversAsync();
 
-        // 4.5 under uk-UA, which uses a comma for the decimal mark (NFR-15). Asserted as the
+        // 4.5 under uk-UA, which uses a comma for the decimal mark. Asserted as the
         // rendered string rather than as the number, because the formatting is half the claim.
         Assert.Contains(">4,5<", html, StringComparison.Ordinal);
         Assert.Contains("Немає оцінок", html, StringComparison.Ordinal);
 
-        // AD-18 and AD-28: the band is Domain's reading of the number and the class is what that
+        // The band is Domain's reading of the number and the class is what that
         // band looks like. 4.5 is favourable; the unrated driver wears neither that class nor any
         // other band's, because the absence of a verdict is not a verdict.
         Assert.Contains("dt-rating dt-rating--favourable", html, StringComparison.Ordinal);
@@ -108,7 +108,7 @@ public class FleetScreenTests
     {
         var html = await RenderDriversAsync();
 
-        // FR-82: the shared table, not a second one built beside it.
+        // The shared table, not a second one built beside it.
         Assert.Contains("dt-table-scroll", html, StringComparison.Ordinal);
         Assert.Contains("table-striped", html, StringComparison.Ordinal);
 
@@ -128,8 +128,9 @@ public class FleetScreenTests
     [Fact]
     public async Task The_assignment_control_offers_only_free_vehicles_and_an_explicit_empty_choice()
     {
-        // FR-45 and FR-38 in one control. The empty option is how a dispatcher releases a vehicle,
-        // and a held vehicle among the choices would be a choice that can only be refused.
+        // Only free vehicles, and unassignment, in one control. The empty option is how a
+        // dispatcher releases a vehicle, and a held vehicle among the choices would be a choice
+        // that can only be refused.
         var html = await RenderDriversAsync();
         var select = SelectBody(html, "driver-vehicle");
 
@@ -155,14 +156,14 @@ public class FleetScreenTests
     [Fact]
     public async Task The_roster_confirms_a_deletion_through_the_shared_prompt()
     {
-        // FR-81: the baseline deleted on the click that asked for it. The prompt is a component so
+        // The baseline deleted on the click that asked for it. The prompt is a component so
         // a screen cannot forget it, and this is what proves this screen did not.
         var html = await RenderDriversAsync();
 
         Assert.Contains("dt-confirm-accept", html, StringComparison.Ordinal);
         Assert.Contains("dt-confirm-cancel", html, StringComparison.Ordinal);
 
-        // NFR-19: the dialog is the native element with the ARIA trio written out.
+        // The dialog is the native element with the ARIA trio written out.
         Assert.Contains("<dialog", html, StringComparison.Ordinal);
         Assert.Contains(@"aria-modal=""true""", html, StringComparison.Ordinal);
     }
@@ -184,9 +185,9 @@ public class FleetScreenTests
     [InlineData(false)]
     public async Task Every_column_heading_and_field_label_is_Ukrainian(bool drivers)
     {
-        // NFR-14, asserted on the rendered chrome rather than on the source: a key that resolved to
-        // its own name would read as Latin here and nowhere else. The data cells are excluded on
-        // purpose - an email address is Latin by nature and is not a translated string.
+        // Translation, asserted on the rendered chrome rather than on the source: a key that
+        // resolved to its own name would read as Latin here and nowhere else. The data cells are
+        // excluded on purpose - an email address is Latin by nature and is not a translated string.
         var html = drivers ? await RenderDriversAsync() : await RenderVehiclesAsync();
 
         var texts = HeaderCell.Matches(html)
@@ -207,10 +208,10 @@ public class FleetScreenTests
     [Fact]
     public async Task The_vehicle_form_captures_the_mileage_and_the_maintenance_date()
     {
-        // FR-40 and FR-42 name both. PRD section 8 excludes the maintenance *alerting*, not the
+        // A vehicle carries both. Maintenance *alerting* is out of scope, not the
         // fields - and a field no form can set is not captured-and-unread, it is a column that
-        // stays null for good. They are on the form and deliberately not in the table: no screen in
-        // this milestone reads them back.
+        // stays null for good. They are on the form and deliberately not in the table: no screen
+        // reads them back.
         var html = await RenderVehiclesAsync();
 
         Assert.Contains(@"id=""vehicle-mileage""", html, StringComparison.Ordinal);
@@ -227,7 +228,7 @@ public class FleetScreenTests
     [Fact]
     public async Task The_driver_form_offers_the_name_fields_FR37_names()
     {
-        // FR-37: a dispatcher may change a driver's name, so the inputs exist. The address and the
+        // A dispatcher may change a driver's name, so the inputs exist. The address and the
         // password are create-only, which the rendered create form still shows.
         var html = await RenderDriversAsync();
 
@@ -247,7 +248,7 @@ public class FleetScreenTests
 
         Assert.Contains("<h1", html, StringComparison.Ordinal);
 
-        // NFR-24: every action carries a glyph beside its text.
+        // Every action carries a glyph beside its text.
         Assert.Contains("<svg", html, StringComparison.Ordinal);
 
         // And the create action is beside the heading rather than loose in the row above the table:
@@ -382,7 +383,7 @@ public class FleetScreenTests
     public void Each_screen_is_reserved_to_the_two_roles_that_run_dispatch(bool drivers)
     {
         // The attribute is what routes a client to /access-denied instead of into an error
-        // boundary (FR-79). It is a convenience and not the decision - IAccessGuard settles
+        // boundary. It is a convenience and not the decision - IAccessGuard settles
         // that, and the API suites assert it - but nothing else pins the attribute, and its
         // absence is invisible in a diff. Read from source, in the style ShellRoutingTests uses.
         var page = SharedMarkup.ReadComponent("Pages", drivers ? "Drivers.razor" : "Vehicles.razor");
@@ -518,12 +519,12 @@ public class FleetScreenTests
             "Рено Мастер",
             "АА1234ВВ",
 
-            // FR-98: a driver clients have been pleased with. Half a point, so the roster is also
+            // A driver clients have been pleased with. Half a point, so the roster is also
             // asserting that an average is rendered as an average rather than rounded to a star.
             Rating: 4.5,
             ReviewCount: 2,
 
-            // FR-116: on duty right now. The roster does not render the flag - the assignment form
+            // On duty right now. The roster does not render the flag - the assignment form
             // does - but the record carries it, so a stub that left it out would be asserting
             // against a shape the service cannot produce.
             OnDuty: true);

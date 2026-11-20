@@ -5,15 +5,16 @@ namespace DriveTrack.Application.Abstractions;
 
 /// <summary>
 /// Persistence for <see cref="ProofOfDelivery"/>. A proof is removed by the cascade from its
-/// delivery (DR-9), or by <see cref="Remove"/> when its capture failed to store its evidence.
+/// delivery, or by <see cref="Remove"/> when its capture failed to store its evidence.
 /// <para>
-/// No <c>Update</c> either, and for a different reason: FR-123 makes a proof immutable, so the
+/// No <c>Update</c> either, and for a different reason: a proof is immutable, so the
 /// absence of the method is the rule. A path that does not exist cannot be taken by mistake.
 /// </para>
 /// <para>
-/// The two visibility reads take an <see cref="AccessScope"/> because AD-3 puts the narrowing in the
-/// <c>WHERE</c> rather than after the fact — a proof a caller may not see must be a row that was
-/// never returned, so the answer is 404 and nothing about its existence is disclosed.
+/// The two visibility reads take an <see cref="AccessScope"/> because the scoping rule puts the
+/// narrowing in the <c>WHERE</c> rather than after the fact — a proof a caller may not see must be
+/// a row that was never returned, so the answer is 404 and nothing about its existence is
+/// disclosed.
 /// </para>
 /// </summary>
 public interface IProofOfDeliveryRepository
@@ -22,7 +23,7 @@ public interface IProofOfDeliveryRepository
     Task<ProofOfDelivery?> GetByIdAsync(int id, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Whether the delivery already has a proof (FR-123). A boolean rather than a load, because the
+    /// Whether the delivery already has a proof. A boolean rather than a load, because the
     /// caller wants the answer and not the row — and because the two callers of this ask it inside
     /// different transactions, one of which is about to insert.
     /// </summary>
@@ -39,7 +40,7 @@ public interface IProofOfDeliveryRepository
 
     /// <summary>
     /// The proof of a delivery this caller may see, with its assets, or null when there is none they
-    /// may see (FR-122).
+    /// may see.
     /// </summary>
     /// <param name="deliveryId">The delivery whose proof is wanted.</param>
     /// <param name="scope">The narrowing the guard answered; applied in the query.</param>
@@ -66,7 +67,7 @@ public interface IProofOfDeliveryRepository
 
     /// <summary>
     /// Stages the removal of a proof, and of its assets by cascade. Only for a capture whose
-    /// evidence did not reach the store: a stored proof is immutable (FR-123).
+    /// evidence did not reach the store: a stored proof is immutable.
     /// </summary>
     void Remove(ProofOfDelivery proof);
 }

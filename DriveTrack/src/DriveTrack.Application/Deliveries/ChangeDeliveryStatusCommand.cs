@@ -5,9 +5,9 @@ using FluentValidation;
 namespace DriveTrack.Application.Deliveries;
 
 /// <summary>
-/// A request to advance a delivery's lifecycle (FR-32, FR-106).
+/// A request to advance a delivery's lifecycle.
 /// <para>
-/// The note rides on the same command rather than being a second call, because FR-106 puts it on
+/// The note rides on the same command rather than being a second call, because the note belongs on
 /// the same entry: "delivery failed, nobody at the address" is one fact, and writing it as a status
 /// change followed by a note would be two rows that a later reader has to join by their timestamps.
 /// It is optional, so the ordinary advance carries none.
@@ -29,10 +29,10 @@ public sealed record ChangeDeliveryStatusCommand(DeliveryStatus? Status, string?
 /// That a status was named at all, that it is one the system has, and that the note fits the column.
 /// <para>
 /// Whether <c>InTransit</c> may follow <c>Pending</c> is deliberately not judged here.
-/// <see cref="Delivery.NextStatuses"/> is the single place the lifecycle is declared (AD-10);
+/// <see cref="Delivery.NextStatuses"/> is the single place the lifecycle is declared;
 /// restating it as a validator rule would be the second copy that decision exists to prevent, and
-/// it would report a 422 where FR-32 asks for a 409. "Is this a member of the enum" is not a
-/// transition rule — it is the same kind of claim as "is this field present".
+/// it would report a 422 where an invalid transition is a 409. "Is this a member of the enum" is
+/// not a transition rule — it is the same kind of claim as "is this field present".
 /// </para>
 /// <para>
 /// Both of those claims have to be made here, because neither the binder nor the JSON reader makes

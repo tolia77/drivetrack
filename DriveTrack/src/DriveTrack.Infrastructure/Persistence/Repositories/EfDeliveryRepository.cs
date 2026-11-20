@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DriveTrack.Infrastructure.Persistence.Repositories;
 
-/// <summary>EF Core implementation of <see cref="IDeliveryRepository"/>. See <see cref="EfClientRepository"/> for the AD-6 rules every repository here follows.</summary>
+/// <summary>EF Core implementation of <see cref="IDeliveryRepository"/>. See <see cref="EfClientRepository"/> for the materialization rules every repository here follows.</summary>
 internal sealed class EfDeliveryRepository(AppDbContext context) : IDeliveryRepository
 {
     /// <summary>
@@ -25,7 +25,7 @@ internal sealed class EfDeliveryRepository(AppDbContext context) : IDeliveryRepo
         // No Include, and the delete path depends on it: a tracked timeline entry would make EF
         // issue its own DELETE at trigger depth 1, where the append-only guard raises. The owned
         // locations still load, because an owned type is columns of this row rather than a
-        // navigation to another one (AD-11).
+        // navigation to another one.
         context.Deliveries.FirstOrDefaultAsync(delivery => delivery.Id == id, cancellationToken);
 
     /// <inheritdoc />
@@ -60,7 +60,7 @@ internal sealed class EfDeliveryRepository(AppDbContext context) : IDeliveryRepo
     {
         ArgumentNullException.ThrowIfNull(criteria);
 
-        // AD-3: the scope is the first WHERE, so every filter below narrows what the caller may see
+        // The scope is the first WHERE, so every filter below narrows what the caller may see
         // and the total counts exactly that - never another client's rows, not even as a number.
         var deliveries = Scoped(context.Deliveries.AsNoTracking(), scope);
 
@@ -110,10 +110,10 @@ internal sealed class EfDeliveryRepository(AppDbContext context) : IDeliveryRepo
 
         // The values the board shows that are not columns of this row: each party's name, read off
         // the Identity account two hops away, and each place as its cell reads it - the address, or
-        // the coordinates when none has been resolved (FR-94). Correlated subqueries rather than
+        // the coordinates when none has been resolved. Correlated subqueries rather than
         // joins, so an unassigned delivery stays in the list with a null name. The `(int)(object)`
         // cast is the one spelling of "the integer behind this typed id" EF translates - a no-op
-        // `::int` - because a value converter's `.Value` cannot be read inside a query (AD-22).
+        // `::int` - because a value converter's `.Value` cannot be read inside a query.
         var rows = deliveries.Select(delivery => new Row
         {
             Delivery = delivery,
@@ -250,7 +250,7 @@ internal sealed class EfDeliveryRepository(AppDbContext context) : IDeliveryRepo
             .AsNoTracking()
             .Where(delivery => keys.Contains(delivery.Id));
 
-        // The same narrowing ListAsync applies (AD-3), and for the same reason: a row outside the
+        // The same narrowing ListAsync applies, and for the same reason: a row outside the
         // scope is absent from the answer rather than present and then filtered, so no caller can
         // learn of a delivery they may not see by naming its id.
         if (scope.DriverId is { } driverId)
@@ -270,7 +270,7 @@ internal sealed class EfDeliveryRepository(AppDbContext context) : IDeliveryRepo
     public Task<decimal?> FindHeaviestActiveWeightForDriverAsync(
         DriverId driverId,
         CancellationToken cancellationToken) =>
-        // Max rather than Sum, and that is the whole reading of FR-103: a vehicle carries one
+        // Max rather than Sum, and that is the whole reading of the capacity rule: a vehicle carries one
         // parcel at a time, so the question is whether the heaviest one fits, not whether the
         // driver's whole outstanding load would.
         //
@@ -343,7 +343,7 @@ internal sealed class EfDeliveryRepository(AppDbContext context) : IDeliveryRepo
     public void Remove(Delivery delivery) => context.Deliveries.Remove(delivery);
 
     /// <summary>
-    /// AD-3's narrowing as a WHERE: a driver sees the deliveries assigned to them, a client the ones
+    /// The caller's narrowing as a WHERE: a driver sees the deliveries assigned to them, a client the ones
     /// they asked for, and dispatch every row.
     /// </summary>
     private static IQueryable<Delivery> Scoped(IQueryable<Delivery> rows, AccessScope scope)

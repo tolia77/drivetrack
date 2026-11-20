@@ -3,7 +3,7 @@
 @inject IJSRuntime JS
 @implements IAsyncDisposable
 
-@* The one place a refused action is reported on a screen (NFR-4, NFR-14).
+@* The one place a refused action is reported on a screen.
 
    Every form used to render this block itself, which meant the field a validator named was dropped
    on the way to the page: eight distinct rules keyed COMMON_VALIDATION_FAILED collapsed into one
@@ -14,14 +14,14 @@
    different claims: what was refused, and why.
 
    The label is resolved into a local before the markup, and the condition then tests that local.
-   A call inside an @@if would read as rendered English to NFR-14's markup scan, which stops at the
-   first closing parenthesis.
+   A call inside an @@if would read as rendered English to the localization markup scan, which stops
+   at the first closing parenthesis.
 
    It renders what no input on the screen has claimed. DtFieldError puts a refusal under the box
    that produced it, and InlineFields names those boxes - so on a screen with per-field messages
    this block is left holding what has nowhere else to go: a field the open dialog does not
    render, and every 403, 404 and 409 that names no field at all. Subtracting rather than hiding is
-   what keeps FR-83 true when a form later drops an input. *@
+   what keeps every refusal on screen when a form later drops an input. *@
 
 @* One banner rather than one per refusal. Eight rules keyed COMMON_VALIDATION_FAILED used to
    stack eight identical red boxes down a dialog, which is how a reader learns to stop reading them;
@@ -29,9 +29,9 @@
 
    The screen's own sentence and the unclaimed refusals are two independent blocks rather than two
    readings of one. They used to be alternatives, and the alternative silently won: a screen binding
-   both lost every real refusal the moment it had a sentence to show, which is the FR-83 guarantee
-   turned upside down. Neither can now destroy the other, and a screen carrying both marks two
-   areas because it has two different things to say. *@
+   both lost every real refusal the moment it had a sentence to show, which is the
+   every-refusal-shown guarantee turned upside down. Neither can now destroy the other, and a screen
+   carrying both marks two areas because it has two different things to say. *@
 @* The reveal's anchor: always rendered, so there is an element to scope from even when every
    refusal was claimed by a box and this banner draws nothing. Hidden, so it occupies no space. *@
 <span class="dt-failure-anchor" hidden @ref="_anchor"></span>
@@ -132,7 +132,7 @@
     [Parameter]
     public string? InlineFields { get; set; }
 
-    /// <summary>The refusals no field on the screen claimed (FR-83).</summary>
+    /// <summary>The refusals no field on the screen claimed.</summary>
     private IReadOnlyList<ScreenFailure> Unclaimed => FailureKeys.Unclaimed(Failures, InlineFields);
 
     /// <summary>One refusal as the banner reads it: the field's name, and the sentence.</summary>
@@ -143,10 +143,10 @@
     /// <summary>
     /// The refusals, resolved to the words that will be printed.
     /// <para>
-    /// Resolved here rather than inside the loop in markup, and the reason is NFR-14's source scan
-    /// rather than tidiness: a `var label = Label(failure);` written between two tags is a text node
-    /// as far as that scan can tell, and it reads as three rendered English words. The pair comes
-    /// out of C# already assembled, so the markup holds nothing but two property reads.
+    /// Resolved here rather than inside the loop in markup, and the reason is the localization
+    /// source scan rather than tidiness: a `var label = Label(failure);` written between two tags
+    /// is a text node as far as that scan can tell, and it reads as three rendered English words.
+    /// The pair comes out of C# already assembled, so the markup holds nothing but two property reads.
     /// </para>
     /// </summary>
     private IReadOnlyList<BannerLine> Lines =>
@@ -163,7 +163,7 @@
     /// <remarks>
     /// It does not replace the refusal list. Both render when both are given: dropping the
     /// unclaimed refusals because a screen also had a sentence to show would lose real refusals
-    /// with nothing on the page saying so, which is exactly what FR-83 exists to prevent.
+    /// with nothing on the page saying so, which is exactly what this banner exists to prevent.
     /// </remarks>
     [Parameter]
     public string? Message { get; set; }
@@ -237,7 +237,7 @@
     /// Null in three cases. A failure that names no field. A field the catalogue has no entry for -
     /// the one worth stating, because <c>IStringLocalizer</c> answers a missing key with the key
     /// itself, so without that check a rule naming a property no form shows would put a raw CLR
-    /// name in front of a Ukrainian-speaking user (NFR-14). And a message that already opens with
+    /// name in front of a Ukrainian-speaking user. And a message that already opens with
     /// the field's own name.
     /// </para>
     /// <para>
@@ -247,7 +247,7 @@
     /// reads as a stutter - "Пароль: Пароль має містити..." - rather than as the two different
     /// claims the label exists to separate. The label earns its place where the sentence cannot say
     /// which box it is about, which is every rule sharing <c>COMMON_VALIDATION_FAILED</c> - the
-    /// whole reason the field travels at all (DW-8).
+    /// whole reason the field travels at all.
     /// </para>
     /// </summary>
     private string? Label(ScreenFailure failure)

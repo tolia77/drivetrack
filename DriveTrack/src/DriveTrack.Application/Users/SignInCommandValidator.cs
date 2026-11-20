@@ -4,7 +4,7 @@ using FluentValidation;
 namespace DriveTrack.Application.Users;
 
 /// <summary>
-/// FR-4's rules. Deliberately thin: anything beyond "both fields were sent" would tell an
+/// The sign-in rules. Deliberately thin: anything beyond "both fields were sent" would tell an
 /// unauthenticated caller something about the account they named, and the whole point of the
 /// sign-in path is that a wrong email and a wrong password are indistinguishable.
 /// <para>

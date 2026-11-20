@@ -30,10 +30,10 @@ public class CultureSwitchTests(PostgresFixture postgres)
 {
     private const string SetCulture = "/set-culture";
 
-    /// <summary>The sign-in page: statically rendered (AD-14), so its markup is in the response.</summary>
+    /// <summary>The sign-in page: statically rendered, so its markup is in the response.</summary>
     /// <remarks>
     /// The page every one of these tests reads back, and it is chosen rather than convenient: with
-    /// prerendering off (AD-14) a routed screen's markup is not in the first response at all, so a
+    /// prerendering off a routed screen's markup is not in the first response at all, so a
     /// statically rendered page is the only place the HTML a switch produces can actually be read.
     /// It is also the page that matters most: somebody who cannot read the sign-in screen cannot
     /// sign in to change anything.
@@ -56,7 +56,7 @@ public class CultureSwitchTests(PostgresFixture postgres)
     [Fact]
     public async Task A_visitor_who_has_chosen_nothing_is_served_Ukrainian_whatever_their_browser_asks()
     {
-        // The first row of the matrix, and the one that has to keep holding: this change must be
+        // The case that has to keep holding: this change must be
         // invisible to everybody who does not go looking for it.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await ApiFactory.CreateAsync(postgres.ConnectionString, cancellationToken);
@@ -78,7 +78,7 @@ public class CultureSwitchTests(PostgresFixture postgres)
     [Fact]
     public async Task Choosing_English_writes_a_cookie_that_outlives_the_browser_session_and_returns_the_page_in_English()
     {
-        // The acceptance criterion, driven the way a browser drives it: read the page, post the
+        // The switch, driven the way a browser drives it: read the page, post the
         // form it rendered, follow the redirect, read the page back.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await ApiFactory.CreateAsync(postgres.ConnectionString, cancellationToken);
@@ -96,7 +96,7 @@ public class CultureSwitchTests(PostgresFixture postgres)
 
         // "and a new browser session": a session cookie would put the reader back into Ukrainian
         // the next morning with nothing on screen to explain why. A relative lifetime rather than an
-        // absolute one, because the endpoint has no clock it is allowed to read (AD-13).
+        // absolute one, because the endpoint has no clock it is allowed to read.
         Assert.Contains("max-age=", written, StringComparison.OrdinalIgnoreCase);
 
         // The name the host writes and the name the provider reads have to be the same string, and
@@ -111,9 +111,9 @@ public class CultureSwitchTests(PostgresFixture postgres)
         Assert.Contains("samesite=lax", written, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("httponly", written, StringComparison.OrdinalIgnoreCase);
 
-        // Not secure over plain HTTP, which is the SameAsRequest default DW-6 gives the session
-        // cookie and the compose stack needs: a Secure cookie on an http:// origin is one the
-        // browser discards, and the reader's choice would not survive the redirect.
+        // Not secure over plain HTTP, which is the SameAsRequest default the session cookie also
+        // has and the compose stack needs: a Secure cookie on an http:// origin is one the browser
+        // discards, and the reader's choice would not survive the redirect.
         Assert.DoesNotContain("secure", written, StringComparison.OrdinalIgnoreCase);
 
         using var page = await client.GetAsync(new Uri(StaticPage, UriKind.Relative), cancellationToken);
@@ -324,7 +324,7 @@ public class CultureSwitchTests(PostgresFixture postgres)
     [Fact]
     public async Task The_error_envelope_speaks_the_language_the_cookie_chose()
     {
-        // NFR-3's wire message and NFR-4's field messages both come out of ErrorMessages, so this is
+        // The wire message and the field messages both come out of ErrorMessages, so this is
         // the whole REST surface's language in one request. Asserted against the catalogue's own
         // values rather than against a quoted sentence: a reworded entry should not fail this test,
         // and an untranslated one must.
@@ -501,9 +501,9 @@ public class CultureSwitchTests(PostgresFixture postgres)
     [Fact]
     public void Each_culture_formats_a_date_and_a_number_its_own_way()
     {
-        // NFR-15, now a two-sided claim. Asserted against known values rather than against
-        // CurrentCulture, so this fails on a machine whose ICU data is missing rather than passing
-        // because the invariant culture happened to be in scope.
+        // Locale formatting, now a two-sided claim. Asserted against known values rather than
+        // against CurrentCulture, so this fails on a machine whose ICU data is missing rather than
+        // passing because the invariant culture happened to be in scope.
         var date = new DateOnly(2026, 9, 16);
 
         Assert.Equal("16.09.2026", date.ToString("d", Ukrainian));

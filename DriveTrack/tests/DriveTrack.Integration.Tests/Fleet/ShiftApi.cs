@@ -7,7 +7,7 @@ namespace DriveTrack.Integration.Tests.Fleet;
 /// <summary>
 /// The eight routes a shift is reached by, collected the way <c>ReviewApi</c> collects its five.
 /// <para>
-/// Every helper hands the response back unasserted, because half of story 4.2's matrix is about
+/// Every helper hands the response back unasserted, because half of the shift matrix is about
 /// <em>which</em> refusal a caller gets: a helper that insisted on success could only be used by the
 /// rows that succeed. The two that do assert say so in their names.
 /// </para>
@@ -18,7 +18,7 @@ namespace DriveTrack.Integration.Tests.Fleet;
 /// </summary>
 internal static class ShiftApi
 {
-    /// <summary>Puts a driver on duty (FR-109). No instant: the server stamps it.</summary>
+    /// <summary>Puts a driver on duty. No instant: the server stamps it.</summary>
     public static Task<HttpResponseMessage> StartAsync(
         HttpClient client,
         string? token,
@@ -27,7 +27,7 @@ internal static class ShiftApi
         FleetApi.SendAsync(
             client, HttpMethod.Post, "/api/shifts/start", token, new { driverId }, cancellationToken);
 
-    /// <summary>Takes a driver off duty (FR-109).</summary>
+    /// <summary>Takes a driver off duty.</summary>
     public static Task<HttpResponseMessage> EndAsync(
         HttpClient client,
         string? token,
@@ -36,7 +36,7 @@ internal static class ShiftApi
         FleetApi.SendAsync(
             client, HttpMethod.Post, "/api/shifts/end", token, new { driverId }, cancellationToken);
 
-    /// <summary>Records a shift that already happened (FR-113).</summary>
+    /// <summary>Records a shift that already happened.</summary>
     /// <param name="client">The API client.</param>
     /// <param name="token">The caller, or null for an anonymous attempt.</param>
     /// <param name="driverId">The driver the shift belongs to.</param>
@@ -59,13 +59,13 @@ internal static class ShiftApi
             cancellationToken);
 
     /// <summary>
-    /// Corrects a shift (FR-114), sending exactly the fields the caller names.
+    /// Corrects a shift, sending exactly the fields the caller names.
     /// </summary>
     /// <remarks>
     /// The body is assembled from a dictionary rather than from an anonymous type with nullable
-    /// members, because AD-23's distinction is between a property that is <em>absent</em> and one
-    /// that is present: an anonymous type always writes both, which is the one thing the edit rows
-    /// of this matrix need to be able to avoid.
+    /// members, because the absent-versus-null distinction is between a property that is
+    /// <em>absent</em> and one that is present: an anonymous type always writes both, which is the
+    /// one thing the edit rows of this matrix need to be able to avoid.
     /// </remarks>
     public static Task<HttpResponseMessage> EditAsync(
         HttpClient client,
@@ -90,15 +90,16 @@ internal static class ShiftApi
 
         if (sendNullEnd)
         {
-            // The reopen attempt: the field is present and carries nothing. Optional<DateTimeOffset>
-            // has no case for it, so this is the payload FR-117 is actually enforced against.
+            // The reopen attempt: the field is present and carries nothing.
+            // Optional<DateTimeOffset> has no case for it, so this is the payload the no-reopen
+            // rule is actually enforced against.
             body["endedAt"] = null;
         }
 
         return FleetApi.SendAsync(client, HttpMethod.Put, Path(shiftId), token, body, cancellationToken);
     }
 
-    /// <summary>Deletes a shift (FR-114).</summary>
+    /// <summary>Deletes a shift.</summary>
     public static Task<HttpResponseMessage> DeleteAsync(
         HttpClient client,
         string? token,
@@ -116,7 +117,7 @@ internal static class ShiftApi
         FleetApi.SendAsync(
             client, HttpMethod.Get, Path(shiftId), token, body: null, cancellationToken);
 
-    /// <summary>Reads a page of shifts (FR-112, FR-113).</summary>
+    /// <summary>Reads a page of shifts.</summary>
     /// <param name="client">The API client.</param>
     /// <param name="token">The caller, or null for an anonymous read.</param>
     /// <param name="cancellationToken">The test's token.</param>
@@ -132,7 +133,7 @@ internal static class ShiftApi
         FleetApi.SendAsync(
             client, HttpMethod.Get, "/api/shifts" + query, token, body: null, cancellationToken);
 
-    /// <summary>Reads which drivers are on duty (FR-116).</summary>
+    /// <summary>Reads which drivers are on duty.</summary>
     public static Task<HttpResponseMessage> ListOnDutyAsync(
         HttpClient client,
         string? token,

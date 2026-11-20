@@ -12,12 +12,13 @@ namespace DriveTrack.Integration.Tests.Configuration;
 /// The real <see cref="IAssetStore"/>, resolved from the container <c>AddInfrastructure</c> builds
 /// and pointed at a loopback socket speaking S3's half of the conversation.
 /// <para>
-/// Every other suite replaces this port with a fake, which is right — a test of AD-26's ordering has
-/// no business running a storage daemon. But it leaves the adapter itself unexecuted, and the three
-/// ways it can be wrong are all silent in exactly the same manner: drop <c>ForcePathStyle</c>, sign
-/// the wrong region, or leave chunk encoding on, and every test in the solution stays green while a
-/// deployment answers 403 to every capture. The bucket, the path and the credential scope the
-/// adapter actually puts on the wire are therefore asserted here, byte for byte.
+/// Every other suite replaces this port with a fake, which is right — a test of the proof-write
+/// ordering has no business running a storage daemon. But it leaves the adapter itself unexecuted,
+/// and the three ways it can be wrong are all silent in exactly the same manner: drop
+/// <c>ForcePathStyle</c>, sign the wrong region, or leave chunk encoding on, and every test in the
+/// solution stays green while a deployment answers 403 to every capture. The bucket, the path and
+/// the credential scope the adapter actually puts on the wire are therefore asserted here, byte for
+/// byte.
 /// </para>
 /// <para>
 /// No database and no container: <c>AddInfrastructure</c> needs a connection string to be present,
@@ -152,7 +153,7 @@ public class ObjectStoreAdapterTests : IDisposable
             Encoding.UTF8.GetByteCount("докази").ToString(System.Globalization.CultureInfo.InvariantCulture),
             request.Header("Content-Length"));
 
-        // The type travels with the object, so a read can answer it without sniffing (DR-14).
+        // The type travels with the object, so a read can answer it without sniffing.
         Assert.Equal("image/webp", request.Header("Content-Type"));
 
         // And the framing the setting turns off is absent.
@@ -214,7 +215,7 @@ public class ObjectStoreAdapterTests : IDisposable
     {
         // The opposite of the geocoder's contract, and deliberately so: a save that failed quietly
         // would let a capture answer 200 while the evidence it asserts never reached the bucket,
-        // which is the system claiming proof it does not hold (AD-26).
+        // which is the system claiming proof it does not hold.
         var cancellationToken = TestContext.Current.CancellationToken;
 
         await using var server = LoopbackHttpServer.Start(_ => new LoopbackHttpServer.CannedResponse(

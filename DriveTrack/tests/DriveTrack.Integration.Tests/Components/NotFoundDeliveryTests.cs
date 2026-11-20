@@ -6,7 +6,7 @@ using DriveTrack.Integration.Tests.Support;
 namespace DriveTrack.Integration.Tests.Components;
 
 /// <summary>
-/// FR-78 asserted over HTTP, the way <c>ThemeDeliveryTests</c> asserts the stylesheet.
+/// The not-found page asserted over HTTP, the way <c>ThemeDeliveryTests</c> asserts the stylesheet.
 /// <para>
 /// Reading the page's source proves it exists; it does not prove an unrouted URL reaches it. That
 /// depends on <c>UseStatusCodePagesWithReExecute</c> and on the router's <c>NotFoundPage</c>, either

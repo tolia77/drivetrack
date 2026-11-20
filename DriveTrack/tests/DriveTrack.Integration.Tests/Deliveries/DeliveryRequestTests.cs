@@ -13,9 +13,9 @@ using Microsoft.EntityFrameworkCore;
 namespace DriveTrack.Integration.Tests.Deliveries;
 
 /// <summary>
-/// FR-89, FR-90 and FR-91 over HTTP, against the real <c>Program.cs</c> pipeline.
+/// Client delivery requests over HTTP, against the real <c>Program.cs</c> pipeline.
 /// <para>
-/// The story's claim is not "a client can post a body" — it is that the row this creates is
+/// The claim is not "a client can post a body" — it is that the row this creates is
 /// attached to the caller, carries no driver and no chosen status, and lands in dispatch's list as
 /// an ordinary delivery they assign through the edit path they already have. Half of that is only
 /// observable against the database and the other half only across two roles' endpoints, which is
@@ -31,8 +31,8 @@ public class DeliveryRequestTests(PostgresFixture postgres)
     [Fact]
     public async Task A_client_request_is_stored_pending_unassigned_and_attached_to_the_caller()
     {
-        // The three halves of FR-90 in one row: the client is whoever asked, the driver is nobody,
-        // and the status is Pending because the entity has no other way to be born.
+        // The three halves of a client request in one row: the client is whoever asked, the driver
+        // is nobody, and the status is Pending because the entity has no other way to be born.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -56,7 +56,7 @@ public class DeliveryRequestTests(PostgresFixture postgres)
             Assert.Equal(12.5m, data.GetProperty("packageWeightKg").GetDecimal());
             Assert.Equal("Подзвонити перед приїздом", data.GetProperty("deliveryNotes").GetString());
 
-            // DR-11 / FR-94: coordinates are the record and the address is a cache the side effect
+            // Coordinates are the record and the address is a cache the side effect
             // fills in later, so the response carries the point and a null address.
             Assert.Equal(
                 50.4501,
@@ -74,7 +74,8 @@ public class DeliveryRequestTests(PostgresFixture postgres)
         Assert.Null(stored.DriverId);
         Assert.Equal(DeliveryStatus.Pending, stored.Status);
 
-        // FR-89 leaves the window to dispatch, and the command has no field that could have set one.
+        // A request leaves the window to dispatch, and the command has no field that could have set
+        // one.
         Assert.Null(stored.WindowEarliestAt);
         Assert.Null(stored.WindowLatestAt);
     }
@@ -82,9 +83,10 @@ public class DeliveryRequestTests(PostgresFixture postgres)
     [Fact]
     public async Task The_payload_a_client_gets_back_has_nowhere_to_put_a_driver_or_a_client()
     {
-        // AD-17 asserted at the wire rather than at the type: a client's own row must not be able to
-        // name a counterparty, and the way that is made true is that AssignedDeliverySummary has no
-        // field for one. A serializer cannot emit what the type does not carry.
+        // The disclosure rule asserted at the wire rather than at the type: a client's own row must
+        // not be able to name a counterparty, and the way that is made true is that
+        // AssignedDeliverySummary has no field for one. A serializer cannot emit what the type does
+        // not carry.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -158,7 +160,7 @@ public class DeliveryRequestTests(PostgresFixture postgres)
     [Fact]
     public async Task An_absent_note_is_stored_as_nothing_rather_than_as_whitespace()
     {
-        // FR-17 and the service's own Blank rule: a notes column holding a single space renders as
+        // The service's own Blank rule: a notes column holding a single space renders as
         // absent and filters as present, which is worse than either.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
@@ -192,13 +194,14 @@ public class DeliveryRequestTests(PostgresFixture postgres)
     [Fact]
     public async Task A_request_answers_without_an_address_and_carries_one_afterwards()
     {
-        // FR-94 / FR-95 on this path rather than on the create path. Deleting the un-awaited
-        // ResolveAddresses line from RequestAsync leaves every other test in this file green: the
-        // row it writes is correct either way, and a client's addresses would simply never arrive.
+        // The deferred address lookup on this path rather than on the create path. Deleting the
+        // un-awaited ResolveAddresses line from RequestAsync leaves every other test in this file
+        // green: the row it writes is correct either way, and a client's addresses would simply
+        // never arrive.
         //
         // Both halves matter. The response the client received names no address at all - an
-        // implementation that awaited the geocoder would satisfy the second half and break FR-95 -
-        // and the addresses are there once the queue has drained.
+        // implementation that awaited the geocoder would satisfy the second half and break the
+        // non-blocking promise - and the addresses are there once the queue has drained.
         var cancellationToken = TestContext.Current.CancellationToken;
 
         var geocoder = new FakeGeocoder { Address = "Київ, Хрещатик, 1" };
@@ -304,8 +307,8 @@ public class DeliveryRequestTests(PostgresFixture postgres)
     [Fact]
     public async Task A_weight_of_zero_is_refused_by_name_and_nothing_is_written()
     {
-        // NFR-4 across the new route: the same refusal a dispatcher gets, naming the same field, so
-        // the client's form has something to attach it to.
+        // Field naming across the request route: the same refusal a dispatcher gets, naming the
+        // same field, so the client's form has something to attach it to.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -364,7 +367,7 @@ public class DeliveryRequestTests(PostgresFixture postgres)
     [Fact]
     public async Task A_driver_is_refused_and_nothing_is_written()
     {
-        // FR-25 makes a driver a reader of the parcels they carry. A request endpoint they could
+        // A driver is a reader of the parcels they carry. A request endpoint they could
         // reach would be a driver opening work for themselves, which is dispatch's job.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
@@ -465,7 +468,7 @@ public class DeliveryRequestTests(PostgresFixture postgres)
     [Fact]
     public async Task The_request_appears_on_the_clients_own_list_and_on_dispatchs_board()
     {
-        // FR-91's whole point: a request is not a second kind of record waiting somewhere. It is a
+        // The whole point: a request is not a second kind of record waiting somewhere. It is a
         // delivery, in the one collection dispatch already reads, with the requester named - and it
         // is on the client's own list, where the payload can carry no counterparty at all.
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -531,11 +534,11 @@ public class DeliveryRequestTests(PostgresFixture postgres)
     [Fact]
     public async Task A_client_already_holding_a_full_page_still_sees_the_request_they_just_made()
     {
-        // FR-91 past the point where the list stops fitting. The screen fetches one page of a
-        // hundred and has no pager, so which end of the table that page is taken from decides
-        // whether a request can be confirmed at all: ordered oldest first, a client holding a full
-        // page posted a delivery and was answered with a list that could not contain it - a
-        // confirmation screen that silently omits the thing it is confirming.
+        // Requests in dispatch's list, past the point where the list stops fitting. The screen
+        // fetches one page of a hundred and has no pager, so which end of the table that page is
+        // taken from decides whether a request can be confirmed at all: ordered oldest first, a
+        // client holding a full page posted a delivery and was answered with a list that could not
+        // contain it - a confirmation screen that silently omits the thing it is confirming.
         //
         // A hundred existing rows, not ninety-nine: the new request makes a hundred and one, so the
         // page cannot hold them all and the ordering is the only thing that puts it on screen.
@@ -588,7 +591,7 @@ public class DeliveryRequestTests(PostgresFixture postgres)
                 .Select(row => row.GetProperty("id").GetInt32())
                 .ToArray();
 
-            // Still one page - the cap is preserved, not raised (NFR-27, PRD section 8).
+            // Still one page - the cap is preserved, not raised.
             Assert.Equal(ListDeliveriesQueryValidator.MaximumLimit, ids.Length);
 
             // And the row just created is the first one, rather than the one that fell off the end.
@@ -619,9 +622,9 @@ public class DeliveryRequestTests(PostgresFixture postgres)
     [Fact]
     public async Task Dispatch_assigns_a_driver_to_a_request_through_the_edit_path_it_already_has()
     {
-        // The reason this story adds no dispatcher screen and no second write path: a requested
-        // delivery is assigned by the same PUT that assigns any other, and the capacity invariant
-        // applies to it unchanged (FR-103).
+        // The reason there is no dispatcher screen for requests and no second write path: a
+        // requested delivery is assigned by the same PUT that assigns any other, and the capacity
+        // invariant applies to it unchanged.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -666,8 +669,9 @@ public class DeliveryRequestTests(PostgresFixture postgres)
     [Fact]
     public async Task Assigning_a_driver_whose_vehicle_is_too_small_for_a_request_is_still_a_conflict()
     {
-        // FR-103 reaches a requested delivery the same way it reaches a dispatcher's own. The weight
-        // came from a client, which is precisely why the check has to be on the assignment.
+        // The capacity invariant reaches a requested delivery the same way it reaches a
+        // dispatcher's own. The weight came from a client, which is precisely why the check has to
+        // be on the assignment.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -715,14 +719,14 @@ public class DeliveryRequestTests(PostgresFixture postgres)
     }
 
     // =====================================================================================
-    // Address search (FR-104)
+    // Address search
     // =====================================================================================
 
     [Fact]
     public async Task A_client_may_search_for_an_address_and_a_driver_may_not()
     {
-        // The reservation this story retires, and the one it keeps. FR-104 is unqualified about who
-        // sets a location by typing, and a client's request form sets two - so the search follows
+        // The reservation that is gone, and the one that stays. Setting a location by typing is
+        // not reserved to any role, and a client's request form sets two - so the search follows
         // the question "may this caller compose a delivery" rather than a role list. A driver
         // composes nothing and is still refused, so a public geocoder is not reachable by every
         // session that exists.

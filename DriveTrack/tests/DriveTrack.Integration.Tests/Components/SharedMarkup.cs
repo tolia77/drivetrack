@@ -29,7 +29,7 @@ internal static class SharedMarkup
     public static string ComponentsDirectory { get; } = Path.Combine(
         RepositoryLayout.ProjectDirectory("DriveTrack.Web"), "Components");
 
-    /// <summary>The <c>Components/Shared/</c> directory the story's vocabulary lives in.</summary>
+    /// <summary>The <c>Components/Shared/</c> directory the shared vocabulary lives in.</summary>
     public static string SharedDirectory { get; } = Path.Combine(ComponentsDirectory, "Shared");
 
     /// <summary>A file under <c>Components/Shared/</c>, read whole.</summary>

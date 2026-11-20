@@ -11,13 +11,13 @@ namespace DriveTrack.Application.Abstractions;
 public interface INotificationAttemptRepository
 {
     /// <summary>
-    /// One page of attempts, newest first (FR-28).
+    /// One page of attempts, newest first.
     /// <para>
-    /// FR-28's remediation is "a row an administrator can read", and a row nothing can read is a
-    /// log line with a table behind it. Paged like every other list that pages (NFR-27), and this
-    /// is the table that most needed it: it grows by a row per status change per delivery and
-    /// nothing prunes it, so an unbounded read is the whole history materialised every time the
-    /// screen is opened.
+    /// The remediation for a silently swallowed notification is "a row an administrator can read",
+    /// and a row nothing can read is a log line with a table behind it. Paged like every other list
+    /// that pages, and this is the table that most needed it: it grows by a row per status change
+    /// per delivery and nothing prunes it, so an unbounded read is the whole history materialised
+    /// every time the screen is opened.
     /// </para>
     /// <para>
     /// Sorted in SQL over the whole log, with the log's total, so the oldest attempt is reachable

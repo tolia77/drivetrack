@@ -15,7 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace DriveTrack.Integration.Tests.Identity;
 
 /// <summary>
-/// The client rows of story 7.1's I/O matrix (FR-46, FR-47, FR-48), over HTTP, against the real
+/// The client administration rows of the I/O matrix, over HTTP, against the real
 /// <c>Program.cs</c> pipeline with the real JWT scheme.
 /// <para>
 /// These claims are only true over the wire and against the schema. "A dispatcher may read the
@@ -57,7 +57,7 @@ public class ClientAdministrationTests(PostgresFixture postgres)
         Assert.Equal("Марія", two.GetProperty("firstName").GetString());
         Assert.Equal("+380509876543", two.GetProperty("phoneNumber").GetString());
 
-        // AD-22: the two identities are separate numbers on the wire as well as in the type system,
+        // The two identities are separate numbers on the wire as well as in the type system,
         // and the client row's own key is what a delivery will one day point at.
         Assert.True(one.GetProperty("clientId").GetInt32() > 0);
     }
@@ -65,8 +65,8 @@ public class ClientAdministrationTests(PostgresFixture postgres)
     [Fact]
     public async Task A_dispatcher_reads_the_same_roster()
     {
-        // FR-48, and the reason the read is RequireRole(Dispatcher) rather than RequireRole(Admin):
-        // a dispatcher needs this list to attach a client to a delivery.
+        // The dispatcher's roster read, and the reason it is RequireRole(Dispatcher) rather than
+        // RequireRole(Admin): a dispatcher needs this list to attach a client to a delivery.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await AdministrationApi.CreateHostAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -87,9 +87,10 @@ public class ClientAdministrationTests(PostgresFixture postgres)
 
         Assert.Equal(subject.Email, Row(rows, subject.UserId).GetProperty("email").GetString());
 
-        // The detail read too, and asserted separately because it is guarded separately: GetAsync is
-        // RequireRole(Dispatcher) while every write beside it is RequireRole(Admin). Without this,
-        // narrowing the single-client read to Admin would break FR-48 and leave the suite green.
+        // The detail read too, and asserted separately because it is guarded separately: GetAsync
+        // is RequireRole(Dispatcher) while every write beside it is RequireRole(Admin). Without
+        // this, narrowing the single-client read to Admin would break dispatch's roster and leave
+        // the suite green.
         using var detail = await AdministrationApi.SendAsync(
             client, HttpMethod.Get, Route(subject.UserId), token, body: null, cancellationToken);
 
@@ -183,8 +184,8 @@ public class ClientAdministrationTests(PostgresFixture postgres)
     [Fact]
     public async Task An_admin_edits_only_the_fields_the_body_carries()
     {
-        // AD-23's whole point, over the wire: a body naming two fields changes two fields, and the
-        // last name and the password are not "unspecified", they are untouched.
+        // The point of absent-versus-null, over the wire: a body naming two fields changes two
+        // fields, and the last name and the password are not "unspecified", they are untouched.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await AdministrationApi.CreateHostAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -225,7 +226,7 @@ public class ClientAdministrationTests(PostgresFixture postgres)
         Assert.Equal("+380509876543", stored.GetProperty("phoneNumber").GetString());
         Assert.Equal("Оксана", stored.GetProperty("firstName").GetString());
 
-        // And the password the body never mentioned still signs in (FR-50).
+        // And the password the body never mentioned still signs in.
         Assert.True(await AdministrationApi.CanSignInAsync(
             client, subject.Email, AdministrationApi.Password, cancellationToken));
     }
@@ -233,10 +234,10 @@ public class ClientAdministrationTests(PostgresFixture postgres)
     [Fact]
     public async Task An_omitted_email_leaves_the_address_alone()
     {
-        // AD-23's absent case on the field story 7.3 added to this command. UpdateClientCommand grew
-        // an Email, and a command that grew a field is exactly where "absent means unchanged"
-        // regresses: merging the stored address back in is what stops every edit of a name being an
-        // attempted rewrite of the address to null.
+        // The absent case on the email field of this command. UpdateClientCommand grew an Email,
+        // and a command that grew a field is exactly where "absent means unchanged" regresses:
+        // merging the stored address back in is what stops every edit of a name being an attempted
+        // rewrite of the address to null.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await AdministrationApi.CreateHostAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -270,10 +271,10 @@ public class ClientAdministrationTests(PostgresFixture postgres)
     [Fact]
     public async Task An_omitted_field_and_a_null_one_are_different_requests()
     {
-        // AD-23 on the wire, which is the only place the distinction can be proved: the same
-        // property, absent and then explicitly null, has to produce two different answers. If the
-        // JSON converter folded null back into absent - which is what happens without one - the
-        // first request would pass and the second would pass too, and nothing else in the suite
+        // Absent versus null on the wire, which is the only place the distinction can be proved:
+        // the same property, absent and then explicitly null, has to produce two different answers.
+        // If the JSON converter folded null back into absent - which is what happens without one -
+        // the first request would pass and the second would pass too, and nothing else in the suite
         // would notice.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await AdministrationApi.CreateHostAsync(postgres.ConnectionString, cancellationToken);
@@ -334,7 +335,7 @@ public class ClientAdministrationTests(PostgresFixture postgres)
         Assert.True(await AdministrationApi.CanSignInAsync(
             client, subject.Email, "New-Passw0rd", cancellationToken));
 
-        // FR-8: what landed is a hash, and the plaintext is nowhere in the row.
+        // What landed is a hash, and the plaintext is nowhere in the row.
         Assert.Equal(
             0L,
             await AdministrationApi.CountAsync(
@@ -348,7 +349,7 @@ public class ClientAdministrationTests(PostgresFixture postgres)
     public async Task A_refused_edit_writes_nothing_at_all()
     {
         // Both 422 rows of the matrix, and the half that is easy to miss: the name in the same body
-        // must not survive the refusal, because the whole edit is one unit of work (AD-5).
+        // must not survive the refusal, because the whole edit is one unit of work.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await AdministrationApi.CreateHostAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -370,7 +371,7 @@ public class ClientAdministrationTests(PostgresFixture postgres)
                 nameof(ErrorCode.COMMON_VALIDATION_FAILED),
                 error.GetProperty("code").GetString());
 
-            // NFR-4: the key is the name the caller sent, so a form can attach it to the input.
+            // The key is the name the caller sent, so a form can attach it to the input.
             var message = error.GetProperty("fields").GetProperty("phoneNumber")[0].GetString();
 
             Assert.False(string.IsNullOrWhiteSpace(message));
@@ -436,9 +437,9 @@ public class ClientAdministrationTests(PostgresFixture postgres)
     [Fact]
     public async Task Deleting_a_client_takes_the_account_and_the_reviews_and_leaves_the_deliveries()
     {
-        // FR-47, and the claim no unit test can make: this is five declared foreign keys behaving,
-        // not five lines of C#. It is also why the story ships no migration - the schema already
-        // says all of it.
+        // The claim no unit test can make: this is five declared foreign keys behaving, not five
+        // lines of C#. Deleting a client needs no migration of its own - the schema already says
+        // all of it.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await AdministrationApi.CreateHostAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -474,7 +475,7 @@ public class ClientAdministrationTests(PostgresFixture postgres)
         {
             Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
-            // 204 forbids a body, and the envelope stops where HTTP does (NFR-1).
+            // 204 forbids a body, and the envelope stops where HTTP does.
             Assert.Empty(await response.Content.ReadAsByteArrayAsync(cancellationToken));
         }
 
@@ -578,7 +579,7 @@ public class ClientAdministrationTests(PostgresFixture postgres)
     private static string Route(int userId) =>
         "/api/clients/" + userId.ToString(CultureInfo.InvariantCulture);
 
-    /// <summary>A dispatcher, which is the least the client roster is guarded for (FR-48).</summary>
+    /// <summary>A dispatcher, which is the least the client roster is guarded for.</summary>
     private sealed class DispatcherCaller : ICurrentUser
     {
         public bool IsAuthenticated => true;

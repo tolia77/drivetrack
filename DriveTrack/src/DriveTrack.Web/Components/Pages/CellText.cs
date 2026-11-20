@@ -16,8 +16,8 @@ internal static class CellText
 {
     /// <summary>
     /// What a cell shows where there is no value at all. An em dash rather than an empty cell: a
-    /// blank reads as a value that failed to render, and it carries no Latin letters for NFR-14's
-    /// scan to object to.
+    /// blank reads as a value that failed to render, and it carries no Latin letters for the
+    /// localization scan to object to.
     /// </summary>
     internal const string NoValue = "—";
 
@@ -25,10 +25,10 @@ internal static class CellText
     private const string WindowSeparator = " – ";
 
     /// <summary>
-    /// The figures of a delivery window as a first column shows them (FR-100), in local time.
+    /// The figures of a delivery window as a first column shows them, in local time.
     /// </summary>
     /// <remarks>
-    /// FR-100 lets either bound stand alone and lets both be absent, so all four shapes are answered
+    /// Either bound may stand alone and both may be absent, so all four shapes are answered
     /// rather than assumed. A pair inside one local day says the date once and lets the two times
     /// bound it, which is how a window is read aloud; a pair that crosses midnight carries the date
     /// on both sides, or the second figure would silently claim the first one's day. A single bound
@@ -37,7 +37,7 @@ internal static class CellText
     /// stays in markup so the closed-catalogue test can see the key it resolves.
     /// <para>
     /// Local is the server's configured zone: the shell renders interactively on the server, so
-    /// <c>ToLocalTime</c> resolves against the host (AD-13 stores at offset zero, and the conversion
+    /// <c>ToLocalTime</c> resolves against the host (storage is at offset zero, and the conversion
     /// happens here, in the presentation layer, and nowhere else).
     /// </para>
     /// </remarks>

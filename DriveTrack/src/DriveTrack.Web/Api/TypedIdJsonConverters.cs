@@ -5,18 +5,18 @@ using DriveTrack.Domain.Identity;
 namespace DriveTrack.Web.Api;
 
 /// <summary>
-/// AD-22's typed identities on the wire.
+/// The typed identities on the wire.
 /// <para>
 /// <c>UserId</c>, <c>DriverId</c> and <c>ClientId</c> are record structs, and a record struct
 /// serializes as its properties — <c>{"value":3}</c>. The wrapper exists to stop two identities
 /// being confused inside the system; there is nothing for a client to do with it, and a nested
-/// object here would be a second wire shape for something that is a number everywhere else
-/// (NFR-1). This converter writes the number and reads it back.
+/// object here would be a second wire shape for something that is a number everywhere else.
+/// This converter writes the number and reads it back.
 /// </para>
 /// <para>
 /// Registered through <see cref="WireJson"/> on both JSON surfaces, so the envelope written by
 /// middleware, the payload written through MVC and a hub message agree, exactly as they do for the
-/// enum-as-name converter (AD-21).
+/// enum-as-name converter.
 /// </para>
 /// </summary>
 /// <typeparam name="T">The typed identity.</typeparam>
@@ -45,8 +45,8 @@ internal sealed class TypedIdJsonConverter<T>(Func<int, T> wrap, Func<T, int> un
 internal static class WireJson
 {
     /// <summary>
-    /// AD-21 (an enum crosses the wire as its member name) and AD-22 (a typed identity crosses it
-    /// as a bare number).
+    /// An enum crosses the wire as its member name, and a typed identity crosses it as a bare
+    /// number.
     /// </summary>
     /// <param name="options">The serializer options a surface is built from.</param>
     public static void Configure(JsonSerializerOptions options)
@@ -57,7 +57,7 @@ internal static class WireJson
         AddTypedIds(options);
     }
 
-    /// <summary>AD-22 alone: the three typed identities as bare numbers.</summary>
+    /// <summary>The three typed identities as bare numbers, alone.</summary>
     /// <param name="options">The serializer options to add the converters to.</param>
     public static void AddTypedIds(JsonSerializerOptions options)
     {

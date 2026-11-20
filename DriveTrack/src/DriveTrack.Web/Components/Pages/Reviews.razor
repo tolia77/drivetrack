@@ -6,7 +6,7 @@
 @inject IStringLocalizer<UiText> Localizer
 @inherits PagedScreen<ListReviewsQuery, object, ReviewSort>
 
-@* FR-62 to FR-67: reviews, and the three different screens the one route is for.
+@* Reviews, and the three different screens the one route is for.
 
    A client sees what they wrote and a way to write another. A dispatcher sees every review and no
    way to touch one. An administrator sees every review and moderates them. A driver sees a
@@ -15,13 +15,13 @@
 
    [Authorize] carries no roles on purpose, and this is the capability where a Roles argument would
    be most wrong: the five routes behind this screen are reserved to three different sets of
-   callers, so one attribute could only ever state one of them, wrongly (AD-2, FR-12). Who may do
+   callers, so one attribute could only ever state one of them, wrongly. Who may do
    what is IAccessGuard's answer inside IReviewService, and it runs whether or not a button was
    rendered.
 
    Independent @if blocks and one literal localizer key per string, for the two reasons the shell
-   components already state: an `else` at markup level reads to NFR-14's scan as a rendered English
-   word, and a key composed at run time is a key the closed-catalogue test cannot see.
+   components already state: an `else` at markup level reads to the localization scan as a rendered
+   English word, and a key composed at run time is a key the closed-catalogue test cannot see.
 
    The role predicates are ReviewViews' rather than expressions here, so a rule about who sees what
    is a thing a test can read back rather than a condition buried in markup. *@
@@ -50,10 +50,10 @@
     }
 </div>
 
-@* NFR-3: the message is the localized string for the code the service threw, resolved through the
+@* The message is the localized string for the code the service threw, resolved through the
    same catalogue the REST envelope uses. Nothing an exception carries reaches this page.
 
-   Stood down while the form is open, because the dialog renders the same list (NFR-19). Two
+   Stood down while the form is open, because the dialog renders the same list. Two
    role="alert" regions holding one refusal is one refusal announced twice; exactly one of them is
    in the DOM at any moment, and which one it is follows where the reader is. *@
 @if (!_formOpen)
@@ -85,10 +85,10 @@
    label rule, and the place a divergence between the author's cards and the moderator's would
    start. *@
 <div class="dt-reviews dt-table-cards">
-    @* FR-63: the author's own list. A separate table from the moderation one below rather than the
+    @* The author's own list. A separate table from the moderation one below rather than the
        same table with columns hidden, because the two are different types - AuthoredReviewSummary
        has no party field at all, so a driver's identity cannot reach this table however it is later
-       edited (AD-17). *@
+       edited. *@
     @if (_authors)
     {
         <DtDataTable TItem="AuthoredReviewSummary"
@@ -135,10 +135,10 @@
                 </td>
                 <td>
                     <span class="dt-visually-hidden dt-review-label">@Localizer["ReviewRating"]</span>
-                    @* AD-18: the band is Domain's own reading of the number, carried on the row, and
+                    @* The band is Domain's own reading of the number, carried on the row, and
                        the shared display is only what that band looks like. No threshold here, and
                        no colour - the `dt-rating--*` modifier resolves to a --dt-rating-* token in
-                       _theme.scss (AD-28, NFR-29). *@
+                       _theme.scss. *@
                     <DtRatingDisplay Rating="review.Rating" Band="review.Band" />
                 </td>
                 <td>
@@ -155,8 +155,8 @@
                 <td class="dt-table-actions">
                     <span class="dt-visually-hidden dt-review-label">@Localizer["Actions"]</span>
                     @* The handler is built in C# rather than written as a lambda in the attribute: a
-                       `=>` here would close the tag as far as NFR-14's markup scan is concerned, and
-                       everything after it would be read as rendered English. *@
+                       `=>` here would close the tag as far as the localization markup scan is
+                       concerned, and everything after it would be read as rendered English. *@
                     <button type="button" class="btn btn-secondary btn-sm dt-review-edit" @onclick="EditMine(review)">
                         <Icon Name="IconName.Edit" />@Localizer["Edit"]
                     </button>
@@ -168,7 +168,7 @@
         </DtDataTable>
     }
 
-    @* FR-64: every review, with both parties named. A dispatcher gets the table and no actions,
+    @* Every review, with both parties named. A dispatcher gets the table and no actions,
        which is the same rule the guard states - they read the collection and never write to it -
        rendered rather than restated. *@
     @if (_readsEvery)
@@ -258,12 +258,12 @@
                     <span class="dt-visually-hidden dt-review-label">@Localizer["CreatedAt"]</span>
                     @Moment(review.CreatedAt)
                 </td>
-                @* FR-65 and FR-66 are an administrator's. Offering a dispatcher an action that could
-                   only ever fail is worse than not offering it - and FR-12 is unchanged: this hides,
-                   the guard decides. The cell goes with the buttons rather than staying behind
-                   empty, because the heading above is conditional on the same predicate - and the
-                   per-cell name goes with the cell, or a dispatcher's card would carry a line headed
-                   "Дії" with nothing at all underneath it. *@
+                @* Editing and deleting another's review are an administrator's. Offering a
+                   dispatcher an action that could only ever fail is worse than not offering it -
+                   and this hides, the guard decides. The cell goes with the buttons rather than
+                   staying behind empty, because the heading above is conditional on the same
+                   predicate - and the per-cell name goes with the cell, or a dispatcher's card
+                   would carry a line headed "Дії" with nothing at all underneath it. *@
                 @if (_moderates)
                 {
                     <td class="dt-table-actions">
@@ -289,7 +289,7 @@
     <p class="dt-review-refused">@Localizer["ReviewsNotAvailable"]</p>
 }
 
-@* FR-85: the one dialog every screen opens, rather than a modal of this screen's own. One heading
+@* The one dialog every screen opens, rather than a modal of this screen's own. One heading
    for both writing and editing - a title composed at run time would be a key no test can see, and
    the catalogue is closed against the keys components literally ask for. *@
 <DtDialog @ref="_formDialog" Title="@Localizer["ReviewForm"]" OnClosed="CloseForm">
@@ -320,9 +320,9 @@
                         <option value="@delivery.Id">@Localizer["ReviewDelivery"] @delivery.Id</option>
                     }
                 </DtSelect>
-                @* FR-62's two halves, said once: only a finished delivery, and only one review
-                   each. The list above is already narrowed to both, so this explains why a client
-                   who expected to see a parcel here does not. *@
+                @* The review rule's two halves, said once: only a finished delivery, and only one
+                   review each. The list above is already narrowed to both, so this explains why a
+                   client who expected to see a parcel here does not. *@
                 <div class="form-text">@Localizer["ReviewDeliveryHint"]</div>
             </div>
         }
@@ -330,7 +330,7 @@
         <div class="mb-4">
             <label class="form-label" for="review-rating">@Localizer["ReviewRating"]</label>
             @* The options are the scale's own values, so the control cannot offer a number the
-               column would refuse (FR-67, AD-18). It opens on RatingScale.Default. *@
+               column would refuse. It opens on RatingScale.Default. *@
             <DtSelect Id="review-rating" @bind-Value="_form.Rating">
                 @foreach (var value in Scale)
                 {
@@ -361,7 +361,7 @@
     </Actions>
 </DtDialog>
 
-@* FR-63 and NFR-22: every delete is confirmed, the author's own as much as the moderator's. One
+@* Every delete is confirmed, the author's own as much as the moderator's. One
    prompt for both, because it is one destructive action - which is the whole reason the
    confirmation is a shared component rather than a convention each screen remembers. *@
 <DtConfirmDialog @ref="_deleteDialog"
@@ -372,7 +372,7 @@
 @code {
     /// <summary>
     /// The boxes this screen renders a <c>DtFieldError</c> for. Stated once and bound by every
-    /// banner on the page: the list repeated per banner is exactly the drift FR-83 is broken by,
+    /// banner on the page: the list repeated per banner is exactly the drift that loses a refusal,
     /// and a screen carries the banner more than once because a dialog opened with showModal()
     /// leaves the page behind it inert.
     /// </summary>
@@ -403,8 +403,8 @@
     /// create action and takes the create colour, and changing one that already exists is an edit.
     /// <para>
     /// One dialog serves both modes, so the button is the only thing on screen that can say which
-    /// one the reader is in - and AD-28 gives the two actions different colours precisely so that
-    /// it does. Resolved here rather than as a ternary in the attribute, for the reason
+    /// one the reader is in - and the palette gives the two actions different colours precisely so
+    /// that it does. Resolved here rather than as a ternary in the attribute, for the reason
     /// <c>DtDialog</c> resolves its panel class into a property.
     /// </para>
     /// <para>
@@ -442,8 +442,8 @@
     /// Whether the write dialog is on screen, which decides where a refusal is rendered.
     /// <para>
     /// Kept here rather than read off the element, because the page needs it while it renders:
-    /// exactly one <c>role="alert"</c> region may be in the DOM, or one refusal is announced twice
-    /// (NFR-19). Cleared through <c>DtDialog.OnClosed</c>, so Escape and the backdrop count as
+    /// exactly one <c>role="alert"</c> region may be in the DOM, or one refusal is announced twice.
+    /// Cleared through <c>DtDialog.OnClosed</c>, so Escape and the backdrop count as
     /// closing it just as the cancel action does.
     /// </para>
     /// </summary>
@@ -453,7 +453,7 @@
     {
         // The circuit outlives the request that opened it, so the cookie can be gone by the time a
         // screen calls a service. Raising the contract's own code here is what puts that case
-        // through FR-13's single boundary instead of a per-screen redirect.
+        // through the single session-expiry boundary instead of a per-screen redirect.
         if (!Caller.IsAuthenticated)
         {
             throw new ForbiddenException(
@@ -488,7 +488,7 @@
 
     /// <summary>
     /// The author's table sorts by its three ordered columns; the moderation table adds the two
-    /// party names, which the author's list does not carry (AD-17).
+    /// party names, which the author's list does not carry.
     /// </summary>
     protected override IReadOnlyCollection<ReviewSort> Sortable => _readsEvery
         ? [ReviewSort.Delivery, ReviewSort.Client, ReviewSort.Driver, ReviewSort.Rating, ReviewSort.CreatedAt]
@@ -513,7 +513,7 @@
 
     /// <summary>
     /// The role's one table. The two are different row types - the author's carries no party at all
-    /// (AD-17) - so the page travels untyped through the shared paging and is split again in
+    /// - so the page travels untyped through the shared paging and is split again in
     /// <see cref="OnListed" />.
     /// </summary>
     protected override async Task<Paged<object>?> FetchAsync(ListReviewsQuery view)
@@ -584,7 +584,7 @@
     /// Both halves are the client's convenience rather than the rule. The service refuses an
     /// unfinished delivery with <c>REVIEW_DELIVERY_NOT_COMPLETED</c> and the unique index refuses a
     /// second review with a 409, whatever this list offered — which is what makes it safe to narrow
-    /// here without a second authorization decision living on a screen (FR-12).
+    /// here without a second authorization decision living on a screen.
     /// </para>
     /// </summary>
     private async Task<IReadOnlyList<AssignedDeliverySummary>> ReviewableAsync(
@@ -670,7 +670,7 @@
         {
             if (_editingId is { } id)
             {
-                // AD-23: both fields are sent because both are on the form. Absent would mean
+                // Both fields are sent because both are on the form. Absent would mean
                 // "leave it alone", which is not what a filled-in form says.
                 await Verdicts.UpdateAsync(
                     id,
@@ -751,7 +751,7 @@
     /// platform would otherwise leave the page with no live region at all.
     /// </summary>
     /// <summary>
-    /// Stands the dialog's banner down, and drops the refusals with it (FR-83).
+    /// Stands the dialog's banner down, and drops the refusals with it.
     /// <para>
     /// The list has to go too, not just the flag. A refusal claimed by the scale or the text is
     /// subtracted from the page-level banner this restores, so leaving it populated would leave
@@ -765,7 +765,7 @@
     }
 
     /// <summary>
-    /// An instant as this screen shows it. Local time against the current culture (NFR-15); the
+    /// An instant as this screen shows it. Local time against the current culture; the
     /// circuit runs interactively on the server, so <c>ToLocalTime</c> resolves against the host -
     /// the same reading every other screen in the product gives a stored instant.
     /// </summary>

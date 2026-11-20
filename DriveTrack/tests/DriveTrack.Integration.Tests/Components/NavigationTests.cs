@@ -8,9 +8,9 @@ using DriveTrack.Web.Components.Pages;
 namespace DriveTrack.Integration.Tests.Components;
 
 /// <summary>
-/// FR-77 and FR-12: the navigation a role is offered, and the product mark every screen shares.
+/// The navigation a role is offered, and the product mark every screen shares.
 /// <para>
-/// FR-12 is the one worth restating, because the test cannot: hiding a link is a convenience.
+/// One point is worth restating, because the test cannot: hiding a link is a convenience.
 /// Whether a caller may perform an operation is settled by <c>IAccessGuard</c> inside the service,
 /// which runs whether or not the link was ever rendered. Nothing below asserts otherwise, and
 /// nothing below should be read as making the menu an authorization boundary.
@@ -37,7 +37,7 @@ public class NavigationTests
     [Fact]
     public void A_role_the_table_does_not_know_fails_loudly()
     {
-        // The rows stopped being uniform with story 7.1, which is what the table was written for.
+        // The rows are not uniform across roles, which is what the table was written for.
         // This is what makes a role added without a row an error rather than an empty menu.
         Assert.Throws<ArgumentOutOfRangeException>(() => NavDestinations.For((UserRole)999));
     }
@@ -52,13 +52,13 @@ public class NavigationTests
         bool clients,
         bool dispatchers)
     {
-        // FR-77 over story 7.1's two new destinations. A dispatcher is offered the client roster
-        // because FR-48 gives them a reason to open it - they need it to attach a client to a
+        // The two administration rosters. A dispatcher is offered the client roster
+        // because they have a reason to open it - they need it to attach a client to a
         // delivery - and is not offered the dispatcher roster, which is admin-only work.
         //
-        // FR-12 still holds: this is what is worth showing, not who is allowed to do what. A
-        // dispatcher who typed /clients would be served the screen and refused the moment it tried
-        // to write, by IAccessGuard, inside the service.
+        // Hiding is still a convenience: this is what is worth showing, not who is allowed to do
+        // what. A dispatcher who typed /clients would be served the screen and refused the moment
+        // it tried to write, by IAccessGuard, inside the service.
         var destinations = NavDestinations.For(role);
 
         Assert.Equal(clients, destinations.Contains(NavDestination.Clients));
@@ -74,7 +74,7 @@ public class NavigationTests
         UserRole role,
         bool notifications)
     {
-        // Story 5.2's destination, pinned to its tier. Moving it into the dispatcher set is the
+        // The notification log, pinned to its tier. Moving it into the dispatcher set is the
         // change this exists to catch: the source assertions below still count one @if block and
         // thirteen icons whichever tier it sits in, so without this the link could quietly be
         // offered to three more roles.
@@ -82,8 +82,7 @@ public class NavigationTests
         // Admin-only rather than dispatcher-or-admin because the log is an operations record that
         // carries the address of every client the system has written to, and because
         // NotificationLogService names RequireRole(Admin) outright - so a dispatcher's link could
-        // only ever refuse. FR-12 unchanged: this is what is worth showing, and the guard is what
-        // decides.
+        // only ever refuse. This is what is worth showing, and the guard is what decides.
         Assert.Equal(
             notifications,
             NavDestinations.For(role).Contains(NavDestination.Notifications));
@@ -96,9 +95,9 @@ public class NavigationTests
     [InlineData(UserRole.Client, false)]
     public void Chat_is_offered_to_its_two_participants_and_to_nobody_else(UserRole role, bool chat)
     {
-        // Story 8.1's destination, and the row a reader will take for a mistake: the administrator
-        // is the one role above a dispatcher that is offered *less*. The PRD locks admins out of
-        // chat on purpose - "admins moderate rather than dispatch" - and
+        // Chat, and the row a reader will take for a mistake: the administrator is the one role
+        // above a dispatcher that is offered *less*. The product locks admins out of chat on
+        // purpose - "admins moderate rather than dispatch" - and
         // IAccessGuard.RequireChatParticipant refuses them by rule, so the link could only ever
         // refuse. A client is refused for the plainer reason that chat has two participants and
         // they are not one.
@@ -115,7 +114,7 @@ public class NavigationTests
     [InlineData(UserRole.Client, true)]
     public void Reviews_are_offered_to_everyone_but_the_party_they_judge(UserRole role, bool reviews)
     {
-        // Story 7.2's destination, and the row that is not a mistake: the driver is the one role
+        // Reviews, and the row that is not a mistake: the driver is the one role
         // excluded, because a review is a verdict on the delivery they carried. Every review route
         // refuses them - IAccessGuard.RequireReviewAuthor and RequireReviewOwner both land a driver
         // in their total arm - so offering the link would be offering one that can only refuse.
@@ -124,7 +123,7 @@ public class NavigationTests
         // until now; reviews are the second capability only one of them has, so the set a driver
         // builds on can no longer be the set a client gets.
         //
-        // FR-12 unchanged: this is what is worth showing, and the guard is what decides.
+        // This is what is worth showing, and the guard is what decides.
         Assert.Equal(reviews, NavDestinations.For(role).Contains(NavDestination.Reviews));
     }
 
@@ -138,17 +137,17 @@ public class NavigationTests
         bool shifts,
         bool myShifts)
     {
-        // Story 4.2's two destinations, and the reason they are two rather than one route that
+        // The two shift destinations, and the reason they are two rather than one route that
         // branches: the roster shows every driver's shifts and is where dispatch corrects one, while
         // the personal screen shows what the caller's own scope narrows to and carries the button
         // that puts them on duty. The sets are complements here rather than nested - a dispatcher's
         // scope narrows to nobody, so "my shifts" could only ever refuse them, and a driver has no
         // business reading the whole roster.
         //
-        // A client appears in neither, which is FR-115: they have no part in shifts at all, and
+        // A client appears in neither: they have no part in shifts at all, and
         // IAccessGuard.RequireShiftScope lands them in its total arm.
         //
-        // FR-12 unchanged: this is what is worth showing, and the guard is what decides.
+        // This is what is worth showing, and the guard is what decides.
         var destinations = NavDestinations.For(role);
 
         Assert.Equal(shifts, destinations.Contains(NavDestination.Shifts));
@@ -166,7 +165,7 @@ public class NavigationTests
         // have no dashboard yet - theirs come from artboards still to be drawn - so they are offered
         // none rather than a screen that can only refuse them.
         //
-        // FR-12 unchanged: this is what is worth showing, and the guard is what decides.
+        // This is what is worth showing, and the guard is what decides.
         Assert.Equal(dashboard, NavDestinations.For(role).Contains(NavDestination.Dashboard));
     }
 
@@ -236,14 +235,14 @@ public class NavigationTests
         Assert.DoesNotContain(@"class=""bi", menu, StringComparison.Ordinal);
         Assert.DoesNotContain(".bi-house-door-fill-nav-menu {", stylesheet, StringComparison.Ordinal);
 
-        // Every link and action carries an icon beside its text (NFR-24): the brand mark, profile,
-        // the two fleet screens (4.1), the dispatch board and the own-deliveries screen (5.1), the
-        // two administration rosters (7.1), story 5.2's notification log, sign-out, sign-in and
-        // register, story 8.1's chat destination, story 7.2's reviews, story 4.2's two shift
-        // screens, the phone toggle - and the dispatch dashboard, which is the eighteenth. The toggle
-        // is the one this count once moved for: it used to draw its bars as three CSS gradients in the component's own
-        // stylesheet, duplicating a glyph `IconName.Menu` already held, and a hamburger nobody can
-        // find in the icon set is a hamburger that drifts away from every other glyph in the shell.
+        // Every link and action carries an icon beside its text: the brand mark, profile, the two
+        // fleet screens, the dispatch board and the own-deliveries screen, the two administration
+        // rosters, the notification log, sign-out, sign-in and register, the chat destination,
+        // reviews, the two shift screens, the phone toggle - and the dispatch dashboard, which is
+        // the eighteenth. The toggle is the one this count once moved for: it used to draw its bars
+        // as three CSS gradients in the component's own stylesheet, duplicating a glyph
+        // `IconName.Menu` already held, and a hamburger nobody can find in the icon set is a
+        // hamburger that drifts away from every other glyph in the shell.
         //
         // The count moves with the destination table on purpose: a destination rendered without a
         // glyph is markup with nothing behind it, which is the defect this whole test guards, so
@@ -255,7 +254,7 @@ public class NavigationTests
     [Fact]
     public void The_product_name_and_mark_travel_together_in_the_shell()
     {
-        // NFR-25. The brand lives in NavMenu, which MainLayout renders for every routed screen, so
+        // The brand lives in NavMenu, which MainLayout renders for every routed screen, so
         // asserting it here is asserting it everywhere.
         var menu = SharedMarkup.ReadComponent("Layout", "NavMenu.razor");
         var layout = SharedMarkup.ReadComponent("Layout", "MainLayout.razor");
@@ -289,7 +288,7 @@ public class NavigationTests
         var html = await ShellCaller.RenderAsync<NavMenu>(role);
         var links = Hrefs(html);
 
-        // FR-77: what the table returns for that role, rendered.
+        // What the table returns for that role, rendered.
         Assert.Contains("profile", links);
 
         // The landing page is the brand's link and not one of the destinations.
@@ -304,7 +303,7 @@ public class NavigationTests
         Assert.Contains("Ірина Бондар", System.Net.WebUtility.HtmlDecode(me), StringComparison.Ordinal);
         Assert.Equal(1, SharedMarkup.Occurrences(html, @"href=""profile"""));
 
-        // FR-77: the fleet screens are offered to the two roles that run dispatch and to nobody
+        // The fleet screens are offered to the two roles that run dispatch and to nobody
         // else. Rendered per role rather than read off the table, because no arrangement of words
         // in the markup can tell a dispatcher's menu from a client's.
         var runsDispatch = role is UserRole.Admin or UserRole.Dispatcher;
@@ -312,7 +311,7 @@ public class NavigationTests
         Assert.Equal(runsDispatch, links.Contains("drivers"));
         Assert.Equal(runsDispatch, links.Contains("vehicles"));
 
-        // Story 5.1's two destinations, and the distinction between them: the dispatch board shows
+        // The two delivery destinations, and the distinction between them: the dispatch board shows
         // every delivery in the system and belongs to the roles that run dispatch, while the
         // own-deliveries screen shows what the caller's own scope narrows to and belongs to the two
         // roles that are a party to a delivery. The two sets are complements here rather than
@@ -334,29 +333,29 @@ public class NavigationTests
         Assert.Equal(destinations.Contains(NavDestination.Clients), links.Contains("clients"));
         Assert.Equal(destinations.Contains(NavDestination.Dispatchers), links.Contains("dispatchers"));
 
-        // Story 5.2's log, rendered rather than only read off the table: the table says which roles
-        // are offered it, and this says the menu actually renders that answer.
+        // The notification log, rendered rather than only read off the table: the table says which
+        // roles are offered it, and this says the menu actually renders that answer.
         Assert.Equal(
             destinations.Contains(NavDestination.Notifications),
             links.Contains("notifications"));
         Assert.Equal(role == UserRole.Admin, links.Contains("notifications"));
 
-        // Story 8.1's destination, rendered rather than only read off the table - and stated as a
+        // Chat, rendered rather than only read off the table - and stated as a
         // literal role test as well, because "what the table says" and "who the product decided
         // may chat" have to be the same answer: a dispatcher and a driver, never an admin or a
         // client.
         Assert.Equal(destinations.Contains(NavDestination.Chat), links.Contains("chat"));
         Assert.Equal(role is UserRole.Dispatcher or UserRole.Driver, links.Contains("chat"));
 
-        // Story 7.2's destination, rendered and stated flatly for the same reason chat's is: the
+        // Reviews, rendered and stated flatly for the same reason chat's is: the
         // table's answer and the product's decision have to be the same sentence. Everyone but the
         // driver, who is the party a review judges.
         Assert.Equal(destinations.Contains(NavDestination.Reviews), links.Contains("reviews"));
         Assert.Equal(role != UserRole.Driver, links.Contains("reviews"));
 
-        // Story 4.2's two destinations, rendered rather than only read off the table, and stated as
+        // The two shift destinations, rendered rather than only read off the table, and stated as
         // flat role tests for the same reason chat's are: dispatch runs the roster of shifts, a
-        // driver has their own, and a client has neither (FR-113, FR-112, FR-115).
+        // driver has their own, and a client has neither.
         Assert.Equal(destinations.Contains(NavDestination.Shifts), links.Contains("shifts"));
         Assert.Equal(runsDispatch, links.Contains("shifts"));
 
@@ -382,8 +381,8 @@ public class NavigationTests
     public async Task Only_an_administrator_is_offered_the_dispatcher_roster()
     {
         // Stated once as a flat claim as well as through the table, because "admin sees both,
-        // dispatcher sees one, the other two see neither" is the sentence FR-77 actually makes and
-        // a parameterised assertion can be true of the wrong table.
+        // dispatcher sees one, the other two see neither" is the sentence the requirement actually
+        // makes and a parameterised assertion can be true of the wrong table.
         var admin = Hrefs(await ShellCaller.RenderAsync<NavMenu>(UserRole.Admin));
         var dispatcher = Hrefs(await ShellCaller.RenderAsync<NavMenu>(UserRole.Dispatcher));
         var driver = Hrefs(await ShellCaller.RenderAsync<NavMenu>(UserRole.Driver));
@@ -575,8 +574,8 @@ public class NavigationTests
     [InlineData(UserRole.Client)]
     public async Task The_landing_page_points_a_signed_in_caller_at_their_own_landing_route(UserRole role)
     {
-        // FR-99, asserted against LandingRoute's own answer rather than against "/profile", so it
-        // keeps testing the right thing on the day a role gets a dashboard.
+        // The landing page's way in, asserted against LandingRoute's own answer rather than against
+        // "/profile", so it keeps testing the right thing on the day a role gets a dashboard.
         var html = await ShellCaller.RenderAsync<Home>(role);
         var links = Hrefs(html);
 
@@ -594,7 +593,7 @@ public class NavigationTests
         Assert.Contains("sign-in", links);
         Assert.Contains("register", links);
 
-        // NFR-24: each call to action carries an icon AND its text.
+        // Each call to action carries an icon AND its text.
         foreach (var target in new[] { "sign-in", "register" })
         {
             var cta = Regex.Match(
@@ -622,18 +621,19 @@ public class NavigationTests
     [Fact]
     public void The_navigation_collapses_behind_a_disclosure_that_needs_no_circuit()
     {
-        // NFR-22 for the shell: below the breakpoint the links and the foot are behind one control,
-        // and that control has to carry a glyph and a word or there is nothing on the bar to press.
+        // The phone layout for the shell: below the breakpoint the links and the foot are behind
+        // one control, and that control has to carry a glyph and a word or there is nothing on the
+        // bar to press.
         //
         // The claim has not moved and the mechanism has, twice. It was a bare `<input
         // type="checkbox">` revealing a sibling through `:checked ~`, which announced itself to a
-        // screen reader as a checkbox and drew its bars as three CSS gradients - the replacement for
-        // a hamburger data URI whose stroke was a percent-encoded rgba(), NFR-29's one recorded
-        // literal-colour exemption. Then it was a `<button>` with `@onclick`, which is the mechanism
-        // this test now exists to keep out: three components render inside MainLayout carrying
-        // `[ExcludeFromInteractiveRouting]`, App.razor hands those a null render mode, and a handler
-        // on a page with no circuit is never wired. The menu on those pages could not open, and
-        // below the breakpoint the language switcher is behind it.
+        // screen reader as a checkbox and drew its bars as three CSS gradients - the replacement
+        // for a hamburger data URI whose stroke was a percent-encoded rgba(), the design-token
+        // rule's one recorded literal-colour exemption. Then it was a `<button>` with `@onclick`,
+        // which is the mechanism this test now exists to keep out: three components render inside
+        // MainLayout carrying `[ExcludeFromInteractiveRouting]`, App.razor hands those a null
+        // render mode, and a handler on a page with no circuit is never wired. The menu on those
+        // pages could not open, and below the breakpoint the language switcher is behind it.
         //
         // So it is a `<details>` disclosure: no circuit, no script, and the same behaviour on every
         // page in the product. The absences below are the assertion - a handler or a checkbox
@@ -685,7 +685,7 @@ public class NavigationTests
         //
         // The two frame rules are pinned for the same reason. `dt-shell`'s columns are the only
         // statement anywhere that the navigation and the screen sit side by side, and `dt-main`'s
-        // `min-width: 0` is NFR-22's wide-table rule - without it a delivery table wider than the
+        // `min-width: 0` is the wide-table rule - without it a delivery table wider than the
         // screen stretches the whole shell instead of scrolling inside its own box, which looks like
         // a table bug and is a grid one.
         var theme = File.ReadAllText(Path.Combine(

@@ -12,8 +12,8 @@ namespace DriveTrack.Integration.Tests.Components;
 /// <c>DtFailureBanner</c> alone answered "what was refused" and left "which box" to a label at the
 /// top of a form half a screen tall. <c>DtFieldError</c> puts the sentence under the input that
 /// produced it, and the banner keeps everything no input claimed — which is the half that has to be
-/// asserted, because it is the half FR-83 is broken by. A screen that claimed a field it does not
-/// render would make a refusal invisible, and nothing about the page would look wrong.
+/// asserted, because it is the half that makes a failure silent. A screen that claimed a field it
+/// does not render would make a refusal invisible, and nothing about the page would look wrong.
 /// </para>
 /// </summary>
 public class FieldErrorTests
@@ -33,8 +33,8 @@ public class FieldErrorTests
     /// <para>
     /// <c>DtLocationPicker</c> counts as one of them. It renders a <c>DtFieldError</c> beneath its
     /// map over the sink its caller hands it, so the field a screen gives it is a field that
-    /// screen's banner still has to subtract - and after FR-104's column was extracted, the two
-    /// delivery screens name <c>Pickup</c> and <c>Dropoff</c> nowhere else.
+    /// screen's banner still has to subtract - and with the address search in its own column, the
+    /// two delivery screens name <c>Pickup</c> and <c>Dropoff</c> nowhere else.
     /// </para>
     /// </summary>
     private static readonly Regex FieldErrorField = new(
@@ -63,7 +63,7 @@ public class FieldErrorTests
     [Fact]
     public async Task A_bounded_refusal_renders_under_the_input_it_is_about()
     {
-        // The matrix's first row, against the box the spec's own example uses: an over-weight
+        // Against the weight box: an over-weight
         // parcel used to render the same sentence a missing one did. It now names the ceiling,
         // and it does so beneath the box rather than in a banner that does not say which box.
         var html = await ComponentRenderer.RenderAsync<DtFieldError>(
@@ -140,7 +140,7 @@ public class FieldErrorTests
     [Fact]
     public async Task Two_fields_failing_at_once_each_render_under_their_own_input()
     {
-        // The matrix's third row. Rendered one control at a time, because that is how a form has
+        // Rendered one control at a time, because that is how a form has
         // them: the pair is only two messages if each control keeps to its own field.
         IReadOnlyList<ScreenFailure> failures =
         [
@@ -164,7 +164,7 @@ public class FieldErrorTests
     [Fact]
     public async Task A_failure_on_a_field_the_screen_does_not_render_still_reaches_the_banner()
     {
-        // The matrix's fourth row, and FR-83 itself. The proof panel draws no coordinate box, so a
+        // No silent failure. The proof panel draws no coordinate box, so a
         // refusal naming CaptureLocation has no input to sit under — and the banner is what keeps
         // it from being nowhere at all.
         var html = await ComponentRenderer.RenderAsync<DtFailureBanner>(
@@ -190,7 +190,7 @@ public class FieldErrorTests
     [Fact]
     public async Task A_failure_that_names_no_field_is_never_claimed()
     {
-        // The matrix's fifth row. A 403, a 404 and a 409 carry no field, so no list of field names
+        // A 403, a 404 and a 409 carry no field, so no list of field names
         // can subtract them however long it grows.
         var html = await ComponentRenderer.RenderAsync<DtFailureBanner>(
             new Dictionary<string, object?>
@@ -232,10 +232,10 @@ public class FieldErrorTests
     [Fact]
     public void Every_field_a_banner_claims_is_one_the_same_screen_renders_a_control_for()
     {
-        // FR-83 as a standing guard rather than a reading of each screen. A banner subtracts what
-        // it is told the screen shows, so the one way a refusal can go missing is a name in that
-        // list with no DtFieldError under it — a rename, a deleted input, a copied attribute. None
-        // of those looks wrong on the page, and no render test would reach them.
+        // No silent failures, as a standing guard rather than a reading of each screen. A banner
+        // subtracts what it is told the screen shows, so the one way a refusal can go missing is a
+        // name in that list with no DtFieldError under it — a rename, a deleted input, a copied
+        // attribute. None of those looks wrong on the page, and no render test would reach them.
         //
         // Every branch of a computed list counts. Drivers and Profile are the two screens whose
         // boxes are conditional, which makes them the two most likely to claim something they are
@@ -308,7 +308,7 @@ public class FieldErrorTests
                 var attributes = banner.Groups["attributes"].Value;
 
                 // The search boxes on the two delivery screens carry their own banner over their
-                // own sink (DW-41). It holds one box's refusal and nothing the form's controls can
+                // own sink. It holds one box's refusal and nothing the form's controls can
                 // claim, so only a banner reading the screen's shared sink is required to subtract.
                 if (!attributes.Contains("Failures=\"_failures\"", StringComparison.Ordinal))
                 {
@@ -329,7 +329,7 @@ public class FieldErrorTests
     public void The_field_control_addresses_its_field_by_name_and_never_by_a_lambda()
     {
         // The documented reason this product had no per-field messages: `For="@(() => ...)"` puts a
-        // `=>` inside an attribute, which closes the tag as far as NFR-14's source scan is
+        // `=>` inside an attribute, which closes the tag as far as the user-facing text scan is
         // concerned, and everything after it is then read as rendered English. The component exists
         // to avoid that construct, so the construct is asserted absent rather than remembered.
         var source = SharedMarkup.ReadShared("DtFieldError.razor");

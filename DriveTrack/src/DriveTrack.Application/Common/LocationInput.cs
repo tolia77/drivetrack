@@ -9,9 +9,9 @@ namespace DriveTrack.Application.Common;
 /// one on the way in. <see cref="MapLocation"/>'s constructor throws
 /// <see cref="ArgumentOutOfRangeException"/> for a coordinate no map could show, and a constructor
 /// that throws during model binding lands in the suppressed model state and leaves as a 500 — so a
-/// latitude of 91 would answer "unexpected error" where NFR-4 promises a 422 naming the field.
-/// Binding to this pair instead lets <see cref="LocationInputValidator"/> refuse the same values
-/// with a field name attached, and <see cref="MapLocation"/> stays the shape that leaves.
+/// latitude of 91 would answer "unexpected error" where the contract promises a 422 naming the
+/// field. Binding to this pair instead lets <see cref="LocationInputValidator"/> refuse the same
+/// values with a field name attached, and <see cref="MapLocation"/> stays the shape that leaves.
 /// </para>
 /// <para>
 /// The two are nullable so an omitted coordinate is absent rather than zero: <c>0, 0</c> is a real
@@ -23,8 +23,8 @@ namespace DriveTrack.Application.Common;
 public sealed record LocationInput(double? Latitude, double? Longitude);
 
 /// <summary>
-/// The ranges <see cref="MapLocation"/> enforces, restated where a failure can carry a field name
-/// (NFR-4). The two are deliberately the same rule in two places: this one refuses politely, and
+/// The ranges <see cref="MapLocation"/> enforces, restated where a failure can carry a field name.
+/// The two are deliberately the same rule in two places: this one refuses politely, and
 /// the constructor refuses absolutely, so a coordinate that reached the domain without passing
 /// here would still not become a marker nobody can find.
 /// </summary>

@@ -14,16 +14,16 @@ using ChatScreen = DriveTrack.Web.Components.Pages.Chat;
 namespace DriveTrack.Integration.Tests.Components;
 
 /// <summary>
-/// The chat screen's decisions, and the conventions its markup has to keep (FR-68 to FR-76).
+/// The chat screen's decisions, and the conventions its markup has to keep.
 /// <para>
 /// The decisions are asserted against <see cref="ChatViews"/> rather than against rendered HTML,
 /// because the screen's own state arrives over a live hub connection and a statically rendered
 /// component dispatches no events: a rule written inside the <c>@onclick</c> or behind the socket is
-/// a rule no test in this solution can reach (DW-17, DW-18). Lifting the four of them out is what
+/// a rule no test in this solution can reach. Lifting the four of them out is what
 /// makes them assertable at all.
 /// </para>
 /// <para>
-/// FR-12 unchanged throughout: none of this is authorization. <c>IAccessGuard</c> inside the chat
+/// None of this is authorization. <c>IAccessGuard</c> inside the chat
 /// service refuses a caller whatever this screen decided to draw, and <c>ChatHubTests</c> is where
 /// that is proved.
 /// </para>
@@ -51,7 +51,7 @@ public class ChatScreenTests
     [InlineData(UserRole.Admin, false)]
     public void Only_a_dispatcher_is_offered_a_roster(UserRole role, bool roster)
     {
-        // FR-69: a driver has exactly one conversation, so there is no picker rather than a picker
+        // A driver has exactly one conversation, so there is no picker rather than a picker
         // with one entry - and no roster call, which the guard would refuse anyway.
         Assert.Equal(roster, ChatViews.ShowsRoster(role));
     }
@@ -90,7 +90,7 @@ public class ChatScreenTests
     [Fact]
     public void A_line_is_set_apart_only_when_the_reader_wrote_it()
     {
-        // FR-73's own-message distinction. The class carries it as well as the alignment, so the
+        // The own-message distinction. The class carries it as well as the alignment, so the
         // difference is not colour alone.
         Assert.Equal(
             ChatViews.LineClassName + " " + ChatViews.OwnLineClassName,
@@ -100,7 +100,7 @@ public class ChatScreenTests
             ChatViews.LineClassName + " " + ChatViews.OtherLineClassName,
             ChatViews.LineClass(senderUserId: 4, viewerUserId: 3));
 
-        // AD-20: a deleted sender is nobody's own line. Null comparing equal to a viewer's id would
+        // A deleted sender is nobody's own line. Null comparing equal to a viewer's id would
         // mark every unattributed line in the conversation as the reader's own.
         Assert.Equal(
             ChatViews.LineClassName + " " + ChatViews.OtherLineClassName,
@@ -130,7 +130,7 @@ public class ChatScreenTests
     [Fact]
     public void A_day_separator_opens_the_conversation_and_every_later_day_of_it()
     {
-        // FR-71 keeps the whole history, so a conversation is a run of days rather than one list.
+        // The whole history is kept, so a conversation is a run of days rather than one list.
         // Without the separator a line from March reads as one from this morning.
         // Written as local instants, because the day a reader means is the day on their own
         // calendar: the same UTC evening is one day in Kyiv and the day before in Lisbon, and a
@@ -200,9 +200,9 @@ public class ChatScreenTests
     [Fact]
     public void The_roster_search_reads_the_name_the_vehicle_and_the_plate()
     {
-        // FR-36's shape, over the roster the hub already answered with - typing here is never a
-        // query. Asserted against the function because the screen's own roster arrives over a live
-        // connection and a static render never holds a row to filter.
+        // The driver search's shape, over the roster the hub already answered with - typing here is
+        // never a query. Asserted against the function because the screen's own roster arrives over
+        // a live connection and a static render never holds a row to filter.
         var row = new ChatThreadSummaryView(
             DriverId: 4,
             DriverName: "Олена Андросова",
@@ -241,7 +241,7 @@ public class ChatScreenTests
     [Fact]
     public void The_screen_is_authorized_by_session_and_never_by_role()
     {
-        // FR-12 and the story's own boundary: chat's roles are decided by
+        // Chat's roles are decided by
         // IAccessGuard.RequireChatParticipant, once, inside the service. A [Authorize(Roles = ...)]
         // here would be a second place that decision lived - and it would have to restate the one
         // asymmetry in the system, admin lockout, in a form no test reads.
@@ -464,7 +464,7 @@ public class ChatScreenTests
         Assert.Contains(Ukrainian("ChatYesterday"), yesterday, StringComparison.Ordinal);
         Assert.DoesNotContain(Ukrainian("ChatToday"), yesterday, StringComparison.Ordinal);
 
-        // The older one names its date, in the culture the product runs in (NFR-15), and neither of
+        // The older one names its date, in the culture the product runs in, and neither of
         // the two words - which is the branch that would silently disappear first.
         Assert.Contains(
             Local(2026, 3, 2, 9).ToLocalTime().ToString("d", CultureInfo.GetCultureInfo("uk-UA")),
@@ -502,7 +502,7 @@ public class ChatScreenTests
     [Fact]
     public void Nothing_is_echoed_optimistically()
     {
-        // FR-73: a sent message appears when the server broadcasts the stored row back, so what is
+        // A sent message appears when the server broadcasts the stored row back, so what is
         // on screen is what is in the database. The only place the conversation grows is the
         // callback the hub invokes.
         var screen = SharedMarkup.ReadComponent("Pages", "Chat.razor");
@@ -515,7 +515,7 @@ public class ChatScreenTests
     // What the screen actually renders
     //
     // Everything above reads source text, and no arrangement of words can tell a driver's screen
-    // from a client's: swap `_isParticipant` and `_showsRoster` in OnInitialized and FR-69's whole
+    // from a client's: swap `_isParticipant` and `_showsRoster` in OnInitialized and the whole
     // driver side is dead while every assertion above still passes, because the file still contains
     // all the same words. These render it.
     //
@@ -554,9 +554,9 @@ public class ChatScreenTests
     [Fact]
     public async Task Only_a_dispatcher_is_rendered_a_roster_and_asked_to_pick_a_driver()
     {
-        // FR-68 and FR-69 as the two sides of one screen, rendered rather than read: a dispatcher
-        // gets a list to choose from and a prompt to choose, a driver gets neither because they have
-        // exactly one conversation and it opens itself.
+        // Dispatcher and driver as the two sides of one screen, rendered rather than read: a
+        // dispatcher gets a list to choose from and a prompt to choose, a driver gets neither
+        // because they have exactly one conversation and it opens itself.
         var desk = await ShellCaller.RenderAsync<ChatScreen>(UserRole.Dispatcher);
         var cab = await ShellCaller.RenderAsync<ChatScreen>(UserRole.Driver);
 
@@ -574,9 +574,9 @@ public class ChatScreenTests
     [Fact]
     public async Task A_line_renders_its_sender_its_text_and_the_time_it_was_sent()
     {
-        // FR-73 and FR-76. Rendered through ChatLine, which exists as its own component precisely so
-        // there is a state with one message in it that a test can produce - the screen's own
-        // conversation only ever arrives over a live connection.
+        // Sender, text and time. Rendered through ChatLine, which exists as its own component
+        // precisely so there is a state with one message in it that a test can produce - the
+        // screen's own conversation only ever arrives over a live connection.
         var sentAt = new DateTimeOffset(2026, 9, 7, 14, 35, 0, TimeSpan.Zero);
 
         var html = await RenderLineAsync(
@@ -586,7 +586,7 @@ public class ChatScreenTests
         Assert.Contains("Ігор Ковальчук", html, StringComparison.Ordinal);
         Assert.Contains("Забери вантаж.", html, StringComparison.Ordinal);
 
-        // The instant, formatted in the culture the product runs in (NFR-15) rather than the
+        // The instant, formatted in the culture the product runs in rather than the
         // machine's - so this is the time a Ukrainian reader actually sees.
         Assert.Contains(
             sentAt.ToLocalTime().ToString("g", CultureInfo.GetCultureInfo("uk-UA")),
@@ -625,7 +625,7 @@ public class ChatScreenTests
     [Fact]
     public async Task A_line_whose_sender_was_deleted_renders_the_unattributed_label()
     {
-        // AD-20's set-null, seen from the screen: the account is gone and the line is not. The
+        // The sender's set-null, seen from the screen: the account is gone and the line is not. The
         // capability hands back an empty name because the label is a sentence the catalogue owns,
         // and this is where that sentence appears.
         var html = await RenderLineAsync(

@@ -4,10 +4,10 @@ using FluentValidation;
 namespace DriveTrack.Application.Users;
 
 /// <summary>
-/// FR-87's rules, held over the <em>merged</em> profile rather than over the payload (AD-23).
+/// The profile-edit rules, held over the <em>merged</em> profile rather than over the payload.
 /// <para>
-/// The phone number is the whole reason <see cref="ProfileState.IsClient"/> is on the record. DR-3
-/// gives a dispatcher, a driver and an administrator no row to store a number in, so for them the
+/// The phone number is the whole reason <see cref="ProfileState.IsClient"/> is on the record. A
+/// dispatcher, a driver and an administrator have no row to store a number in, so for them the
 /// only legal merged value is none at all — and a caller who sent one is told so rather than having
 /// the field silently dropped, which is the failure <see cref="Optional{T}"/> exists to prevent.
 /// </para>
@@ -31,7 +31,7 @@ public sealed class ProfileStateValidator : AbstractValidator<ProfileState>
             .MaximumLength(RegisterClientCommandValidator.NameMaximumLength)
                 .WithMessage(nameof(ErrorCode.AUTH_LAST_NAME_TOO_LONG));
 
-        // A client must end up with a number: clearing one is not an operation FR-3 leaves open, so
+        // A client must end up with a number: clearing one is not an operation registration leaves open, so
         // a present-null is a 422 rather than an empty string in the column.
         RuleFor(state => state.PhoneNumber)
             .NotEmpty().WithMessage(nameof(ErrorCode.AUTH_PHONE_NUMBER_INVALID))
@@ -50,12 +50,12 @@ public sealed class ProfileStateValidator : AbstractValidator<ProfileState>
 }
 
 /// <summary>
-/// FR-88's rules. Presence and bounds only on the two passwords, plus the confirmation: the strength
+/// The password-change rules. Presence and bounds only on the two passwords, plus the confirmation: the strength
 /// policy itself is Identity's, configured once in <c>AddIdentityCore</c> and reported back through
 /// the same code, so the two cannot disagree.
 /// <para>
 /// Whether the current password is <em>right</em> is not a question a validator can answer — only a
-/// hash is stored (FR-8) — so that check lives in the service, against the repository, and raises
+/// hash is stored — so that check lives in the service, against the repository, and raises
 /// <see cref="ErrorCode.AUTH_CURRENT_PASSWORD_INCORRECT"/>.
 /// </para>
 /// </summary>
@@ -84,7 +84,7 @@ public sealed class ChangePasswordCommandValidator : AbstractValidator<ChangePas
 }
 
 /// <summary>
-/// FR-92's shape rules — the same three checks, and the same code, as every other address in the
+/// The email address's shape rules — the same three checks, and the same code, as every other address in the
 /// system. Whether the address is <em>free</em> is asked once, in <see cref="EmailChange"/>, because
 /// it is a question about the whole roster rather than about this request.
 /// </summary>

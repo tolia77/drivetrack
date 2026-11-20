@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DriveTrack.Infrastructure.Persistence.Repositories;
 
-/// <summary>EF Core implementation of <see cref="IShiftRepository"/>. See <see cref="EfClientRepository"/> for the AD-6 rules every repository here follows.</summary>
+/// <summary>EF Core implementation of <see cref="IShiftRepository"/>. See <see cref="EfClientRepository"/> for the materialization rules every repository here follows.</summary>
 internal sealed class EfShiftRepository(AppDbContext context) : IShiftRepository
 {
     /// <inheritdoc />
@@ -34,7 +34,7 @@ internal sealed class EfShiftRepository(AppDbContext context) : IShiftRepository
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
-        // Offset zero, because Npgsql binds a timestamptz parameter at no other (AD-13).
+        // Offset zero, because Npgsql binds a timestamptz parameter at no other.
         var from = start.ToUniversalTime();
         var to = (end ?? now).ToUniversalTime();
         var present = now.ToUniversalTime();
@@ -66,7 +66,7 @@ internal sealed class EfShiftRepository(AppDbContext context) : IShiftRepository
 
         var shifts = context.Shifts.AsNoTracking();
 
-        // AD-3: the narrowing is a WHERE, applied before OFFSET and LIMIT. Filtering the
+        // The narrowing is a WHERE, applied before OFFSET and LIMIT. Filtering the
         // materialized page instead would answer an empty page for a driver whose shifts fall
         // outside the first hundred - the defect the parameter exists to make unrepresentable.
         if (driverId is { } driver)
@@ -74,7 +74,7 @@ internal sealed class EfShiftRepository(AppDbContext context) : IShiftRepository
             shifts = shifts.Where(shift => shift.DriverId == driver);
         }
 
-        // Open is `EndedAt IS NULL` and nothing else - the index's own filter (FR-117).
+        // Open is `EndedAt IS NULL` and nothing else - the index's own filter.
         if (query.OpenOnly)
         {
             shifts = shifts.Where(shift => shift.EndedAt == null);
@@ -84,7 +84,7 @@ internal sealed class EfShiftRepository(AppDbContext context) : IShiftRepository
         // correlated subquery rather than a join so a shift whose account is somehow missing stays
         // in the list with an empty name instead of vanishing from it. The `(int)(object)` cast is
         // the one spelling of "the integer behind this typed id" EF translates - as a no-op
-        // `::int` - because a value converter's `.Value` cannot be read inside a query (AD-22).
+        // `::int` - because a value converter's `.Value` cannot be read inside a query.
         var rows = shifts.Select(shift => new Row
         {
             Shift = shift,

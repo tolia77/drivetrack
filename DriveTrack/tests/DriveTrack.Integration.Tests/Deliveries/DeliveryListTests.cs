@@ -14,7 +14,7 @@ namespace DriveTrack.Integration.Tests.Deliveries;
 
 /// <summary>
 /// The delivery lists paged, filtered and sorted by the database, over every row the caller may
-/// see - the I/O matrix of the server-side paging story, asserted against PostgreSQL rather than
+/// see - the server-side paging I/O matrix, asserted against PostgreSQL rather than
 /// against a page already fetched.
 /// <para>
 /// Rows are seeded through the context, because what is under test is the WHERE, the ORDER BY and
@@ -27,7 +27,7 @@ public class DeliveryListTests(PostgresFixture postgres)
     [Fact]
     public async Task The_first_page_carries_ten_rows_and_the_total_of_all_eighty_six()
     {
-        // The matrix's first row, and the acceptance criterion behind it: paging to the end shows the
+        // The matrix's first row, and the promise behind it: paging to the end shows the
         // last rows in the chosen order, and the range reads "N–M of T".
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
@@ -166,7 +166,7 @@ public class DeliveryListTests(PostgresFixture postgres)
     [Fact]
     public async Task The_location_filters_read_the_address_or_the_coordinates_the_cell_shows()
     {
-        // FR-94: a place with no resolved address is shown, and therefore searched, by its
+        // A place with no resolved address is shown, and therefore searched, by its
         // coordinates.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
@@ -392,8 +392,8 @@ public class DeliveryListTests(PostgresFixture postgres)
     [Fact]
     public async Task Every_column_the_own_list_offers_reorders_the_rows_both_ways()
     {
-        // The same walk over one client's own rows. The two name columns are refused on this list
-        // (AD-17) - asserted by The_own_list_refuses_a_column_it_does_not_have - and skipped here.
+        // The same walk over one client's own rows. The two name columns are refused on this
+        // list - asserted by The_own_list_refuses_a_column_it_does_not_have - and skipped here.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -457,8 +457,8 @@ public class DeliveryListTests(PostgresFixture postgres)
     [Fact]
     public async Task A_client_sees_a_total_of_their_own_rows_and_never_another_client_s()
     {
-        // The matrix's scope row: 25 of 300, and AD-3's narrowing comes before every filter, every
-        // sort and the count itself.
+        // The matrix's scope row: 25 of 300, and the caller's narrowing comes before every filter,
+        // every sort and the count itself.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -493,7 +493,7 @@ public class DeliveryListTests(PostgresFixture postgres)
     [InlineData("?sort=bogus")]
     public async Task The_own_list_refuses_a_column_it_does_not_have(string query)
     {
-        // AD-17: the own-deliveries list carries no counterparty, and ordering by one is a way of
+        // The own-deliveries list carries no counterparty, and ordering by one is a way of
         // reading it - so the two name columns are refused like any column the list lacks.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);

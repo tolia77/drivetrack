@@ -3,17 +3,17 @@ using DriveTrack.Domain.Identity;
 namespace DriveTrack.Domain.Deliveries;
 
 /// <summary>
-/// One appended line in a delivery's history (FR-105 to FR-108).
+/// One appended line in a delivery's history.
 /// <para>
-/// Every property is get-only and set through the constructor: AD-27 forbids a mutable
-/// property as much as it forbids an update statement, because "append-only" that any caller
-/// can edit in memory is not append-only. A correction is a new entry (FR-108), and an entry
-/// may carry only a note with no status change (FR-107).
+/// Every property is get-only and set through the constructor: the append-only rule forbids a
+/// mutable property as much as it forbids an update statement, because "append-only" that any
+/// caller can edit in memory is not append-only. A correction is a new entry, and an entry
+/// may carry only a note with no status change.
 /// </para>
 /// <para>
 /// The actor is snapshotted. <see cref="ActorUserId"/> is nullable and set null when the user
 /// is deleted, while <see cref="ActorDisplayName"/> and <see cref="ActorRole"/> keep what was
-/// true at the moment of writing (AD-20). A restrict there would make every user who has ever
+/// true at the moment of writing. A restrict there would make every user who has ever
 /// acted undeletable — the exact "deleting a driver raises a database error" defect this
 /// rewrite exists to fix — and a cascade would erase the history instead.
 /// </para>
@@ -68,7 +68,7 @@ public sealed class TimelineEntry
     /// <param name="previousStatus">Status before the change, or null when nothing changed.</param>
     /// <param name="newStatus">Status after the change, or null when nothing changed.</param>
     /// <param name="note">Free text, or null.</param>
-    /// <param name="occurredAt">When it happened, at offset zero (AD-13).</param>
+    /// <param name="occurredAt">When it happened, at offset zero.</param>
     public TimelineEntry(
         int deliveryId,
         UserId? actorUserId,
@@ -92,10 +92,10 @@ public sealed class TimelineEntry
     /// <summary>Surrogate key, assigned by the database.</summary>
     public int Id { get; }
 
-    /// <summary>The delivery this entry belongs to. The entry dies with it (DR-9).</summary>
+    /// <summary>The delivery this entry belongs to. The entry dies with it.</summary>
     public int DeliveryId { get; }
 
-    /// <summary>Who acted, or null once that user is deleted (AD-20 set-null).</summary>
+    /// <summary>Who acted, or null once that user is deleted (set null).</summary>
     public UserId? ActorUserId { get; }
 
     /// <summary>The actor's display name, snapshotted at write time and never updated.</summary>
@@ -104,7 +104,7 @@ public sealed class TimelineEntry
     /// <summary>
     /// The actor's role, snapshotted at write time and never updated.
     /// <para>
-    /// The enum rather than free text (AD-21): the column still holds the member name, so nothing
+    /// The enum rather than free text: the column still holds the member name, so nothing
     /// about the schema changes, but a reader gets a closed set instead of a string to parse. That
     /// is what lets the view expose a role a screen can label without a lookup table of its own,
     /// and what stops "dispatcher" and "Dispatcher" ever both appearing in the same table.
@@ -112,15 +112,15 @@ public sealed class TimelineEntry
     /// </summary>
     public UserRole ActorRole { get; }
 
-    /// <summary>Status before the change, or null for a note-only entry (FR-107).</summary>
+    /// <summary>Status before the change, or null for a note-only entry.</summary>
     public DeliveryStatus? PreviousStatus { get; }
 
-    /// <summary>Status after the change, or null for a note-only entry (FR-107).</summary>
+    /// <summary>Status after the change, or null for a note-only entry.</summary>
     public DeliveryStatus? NewStatus { get; }
 
     /// <summary>Free text explaining the entry, or null.</summary>
     public string? Note { get; }
 
-    /// <summary>When it happened, at offset zero, from an injected TimeProvider (AD-13).</summary>
+    /// <summary>When it happened, at offset zero, from an injected TimeProvider.</summary>
     public DateTimeOffset OccurredAt { get; }
 }

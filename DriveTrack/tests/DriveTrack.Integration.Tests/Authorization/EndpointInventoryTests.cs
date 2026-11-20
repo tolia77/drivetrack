@@ -39,11 +39,11 @@ public class EndpointInventoryTests(PostgresFixture postgres)
     /// <para>
     /// <c>sign-out</c> is deliberately reachable without credentials: clearing a cookie has to work
     /// for a session that has already expired, and its cross-site protection is the antiforgery
-    /// token it validates by hand (FR-6). <c>set-culture</c> is anonymous for the same shape of
+    /// token it validates by hand. <c>set-culture</c> is anonymous for the same shape of
     /// reason and a stronger one: the language control is offered on the sign-in screen, so
     /// requiring a session would put the one page a reader has to understand before they can do
     /// anything behind the very thing they cannot do. It writes a culture cookie and nothing else,
-    /// names no user, and validates the same antiforgery token by hand (NFR-14). The two hub routes
+    /// names no user, and validates the same antiforgery token by hand. The two hub routes
     /// carry <c>ChatHub</c>'s own <c>[Authorize]</c>, naming both schemes, rather than authorization
     /// on the route — <c>HubBoundaryTests</c> is where that is asserted over the wire.
     /// </para>
@@ -70,9 +70,10 @@ public class EndpointInventoryTests(PostgresFixture postgres)
     [Fact]
     public async Task The_anonymous_rest_allowlist_is_exactly_registration_and_sign_in()
     {
-        // AD-2's allowlist on the HTTP side. PublicEntryPoints closes the Application half; this is
-        // a different claim - a controller can be decorated [AllowAnonymous] without any service
-        // method changing at all, and the coverage gate would never see it.
+        // The guard's anonymous allowlist on the HTTP side. PublicEntryPoints closes the
+        // Application half; this is a different claim - a controller can be decorated
+        // [AllowAnonymous] without any service method changing at all, and the coverage gate would
+        // never see it.
         var cancellationToken = TestContext.Current.CancellationToken;
         var world = await AuthorizationWorld.InstanceAsync(postgres.ConnectionString, cancellationToken);
 
@@ -189,7 +190,7 @@ public class EndpointInventoryTests(PostgresFixture postgres)
     /// The caller-facing REST surface: this product's controllers plus the proof-asset route.
     /// <para>
     /// The probe controllers <c>ApiFactory</c> adds as an application part are excluded by their
-    /// declaring assembly. They exist so the Epic 1 wire-contract tests have something to call and
+    /// declaring assembly. They exist so the wire-contract tests have something to call and
     /// ship in no container, so a matrix carrying rows for them would be a matrix of the test suite
     /// rather than of the product.
     /// </para>

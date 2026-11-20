@@ -6,7 +6,7 @@ using DriveTrack.Domain.Identity;
 
 namespace DriveTrack.Application.Abstractions;
 
-/// <summary>Persistence for <see cref="Delivery"/>. See <see cref="IClientRepository"/> for the shape rules (AD-6).</summary>
+/// <summary>Persistence for <see cref="Delivery"/>. See <see cref="IClientRepository"/> for the shape rules.</summary>
 public interface IDeliveryRepository
 {
     /// <summary>Loads a delivery, or null when there is none with that id.</summary>
@@ -14,13 +14,13 @@ public interface IDeliveryRepository
     /// Deliberately un-included, and it must stay that way. The delete path loads through here, and
     /// a tracked timeline entry makes EF client-cascade the dependent by issuing its own
     /// <c>DELETE</c> at trigger depth 1, where the append-only guard raises. With nothing tracked,
-    /// the database's own cascade runs at depth 2, which the guard permits (AD-27).
+    /// the database's own cascade runs at depth 2, which the guard permits.
     /// </remarks>
     Task<Delivery?> GetByIdAsync(int id, CancellationToken cancellationToken);
 
     /// <summary>
     /// One delivery, but only if <paramref name="scope"/> admits it — otherwise null, whether the
-    /// row is missing or merely somebody else's (FR-26, FR-27).
+    /// row is missing or merely somebody else's.
     /// </summary>
     /// <remarks>
     /// A distinctly named method rather than an overload of <see cref="GetByIdAsync"/>, and the
@@ -28,10 +28,10 @@ public interface IDeliveryRepository
     /// un-included, and an overload invites a caller to reach for whichever signature is nearest.
     /// This one is <c>AsNoTracking</c>, because every caller of it reads.
     /// <para>
-    /// The narrowing is a <c>WHERE</c> rather than a check after the fact, for AD-3's reason and one
-    /// more: a caller who is told "not found" learns nothing about a row they may not see, so the
-    /// non-disclosing 404 the requirements ask for falls out of the query instead of having to be
-    /// remembered at each call site.
+    /// The narrowing is a <c>WHERE</c> rather than a check after the fact, for the scoping rule's
+    /// reason and one more: a caller who is told "not found" learns nothing about a row they may
+    /// not see, so the non-disclosing 404 the requirements ask for falls out of the query instead
+    /// of having to be remembered at each call site.
     /// </para>
     /// </remarks>
     /// <param name="id">The delivery being addressed.</param>
@@ -41,8 +41,7 @@ public interface IDeliveryRepository
 
     /// <summary>
     /// One page of deliveries narrowed to the rows the caller may see, filtered and sorted in SQL,
-    /// with each row's two parties named and the size of the whole filtered set (FR-18, FR-20,
-    /// FR-25, FR-101, NFR-27).
+    /// with each row's two parties named and the size of the whole filtered set.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -52,10 +51,10 @@ public interface IDeliveryRepository
     /// the id as well, so OFFSET can never repeat or skip a row between two requests.
     /// </para>
     /// <para>
-    /// There is no overload without <paramref name="scope"/>, and AD-3 is why: a page fetched
-    /// unscoped and filtered afterwards answers an empty page for a driver whose rows fall outside
-    /// the first page, and no amount of paging further finds them. The narrowing comes first, the
-    /// filters are applied to what it leaves, and the total counts exactly that.
+    /// There is no overload without <paramref name="scope"/>, and the scoping rule is why: a page
+    /// fetched unscoped and filtered afterwards answers an empty page for a driver whose rows fall
+    /// outside the first page, and no amount of paging further finds them. The narrowing comes
+    /// first, the filters are applied to what it leaves, and the total counts exactly that.
     /// </para>
     /// <para>
     /// The party names are read here, as part of the same query, because the driver and client
@@ -90,10 +89,10 @@ public interface IDeliveryRepository
     /// times; the mirror of <see cref="IReviewRepository.ListDriverRatingsAsync"/>, which the
     /// Drivers capability reads ratings through for the same reason.
     /// <para>
-    /// The scope is a parameter for AD-3's reason, unchanged by the ids being explicit: a row the
-    /// caller may not see must be absent from the answer rather than filtered out of it afterwards.
-    /// An id the scope excludes is simply missing from the result, exactly as an id nobody ever
-    /// wrote is.
+    /// The scope is a parameter for the scoping rule's reason, unchanged by the ids being explicit:
+    /// a row the caller may not see must be absent from the answer rather than filtered out of it
+    /// afterwards. An id the scope excludes is simply missing from the result, exactly as an id
+    /// nobody ever wrote is.
     /// </para>
     /// <para>
     /// An empty <paramref name="ids"/> answers an empty list without asking the database; every
@@ -110,7 +109,7 @@ public interface IDeliveryRepository
 
     /// <summary>
     /// The heaviest package among the driver's deliveries that have not been carried yet, or null
-    /// when they have none — the one question FR-103's fleet-side arm asks.
+    /// when they have none — the one question the capacity rule's fleet-side arm asks.
     /// <para>
     /// Only <see cref="DeliveryStatus.Pending"/> and <see cref="DeliveryStatus.InTransit"/> count.
     /// A delivered or failed parcel has already been carried, and counting it would let a job
@@ -151,7 +150,7 @@ public interface IDeliveryRepository
     /// <summary>Stages a new delivery for the next commit.</summary>
     void Add(Delivery delivery);
 
-    /// <summary>Stages a delivery for deletion (FR-24). Its timeline, proof, review and notification attempts go with it (DR-9).</summary>
+    /// <summary>Stages a delivery for deletion. Its timeline, proof, review and notification attempts go with it.</summary>
     void Remove(Delivery delivery);
 }
 

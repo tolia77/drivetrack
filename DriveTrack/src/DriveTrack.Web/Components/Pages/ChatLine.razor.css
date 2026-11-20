@@ -1,13 +1,13 @@
 /*
-    ChatBubble (FR-73, FR-76). Scoped to this component rather than to the screen around it, and
+    ChatBubble. Scoped to this component rather than to the screen around it, and
     that is a fix as well as a move: a `.razor.css` is compiled against the component that owns the
     markup, so the bubble rules living in `Chat.razor.css` were compiled with the screen's scope
     attribute and matched nothing at all - the <li> is written here.
 
     Every palette value is a `--dt-*` token. `max-width` and `align-self` are geometry and outside
-    NFR-29's scan; they are also half the distinction between the two sides, which is deliberate:
-    the side, the fill and the border each say whose message this is, so none of them is the only
-    signal.
+    the design-token scan; they are also half the distinction between the two sides, which is
+    deliberate: the side, the fill and the border each say whose message this is, so none of them is
+    the only signal.
 
     The speaker's corner is the third. Each bubble's bottom corner on the side it is aligned to is
     cut back to `radius-sm` - the tail every messaging app draws, said with a radius rather than

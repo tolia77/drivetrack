@@ -1,9 +1,9 @@
 /*
-    NFR-24: an icon is sized by the text it labels, not by a figure of its own. `icon-size` is
+    An icon is sized by the text it labels, not by a figure of its own. `icon-size` is
     1.15em, so a glyph beside a button label, a nav link and an <h1> each come out the right size
-    without a per-context rule - and NFR-29 is untouched either way, because width and height are
-    geometry rather than palette. The token is named all the same, so the ratio between a glyph and
-    the text beside it is one decision rather than fifteen.
+    without a per-context rule - and the design-token scan is untouched either way, because width
+    and height are geometry rather than palette. The token is named all the same, so the ratio
+    between a glyph and the text beside it is one decision rather than fifteen.
 
     The optical nudge is `vertical-align`, which is also geometry: a 1em box sits on the baseline,
     and a glyph's visual centre is a little above it.

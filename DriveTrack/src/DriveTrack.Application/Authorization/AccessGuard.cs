@@ -4,14 +4,14 @@ using DriveTrack.Domain.Identity;
 namespace DriveTrack.Application.Authorization;
 
 /// <summary>
-/// AD-2's guard over AD-22's caller. The whole authorization vocabulary of this story is these few
+/// The one authorization guard over the caller. The whole authorization vocabulary is these few
 /// lines, which is the point: one implementation, one admin override, one place to read when
 /// asking who may do what.
 /// <para>
 /// Three rules hold for every member, so they are stated once here rather than in each.
-/// An anonymous caller is answered 401, not 403: FR-13's session-expiry flow branches on that single
+/// An anonymous caller is answered 401, not 403: the session-expiry flow branches on that single
 /// code, and an expired cookie on a live circuit is a caller with no credentials left, not one who
-/// lacks permission. AD-4's admin override - admin passes by rule, never by holding a second role
+/// lacks permission. The admin override - admin passes by rule, never by holding a second role
 /// row - is written only in this file, so no capability has to remember
 /// <c>RequireRole(Dispatcher) || RequireRole(Admin)</c>; the two members it deliberately does not
 /// apply to say so. And every member is total over <see cref="UserRole"/>: a role without an arm,
@@ -82,8 +82,8 @@ public sealed class AccessGuard(ICurrentUser currentUser) : IAccessGuard
 
     /// <inheritdoc />
     public void RequireAssignedDriver(DriverId? assignedDriverId) =>
-        // FR-34 gives dispatch the lifecycle as much as it gives it the board. A Client is refused:
-        // FR-90 lets them add a note and read the timeline, and never change a status.
+        // Dispatch owns the lifecycle as much as it owns the board. A Client is refused: they may
+        // add a note and read the timeline, and never change a status.
         RequireOwningDriverOrDispatch(
             assignedDriverId,
             "attempted to act on a delivery's lifecycle",
@@ -95,7 +95,7 @@ public sealed class AccessGuard(ICurrentUser currentUser) : IAccessGuard
     {
         RequireAuthenticated("attempted to compose a delivery");
 
-        // Composing a delivery is what FR-14 gives dispatch. Null is the honest answer to "which
+        // Dispatch composes deliveries. Null is the honest answer to "which
         // client row": they compose for somebody else, and the client is a field of the command
         // they send rather than a property of who they are.
         if (IsDispatchOrAdmin)
@@ -110,7 +110,7 @@ public sealed class AccessGuard(ICurrentUser currentUser) : IAccessGuard
                 : throw Undeterminable("client", "row a request would be attached to");
         }
 
-        // A Driver lands here: FR-25 makes them a reader of deliveries and never an author of one.
+        // A Driver lands here: a driver is a reader of deliveries and never an author of one.
         throw RoleRefused("does not compose deliveries");
     }
 
@@ -119,7 +119,7 @@ public sealed class AccessGuard(ICurrentUser currentUser) : IAccessGuard
     {
         RequireAuthenticated("attempted to reach a driver's conversation");
 
-        // FR-68 and FR-71: dispatch runs every conversation, so a dispatcher passes for the roster
+        // Dispatch runs every conversation, so a dispatcher passes for the roster
         // (a null thread) and for each thread alike.
         if (currentUser.Role == UserRole.Dispatcher)
         {
@@ -137,9 +137,9 @@ public sealed class AccessGuard(ICurrentUser currentUser) : IAccessGuard
             throw Forbidden(Caller + " holds role Driver and is not a participant in that conversation.");
         }
 
-        // The first place AD-4's admin override deliberately does not apply. A Client lands here
+        // The first place the admin override deliberately does not apply. A Client lands here
         // because chat has two participants and a client is not one of them; an Admin lands here
-        // because the PRD says so - "admins moderate rather than dispatch" - which is a product
+        // because admins moderate rather than dispatch, which is a product
         // decision rather than a gap, and is why there is no Admin arm above.
         throw RoleRefused("is not a participant in chat");
     }
@@ -156,8 +156,8 @@ public sealed class AccessGuard(ICurrentUser currentUser) : IAccessGuard
                 : throw Undeterminable("client", "row a review would be attached to");
         }
 
-        // The second place AD-4's admin override deliberately does not apply. An Admin lands here
-        // because the PRD retired FR-97 - an administrator authoring customer feedback is
+        // The second place the admin override deliberately does not apply. An Admin lands here
+        // because an administrator authoring customer feedback is
         // manufacturing it rather than moderating it, and moderation is RequireReviewOwner's, where
         // the override does apply. A Dispatcher lands here because they run the deliveries being
         // judged, and a Driver because they are the party being judged.
@@ -169,7 +169,7 @@ public sealed class AccessGuard(ICurrentUser currentUser) : IAccessGuard
     {
         RequireAuthenticated("attempted to change a review");
 
-        // FR-66 gives an administrator every review to edit and to delete, which is what
+        // An administrator may edit and delete every review, which is what
         // moderation is.
         if (currentUser.Role == UserRole.Admin)
         {
@@ -189,7 +189,7 @@ public sealed class AccessGuard(ICurrentUser currentUser) : IAccessGuard
             throw Forbidden(Caller + " holds role Client and did not write that review.");
         }
 
-        // A Dispatcher lands here - FR-65 makes them a reader of reviews and never a writer of
+        // A Dispatcher lands here - a dispatcher is a reader of reviews and never a writer of
         // one - and so does a Driver, who is the party the review is about.
         throw RoleRefused("does not moderate reviews");
     }
@@ -199,7 +199,7 @@ public sealed class AccessGuard(ICurrentUser currentUser) : IAccessGuard
     {
         RequireAuthenticated("asked whose shifts they are allowed to see");
 
-        // FR-114 gives dispatch the whole roster of shifts.
+        // Dispatch sees the whole roster of shifts.
         if (IsDispatchOrAdmin)
         {
             return null;
@@ -212,7 +212,7 @@ public sealed class AccessGuard(ICurrentUser currentUser) : IAccessGuard
                 : throw Undeterminable("driver", "shifts they may see");
         }
 
-        // A Client lands here, and that is FR-115 written once: a client has no part in shifts, and
+        // A Client lands here, and that rule is written once: a client has no part in shifts, and
         // the narrowing RequireScope would have handed them - (null, clientId) - has a null driver
         // half that a shift query reads as "unrestricted by driver", which is every shift in the
         // system.
@@ -221,7 +221,7 @@ public sealed class AccessGuard(ICurrentUser currentUser) : IAccessGuard
 
     /// <inheritdoc />
     public void RequireShiftOwner(DriverId? ownerDriverId) =>
-        // FR-114 gives dispatch every shift to correct; FR-115 gives a Client no part in shifts.
+        // Dispatch may correct every shift; a Client has no part in shifts.
         RequireOwningDriverOrDispatch(
             ownerDriverId,
             "attempted to act on a driver's shift",

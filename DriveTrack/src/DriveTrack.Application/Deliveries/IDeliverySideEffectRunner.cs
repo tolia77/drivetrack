@@ -1,9 +1,9 @@
 namespace DriveTrack.Application.Deliveries;
 
 /// <summary>
-/// Performs one queued side effect (AD-12).
+/// Performs one queued side effect.
 /// <para>
-/// Named <c>Runner</c> rather than <c>Service</c>, and the name is load-bearing. AD-2's coverage
+/// Named <c>Runner</c> rather than <c>Service</c>, and the name is load-bearing. The guard coverage
 /// gate binds on the <c>Service</c> suffix and requires an <c>IAccessGuard</c> call in every public
 /// method it finds; this type has no caller to authorize — it runs on a background worker, on
 /// behalf of nobody, long after the request that queued it was authorized and answered. A guard
@@ -23,8 +23,8 @@ public interface IDeliverySideEffectRunner
     /// <para>
     /// A storage failure is not absorbed and does leave here. There is still nobody to tell, but
     /// there is somewhere to say it: the caller of this method logs what escapes. Catching it here
-    /// instead would leave no row and no log line anywhere, which is the silent swallow FR-28 exists
-    /// to end.
+    /// instead would leave no row and no log line anywhere, which is the silent swallow the
+    /// notification log exists to end.
     /// </para>
     /// </summary>
     /// <param name="job">The queued work.</param>

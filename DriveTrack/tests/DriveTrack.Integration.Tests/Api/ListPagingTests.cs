@@ -168,7 +168,7 @@ public class ListPagingTests(PostgresFixture postgres)
             await context.SaveChangesAsync(cancellationToken);
         }
 
-        // AD-3: a driver's narrowing comes first, so the total is theirs - never the roster's.
+        // A driver's narrowing comes first, so the total is theirs - never the roster's.
         var own = await PageAsync(client, driver.Token, "/api/shifts?limit=10&offset=20", cancellationToken);
 
         Assert.Equal(30, own.GetProperty("total").GetInt32());
@@ -272,7 +272,7 @@ public class ListPagingTests(PostgresFixture postgres)
 
         Assert.Equal(1, lowest.GetProperty("items")[0].GetProperty("rating").GetInt32());
 
-        // The author's list carries no party, so it is not sorted by one (AD-17).
+        // The author's list carries no party, so it is not sorted by one.
         using var refused = await FleetApi.SendAsync(
             client, HttpMethod.Get, "/api/reviews/mine?sort=driver", author.Token, body: null, cancellationToken);
 
@@ -317,7 +317,7 @@ public class ListPagingTests(PostgresFixture postgres)
     [Fact]
     public async Task The_log_s_page_and_its_total_are_cut_by_the_database_rather_than_in_memory()
     {
-        // DW-74: a repository that materialised the whole log and sliced it would answer every test
+        // A repository that materialised the whole log and sliced it would answer every test
         // above correctly. What tells the two apart is the SQL, so the SQL is what this reads - the
         // page query carries the LIMIT and the OFFSET, and the total is a COUNT rather than a length.
         var cancellationToken = TestContext.Current.CancellationToken;

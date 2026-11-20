@@ -1,7 +1,7 @@
 namespace DriveTrack.Domain.Deliveries;
 
 /// <summary>
-/// What a stored proof asset is (FR-119). Persisted as the member name (AD-21).
+/// What a stored proof asset is. Persisted as the member name.
 /// </summary>
 public enum ProofAssetKind
 {

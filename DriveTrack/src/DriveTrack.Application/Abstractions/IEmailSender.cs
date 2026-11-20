@@ -9,10 +9,10 @@ namespace DriveTrack.Application.Abstractions;
 public sealed record EmailMessage(string Recipient, string Subject, string Body);
 
 /// <summary>
-/// AD-12's outbound-mail port (FR-28). A dumb transport and nothing more.
+/// The outbound-mail port. A dumb transport and nothing more.
 /// <para>
 /// The wording is the caller's: this takes a composed <see cref="EmailMessage"/> rather than a
-/// delivery and a status, so no user-facing sentence lives in an adapter and NFR-14's catalogue
+/// delivery and a status, so no user-facing sentence lives in an adapter and the text catalogue
 /// stays in the layer that owns it.
 /// </para>
 /// <para>

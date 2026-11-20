@@ -9,7 +9,7 @@ using DriveTrack.Integration.Tests.Support;
 namespace DriveTrack.Integration.Tests.Deliveries;
 
 /// <summary>
-/// FR-104 over HTTP: the address search behind the delivery form, and the two refusals that guard
+/// Address search over HTTP: the search behind the delivery form, and the two refusals that guard
 /// it.
 /// <para>
 /// The order of those refusals is the interesting part and is only visible from here. A driver who
@@ -67,7 +67,7 @@ public class PlaceSearchTests(PostgresFixture postgres)
     [Fact]
     public async Task An_administrator_gets_matches_for_the_reason_they_get_everything_else()
     {
-        // AD-4: the guard says RequireRole(Dispatcher) and an admin satisfies every check by rule
+        // The guard says RequireRole(Dispatcher) and an admin satisfies every check by rule
         // inside it. Asserted rather than assumed, because the alternative reading - dispatcher and
         // nobody else - is the one a reader of the service would get from the method name alone.
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -95,9 +95,9 @@ public class PlaceSearchTests(PostgresFixture postgres)
         // the only thing that can refuse them is their role - and nothing reaches the port, which
         // is what stops a public geocoder being spendable by anyone with a session.
         //
-        // A driver alone, since story 7.4. The rule the search follows is "may this caller compose
-        // a delivery" rather than a role list, and a driver composes nothing: FR-25 makes them a
-        // reader of the parcels they carry.
+        // A driver alone. The rule the search follows is "may this caller compose a delivery"
+        // rather than a role list, and a driver composes nothing: they are a reader of the parcels
+        // they carry.
         var cancellationToken = TestContext.Current.CancellationToken;
 
         var geocoder = new FakeGeocoder { Matches = Matches };
@@ -127,10 +127,10 @@ public class PlaceSearchTests(PostgresFixture postgres)
     [Fact]
     public async Task A_client_gets_matches_because_their_own_request_form_sets_two_points()
     {
-        // The reservation story 7.4 retires, asserted where FR-104 lives. The justification for
-        // dispatcher-only was "a client reads deliveries rather than composes them" - which stopped
-        // being true the moment /my-deliveries grew a request form with a pickup and a dropoff on
-        // it. FR-104 itself is unqualified about who sets a location by typing.
+        // The dispatcher-only reservation is gone, asserted where the search lives. The
+        // justification for dispatcher-only was "a client reads deliveries rather than composes
+        // them" - which stopped being true the moment /my-deliveries grew a request form with a
+        // pickup and a dropoff on it. Setting a location by typing is not reserved to any role.
         var cancellationToken = TestContext.Current.CancellationToken;
 
         var geocoder = new FakeGeocoder { Matches = Matches };
@@ -209,9 +209,9 @@ public class PlaceSearchTests(PostgresFixture postgres)
     public async Task A_query_under_three_characters_is_refused_before_anything_leaves_the_process(
         string query)
     {
-        // AD-9's explicit validation, and the reason the floor exists at all: without it a search
-        // box wired to `oninput` would be one outbound request per keystroke, which is both wasteful
-        // and the sort of traffic a public geocoder blocks outright.
+        // Explicit validation in the core, and the reason the floor exists at all: without it a
+        // search box wired to `oninput` would be one outbound request per keystroke, which is both
+        // wasteful and the sort of traffic a public geocoder blocks outright.
         var cancellationToken = TestContext.Current.CancellationToken;
 
         var geocoder = new FakeGeocoder { Matches = Matches };

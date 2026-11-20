@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DriveTrack.Infrastructure.Persistence.Repositories;
 
-/// <summary>EF Core implementation of <see cref="IReviewRepository"/>. See <see cref="EfClientRepository"/> for the AD-6 rules every repository here follows.</summary>
+/// <summary>EF Core implementation of <see cref="IReviewRepository"/>. See <see cref="EfClientRepository"/> for the materialization rules every repository here follows.</summary>
 internal sealed class EfReviewRepository(AppDbContext context) : IReviewRepository
 {
     /// <inheritdoc />
@@ -24,7 +24,7 @@ internal sealed class EfReviewRepository(AppDbContext context) : IReviewReposito
     {
         var rows = context.Reviews.AsNoTracking();
 
-        // AD-3: the scope is a WHERE, applied before OFFSET and LIMIT. Filtering the materialized
+        // The scope is a WHERE, applied before OFFSET and LIMIT. Filtering the materialized
         // page instead would answer an empty page for a client whose reviews fall outside the first
         // hundred - the defect the whole scope parameter exists to make unrepresentable.
         if (scope.ClientId is { } clientId)
@@ -72,7 +72,7 @@ internal sealed class EfReviewRepository(AppDbContext context) : IReviewReposito
         // Every order ends on the id. The two party sorts read each name off the Identity account
         // as a correlated subquery - the author through the client row, the driver through the
         // reviewed delivery - with the `(int)(object)` cast that is the one translatable spelling of
-        // "the integer behind this typed id" (AD-22).
+        // "the integer behind this typed id".
         return reviews.ToPageAsync(
             rows => sort switch
             {
@@ -177,7 +177,7 @@ internal sealed class EfReviewRepository(AppDbContext context) : IReviewReposito
     public void Remove(Review review) => context.Reviews.Remove(review);
 
     /// <summary>
-    /// AD-3's narrowing as a WHERE. A client sees the reviews they wrote. A driver's narrowing has to
+    /// The caller's narrowing as a WHERE. A client sees the reviews they wrote. A driver's narrowing has to
     /// go through the delivery, because a review carries no driver key; no shipped route reaches
     /// here with one, but a repository that silently ignored half its own parameter would be a hole
     /// waiting for the first caller who needs it.

@@ -1,10 +1,10 @@
 @inject NavigationManager Navigation
-@* FR-79 / FR-80: AuthorizeRouteView's NotAuthorized branch, which exists to send the caller
+@* AuthorizeRouteView's NotAuthorized branch, which exists to send the caller
    somewhere rather than to say anything.
 
    It renders nothing on purpose - a page of prose explaining that a redirect is about to happen is
    a second thing to read before being redirected - and it renders nothing on BOTH paths, which is
-   the part that matters: with prerendering off (AD-14) and no route view in this fragment, the
+   the part that matters: with prerendering off and no route view in this fragment, the
    protected component's markup cannot reach the response whichever way the decision goes.
 
    Which way it goes is AuthFailureRoute's, not this component's: a caller who is already signed in

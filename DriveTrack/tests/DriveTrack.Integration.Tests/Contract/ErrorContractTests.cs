@@ -11,17 +11,17 @@ namespace DriveTrack.Integration.Tests.Contract;
 
 /// <summary>
 /// The exhaustiveness gates that make the failure vocabulary genuinely closed rather than closed by
-/// convention (AD-8, AD-18).
+/// convention.
 /// <para>
 /// Every rule here is one an eventual ninth code or sixth exception type would break silently: a
 /// code with no resource key ships an untranslated identifier to a user, a code with no status arm
 /// answers 500 for something that meant 409, and a sixth exception type is a failure the adapter
-/// never learns to shape. Each is caught here at build time instead of in Epic 6.
+/// never learns to shape. Each is caught here at build time instead of in a later screen.
 /// </para>
 /// </summary>
 public class ErrorContractTests
 {
-    /// <summary>The resource catalogue AD-18 pairs with the enum, read as a file rather than through the runtime.</summary>
+    /// <summary>The resource catalogue paired with the enum, read as a file rather than through the runtime.</summary>
     private static readonly string ErrorMessagesResx = Path.Combine(
         RepositoryLayout.ProjectDirectory("DriveTrack.Web"),
         "Resources",
@@ -34,7 +34,7 @@ public class ErrorContractTests
     private static readonly string[] KnownPrefixes =
         ["COMMON_", "AUTH_", "FLEET_", "PERSISTENCE_", "DELIVERY_", "CHAT_", "REVIEW_", "SHIFT_"];
 
-    /// <summary>AD-8's closed failure set, by name.</summary>
+    /// <summary>The closed failure set, by name.</summary>
     private static readonly string[] ExpectedExceptionTypes =
     [
         nameof(ConflictException),
@@ -47,7 +47,7 @@ public class ErrorContractTests
     [Fact]
     public void Every_error_code_has_a_resource_key()
     {
-        // AD-18. Without this a new code reaches a user as its own member name.
+        // Without this a new code reaches a user as its own member name.
         var keys = ResourceKeys();
 
         var missing = Codes
@@ -62,7 +62,7 @@ public class ErrorContractTests
     public void Every_resource_key_is_an_error_code()
     {
         // The other direction, and the reason UiText.resx exists as a separate file: a chrome string
-        // parked in the error catalogue is dead weight (NFR-6) and quietly weakens the pairing above.
+        // parked in the error catalogue is dead weight and quietly weakens the pairing above.
         var names = Codes.Select(code => code.ToString()).ToHashSet(StringComparer.Ordinal);
 
         var strays = ResourceKeys().Where(key => !names.Contains(key)).Order().ToArray();
@@ -116,8 +116,8 @@ public class ErrorContractTests
     [Fact]
     public void Every_error_code_has_a_status()
     {
-        // AD-7's map is total. A member with no arm throws rather than returning a plausible 500,
-        // which is the difference between a failing build and a capability that looks fine in
+        // The status map is total. A member with no arm throws rather than returning a plausible
+        // 500, which is the difference between a failing build and a capability that looks fine in
         // review and answers the wrong status in production.
         var offenders = new List<string>();
 
@@ -150,11 +150,12 @@ public class ErrorContractTests
     [InlineData(ErrorCode.AUTH_FORBIDDEN, 403)]
     [InlineData(ErrorCode.PERSISTENCE_UNIQUE_VIOLATION, 409)]
     [InlineData(ErrorCode.PERSISTENCE_CHECK_VIOLATION, 422)]
-    public void The_status_map_is_the_one_AD7_and_AD8_agree_on(ErrorCode code, int expected)
+    public void The_status_map_splits_unique_from_check_violations(ErrorCode code, int expected)
     {
-        // AD-7:173 folds every constraint violation into 409; AD-8:185-186 splits unique from check.
-        // AD-8 is the more specific rule and the one the epic cites, so a unique violation is 409
-        // and a check violation is 422 - which is also what keeps NFR-2 honest, since a rating of 6
+        // The wire contract folds every constraint violation into 409; the failure mapping splits
+        // unique from check. The failure mapping is the more specific rule, so a unique violation
+        // is 409 and a check violation is 422 - which also keeps one status per failure, since a
+        // rating of 6
         // then returns 422 whether the validator or the database caught it.
         Assert.Equal(expected, ErrorContract.StatusFor(code));
     }
@@ -172,10 +173,9 @@ public class ErrorContractTests
         int statusCode,
         ErrorCode expected)
     {
-        // The other direction of AD-7's table. The HTTP suite reaches only the 404 arm, because
-        // Epic 1 ships no action returning Conflict() and no scheme whose authorization
-        // short-circuit the backstop would have to name - so swapping the 401 and 403 arms left the
-        // whole suite green until this table existed. Both callers, the result filter's client-error
+        // The other direction of the status table, pinned here because the HTTP suite does not
+        // reach every arm: swapping the 401 and 403 arms would otherwise leave the whole suite
+        // green. Both callers, the result filter's client-error
         // arm and the middleware's body-less backstop, decide the client's code from here.
         Assert.Equal(expected, ErrorContract.DefaultCodeFor(statusCode));
     }

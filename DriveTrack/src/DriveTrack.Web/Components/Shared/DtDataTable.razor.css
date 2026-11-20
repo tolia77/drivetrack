@@ -1,10 +1,10 @@
 /*
-    NFR-22: a table that is wider or longer than the space it has scrolls inside its own box rather
+    A table that is wider or longer than the space it has scrolls inside its own box rather
     than widening the page. On a phone that is the difference between a horizontal scrollbar on the
     table and a horizontal scrollbar on the whole screen.
 
-    `overflow`, `max-height` and `position` are geometry and outside NFR-29's scan; the header's
-    colours, the sticky header's depth and every gap in this file are not, and are tokens.
+    `overflow`, `max-height` and `position` are geometry and outside the design-token scan; the
+    header's colours, the sticky header's depth and every gap in this file are not, and are tokens.
 */
 
 .dt-table-scroll {

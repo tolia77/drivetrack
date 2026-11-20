@@ -11,10 +11,10 @@ namespace DriveTrack.Web.Api;
 /// <summary>
 /// Builds and writes the failure envelope. One writer, used by the result filter, the exception
 /// middleware and the challenge and forbid events alike, so a 401 produced by an authentication
-/// handler is byte-identical to a 404 produced by an action (NFR-1).
+/// handler is byte-identical to a 404 produced by an action.
 /// <para>
 /// It resolves its dependencies from <c>HttpContext.RequestServices</c> rather than taking them in a
-/// constructor because AD-7's third suppression is a pair of static, scheme-agnostic methods that an
+/// constructor because the wire contract's third suppression is a pair of static, scheme-agnostic methods that an
 /// authentication handler's events call - a handler has a context and no injection point.
 /// </para>
 /// </summary>
@@ -24,7 +24,7 @@ internal static class EnvelopeWriter
     /// The failure envelope for a code, with its message read from the localized catalogue.
     /// </summary>
     /// <remarks>
-    /// NFR-3: the message on the wire is the localized resource string for the code and nothing
+    /// The message on the wire is the localized resource string for the code and nothing
     /// else. The body never reads an exception, so no stack frame, SQL fragment or constraint name
     /// has a path to a client - the guarantee is structural, not a matter of discipline.
     /// </remarks>
@@ -44,7 +44,7 @@ internal static class EnvelopeWriter
     }
 
     /// <summary>
-    /// Writes the failure envelope for <paramref name="code"/> at the status AD-7 assigns it.
+    /// Writes the failure envelope for <paramref name="code"/> at the status the status table assigns it.
     /// </summary>
     public static Task WriteAsync(
         HttpContext context,
@@ -95,7 +95,7 @@ internal static class EnvelopeWriter
 
     /// <summary>
     /// The serializer settings the controllers use, so an envelope written by middleware matches one
-    /// written through MVC - the enum-as-name converter (AD-21) above all.
+    /// written through MVC - the enum-as-name converter above all.
     /// </summary>
     private static JsonSerializerOptions SerializerOptions(HttpContext context) =>
         context.RequestServices
@@ -106,7 +106,7 @@ internal static class EnvelopeWriter
     /// <summary>
     /// Turns the offending fields into <c>{ field: [localized message] }</c>.
     /// <para>
-    /// NFR-4 wants the caller to be able to attach each message to the input that produced it, so
+    /// The caller has to be able to attach each message to the input that produced it, so
     /// the key has to be the name the caller <em>sent</em>. A <see cref="FieldError"/> carries the
     /// CLR property name (<c>Rating</c>) while the payload spelled it camelCase (<c>rating</c>);
     /// passing it through verbatim would hand a form keys matching none of its fields. Running it

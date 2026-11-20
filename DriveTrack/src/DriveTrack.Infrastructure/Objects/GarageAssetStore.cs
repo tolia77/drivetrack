@@ -84,7 +84,7 @@ internal sealed class GarageAssetStore : IAssetStore, IDisposable
         // a GUID carries no delivery id, no driver and no date, so a key that escaped into a log
         // discloses nothing and a key cannot be guessed from another one. The extension is a
         // courtesy to whoever browses the bucket - nothing reads it back, because the content type
-        // travels on the row (DR-14).
+        // travels on the row.
         //
         // Nothing is created by saying the name: the bucket is untouched until SaveAsync is called,
         // which is what lets the caller commit the row that names this key first.

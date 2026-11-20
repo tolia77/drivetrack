@@ -7,11 +7,11 @@ using Microsoft.AspNetCore.Mvc;
 namespace DriveTrack.Web.Api;
 
 /// <summary>
-/// Dispatcher accounts over REST (FR-49, FR-50): the original's five <c>/dispatchers</c> endpoints.
+/// Dispatcher accounts over REST: the original's five <c>/dispatchers</c> endpoints.
 /// <para>
 /// As in <see cref="ClientsController"/>, <c>[Authorize]</c> carries no roles: every one of these
 /// operations is admin-only, and that is settled by <c>IAccessGuard</c> inside
-/// <see cref="IDispatcherAdministrationService"/> (AD-2).
+/// <see cref="IDispatcherAdministrationService"/>.
 /// </para>
 /// </summary>
 [ApiController]
@@ -19,7 +19,7 @@ namespace DriveTrack.Web.Api;
 [Authorize]
 public sealed class DispatchersController(IDispatcherAdministrationService dispatchers) : ControllerBase
 {
-    /// <summary>Opens a dispatcher account (FR-49). 201, with the account as the payload.</summary>
+    /// <summary>Opens a dispatcher account. 201, with the account as the payload.</summary>
     [HttpPost]
     public async Task<IActionResult> CreateAsync(
         [FromBody] CreateDispatcherCommand command,
@@ -33,7 +33,7 @@ public sealed class DispatchersController(IDispatcherAdministrationService dispa
             account);
     }
 
-    /// <summary>One page of the dispatcher roster (FR-49), sorted over every dispatcher. Defaults to the first hundred.</summary>
+    /// <summary>One page of the dispatcher roster, sorted over every dispatcher. Defaults to the first hundred.</summary>
     /// <remarks>
     /// The paging parameters are nullable so an omitted one takes the default here rather than
     /// binding to zero — a limit of zero is a refusal, and "I did not say" must not mean "give me
@@ -61,8 +61,8 @@ public sealed class DispatchersController(IDispatcherAdministrationService dispa
         dispatchers.GetAsync(new UserId(id), cancellationToken);
 
     /// <summary>
-    /// Edits a dispatcher (FR-50). A body with no <c>password</c> leaves the existing password
-    /// working (AD-23).
+    /// Edits a dispatcher. A body with no <c>password</c> leaves the existing password
+    /// working.
     /// </summary>
     [HttpPatch("{id:int}")]
     public Task<DispatcherAccount> UpdateAsync(
@@ -71,7 +71,7 @@ public sealed class DispatchersController(IDispatcherAdministrationService dispa
         CancellationToken cancellationToken) =>
         dispatchers.UpdateAsync(new UserId(id), command, cancellationToken);
 
-    /// <summary>Deletes a dispatcher's account (FR-50). 204, with no body.</summary>
+    /// <summary>Deletes a dispatcher's account. 204, with no body.</summary>
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteAsync(int id, CancellationToken cancellationToken)
     {

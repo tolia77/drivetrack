@@ -1,14 +1,13 @@
 // =============================================================================
-// AD-28 / NFR-20: the single owner of every literal visual value in the app.
+// The single owner of every literal visual value in the app.
 //
 // This is the ONLY project file allowed to contain a raw colour, length, radius,
 // shadow or font stack. `Styles/vendor/**` is untouched third-party source and is
 // exempt; everything else - the Bootstrap bridge, the theme, every `.razor.css` -
 // must reference a token. `DesignTokenTests` enforces that.
 //
-// The values are transcribed from the design system's own
-// `_bmad-output/planning-artifacts/design-system/tokens.json`, and each token
-// carries that file's `usage` sentence as its comment. That prose is the
+// The values are transcribed from the design system's own token definitions,
+// and each token carries its `usage` sentence as its comment. That prose is the
 // palette's only documentation: it is what stops a later reader re-deriving a
 // value from the pixels of a screenshot and getting a different answer.
 //
@@ -47,7 +46,7 @@ $dt-slate-0:                  #ffffff;   // Pure white. Use via surface-card.
 $dt-slate-50:                 #f2f4f7;   // Tinted near-white. Use via surface-page.
 $dt-slate-100:                #e6eaef;   // Light grey. Use via surface-sunken and status-pending-bg.
 $dt-slate-200:                #d2d9e0;   // Hairline grey. Use via border.
-// The one step tokens.json states on the semantic rather than the primitive tier
+// The one step the design system states on the semantic rather than the primitive tier
 // (`nav-ink: #c3ccd6`). Named here so the semantic layer stays free of literals
 // and so the ramp reads in order; it sits exactly between 200 and 400.
 $dt-slate-300:                #c3ccd6;   // Dimmed white. Use via nav-ink.
@@ -87,7 +86,7 @@ $dt-alpha-shadow-strong:      rgba(21, 29, 38, .24);
 // -----------------------------------------------------------------------------
 // Primitives - type
 //
-// System fonts only (NFR-21): no webfont means no network dependency for type, so
+// System fonts only: no webfont means no network dependency for type, so
 // the interface renders identically offline and on first paint.
 //
 // The size and leading steps carry no meaning on their own. Nine composite styles
@@ -128,7 +127,7 @@ $dt-font-weight-700:          700;
 // the design writes, for two reasons: Bootstrap multiplies and adds these to its
 // own rem figures, and `20px + 1rem` is a compile error rather than a length; and
 // a scale in rem follows a reader who has enlarged their browser's text. At the
-// 16px root every value below is exactly the figure tokens.json names.
+// 16px root every value below is exactly the figure the design system names.
 $dt-space-1:                  0.25rem;       // Icon-to-text gap, badge padding. Bootstrap spacer 1.
 $dt-space-2:                  0.5rem;       // Table cell padding, gap between buttons. Bootstrap spacer 2.
 $dt-space-3:                  0.75rem;      // Field to field gap, dialog footer gap. Bootstrap spacer 3.
@@ -172,7 +171,7 @@ $dt-z-dock:                   1090;      // Connection-lost dock and reconnect m
 // Semantics - the layer components consume
 // -----------------------------------------------------------------------------
 
-// Surfaces. One light theme (NFR-21): tinted page, white cards, dark navigation.
+// Surfaces. One light theme: tinted page, white cards, dark navigation.
 $dt-surface-page:             $dt-slate-50;   // Page background behind cards. Bootstrap $body-bg.
 $dt-surface-card:             $dt-slate-0;    // Cards, dialogs, table body, inputs. Bootstrap $card-bg, $input-bg.
 $dt-surface-sunken:           $dt-slate-100;  // Striped table rows, map placeholder, disabled inputs. Bootstrap $table-striped-bg.
@@ -197,7 +196,7 @@ $dt-nav-divider:              $dt-slate-700;  // Rule above the nav footer. Deco
 $dt-nav-control-border:       $dt-slate-400;  // Edge of the language switcher on nav-bg. 5:1 on nav-bg.
 $dt-nav-active-bg:            $dt-teal-700;   // Current destination fill in the nav, under ink-inverse text.
 
-// Actions (AD-28, NFR-23): create is teal, edit is slate, destructive is red. A
+// Actions: create is teal, edit is slate, destructive is red. A
 // component asks for the *action*, never for the colour.
 $dt-action-create:            $dt-teal-600;   // Create buttons. ink-inverse on it. Bootstrap $primary / .btn-primary.
 $dt-action-create-hover:      $dt-teal-700;   // Create button hover and active.
@@ -206,7 +205,7 @@ $dt-action-edit-hover:        $dt-slate-800;  // Edit button hover and active.
 $dt-action-destructive:       $dt-red-600;    // Delete buttons and the confirm button of a confirmation dialog. ink-inverse on it. Bootstrap $danger / .btn-danger.
 $dt-action-destructive-hover: $dt-red-700;    // Destructive button hover and active.
 
-// Feedback. Three, and no `info`: NFR-23's vocabulary has no informational state,
+// Feedback. Three, and no `info`: the colour vocabulary has no informational state,
 // so the palette declares no hue for one.
 $dt-success:                  $dt-green-600;  // Success fill and icon. ink-inverse on it. Bootstrap $success.
 $dt-success-subtle:           $dt-green-50;   // Success banner and badge background, under success-text.
@@ -230,7 +229,7 @@ $dt-status-delivered-text:    $dt-success-text;   // Delivered status label text
 $dt-status-failed-bg:         $dt-danger-subtle;  // Failed status label background.
 $dt-status-failed-text:       $dt-danger-text;    // Failed status label text on status-failed-bg.
 
-// FR-98 ratings. Deliberately separate from the feedback colours even where the
+// Driver ratings. Deliberately separate from the feedback colours even where the
 // hue coincides: a rating is a judgement, not a notice, and the two are free to
 // diverge later without a find-and-replace.
 $dt-rating-favourable:        $dt-success-text;   // Rating 4.0 and above. Text and stars on surface-card.
@@ -254,7 +253,7 @@ $dt-font-mono:                $dt-family-mono;  // Plates, licence numbers and I
 //
 // Each is published as three custom properties rather than one `font` shorthand,
 // because a scoped `.razor.css` is compiled apart from this file and can only
-// reach the token layer through custom properties - and NFR-29 forbids it a
+// reach the token layer through custom properties - and the design-token rule forbids it a
 // literal `font-size`. `_theme.scss` also emits a `.dt-type-*` utility per style
 // for the common case of wearing one whole.
 $dt-display-font-size:        $dt-font-size-32;   // Landing page headline only.
@@ -453,7 +452,7 @@ $dt-tokens: (
 // Bridge-shaped values
 //
 // Everything below is a token in a shape Bootstrap's own variables want, and it
-// lives here for one reason: NFR-29 reads *every* `$variable:` declaration in
+// lives here for one reason: the design-token gate reads *every* `$variable:` declaration in
 // `_bootstrap-bridge.scss` as a visual one, so the bridge may contain nothing but
 // bare token references. A Sass map, an arithmetic expression or a quoted key
 // written there reads as a literal and fails the gate - correctly, because that
@@ -488,7 +487,7 @@ $dt-backdrop-opacity:         1;
 $dt-btn-disabled-opacity:     1;
 
 // The five theme colours, and only five. `$info`, `$light` and `$dark` are gone
-// from the map (NFR-23 has no informational action, and `bg-light` / `bg-dark`
+// from the map (the colour vocabulary has no informational action, and `bg-light` / `bg-dark`
 // have no consumer), which is what stops `.btn-info`, `.text-bg-info`, `--bs-info`
 // and their light/dark siblings from being generated at all. The three Sass
 // variables themselves stay assigned in the bridge, so the `.table-*` variants

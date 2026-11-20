@@ -34,8 +34,8 @@ public class ScreenFailureTests
     /// <para>
     /// Both are needed, and the second is the one a plausible refactor writes.
     /// <c>[^;]*</c> cannot cross a statement terminator, so the first pattern alone says nothing
-    /// about <c>await search.RunAsync(...); _failures = search.Failures;</c> - which restores DW-41
-    /// exactly, through the new API, with every other assertion here still passing.
+    /// about <c>await search.RunAsync(...); _failures = search.Failures;</c> - which re-merges the
+    /// two sinks exactly, through the new API, with every other assertion here still passing.
     /// </para>
     /// </summary>
     private static readonly Regex[] SearchWritingTheSubmitSink =
@@ -58,7 +58,7 @@ public class ScreenFailureTests
     [Fact]
     public void Two_fields_keyed_alike_stay_two_failures()
     {
-        // The whole of DW-8: most rules share COMMON_VALIDATION_FAILED, so distincting on the key
+        // The whole defect: most rules share COMMON_VALIDATION_FAILED, so distincting on the key
         // alone threw away everything that told the two apart.
         var failures = FailureKeys.For(Refusal(
             ("PackageWeightKg", nameof(ErrorCode.COMMON_VALIDATION_FAILED)),
@@ -223,7 +223,7 @@ public class ScreenFailureTests
     public async Task A_field_with_no_label_falls_back_to_the_message_alone()
     {
         // The one path that could put a raw CLR property name in front of a user: IStringLocalizer
-        // answers a missing key with the key itself (NFR-14).
+        // answers a missing key with the key itself.
         var html = await ComponentRenderer.RenderAsync<DtFailureBanner>(
             new Dictionary<string, object?>
             {
@@ -243,8 +243,8 @@ public class ScreenFailureTests
     [Fact]
     public async Task A_box_that_searches_again_clears_only_its_own_refusal()
     {
-        // DW-41, at the seam where it is decided. The pickup box has been refused; it searches
-        // again and succeeds; the dropoff box's refusal is none of its business.
+        // Separate sinks, at the seam where it is decided. The pickup box has been refused; it
+        // searches again and succeeds; the dropoff box's refusal is none of its business.
         var pickup = new PlaceSearch(_ => { });
         var dropoff = new PlaceSearch(_ => { });
 
@@ -353,7 +353,7 @@ public class ScreenFailureTests
 
         // And the sink the boxes were separated *from* still has somewhere to render. Deleting the
         // dialog's banner would leave a refused Save or Delete saying nothing at all, which is the
-        // same silence DW-41 is about arrived at from the other side.
+        // same silence the separate sinks prevent, arrived at from the other side.
         //
         // Counted on the parsed tag rather than on a literal substring: attribute spacing is not
         // the claim being made, and a substring count is satisfied by an occurrence sitting inside

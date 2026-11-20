@@ -7,7 +7,7 @@ namespace DriveTrack.Web.Api;
 /// Which paths belong to the machine-readable surface, and which credential a request on one
 /// carries. One decision, four call sites in the composition root.
 /// <para>
-/// Until story 6.1 there was exactly one such path prefix — <c>/api</c> — and it was a
+/// There used to be exactly one such path prefix — <c>/api</c> — and it was a
 /// <c>const string</c> in <c>Program.cs</c> repeated in four places: the scheme selector, the two
 /// cookie redirect events and the envelope branch. A second prefix arriving as four separate edits
 /// is how three of them get made and the fourth does not, and the one that gets missed is silent: an
@@ -15,7 +15,7 @@ namespace DriveTrack.Web.Api;
 /// the browser would render a broken image with no explanation anywhere.
 /// </para>
 /// <para>
-/// <b>Why the asset route is not simply under <c>/api</c>.</b> AD-22 makes <c>/api/*</c> bearer-only,
+/// <b>Why the asset route is not simply under <c>/api</c>.</b> <c>/api/*</c> is bearer-only,
 /// and the Blazor circuit holds no token — it holds a cookie. An <c>&lt;img src&gt;</c> on a proof
 /// screen is a browser request with that cookie and nothing else, so it could never authenticate
 /// there. Putting the route outside <c>/api</c> and choosing the scheme by the presence of an
@@ -25,7 +25,7 @@ namespace DriveTrack.Web.Api;
 /// </summary>
 internal static class MachineSurface
 {
-    /// <summary>The REST surface (AD-22): bearer tokens only.</summary>
+    /// <summary>The REST surface: bearer tokens only.</summary>
     public const string ApiPrefix = "/api";
 
     /// <summary>
@@ -52,7 +52,7 @@ internal static class MachineSurface
     /// <summary>
     /// Whether this request should be authenticated as a bearer token rather than as a cookie.
     /// <para>
-    /// On <c>/api</c> the answer is the path, unconditionally: AD-22 says a cookie presented there
+    /// On <c>/api</c> the answer is the path, unconditionally: a cookie presented there
     /// is never even looked at. On the asset prefix the answer is the header, because the route
     /// serves two audiences and the credential the caller actually presented is the only honest way
     /// to tell them apart — a browser sends a cookie and no <c>Authorization</c> header, an API

@@ -8,12 +8,12 @@ using DriveTrack.Integration.Tests.Support;
 namespace DriveTrack.Integration.Tests.Api;
 
 /// <summary>
-/// NFR-1 and AD-7 asserted where they are actually promised: on the wire. One test per row of the
-/// story's HTTP matrix, each driving the real <c>Program.cs</c> pipeline through a probe endpoint.
+/// The response envelope asserted where it is actually promised: on the wire. One test per row of
+/// the HTTP matrix, each driving the real <c>Program.cs</c> pipeline through a probe endpoint.
 /// <para>
 /// The original system's defect was never that any one endpoint was wrong - it was that each
 /// endpoint was right in its own way. A contract asserted per shape rather than per endpoint is the
-/// only kind that survives eight more epics of new controllers.
+/// only kind that survives every new controller.
 /// </para>
 /// </summary>
 public class EnvelopeContractTests(PostgresFixture postgres)
@@ -42,7 +42,7 @@ public class EnvelopeContractTests(PostgresFixture postgres)
     [Fact]
     public async Task Enum_in_a_payload_is_serialized_as_its_member_name()
     {
-        // AD-21: an ordinal is a number whose meaning changes the day someone reorders the enum.
+        // An ordinal is a number whose meaning changes the day someone reorders the enum.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await ApiFactory.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -99,7 +99,7 @@ public class EnvelopeContractTests(PostgresFixture postgres)
 
         AssertFailure(envelope, ErrorCode.COMMON_NOT_FOUND);
 
-        // NFR-3: the message is the resource string for the code, never the exception's.
+        // The message is the resource string for the code, never the exception's.
         var body = await response.Content.ReadAsStringAsync(cancellationToken);
         Assert.DoesNotContain("Probe delivery 7", body, StringComparison.Ordinal);
     }
@@ -109,7 +109,7 @@ public class EnvelopeContractTests(PostgresFixture postgres)
     [InlineData("domain-rule")]
     public async Task Both_conflict_kinds_return_409(string route)
     {
-        // NFR-2: one failure kind, one status. AD-10 puts DomainRuleException on 409 beside
+        // One failure kind, one status. DomainRuleException sits on 409 beside
         // ConflictException precisely so a caller never has to know which one a service used.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await ApiFactory.CreateAsync(postgres.ConnectionString, cancellationToken);
@@ -145,7 +145,7 @@ public class EnvelopeContractTests(PostgresFixture postgres)
 
         var fields = envelope.RootElement.GetProperty("error").GetProperty("fields");
 
-        // NFR-4: the field name survives verbatim, so a form can attach the message to its input.
+        // The field name survives verbatim, so a form can attach the message to its input.
         var rating = fields.GetProperty("rating");
         var weight = fields.GetProperty("packageWeightKg");
 
@@ -171,7 +171,7 @@ public class EnvelopeContractTests(PostgresFixture postgres)
         var message = envelope.RootElement
             .GetProperty("error").GetProperty("fields").GetProperty("rating")[0].GetString();
 
-        // The raw key would be an untranslated identifier in front of a user (NFR-14).
+        // The raw key would be an untranslated identifier in front of a user.
         Assert.NotEqual(ProbeController.UnknownMessageKey, message);
         Assert.Equal(envelope.RootElement.GetProperty("error").GetProperty("message").GetString(), message);
         Assert.True(IsUkrainian(message));
@@ -196,8 +196,9 @@ public class EnvelopeContractTests(PostgresFixture postgres)
     [Fact]
     public async Task An_unauthenticated_request_gets_the_401_envelope_from_the_challenge_writer()
     {
-        // AD-7's third suppression. Without it a cookie handler answers 302 to a login page, which
-        // is HTML - a second wire shape at exactly the point a REST client needs to detect expiry.
+        // The envelope's third suppression. Without it a cookie handler answers 302 to a login
+        // page, which is HTML - a second wire shape at exactly the point a REST client needs to
+        // detect expiry.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await ApiFactory.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
@@ -273,7 +274,7 @@ public class EnvelopeContractTests(PostgresFixture postgres)
 
         var body = await response.Content.ReadAsStringAsync(cancellationToken);
 
-        // NFR-3. The body never reads the exception at all, so these three absences are structural
+        // The body never reads the exception at all, so these three absences are structural
         // rather than a matter of having remembered to strip them.
         Assert.DoesNotContain("boom", body, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("InvalidOperationException", body, StringComparison.Ordinal);
@@ -306,7 +307,7 @@ public class EnvelopeContractTests(PostgresFixture postgres)
     public async Task A_real_validator_names_its_fields_the_way_the_caller_spelled_them()
     {
         // FluentValidation reports the CLR name (Rating); the payload spelled it "rating". A form
-        // cannot attach a message to an input it cannot find, so NFR-4 is only satisfied once the
+        // cannot attach a message to an input it cannot find, so the field is only named once the
         // adapter converts the key with the same naming policy it serializes everything else with.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await ApiFactory.CreateAsync(postgres.ConnectionString, cancellationToken);
@@ -347,7 +348,8 @@ public class EnvelopeContractTests(PostgresFixture postgres)
     public async Task A_JsonResult_is_enveloped_like_any_other_value()
     {
         // JsonResult is not an ObjectResult, so it is the one helper that looks like it is already
-        // doing the right thing while leaving unenveloped - the second wire shape NFR-1 closes.
+        // doing the right thing while leaving unenveloped - the second wire shape the envelope
+        // closes.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await ApiFactory.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -406,7 +408,7 @@ public class EnvelopeContractTests(PostgresFixture postgres)
     [Fact]
     public async Task A_unique_violation_reaches_the_client_as_the_409_envelope()
     {
-        // The defect this whole story exists to remove, asserted where it was actually reported: a
+        // The headline defect, asserted where it was actually reported: a
         // second review for one delivery used to leave as a 500. ConstraintTranslationTests proves
         // the translation and ErrorContractTests proves the status, but neither observes the join,
         // and "500 instead of 409" is a claim about the wire.
@@ -432,9 +434,9 @@ public class EnvelopeContractTests(PostgresFixture postgres)
     [Fact]
     public async Task A_check_violation_reaches_the_client_as_the_422_envelope()
     {
-        // The other half of NFR-2: a rating of 6 is 422 on the wire whether a validator or the check
-        // constraint caught it. The body must also carry nothing of the constraint - its name is a
-        // fact about the schema (NFR-3).
+        // The other half of one-failure-one-status: a rating of 6 is 422 on the wire whether a
+        // validator or the check constraint caught it. The body must also carry nothing of the
+        // constraint - its name is a fact about the schema.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await ApiFactory.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -497,7 +499,7 @@ public class EnvelopeContractTests(PostgresFixture postgres)
         Assert.True(IsUkrainian(error.GetProperty("message").GetString()));
     }
 
-    /// <summary>True when the string carries Cyrillic and no Latin word (NFR-14).</summary>
+    /// <summary>True when the string carries Cyrillic and no Latin word.</summary>
     private static bool IsUkrainian(string? value) =>
         !string.IsNullOrWhiteSpace(value)
         && value.Any(character => character is >= 'Ѐ' and <= 'ӿ')

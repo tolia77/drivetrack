@@ -12,7 +12,7 @@ using FluentValidation;
 namespace DriveTrack.Application.Chat;
 
 /// <summary>
-/// AD-3's pipeline over a driver's conversation: open the scope → load → guard → not found →
+/// The fixed operation pipeline over a driver's conversation: open the scope → load → guard → not found →
 /// validate → act → commit → map.
 /// <para>
 /// The guard call is written out in each of the three public bodies rather than factored into a
@@ -21,8 +21,8 @@ namespace DriveTrack.Application.Chat;
 /// build cannot see.
 /// </para>
 /// <para>
-/// <b>What chat reads that it does not own (AD-16, AD-24).</b> The roster goes through the owning
-/// capability, <see cref="IDriverService.ListAllAsync"/>, exactly as AD-24 asks. Two reads cannot, and
+/// <b>What chat reads that it does not own.</b> The roster goes through the owning
+/// capability, <see cref="IDriverService.ListAllAsync"/>, exactly as the single-owner rule asks. Two reads cannot, and
 /// both are identity lookups: whether a conversation exists for a driver opening <em>their own</em>
 /// (<c>IDriverService.GetAsync</c> is dispatcher-guarded and would refuse them), and a display name
 /// per sender (no service exposes another user's name). Both follow
@@ -48,10 +48,10 @@ public sealed class ChatService(
         // Nothing to load before the decision: the operation is about the roster rather than about
         // one conversation, which is exactly what the null argument says. Asked here rather than
         // left to the driver capability's own RequireRole(Dispatcher), because that one reads as
-        // "a dispatcher or an admin" (AD-4) and chat is where that is deliberately wrong.
+        // "a dispatcher or an admin" and chat is where that is deliberately wrong.
         accessGuard.RequireChatParticipant(null);
 
-        // AD-24: another capability's rows are read through its service, never through its
+        // Another capability's rows are read through its service, never through its
         // repository. The driver capability decides what a driver summary is and what a dispatcher
         // may see of one; chat only keys a conversation on it.
         var roster = await drivers.ListAllAsync(cancellationToken);
@@ -69,7 +69,7 @@ public sealed class ChatService(
                     driver.VehicleModel,
                     driver.VehicleLicensePlate,
                     driver.OnDuty))
-                // FR-68 names the roster by person, so it is ordered by person. The driver
+                // The roster names drivers by person, so it is ordered by person. The driver
                 // capability orders its own list by row id, which is the order they were taken on -
                 // useful for a fleet roster and meaningless in a list somebody scans for a name.
                 // Ukrainian collation rather than ordinal: code-point order puts Є, І and Ї before
@@ -90,7 +90,7 @@ public sealed class ChatService(
 
         var driver = await unitOfWork.Drivers.GetByIdAsync(driverId, cancellationToken);
 
-        // AD-3: the row is read before the decision, and nothing about it is disclosed unless the
+        // The row is read before the decision, and nothing about it is disclosed unless the
         // guard passes - not even whether it exists, which is why the 404 below comes second.
         accessGuard.RequireChatParticipant(driverId);
 
@@ -135,7 +135,7 @@ public sealed class ChatService(
             SenderUserId = senderUserId,
             Text = trimmed.Text!,
 
-            // AD-13: the injected clock, never the ambient one. The whole conversation's order
+            // The injected clock, never the ambient one. The whole conversation's order
             // depends on this value, so it has to be a value a test can fix.
             SentAt = timeProvider.GetUtcNow(),
         };
@@ -152,7 +152,7 @@ public sealed class ChatService(
 
         // Mapped from the entity after the commit, so the id and the instant on the returned line
         // are the ones the row actually holds - which is what makes broadcasting it instead of the
-        // typed text an honest echo rather than an optimistic one (FR-73).
+        // typed text an honest echo rather than an optimistic one.
         return new ChatMessage(
             message.Id,
             senderUserId.Value,
@@ -209,7 +209,7 @@ public sealed class ChatService(
 
     /// <summary>
     /// The driver's display name for the conversation header. Chat reads driver and user identity
-    /// and owns neither (AD-16), so the name comes from the account rather than from a copy of it.
+    /// and owns neither, so the name comes from the account rather than from a copy of it.
     /// </summary>
     private static async Task<string> DriverNameAsync(
         IUnitOfWork unitOfWork,

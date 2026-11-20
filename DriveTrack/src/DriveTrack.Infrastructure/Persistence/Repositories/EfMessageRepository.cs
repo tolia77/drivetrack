@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DriveTrack.Infrastructure.Persistence.Repositories;
 
-/// <summary>EF Core implementation of <see cref="IMessageRepository"/>. See <see cref="EfClientRepository"/> for the AD-6 rules every repository here follows.</summary>
+/// <summary>EF Core implementation of <see cref="IMessageRepository"/>. See <see cref="EfClientRepository"/> for the materialization rules every repository here follows.</summary>
 internal sealed class EfMessageRepository(AppDbContext context) : IMessageRepository
 {
     /// <inheritdoc />
@@ -16,11 +16,11 @@ internal sealed class EfMessageRepository(AppDbContext context) : IMessageReposi
             // A history is read, never edited: nothing here is written back, so tracking it would
             // only be change detection over rows no code path changes.
             .AsNoTracking()
-            // The thread key, and the same one the row was written against (AD-15). The
+            // The thread key, and the same one the row was written against. The
             // (driver_id, sent_at) index declared on the table serves exactly this shape.
             .Where(message => message.DriverId == driverId)
             // Id breaks a tie, for the reason the timeline read gives: two messages written in one
-            // transaction share an instant, and FR-72 asks for an order rather than an almost-order.
+            // transaction share an instant, and the thread needs an order rather than an almost-order.
             .OrderBy(message => message.SentAt)
             .ThenBy(message => message.Id)
             .ToListAsync(cancellationToken);

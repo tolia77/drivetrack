@@ -4,11 +4,11 @@ using DriveTrack.Application.Users;
 namespace DriveTrack.Application.Tests.Users;
 
 /// <summary>
-/// FR-3's rules, driven through the real <c>EnsureValidAsync</c> seam (AD-9) so the assertions
+/// The registration rules, driven through the real <c>EnsureValidAsync</c> seam so the assertions
 /// are about the <see cref="FieldError"/> list the adapter will actually receive.
 /// <para>
 /// Both halves of each row matter. The field name is what lets a form attach the message to the
-/// input that produced it (NFR-4), and the message key has to be an <see cref="ErrorCode"/> name,
+/// input that produced it, and the message key has to be an <see cref="ErrorCode"/> name,
 /// because the adapter resolves it through the same Ukrainian catalogue as <c>error.code</c> — a
 /// sentence there would reach a user untranslated.
 /// </para>
@@ -69,7 +69,7 @@ public class RegistrationValidationTests
     public async Task A_missing_password_is_refused_with_the_weak_password_key()
     {
         // The same code Identity's own policy failure maps to, so a caller sees one answer to
-        // "the password is not acceptable" whichever half decided it (NFR-2).
+        // "the password is not acceptable" whichever half decided it.
         var failure = await Refuse(Valid() with { Password = "", PasswordConfirmation = "" });
 
         AssertField(failure, "Password", nameof(ErrorCode.AUTH_PASSWORD_TOO_WEAK));
@@ -161,7 +161,7 @@ public class RegistrationValidationTests
     [Fact]
     public async Task Every_offending_field_is_reported_not_only_the_first()
     {
-        // NFR-4: a form that reports one error at a time is a form filled in five times.
+        // A form that reports one error at a time is a form filled in five times.
         var failure = await Refuse(new RegisterClientCommand(null, null, "nope", "0441234567", "", "x"));
 
         Assert.Equal(ErrorCode.COMMON_VALIDATION_FAILED, failure.Code);

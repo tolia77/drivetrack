@@ -80,8 +80,8 @@
                 <DtFieldError Field="PasswordConfirmation" Failures="_failures" />
             </div>
 
-            @* NFR-24, and no `disabled` binding for the reason SignIn's submit carries none: there
-               is no circuit behind this page to flip one. *@
+            @* An icon beside the label, and no `disabled` binding for the reason SignIn's submit
+               carries none: there is no circuit behind this page to flip one. *@
             <button class="btn btn-primary dt-register-submit" type="submit">
                 <Icon Name="IconName.Register" />@Localizer["LandingCreateAccount"]
             </button>
@@ -94,7 +94,7 @@
 @code {
     /// <summary>
     /// The boxes this screen renders a <c>DtFieldError</c> for. Stated once and bound by every
-    /// banner on the page: the list repeated per banner is exactly the drift FR-83 is broken by,
+    /// banner on the page: the list repeated per banner is exactly the drift that loses a refusal,
     /// and a screen carries the banner more than once because a dialog opened with showModal()
     /// leaves the page behind it inert.
     /// </summary>

@@ -1,12 +1,12 @@
 namespace DriveTrack.Application.Deliveries;
 
 /// <summary>
-/// Proof of delivery (FR-119 to FR-123): the only writer of <c>proof_of_deliveries</c>, and the only
+/// Proof of delivery: the only writer of <c>proof_of_deliveries</c>, and the only
 /// route to a stored asset's bytes.
 /// <para>
 /// Three members, and the ones that are missing are the design. There is no update, no replace and
-/// no delete: FR-123 makes a proof immutable, so a second capture is refused rather than merged, and
-/// a proof is removed only by the cascade from its delivery (DR-9). Evidence that can be edited is
+/// no delete: a proof is immutable, so a second capture is refused rather than merged, and
+/// a proof is removed only by the cascade from its delivery. Evidence that can be edited is
 /// not evidence.
 /// </para>
 /// <para>
@@ -20,12 +20,12 @@ namespace DriveTrack.Application.Deliveries;
 public interface IProofOfDeliveryService
 {
     /// <summary>
-    /// Records the hand-over (FR-119): one proof row and its assets commit together, and the bytes
+    /// Records the hand-over: one proof row and its assets commit together, and the bytes
     /// are written into the store afterwards, under keys the row already names.
     /// <para>
     /// Reserved to the assigned driver and to dispatch, which is the same predicate the status
     /// change uses — a client may never capture proof of their own delivery. It is allowed on a
-    /// delivery that has already been marked delivered (FR-121): the parcel arrived before anyone
+    /// delivery that has already been marked delivered: the parcel arrived before anyone
     /// had a chance to photograph it, and refusing the evidence afterwards would leave the gap this
     /// capability exists to close.
     /// </para>
@@ -39,10 +39,10 @@ public interface IProofOfDeliveryService
     /// <exception cref="Common.NotFoundException">No delivery has that id.</exception>
     /// <exception cref="Common.ValidationException">
     /// The command describes a proof that may not exist: no recipient, no coordinates, no signature,
-    /// no photograph, too many photographs, a disallowed type or an oversized asset (NFR-28).
+    /// no photograph, too many photographs, a disallowed type or an oversized asset.
     /// </exception>
     /// <exception cref="Common.ConflictException">
-    /// The delivery already has a proof (<c>DELIVERY_PROOF_ALREADY_CAPTURED</c>, FR-123).
+    /// The delivery already has a proof (<c>DELIVERY_PROOF_ALREADY_CAPTURED</c>).
     /// </exception>
     /// <exception cref="Exception">
     /// The object store refused a write. The one failure here that does not mean "nothing happened":
@@ -59,8 +59,8 @@ public interface IProofOfDeliveryService
         CancellationToken cancellationToken);
 
     /// <summary>
-    /// The proof of a delivery this caller may see (FR-122), with the capturer's name present only
-    /// for an administrator or a dispatcher (AD-17).
+    /// The proof of a delivery this caller may see, with the capturer's name present only
+    /// for an administrator or a dispatcher.
     /// </summary>
     /// <param name="deliveryId">The delivery whose proof is wanted.</param>
     /// <param name="cancellationToken">Cancellation token.</param>

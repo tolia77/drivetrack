@@ -246,7 +246,7 @@ internal sealed class TableView<TView>
 /// order by, rather than no attribute - and the stacked pair that means "this sorts"; the one the
 /// rows are actually ordered by swaps the pair for a single chevron pointing the way it went, so the
 /// two directions differ by shape and not by the brand colour alone. The three ARIA values are
-/// tokens a browser reads out in the user's own language, so they take no resource key (NFR-14).
+/// tokens a browser reads out in the user's own language, so they take no resource key.
 /// </para>
 /// </summary>
 internal static class SortHeading

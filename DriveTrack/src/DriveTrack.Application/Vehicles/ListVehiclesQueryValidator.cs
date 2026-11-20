@@ -4,7 +4,7 @@ using FluentValidation;
 namespace DriveTrack.Application.Vehicles;
 
 /// <summary>
-/// NFR-27's "validated rather than passed through unchecked".
+/// Paging "validated rather than passed through unchecked".
 /// <para>
 /// Every message is an <see cref="ErrorCode"/> name applied per rule, never once at the end of a
 /// chain — see <c>RegisterClientCommandValidator</c> for why that distinction is load-bearing.

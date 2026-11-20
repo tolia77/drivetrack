@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore;
 namespace DriveTrack.Integration.Tests.Fleet;
 
 /// <summary>
-/// Story 4.2's I/O matrix over HTTP, against the real <c>Program.cs</c> pipeline with the real JWT
-/// scheme (FR-109 to FR-117).
+/// The shift I/O matrix over HTTP, against the real <c>Program.cs</c> pipeline with the real JWT
+/// scheme.
 /// <para>
 /// These claims are only true over the wire and against the schema. "A driver reaches their own
 /// shifts and nobody else's" is a property of the guard reached through the whole adapter; "two
@@ -24,8 +24,8 @@ namespace DriveTrack.Integration.Tests.Fleet;
 /// <para>
 /// The refusals are checked by code rather than only by status, because two of them are the same
 /// 409: being already on duty and losing a race are different sentences a caller acts on
-/// differently, and NFR-2 is only interesting because both arrive as 409 while saying different
-/// things.
+/// differently, and one-failure-one-status is only interesting because both arrive as 409 while
+/// saying different things.
 /// </para>
 /// </summary>
 public class ShiftManagementTests(PostgresFixture postgres)
@@ -33,7 +33,7 @@ public class ShiftManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task A_driver_goes_on_duty_and_off_duty_against_one_row_stamped_by_the_clock()
     {
-        // The headline row, end to end: one row, both instants from the injected clock (AD-13), and
+        // The headline row, end to end: one row, both instants from the injected clock, and
         // the row open only between the two presses. A shift whose end opened a second row would
         // satisfy every status assertion here, so the count is checked as well.
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -97,8 +97,8 @@ public class ShiftManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task A_driver_who_is_already_on_duty_cannot_start_a_second_shift()
     {
-        // FR-110's friendly refusal, and the row count is half the claim: a 409 answered beside a
-        // second stored shift would satisfy the status assertion on its own.
+        // The one-open-shift rule's friendly refusal, and the row count is half the claim: a 409
+        // answered beside a second stored shift would satisfy the status assertion on its own.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -123,19 +123,20 @@ public class ShiftManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task Two_starts_racing_for_one_driver_leave_exactly_one_row_and_one_409()
     {
-        // FR-110, AD-20, and the row of the matrix that is the reason the rule is a partial unique
-        // index rather than a lookup. Both requests are in flight before either has committed, so
-        // the service's "is there an open shift" read passes in both - which is precisely how a
-        // driver ends up on duty twice.
+        // One open shift per driver, and the row of the matrix that is the reason the rule is a
+        // partial unique index rather than a lookup. Both requests are in flight before either has
+        // committed, so the service's "is there an open shift" read passes in both - which is
+        // precisely how a driver ends up on duty twice.
         //
         // Shaped after ReviewTests' race: fire both, sort the answers, and assert the pair rather
         // than which one won. Which request wins is the database's business.
         //
         // The one difference from that race is why the loser's code is a set below rather than a
         // single value. Reviews has no pre-insert lookup at all, so its loser is always the index's
-        // 409; shifts has one, because FR-110 asks for a sentence a driver can act on - so the loser
-        // gets the friendly refusal when the winner committed first and the index's when it did not.
-        // Both are 409, and the row count below is the claim that does not depend on which.
+        // 409; shifts has one, because the rule asks for a sentence a driver can act on - so the
+        // loser gets the friendly refusal when the winner committed first and the index's when it
+        // did not. Both are 409, and the row count below is the claim that does not depend on
+        // which.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -157,11 +158,12 @@ public class ShiftManagementTests(PostgresFixture postgres)
             var loser = responses.Single(response => response.StatusCode == HttpStatusCode.Conflict);
 
             // The loser is refused by one of two things, and which one is the database's business
-            // rather than a property worth pinning: the service's lookup when the winner had already
-            // committed by the time the loser read, and ix_shifts_driver_id_open when it had not.
-            // Both are 409, which is the whole of NFR-2 here - a caller acts on the same status
-            // either way - and the code is asserted to be one of exactly those two so a third answer
-            // (a 500 from an untranslated constraint, say) fails rather than passes.
+            // rather than a property worth pinning: the service's lookup when the winner had
+            // already committed by the time the loser read, and ix_shifts_driver_id_open when it
+            // had not. Both are 409, which is the whole of one-failure-one-status here - a caller
+            // acts on the same status either way - and the code is asserted to be one of exactly
+            // those two so a third answer (a 500 from an untranslated constraint, say) fails rather
+            // than passes.
             var code = (await FleetApi.ReadAsync(loser, cancellationToken))
                 .GetProperty("error")
                 .GetProperty("code")
@@ -175,7 +177,7 @@ public class ShiftManagementTests(PostgresFixture postgres)
                     nameof(ErrorCode.PERSISTENCE_UNIQUE_VIOLATION),
                 });
 
-            // NFR-3 whichever of the two it was: no SQLSTATE, no constraint name, no raw code.
+            // Whichever of the two it was: no SQLSTATE, no constraint name, no raw code.
             await FleetApi.AssertFailureAsync(
                 loser,
                 HttpStatusCode.Conflict,
@@ -216,9 +218,10 @@ public class ShiftManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task A_shift_recorded_with_a_backwards_window_is_refused_naming_the_end()
     {
-        // FR-111 on the create path. The field is asserted as well as the code: NFR-4 promises
-        // error.fields keys a form can attach a message to, and a refusal that named nothing would
-        // leave a dispatcher with two date boxes and no idea which one is wrong.
+        // The end-after-start rule on the create path. The field is asserted as well as the code:
+        // the contract promises error.fields keys a form can attach a message to, and a refusal
+        // that named nothing would leave a dispatcher with two date boxes and no idea which one is
+        // wrong.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -254,10 +257,10 @@ public class ShiftManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task An_edit_that_moves_only_the_start_is_judged_on_the_window_it_would_produce()
     {
-        // AD-23 and FR-111 together, over the wire. The payload carries one instant and nothing to
-        // compare it with, so a service validating the payload would accept this and store a shift
-        // that ends before it begins. The field named is the start, because that is the box the
-        // dispatcher actually filled in.
+        // Absent-versus-null and end-after-start together, over the wire. The payload carries one
+        // instant and nothing to compare it with, so a service validating the payload would accept
+        // this and store a shift that ends before it begins. The field named is the start, because
+        // that is the box the dispatcher actually filled in.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -302,17 +305,17 @@ public class ShiftManagementTests(PostgresFixture postgres)
 
         Assert.Equal(start.AddMinutes(10), edited.GetProperty("startedAt").GetDateTimeOffset());
 
-        // The end the caller never mentioned is still there: absent means "leave it alone" (AD-23).
+        // The end the caller never mentioned is still there: absent means "leave it alone".
         Assert.Equal(start.AddHours(8), edited.GetProperty("endedAt").GetDateTimeOffset());
     }
 
     [Fact]
     public async Task A_closed_shift_cannot_be_reopened_because_the_payload_cannot_say_so()
     {
-        // FR-117 as a property of the contract rather than of a rule somebody could delete.
-        // UpdateShiftCommand types the end as Optional<DateTimeOffset>, which has no case for a
-        // present null - so the converter refuses the payload before any service sees it, and the
-        // shift stays closed.
+        // The no-reopen rule as a property of the contract rather than of a rule somebody could
+        // delete. UpdateShiftCommand types the end as Optional<DateTimeOffset>, which has no case
+        // for a present null - so the converter refuses the payload before any service sees it, and
+        // the shift stays closed.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -346,8 +349,9 @@ public class ShiftManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task A_driver_reads_their_own_shifts_and_nobody_elses()
     {
-        // FR-112. Both drivers have a shift, so an unnarrowed list would answer two rows and this
-        // would fail - which is the only way to tell "narrowed correctly" from "there was only one".
+        // A driver sees only their own shifts. Both drivers have a shift, so an unnarrowed list
+        // would answer two rows and this would fail - which is the only way to tell "narrowed
+        // correctly" from "there was only one".
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -389,8 +393,9 @@ public class ShiftManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task A_driver_may_not_read_edit_or_delete_another_drivers_shift()
     {
-        // FR-112's other half, on all three routes. 403 rather than 404, and before the row's
-        // existence is disclosed: the guard is handed the shift's owner and refuses on that alone.
+        // The other half of driver ownership, on all three routes. 403 rather than 404, and before
+        // the row's existence is disclosed: the guard is handed the shift's owner and refuses on
+        // that alone.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -445,9 +450,10 @@ public class ShiftManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task A_client_is_refused_every_shift_route()
     {
-        // FR-115, and the reason the guard has a member of its own: RequireScope would have handed a
-        // client the scope (null, clientId), whose null driver half reads as "unrestricted by
-        // driver" - which is every shift in the system under a heading nobody wrote.
+        // A client has no part in shifts, and that is the reason the guard has a member of its own:
+        // RequireScope would have handed a client the scope (null, clientId), whose null driver
+        // half reads as "unrestricted by driver" - which is every shift in the system under a
+        // heading nobody wrote.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -471,7 +477,7 @@ public class ShiftManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task An_anonymous_caller_is_refused_every_shift_route()
     {
-        // 401 rather than 403, on every route: FR-13's session-expiry flow branches on this single
+        // 401 rather than 403, on every route: the session-expiry flow branches on this single
         // code, so a shift route answering 403 for a missing credential would send an expired
         // session to the wrong screen.
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -501,9 +507,9 @@ public class ShiftManagementTests(PostgresFixture postgres)
     [InlineData(UserRole.Admin)]
     public async Task Dispatch_records_reads_corrects_and_deletes_another_drivers_shift(UserRole role)
     {
-        // FR-113 and FR-114 for both roles that run dispatch, driven as one sequence rather than as
-        // four tests: "no operation is available to one and not the other" is a claim about the
-        // whole set, and two roles running the same sequence is what states it.
+        // Recording and correcting shifts for both roles that run dispatch, driven as one sequence
+        // rather than as four tests: "no operation is available to one and not the other" is a
+        // claim about the whole set, and two roles running the same sequence is what states it.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -559,8 +565,8 @@ public class ShiftManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task The_driver_roster_says_who_is_on_duty_and_still_offers_everybody()
     {
-        // FR-116 where the assignment form reads it. The flag is derived from the open shift on
-        // every read (AD-24, DR-18), so going off duty changes the answer without anything being
+        // The on-duty flag where the assignment form reads it. The flag is derived from the open
+        // shift on every read, so going off duty changes the answer without anything being
         // written to the driver row - which is the half a stored column would get wrong.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
@@ -574,7 +580,7 @@ public class ShiftManagementTests(PostgresFixture postgres)
 
         var roster = await RosterAsync(client, dispatcher, cancellationToken);
 
-        // Both drivers are on the roster: FR-116 flags, and never filters.
+        // Both drivers are on the roster: the on-duty status flags, and never filters.
         Assert.Equal(2, roster.Count);
         Assert.True(roster[working.DriverId]);
         Assert.False(roster[resting.DriverId]);
@@ -607,8 +613,9 @@ public class ShiftManagementTests(PostgresFixture postgres)
     {
         // The one write path whose instant nobody typed. Create and edit refuse an open shift dated
         // in the future, so the backwards window this guards against now needs a clock that stepped
-        // back after the shift opened - and the refusal is FR-111's rather than a stored backwards
-        // window. Tokens are validated against the real clock, so moving the host's back is safe.
+        // back after the shift opened - and the refusal is end-after-start's rather than a stored
+        // backwards window. Tokens are validated against the real clock, so moving the host's back
+        // is safe.
         var cancellationToken = TestContext.Current.CancellationToken;
         var clock = new FixedTimeProvider(Truncated(DateTimeOffset.UtcNow));
 
@@ -648,9 +655,9 @@ public class ShiftManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task Shift_instants_sent_with_a_local_offset_are_stored_at_offset_zero()
     {
-        // AD-13. The screens send ToLocalTime() values - +02:00 or +03:00 under TZ=Europe/Kyiv - and
-        // Npgsql refuses to write a timestamptz at any offset but zero, so without the service's
-        // normalization every add and edit from the UI failed at the commit.
+        // UTC storage. The screens send ToLocalTime() values - +02:00 or +03:00 under
+        // TZ=Europe/Kyiv - and Npgsql refuses to write a timestamptz at any offset but zero, so
+        // without the service's normalization every add and edit from the UI failed at the commit.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -983,9 +990,10 @@ public class ShiftManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task A_driver_records_corrects_and_deletes_a_shift_of_their_own()
     {
-        // FR-112's write side, which every other driver-side row here is silent about: the rest are
-        // reads or refusals, so tightening RequireShiftOwner to dispatch alone would leave the suite
-        // green while MyShifts.razor shipped edit and delete buttons that could only ever 403.
+        // The write side of driver ownership, which every other driver-side row here is silent
+        // about: the rest are reads or refusals, so tightening RequireShiftOwner to dispatch alone
+        // would leave the suite green while MyShifts.razor shipped edit and delete buttons that
+        // could only ever 403.
         //
         // The create is here too, because the guard on it is the same member: a shift a driver
         // forgot to log at all is the first correction they need, and withholding that one route
@@ -1037,10 +1045,10 @@ public class ShiftManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task A_shift_for_a_driver_no_row_holds_is_a_404_rather_than_a_broken_key()
     {
-        // AD-8 leaves a foreign-key violation untranslated on purpose - an unreachable constraint
-        // failure is a defect rather than a caller error - so a dispatcher's typo would arrive as a
-        // 500 if the service did not answer the miss itself. Both write paths that name a driver are
-        // checked, because they resolve the name separately.
+        // The translator leaves a foreign-key violation untranslated on purpose - an unreachable
+        // constraint failure is a defect rather than a caller error - so a dispatcher's typo would
+        // arrive as a 500 if the service did not answer the miss itself. Both write paths that name
+        // a driver are checked, because they resolve the name separately.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -1068,9 +1076,9 @@ public class ShiftManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task Dispatch_narrows_the_roster_to_one_driver_when_it_asks_to()
     {
-        // FR-113's filter, which is dispatch's convenience rather than an authorization decision -
-        // and is therefore the half a guard-only narrowing would silently drop. Both drivers have a
-        // shift, so a filter that was ignored answers two rows here rather than nothing at all.
+        // The driver filter, which is dispatch's convenience rather than an authorization decision
+        // - and is therefore the half a guard-only narrowing would silently drop. Both drivers have
+        // a shift, so a filter that was ignored answers two rows here rather than nothing at all.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -1094,7 +1102,7 @@ public class ShiftManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task A_drivers_page_counts_their_own_rows_however_many_somebody_else_has()
     {
-        // AD-3: the narrowing is a WHERE applied before OFFSET and LIMIT. Filtering a materialized
+        // The narrowing is a WHERE applied before OFFSET and LIMIT. Filtering a materialized
         // page instead would answer nothing at all here - the driver's three rows are the hundred
         // and twenty-first onward - and dropping Skip would answer the same page twice. Two rows
         // would never reach this: it takes more of somebody else's than one page holds.
@@ -1180,8 +1188,8 @@ public class ShiftManagementTests(PostgresFixture postgres)
     [InlineData("?offset=-1")]
     public async Task Paging_outside_the_bounds_is_refused_rather_than_run(string query)
     {
-        // NFR-27, and the half a unit test cannot make: that the validator is actually reached from
-        // the route. Deleting the EnsureValidAsync call in ListAsync would leave every
+        // Validated paging, and the half a unit test cannot make: that the validator is actually
+        // reached from the route. Deleting the EnsureValidAsync call in ListAsync would leave every
         // ShiftValidationTests case green while a limit of two million became a query.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
@@ -1201,15 +1209,15 @@ public class ShiftManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task Recording_a_shift_for_a_driver_on_duty_is_allowed_closed_and_refused_open()
     {
-        // Both directions of CreateAsync's one conditional. FR-113 exists so dispatch can log a
-        // stretch of time somebody forgot to report, and a driver being on duty right now says
-        // nothing about a window that already finished - so the closed one is written. The open one
-        // is the second open shift FR-110 forbids, and it earns the friendly sentence rather than
-        // the index's, because the lookup gets there first.
+        // Both directions of CreateAsync's one conditional. Recording a shift exists so dispatch
+        // can log a stretch of time somebody forgot to report, and a driver being on duty right now
+        // says nothing about a window that already finished - so the closed one is written. The
+        // open one is the second open shift the one-open-shift rule forbids, and it earns the
+        // friendly sentence rather than the index's, because the lookup gets there first.
         //
         // Dropping the `command.EndedAt is null &&` qualifier passes every other test in this file:
         // none of the others creates a shift for a driver who already holds an open one, so the
-        // correction FR-113 exists for would start answering 409 with the suite still green.
+        // correction recording exists for would start answering 409 with the suite still green.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -1256,9 +1264,10 @@ public class ShiftManagementTests(PostgresFixture postgres)
     public async Task A_driver_is_refused_the_fleet_wide_on_duty_feed()
     {
         // The one route in the capability a driver may not reach, and the only method guarded by
-        // RequireRole rather than by the two shift members. Every other route answers a driver about
-        // their own rows; this one answers who is on duty across the whole fleet, which is dispatch's
-        // question - FR-116 reads it through /api/drivers, never through a driver's token.
+        // RequireRole rather than by the two shift members. Every other route answers a driver
+        // about their own rows; this one answers who is on duty across the whole fleet, which is
+        // dispatch's question - the assignment form reads it through /api/drivers, never through a
+        // driver's token.
         //
         // Without this, swapping that guard to RequireShiftScope - the obvious consistency edit,
         // since every other method in the file uses the shift members - hands every driver the whole

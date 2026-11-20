@@ -5,32 +5,32 @@ using DriveTrack.Domain.Shifts;
 namespace DriveTrack.Application.Shifts;
 
 /// <summary>
-/// What a driver sends to go on duty (FR-109).
+/// What a driver sends to go on duty.
 /// <para>
 /// The instant is not a field and never can be: it is <c>TimeProvider.GetUtcNow()</c>'s answer
-/// inside the service (AD-13). A start a caller could name is a start a caller could backdate, and
+/// inside the service. A start a caller could name is a start a caller could backdate, and
 /// the whole point of a shift is that it records when somebody actually went on duty.
 /// </para>
 /// <para>
 /// The driver <em>is</em> a field, because dispatch may put a driver on duty as well as the driver
-/// themselves (FR-113). It is not a hole: <c>IAccessGuard.RequireShiftOwner</c> refuses a driver
+/// themselves. It is not a hole: <c>IAccessGuard.RequireShiftOwner</c> refuses a driver
 /// who names anybody but themselves.
 /// </para>
 /// </summary>
 /// <param name="DriverId">The driver going on duty.</param>
 public sealed record StartShiftCommand(DriverId DriverId);
 
-/// <summary>What a driver sends to go off duty (FR-109). The instant is the injected clock's, as it is on the way in.</summary>
+/// <summary>What a driver sends to go off duty. The instant is the injected clock's, as it is on the way in.</summary>
 /// <param name="DriverId">The driver going off duty.</param>
 public sealed record EndShiftCommand(DriverId DriverId);
 
 /// <summary>
 /// What a caller sends to record a shift that already happened: dispatch for anybody's driver, a
-/// driver for their own (FR-112, FR-113).
+/// driver for their own.
 /// <para>
 /// The same rule the corrections carry, and the same guard member states it —
 /// <c>IAccessGuard.RequireShiftOwner</c> passes dispatch for every driver and a driver only for
-/// themselves. FR-112 gives a driver their own shifts to correct, and a shift they forgot to log at
+/// themselves. A driver may correct their own shifts, and a shift they forgot to log at
 /// all is the first correction they need; withholding this one route while leaving them the edit and
 /// the delete would be a rule nothing else in the capability keeps.
 /// </para>
@@ -49,14 +49,14 @@ public sealed record CreateShiftCommand(
     DateTimeOffset? EndedAt);
 
 /// <summary>
-/// What a caller sends to correct a shift (FR-114).
+/// What a caller sends to correct a shift.
 /// <para>
-/// AD-23: both fields are <see cref="Optional{T}"/>, so an edit that only moves the start leaves
+/// Both fields are <see cref="Optional{T}"/>, so an edit that only moves the start leaves
 /// the end alone rather than clearing it.
 /// </para>
 /// <para>
 /// <see cref="EndedAt"/> is <c>Optional&lt;DateTimeOffset&gt;</c> and deliberately not
-/// <c>Optional&lt;DateTimeOffset?&gt;</c>, and that one character is FR-117. Present always means a
+/// <c>Optional&lt;DateTimeOffset?&gt;</c>, and that one character is what keeps a closed shift closed. Present always means a
 /// real instant and absent always means "leave the row's value": there is no third case, so
 /// reopening a closed shift is not something this contract can express. The wire agrees — the
 /// converter refuses a <c>null</c> for a field that cannot hold one — so
@@ -78,9 +78,9 @@ public sealed record UpdateShiftCommand(
     /// The command with every absent field filled in from the stored row: the state the shift will
     /// hold afterwards.
     /// <para>
-    /// AD-23 makes this the thing the validator reads. Validating the payload instead would accept
+    /// Distinguishing absent from null makes this the thing the validator reads. Validating the payload instead would accept
     /// <c>{"startedAt": T+9h}</c> against a shift that ended at <c>T+8h</c> — a window that runs
-    /// backwards, assembled out of two individually harmless halves (FR-111).
+    /// backwards, assembled out of two individually harmless halves.
     /// </para>
     /// </summary>
     /// <param name="shift">The stored row the edit will be applied to.</param>
@@ -98,7 +98,7 @@ public sealed record UpdateShiftCommand(
 }
 
 /// <summary>
-/// The state a shift will hold once an edit is applied — AD-23's merged shape, and the only thing
+/// The state a shift will hold once an edit is applied — the merged shape, and the only thing
 /// <see cref="ShiftStateValidator"/> is ever handed.
 /// </summary>
 /// <param name="StartedAt">The start the row will carry.</param>
@@ -106,12 +106,12 @@ public sealed record UpdateShiftCommand(
 public sealed record ShiftState(DateTimeOffset StartedAt, DateTimeOffset? EndedAt);
 
 /// <summary>
-/// NFR-27's paging over a shift list, with the sort and the driver-name search the shift screen
+/// Paging over a shift list, with the sort and the driver-name search the shift screen
 /// offers, all applied in SQL before OFFSET and LIMIT.
 /// <para>
 /// <see cref="DriverId"/> is a filter dispatch may set, never the authorization decision. A driver's
 /// narrowing comes from <c>IAccessGuard.RequireShiftScope</c> and overrides whatever the query
-/// asked for, so a driver cannot widen their own listing by naming somebody else (AD-3) - and the
+/// asked for, so a driver cannot widen their own listing by naming somebody else - and the
 /// total the page carries counts that same narrowed set.
 /// </para>
 /// </summary>
@@ -151,7 +151,7 @@ public enum ShiftSort
 }
 
 /// <summary>
-/// A shift as a screen reads one (FR-112, FR-113): the row, the driver it belongs to by name, and
+/// A shift as a screen reads one: the row, the driver it belongs to by name, and
 /// whether it is still running.
 /// </summary>
 /// <param name="Id">The shift row's id.</param>
@@ -161,11 +161,11 @@ public enum ShiftSort
 /// their account and nowhere else, which is how the Shifts capability names a driver without
 /// depending on the Drivers one.
 /// </param>
-/// <param name="StartedAt">When the shift started, at offset zero (AD-13).</param>
+/// <param name="StartedAt">When the shift started, at offset zero.</param>
 /// <param name="EndedAt">When it ended, or null while it is open.</param>
 /// <param name="IsOpen">
 /// Whether the driver is still on duty. Derived from <paramref name="EndedAt"/> rather than stored:
-/// there is no status column, and a second answer is a second thing that can disagree (FR-117).
+/// there is no status column, and a second answer is a second thing that can disagree.
 /// </param>
 public sealed record ShiftSummary(
     int Id,

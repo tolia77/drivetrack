@@ -24,9 +24,9 @@ namespace DriveTrack.Integration.Tests.Support;
 /// <summary>
 /// The endpoints, principal and validator the wire-contract tests call.
 /// <para>
-/// All of it lives in the test assembly on purpose. <c>DriveTrack.Web</c> ships no controller in
-/// Epic 1, and a diagnostics controller kept only so a test has something to call is exactly the
-/// empty placeholder NFR-6 forbids. <c>WebApplicationFactory</c> adds this assembly as an MVC
+/// All of it lives in the test assembly on purpose. A diagnostics controller kept in
+/// <c>DriveTrack.Web</c> only so a test has something to call is exactly the empty placeholder
+/// the no-dead-code rule forbids. <c>WebApplicationFactory</c> adds this assembly as an MVC
 /// application part, so these actions run through the real <c>Program.cs</c> pipeline - the real
 /// filter, the real middleware, the real suppressions - without shipping a byte of it.
 /// </para>
@@ -39,7 +39,7 @@ public sealed class ProbeController : ControllerBase
     [HttpGet("success")]
     public ProbePayload Success() => new("ok", 42);
 
-    /// <summary>An action returning an enum-bearing payload: AD-21's member name, not an ordinal.</summary>
+    /// <summary>An action returning an enum-bearing payload: the member name, not an ordinal.</summary>
     [HttpGet("enum")]
     public ProbeStatusPayload Enumeration() => new(DeliveryStatus.InTransit);
 
@@ -51,17 +51,17 @@ public sealed class ProbeController : ControllerBase
     [HttpGet("mvc-conflict")]
     public IActionResult MvcConflict() => Conflict();
 
-    /// <summary>AD-8's typed 404.</summary>
+    /// <summary>The typed 404.</summary>
     [HttpGet("typed-not-found")]
     public ProbePayload TypedNotFound() =>
         throw new NotFoundException(ErrorCode.COMMON_NOT_FOUND, "Probe delivery 7 does not exist.");
 
-    /// <summary>AD-8's conflict.</summary>
+    /// <summary>The typed conflict.</summary>
     [HttpGet("conflict")]
     public ProbePayload ConflictFailure() =>
         throw new ConflictException(ErrorCode.COMMON_CONFLICT, "Probe row already exists.");
 
-    /// <summary>AD-10's domain-rule failure: a different exception, the same status (NFR-2).</summary>
+    /// <summary>The domain-rule failure: a different exception, the same status.</summary>
     [HttpGet("domain-rule")]
     public ProbePayload DomainRule() =>
         throw new DomainRuleException(
@@ -110,12 +110,12 @@ public sealed class ProbeController : ControllerBase
     [HttpGet("json-result")]
     public IActionResult JsonResultResponse() => new JsonResult(new ProbePayload("json", 7));
 
-    /// <summary>AD-2's guard rejection.</summary>
+    /// <summary>The guard's rejection.</summary>
     [HttpGet("forbidden")]
     public ProbePayload Forbidden() =>
         throw new ForbiddenException(ErrorCode.AUTH_FORBIDDEN, "Probe principal owns no such row.");
 
-    /// <summary>Anything unmodelled: 500, and nothing of the exception on the wire (NFR-3).</summary>
+    /// <summary>Anything unmodelled: 500, and nothing of the exception on the wire.</summary>
     [HttpGet("boom")]
     public ProbePayload Boom() => throw new InvalidOperationException("boom");
 
@@ -137,13 +137,13 @@ public sealed class ProbeController : ControllerBase
     public ProbeModelStatePayload PostModel([FromBody] ProbeModel model) =>
         new(ModelState.IsValid, model.Name);
 
-    /// <summary>Echoes the request culture, so NFR-14's fixed locale can be asserted over HTTP.</summary>
+    /// <summary>Echoes the request culture, so the served locale can be asserted over HTTP.</summary>
     [HttpGet("culture")]
     public ProbeCulturePayload Culture() =>
         new(CultureInfo.CurrentCulture.Name, CultureInfo.CurrentUICulture.Name);
 
     /// <summary>
-    /// The one probe that reaches the database, so the story's headline defect can be asserted end to
+    /// The one probe that reaches the database, so the headline defect can be asserted end to
     /// end. The translation at <c>CommitAsync</c> and the envelope at the adapter are otherwise
     /// proven in two suites that never meet, and "a unique violation is a 409 on the wire" is a
     /// claim about the join rather than about either half.
@@ -181,7 +181,7 @@ public sealed class ProbeController : ControllerBase
 /// <summary>A plain payload for the success rows.</summary>
 public sealed record ProbePayload(string Name, int Value);
 
-/// <summary>A payload carrying a domain enum (AD-21).</summary>
+/// <summary>A payload carrying a domain enum.</summary>
 public sealed record ProbeStatusPayload(DeliveryStatus Status);
 
 /// <summary>What the model-state action reports back.</summary>
@@ -198,7 +198,7 @@ public sealed class ProbeModel
     public string? Name { get; set; }
 }
 
-/// <summary>A command with one rule, for the <c>EnsureValidAsync</c> rows (AD-9).</summary>
+/// <summary>A command with one rule, for the <c>EnsureValidAsync</c> rows.</summary>
 /// <param name="Title">Must be present.</param>
 /// <param name="Rating">Must be 1 to 5.</param>
 public sealed record ProbeCommand(string? Title, int Rating);
@@ -245,10 +245,10 @@ public static class ProbeAuthentication
 }
 
 /// <summary>
-/// A minimal scheme whose only job is to reach AD-7's third suppression: its challenge and forbid
-/// overrides call the production <see cref="EnvelopeAuthenticationEvents"/> methods, which is
-/// exactly what Epic 2 will do from the cookie and JWT handlers' events. Proving them here means
-/// the 401 and 403 shapes are settled before either real scheme exists.
+/// A minimal scheme whose only job is to reach the envelope's third suppression: its challenge and
+/// forbid overrides call the production <see cref="EnvelopeAuthenticationEvents"/> methods, which
+/// is exactly what the cookie and JWT handlers' events do. Proving them here means the 401 and 403
+/// shapes are asserted independently of either real scheme.
 /// </summary>
 public sealed class ProbeAuthenticationHandler(
     IOptionsMonitor<AuthenticationSchemeOptions> options,

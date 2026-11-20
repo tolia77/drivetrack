@@ -3,7 +3,7 @@ using DriveTrack.Domain.Identity;
 namespace DriveTrack.Application.Authorization;
 
 /// <summary>
-/// The caller, expressed once (AD-22).
+/// The caller, expressed once.
 /// <para>
 /// This is the <em>only</em> shape of a caller anywhere in <c>DriveTrack.Application</c>. No type in
 /// this layer names <c>HttpContext</c>, <c>ClaimsPrincipal</c> or <c>AuthenticationStateProvider</c>
@@ -28,7 +28,7 @@ public interface ICurrentUser
     /// </exception>
     UserId UserId { get; }
 
-    /// <summary>The calling user's single role (AD-4).</summary>
+    /// <summary>The calling user's single role.</summary>
     /// <exception cref="InvalidOperationException">The caller is anonymous.</exception>
     UserRole Role { get; }
 

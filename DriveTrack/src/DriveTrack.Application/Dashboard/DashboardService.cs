@@ -11,7 +11,7 @@ namespace DriveTrack.Application.Dashboard;
 
 /// <summary>
 /// The day at a glance for the two roles that run dispatch. Read-only: it writes nothing and owns
-/// no entity, so AD-24's ownership rule - which is about writes - has nothing to say about the
+/// no entity, so the single-owner rule - which is about writes - has nothing to say about the
 /// repositories it reads.
 /// <para>
 /// One unit of work, and every read in it awaited in turn. The context behind a unit of work is not
@@ -19,7 +19,7 @@ namespace DriveTrack.Application.Dashboard;
 /// of work per card would be a transaction per card for a screen that is one snapshot of one moment.
 /// </para>
 /// <para>
-/// <b>Chat (AD-16).</b> The conversations card reads the newest message per driver through
+/// <b>Chat.</b> The conversations card reads the newest message per driver through
 /// <c>IMessageRepository</c>, which makes this file one of chat's named seams in
 /// <c>SeverabilityTests</c>: deleting the chat module means deleting that card's dispatcher-only
 /// block here.
@@ -56,7 +56,7 @@ public sealed class DashboardService(
     /// <inheritdoc />
     public async Task<DashboardView> GetAsync(CancellationToken cancellationToken)
     {
-        // AD-4: Dispatcher admits an administrator by rule. Asked before anything is read.
+        // Dispatcher admits an administrator by rule. Asked before anything is read.
         accessGuard.RequireRole(UserRole.Dispatcher);
 
         var now = timeProvider.GetUtcNow();

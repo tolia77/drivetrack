@@ -19,8 +19,8 @@ public class AccessibilityStylesheetTests
     {
         // Forced colours replace every background with the system canvas, and the status markers
         // are painted as backgrounds - so without this block the shape, the one status cue that is
-        // not colour, disappears. Lowercase `canvastext`: NFR-29 reads a capitalised keyword as a
-        // literal.
+        // not colour, disappears. Lowercase `canvastext`: the token scan reads a capitalised
+        // keyword as a literal.
         var block = MediaBlock(Theme(), "@media (forced-colors: active)");
 
         var marker = RuleIn(block, ".dt-status::before");

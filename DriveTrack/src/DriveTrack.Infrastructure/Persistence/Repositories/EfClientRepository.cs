@@ -10,7 +10,7 @@ namespace DriveTrack.Infrastructure.Persistence.Repositories;
 /// <summary>
 /// EF Core implementation of <see cref="IClientRepository"/> over the unit of work's context.
 /// <para>
-/// AD-6: every method awaits a materializing call, so nothing an <c>IQueryable</c> could carry
+/// Every method awaits a materializing call, so nothing an <c>IQueryable</c> could carry
 /// — a live context, a deferred filter, a lazy load — escapes into Application.
 /// </para>
 /// </summary>
@@ -25,7 +25,7 @@ internal sealed class EfClientRepository(AppDbContext context) : IClientReposito
         // Ordered so this method answers the same way on every request rather than at the
         // planner's discretion. It is not what orders the roster screen: the only caller joins
         // this list into a dictionary and renders it in ListByRoleAsync's surname order.
-        // Awaited to a list, so nothing an IQueryable could carry escapes (AD-6).
+        // Awaited to a list, so nothing an IQueryable could carry escapes.
         await context.Clients
             .OrderBy(client => client.Id)
             .ToListAsync(cancellationToken);
@@ -41,7 +41,7 @@ internal sealed class EfClientRepository(AppDbContext context) : IClientReposito
         // The name and the address are on the account, the phone number on this row, and the sort
         // can be about either - so the two are joined in SQL rather than read twice and matched up
         // in memory. `(int)(object)` is the one translatable spelling of "the integer behind this
-        // typed id" (AD-22).
+        // typed id".
         var rows = context.Clients
             .AsNoTracking()
             .Join(

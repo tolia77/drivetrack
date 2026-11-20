@@ -10,14 +10,14 @@ using FluentValidation;
 namespace DriveTrack.Application.Deliveries;
 
 /// <summary>
-/// FR-119 to FR-123: capturing the evidence that a parcel changed hands, and reading it back.
+/// Proof of delivery: capturing the evidence that a parcel changed hands, and reading it back.
 /// <para>
-/// AD-2 applies here exactly as it does to <see cref="DeliveryService"/>: every public method calls
-/// <see cref="IAccessGuard"/> through the interface, inline in its own body, because the coverage
-/// gate walks each method's IL and does not follow a call it makes.
+/// The one-guard rule applies here exactly as it does to <see cref="DeliveryService"/>: every
+/// public method calls <see cref="IAccessGuard"/> through the interface, inline in its own body,
+/// because the coverage gate walks each method's IL and does not follow a call it makes.
 /// </para>
 /// <para>
-/// <b>Why <see cref="CaptureAsync"/> opens two scopes.</b> AD-26's rule that no store call happens
+/// <b>Why <see cref="CaptureAsync"/> opens two scopes.</b> The rule that no store call happens
 /// with a unit of work open still holds; what moved is which side of the commit the writing happens
 /// on. The bytes go in <em>after</em> the row that names them is committed, because the alternative —
 /// writing first — leaves an object no row will ever name behind every refusal the later steps can
@@ -34,8 +34,9 @@ namespace DriveTrack.Application.Deliveries;
 /// </para>
 /// <para>
 /// When the store refuses a write after the commit, the proof is removed again in a fresh scope and
-/// the failure propagates. Keeping it would leave evidence that does not resolve, which FR-123 then
-/// makes permanent (a second capture is refused) and FR-120 would accept as proof for Delivered.
+/// the failure propagates. Keeping it would leave evidence that does not resolve, which
+/// immutability then makes permanent (a second capture is refused) and the proof-required gate
+/// would accept as proof for Delivered.
 /// Removing it lets the driver capture again. Any bytes that did land before the failure stay in
 /// the bucket unreferenced, because <see cref="IAssetStore"/> has no delete.
 /// </para>
@@ -58,12 +59,12 @@ public sealed class ProofOfDeliveryService(
 
         // Step one: read, authorize and validate in a scope that commits nothing. The block is
         // explicit rather than an `await using var` declaration because where this scope ends is
-        // still the whole point - the store write below happens with no transaction open (AD-26).
+        // still the whole point - the store write below happens with no transaction open.
         await using (var reading = await unitOfWorkFactory.CreateAsync(cancellationToken))
         {
             var delivery = await reading.Deliveries.GetByIdAsync(deliveryId, cancellationToken);
 
-            // The same predicate the status change uses (FR-34): the driver carrying the parcel, or
+            // The same predicate the status change uses: the driver carrying the parcel, or
             // dispatch, and never the client whose delivery it is. Run on a null row deliberately,
             // so a caller who may not act on the delivery is refused before learning it exists.
             accessGuard.RequireAssignedDriver(delivery?.DriverId);
@@ -73,12 +74,12 @@ public sealed class ProofOfDeliveryService(
                 throw NotFound(deliveryId);
             }
 
-            // NFR-28, and here rather than later: a caller whose upload is refused costs the store
-            // no call at all - not even a minted key - so the whole set is judged while the cheapest
-            // thing to do about it is nothing.
+            // Upload validation, and here rather than later: a caller whose upload is refused costs
+            // the store no call at all - not even a minted key - so the whole set is judged while
+            // the cheapest thing to do about it is nothing.
             await captureValidator.EnsureValidAsync(command, cancellationToken);
 
-            // FR-123: a proof is immutable, so the second capture is refused rather than merged.
+            // A proof is immutable, so the second capture is refused rather than merged.
             // Asked here so the refusal costs no round trip to the store; asked again inside the
             // writing transaction, below, because two captures racing would both pass this check.
             if (await reading.ProofOfDeliveries.ExistsForDeliveryAsync(deliveryId, cancellationToken))
@@ -100,7 +101,7 @@ public sealed class ProofOfDeliveryService(
             // Normalised once, here, and lower-cased as well as trimmed. A MIME type is
             // case-insensitive by its own specification, so ProofAssetRules accepts IMAGE/PNG - but
             // what a caller shouted is not what the system should then keep repeating. Stored
-            // verbatim it would be the column's value, the FR-122 view's value and the asset
+            // verbatim it would be the column's value, the proof view's value and the asset
             // route's Content-Type header, and two rows would hold different spellings of one type.
             // This is the single site every one of those reads from.
             var contentType = upload.ContentType!.Trim().ToLowerInvariant();
@@ -114,7 +115,7 @@ public sealed class ProofOfDeliveryService(
 
         // Step three: the transaction that names the keys, opened while the bucket is still empty of
         // this capture. A block rather than a declaration, for the reason the reading scope is one:
-        // the store writes below must happen with no unit of work open (AD-26), and a declaration
+        // the store writes below must happen with no unit of work open, and a declaration
         // would hold this one - and the pooled connection under it - for the whole time the bytes
         // are travelling.
         ProofOfDelivery proof;
@@ -137,14 +138,14 @@ public sealed class ProofOfDeliveryService(
                 RecipientName = command.RecipientName!.Trim(),
 
                 // No address and no resolution timestamp: the coordinates are the record, and the
-                // address is a cache nothing has filled in yet (DR-11).
+                // address is a cache nothing has filled in yet.
                 CaptureLocation = new Location(
                     command.CaptureLocation!.Latitude!.Value,
                     command.CaptureLocation.Longitude!.Value,
                     Address: null,
                     AddressResolvedAt: null),
 
-                // AD-13's injected clock, at offset zero. A capture instant the caller could name is
+                // The injected clock, at offset zero. A capture instant the caller could name is
                 // an instant a caller could choose, which is the one thing evidence must not permit.
                 CapturedAt = timeProvider.GetUtcNow(),
                 CapturedByUserId = currentUser.UserId,
@@ -164,7 +165,7 @@ public sealed class ProofOfDeliveryService(
 
             // Read before the commit, inside the transaction that is about to close, as the delivery
             // capability reads its parties: a query issued after CommitAsync would run outside the
-            // scope AD-5 gave this operation.
+            // scope this operation was given.
             capturedBy = await CapturerNameAsync(writing, currentUser.UserId, cancellationToken);
 
             await writing.CommitAsync(cancellationToken);
@@ -208,7 +209,7 @@ public sealed class ProofOfDeliveryService(
     }
 
     /// <summary>
-    /// Takes back a proof whose evidence did not reach the store, so FR-123 does not lock the
+    /// Takes back a proof whose evidence did not reach the store, so immutability does not lock the
     /// delivery to evidence that does not resolve. The asset rows go with it by cascade.
     /// <para>
     /// <see cref="CancellationToken.None"/> for the reason the upload loop uses it: the request is
@@ -240,8 +241,8 @@ public sealed class ProofOfDeliveryService(
     /// <inheritdoc />
     public async Task<ProofOfDeliveryView> GetAsync(int deliveryId, CancellationToken cancellationToken)
     {
-        // FR-122's audience is "anyone who can view the delivery", which is what the scope answers -
-        // including the client, who may read the evidence and may never capture it.
+        // The proof's audience is "anyone who can view the delivery", which is what the scope
+        // answers - including the client, who may read the evidence and may never capture it.
         var scope = accessGuard.RequireScope();
 
         await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
@@ -266,7 +267,7 @@ public sealed class ProofOfDeliveryService(
         string contentType;
 
         // The scope is a block rather than a declaration for the reason the capture's first scope
-        // is: the store read below happens with nothing open (AD-26), and a `await using var` here
+        // is: the store read below happens with nothing open, and a `await using var` here
         // would hold the transaction open for the whole time the bytes are being fetched.
         await using (var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken))
         {
@@ -298,7 +299,7 @@ public sealed class ProofOfDeliveryService(
     /// half — which is why it holds the caller's stream rather than a key it has already earned.
     /// </para>
     /// </summary>
-    /// <param name="Kind">Signature or photograph (FR-119).</param>
+    /// <param name="Kind">Signature or photograph.</param>
     /// <param name="ContentType">The normalised MIME type, stored on the row and with the object.</param>
     /// <param name="Key">The key the store minted, committed before anything is written under it.</param>
     /// <param name="Content">The caller's stream, read once the row is safe.</param>
@@ -309,7 +310,7 @@ public sealed class ProofOfDeliveryService(
         Stream Content);
 
     /// <summary>
-    /// AD-17's disclosure decision, taken here and nowhere else: dispatch is told who captured the
+    /// The disclosure decision, taken here and nowhere else: dispatch is told who captured the
     /// proof, and everyone else is told that it was captured.
     /// <para>
     /// The lookup is skipped entirely for a caller who may not be told, so a client's read costs no
@@ -317,7 +318,7 @@ public sealed class ProofOfDeliveryService(
     /// </para>
     /// </summary>
     /// <param name="unitOfWork">The open scope to read the account through.</param>
-    /// <param name="capturedByUserId">Who captured it, or null once that account is deleted (AD-20).</param>
+    /// <param name="capturedByUserId">Who captured it, or null once that account is deleted.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The display name, or null when it is withheld, unknown or the account is gone.</returns>
     private async Task<string?> CapturerNameAsync(
@@ -337,9 +338,9 @@ public sealed class ProofOfDeliveryService(
 
         var account = await unitOfWork.Users.GetByIdAsync(userId, cancellationToken);
 
-        // A deleted capturer leaves the set-null AD-20 asks for, and a proof whose capturer's row is
-        // gone is still evidence. Null here reads the same as withheld, which is the only reading
-        // this shape supports and the correct one either way: there is no name to show.
+        // A deleted capturer leaves the set-null the schema declares, and a proof whose capturer's
+        // row is gone is still evidence. Null here reads the same as withheld, which is the only
+        // reading this shape supports and the correct one either way: there is no name to show.
         return account?.DisplayName;
     }
 
@@ -382,5 +383,5 @@ public sealed class ProofOfDeliveryService(
         new(
             ErrorCode.DELIVERY_PROOF_ALREADY_CAPTURED,
             "Delivery " + deliveryId.ToString(CultureInfo.InvariantCulture)
-                + " already has a proof of delivery, and a proof is never replaced (FR-123).");
+                + " already has a proof of delivery, and a proof is never replaced.");
 }

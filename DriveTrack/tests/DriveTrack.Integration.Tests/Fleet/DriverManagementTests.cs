@@ -9,12 +9,12 @@ using Microsoft.EntityFrameworkCore;
 namespace DriveTrack.Integration.Tests.Fleet;
 
 /// <summary>
-/// FR-35 to FR-39 over HTTP, against the real <c>Program.cs</c> pipeline.
+/// Driver management over HTTP, against the real <c>Program.cs</c> pipeline.
 /// <para>
-/// Two rows here are the original system's structural defects. FR-38's release — an update whose
-/// <c>vehicleId</c> is present and null — is the arm the original could not express, and FR-39's
-/// delete is the one that surfaced a raw database error. Both are asserted end to end, including
-/// what the database holds afterwards.
+/// Two rows here are the original system's structural defects. Releasing a vehicle — an update
+/// whose <c>vehicleId</c> is present and null — is the arm the original could not express, and
+/// deleting a driver is the one that surfaced a raw database error. Both are asserted end to end,
+/// including what the database holds afterwards.
 /// </para>
 /// </summary>
 public class DriverManagementTests(PostgresFixture postgres)
@@ -42,7 +42,7 @@ public class DriverManagementTests(PostgresFixture postgres)
             driverId = data.GetProperty("id").GetInt32();
             userId = data.GetProperty("userId").GetInt32();
 
-            // AD-22: the typed ids are a compile-time device, not a wire shape - and they are
+            // The typed ids are a compile-time device, not a wire shape - and they are
             // different numbers, which is what makes the separation load-bearing.
             Assert.Equal(vehicleId, data.GetProperty("vehicleId").GetInt32());
             Assert.Equal(email, data.GetProperty("email").GetString());
@@ -67,9 +67,9 @@ public class DriverManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task A_second_driver_naming_the_same_vehicle_is_refused_and_leaves_no_orphan_account()
     {
-        // FR-44, and AD-5's reason for existing: the account is created before the assignment is
-        // judged, so a refusal that did not roll the whole operation back would leave an account
-        // holding role Driver with no driver row behind it.
+        // One vehicle per driver, and the unit of work's reason for existing: the account is
+        // created before the assignment is judged, so a refusal that did not roll the whole
+        // operation back would leave an account holding role Driver with no driver row behind it.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -150,7 +150,7 @@ public class DriverManagementTests(PostgresFixture postgres)
     public async Task A_password_below_the_policy_is_refused_naming_the_field()
     {
         // Identity's own policy, reported back through the contract's code: the validator only
-        // proves the password is present, so this row is the one that proves the two agree (NFR-2).
+        // proves the password is present, so this row is the one that proves the two agree.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -184,9 +184,10 @@ public class DriverManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task An_explicit_null_vehicle_releases_the_assignment_and_the_vehicle_becomes_deletable()
     {
-        // FR-38, and the whole reason Optional<T> exists. The original read a plain vehicle_id off
-        // the payload, so this request was indistinguishable from one that mentioned no vehicle at
-        // all - which is why an assigned vehicle there could never be released or deleted.
+        // Releasing a vehicle, and the whole reason Optional<T> exists. The original read a plain
+        // vehicle_id off the payload, so this request was indistinguishable from one that mentioned
+        // no vehicle at all - which is why an assigned vehicle there could never be released or
+        // deleted.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -220,7 +221,7 @@ public class DriverManagementTests(PostgresFixture postgres)
                     cancellationToken));
         }
 
-        // It reappears in the list that feeds the assignment control (FR-45)...
+        // It reappears in the list that feeds the assignment control...
         using (var unassigned = await FleetApi.SendAsync(
                    client, HttpMethod.Get, "/api/vehicles/unassigned", token, body: null, cancellationToken))
         {
@@ -232,7 +233,7 @@ public class DriverManagementTests(PostgresFixture postgres)
             Assert.Contains(vehicleId, ids);
         }
 
-        // ...and deleting it now succeeds, which is the end of the defect (FR-43).
+        // ...and deleting it now succeeds, which is the end of the defect.
         using var deleted = await FleetApi.SendAsync(
             client, HttpMethod.Delete, $"/api/vehicles/{vehicleId}", token, body: null, cancellationToken);
 
@@ -242,7 +243,7 @@ public class DriverManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task Renaming_a_driver_changes_the_account_and_leaves_the_licence_and_assignment_alone()
     {
-        // FR-37 names three things a dispatcher may change, and the name is the one that lives on
+        // A dispatcher may change three things, and the name is the one that lives on
         // the account rather than on the driver row - so this is also the row that proves the
         // narrow rename reaches Identity without disturbing anything else about the account.
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -366,7 +367,7 @@ public class DriverManagementTests(PostgresFixture postgres)
 
         Assert.Equal("Леся", data2.GetProperty("firstName").GetString());
 
-        // FR-5: a driver's own profile carries the licence their driver row holds - the one field
+        // A driver's own profile carries the licence their driver row holds - the one field
         // the subtype row contributes, and asserted nowhere else on this read.
         Assert.Equal(licenseNumber, data2.GetProperty("licenseNumber").GetString());
     }
@@ -447,8 +448,8 @@ public class DriverManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task An_update_naming_only_the_licence_number_leaves_both_names_alone()
     {
-        // AD-23 again, now over a field that lives on the other row: absent is not "clear the
-        // name", and a merge that read the payload would empty it.
+        // Absent versus null again, now over a field that lives on the other row: absent is not
+        // "clear the name", and a merge that read the payload would empty it.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -497,7 +498,7 @@ public class DriverManagementTests(PostgresFixture postgres)
 
         Assert.Equal(nameof(ErrorCode.COMMON_VALIDATION_FAILED), error.GetProperty("code").GetString());
 
-        // NFR-4: `firstName`, not `firstName.value` - a form can only attach a message to an input
+        // `firstName`, not `firstName.value` - a form can only attach a message to an input
         // it actually has.
         Assert.True(error.GetProperty("fields").TryGetProperty("firstName", out _));
 
@@ -512,8 +513,8 @@ public class DriverManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task An_update_that_omits_the_vehicle_leaves_the_assignment_alone()
     {
-        // The other half of AD-23's distinction. Absent is not null: an edit to the licence number
-        // must not silently release the vehicle.
+        // The other half of the absent-versus-null distinction. Absent is not null: an edit to the
+        // licence number must not silently release the vehicle.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -589,9 +590,10 @@ public class DriverManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task Deleting_a_driver_with_an_active_delivery_succeeds_and_leaves_it_unassigned()
     {
-        // FR-39's "leaves them unassigned" arm, and the request that used to answer a raw database
-        // error. The cascade itself is DeleteBehaviourTests' claim; what is asserted here is that
-        // the endpoint answers a success envelope rather than a 500, and that the delivery survives.
+        // The "leaves them unassigned" arm of deleting a driver, and the request that used to
+        // answer a raw database error. The cascade itself is DeleteBehaviourTests' claim; what is
+        // asserted here is that the endpoint answers a success envelope rather than a 500, and that
+        // the delivery survives.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -639,7 +641,7 @@ public class DriverManagementTests(PostgresFixture postgres)
         Assert.Equal(0, await after.Drivers.CountAsync(row => row.Id == new DriverId(driverId), cancellationToken));
         Assert.Equal(0, await after.Users.CountAsync(row => row.Id == userId, cancellationToken));
 
-        // The delivery survives, unassigned. FR-39 takes that arm rather than refusing the delete.
+        // The delivery survives, unassigned: that arm is taken rather than refusing the delete.
         Assert.Equal(
             1,
             await after.Deliveries.CountAsync(
@@ -653,7 +655,7 @@ public class DriverManagementTests(PostgresFixture postgres)
     [Fact]
     public async Task The_list_names_the_vehicle_each_driver_holds()
     {
-        // FR-35: the roster is what the screen's browser-side search runs over, so the vehicle has
+        // The roster is what the screen's browser-side search runs over, so the vehicle has
         // to travel with the driver rather than being fetched per row by the client.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await FleetApi.CreateAsync(postgres.ConnectionString, cancellationToken);
@@ -674,7 +676,7 @@ public class DriverManagementTests(PostgresFixture postgres)
         Assert.Contains(rows, row => row.GetProperty("vehicleModel").GetString() == "Рено Мастер");
         Assert.Contains(rows, row => row.GetProperty("vehicleId").ValueKind == JsonValueKind.Null);
 
-        // AD-17: only DTOs leave the Application layer, so no EF navigation is serialized back.
+        // Only DTOs leave the Application layer, so no EF navigation is serialized back.
         foreach (var row in rows)
         {
             Assert.False(row.TryGetProperty("vehicle", out _));

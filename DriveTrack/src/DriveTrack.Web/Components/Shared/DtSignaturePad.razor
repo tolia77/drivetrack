@@ -2,7 +2,7 @@
 @inject IStringLocalizer<UiText> Localizer
 @implements IAsyncDisposable
 
-@* FR-119: the recipient signs on the device, and the drawing becomes one of the proof's assets.
+@* The recipient signs on the device, and the drawing becomes one of the proof's assets.
 
    A <canvas> the module draws into, for the reason DtMap's container is an empty <div>: the pixels
    are outside Blazor's diff, so anything the renderer wrote here would be wiped on the first stroke.
@@ -57,8 +57,9 @@
            creates another. The arms are therefore inside it rather than around it.
 
            Independent @@if blocks rather than an if/else chain, for the reason every other screen in
-           this product writes them that way: an `else` reads to NFR-14's source scan as a rendered
-           English word, and a key chosen in C# is a key the closed-catalogue test cannot see. *@
+           this product writes them that way: an `else` reads to the localization source scan as a
+           rendered English word, and a key chosen in C# is a key the closed-catalogue test cannot
+           see. *@
         <span class="dt-signature-state dt-type-small @StateClass" role="status">
             @if (_signed)
             {

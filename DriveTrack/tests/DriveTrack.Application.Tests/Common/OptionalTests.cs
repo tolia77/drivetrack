@@ -3,7 +3,7 @@ using DriveTrack.Application.Common;
 namespace DriveTrack.Application.Tests.Common;
 
 /// <summary>
-/// AD-23's wrapper, which is the story's load-bearing primitive: every "leave this field alone"
+/// The absent-versus-null wrapper, a load-bearing primitive: every "leave this field alone"
 /// in a partial update is one of these, and the whole point is that absent and present-null are
 /// different answers.
 /// <para>
@@ -62,7 +62,7 @@ public class OptionalTests
     [Fact]
     public void Or_answers_the_stored_value_only_when_the_field_was_not_sent()
     {
-        // The merge, in one line (AD-23). Absent takes what is stored; present takes what was sent,
+        // The merge, in one line. Absent takes what is stored; present takes what was sent,
         // including a null that means "clear this".
         Assert.Equal("Петренко", Optional<string?>.Absent.Or("Петренко"));
         Assert.Equal("Коваль", Optional<string?>.Present("Коваль").Or("Петренко"));

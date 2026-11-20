@@ -4,13 +4,13 @@
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
     <UserSecretsId>drivetrack-web</UserSecretsId>
     <!--
-      NFR-14: the neutral resources in this assembly *are* Ukrainian. Saying so stops the runtime
+      The neutral resources in this assembly *are* Ukrainian. Saying so stops the runtime
       probing for a uk satellite assembly that will never exist, and makes uk-UA resolve straight
       to the .resx files under Resources/.
     -->
     <NeutralResourcesLanguage>uk</NeutralResourcesLanguage>
     <!--
-      AD-28: the theme is compiled from Sass at build time, and the watcher keeps it compiled
+      The theme is compiled from Sass at build time, and the watcher keeps it compiled
       while the app runs. It was off because it copies a dart-sass runtime into bin/ and from
       there into the publish output, which the production image had no use for. There is no
       publish path any more - the only image is the development container, whose entrypoint is
@@ -32,7 +32,7 @@
   </PropertyGroup>
 
   <!--
-    AD-1: Web depends on Application, and on Domain because the caller shape it implements is
+    Web depends on Application, and on Domain because the caller shape it implements is
     typed in Domain identities - ICurrentUser answers UserId, DriverId, ClientId and UserRole, and
     the screens render the role. The direction is still inward, and the reference is declared rather
     than taken transitively so the layering test can pin it.
@@ -74,7 +74,7 @@
   -->
   <!--
     The bearer handler is an adapter concern: Infrastructure signs a token, and this reads one back
-    off an Authorization header. Application names neither (AD-1).
+    off an Authorization header. Application names neither.
   -->
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.4" />

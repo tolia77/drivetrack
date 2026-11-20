@@ -34,7 +34,7 @@ internal static class DeliveryApi
     /// <param name="Token">A bearer token for the client's own account.</param>
     /// <param name="Email">
     /// The address on their account — which is where a client's address lives and the only place it
-    /// does (FR-28). Carried so a notification suite can assert who a notice was addressed to
+    /// does. Carried so a notification suite can assert who a notice was addressed to
     /// without reading the roster back a second time.
     /// </param>
     internal sealed record ClientCaller(int ClientId, string Token, string Email);
@@ -167,7 +167,7 @@ internal static class DeliveryApi
 
     /// <summary>
     /// The body of a create request, with the two coordinates every delivery needs and everything
-    /// else optional — which is what FR-16 says a delivery is.
+    /// else optional — which is what a delivery minimally is.
     /// </summary>
     public static object NewDelivery(
         decimal weight = 12.5m,
@@ -205,7 +205,7 @@ internal static class DeliveryApi
     }
 
     /// <summary>
-    /// The body of a client's request (FR-89): the two points, a description, a weight and
+    /// The body of a client's request: the two points, a description, a weight and
     /// optionally a note — and nothing else, because the command carries nothing else.
     /// </summary>
     /// <remarks>
@@ -225,7 +225,7 @@ internal static class DeliveryApi
 
     /// <summary>
     /// Asks for a delivery as the caller the token belongs to. The response is handed back rather
-    /// than asserted, because half this story's matrix is about which refusal a caller gets.
+    /// than asserted, because half the request matrix is about which refusal a caller gets.
     /// </summary>
     public static Task<HttpResponseMessage> RequestAsync(
         HttpClient client,
@@ -241,8 +241,8 @@ internal static class DeliveryApi
             cancellationToken);
 
     /// <summary>
-    /// Asks for a status change (FR-32). The response is handed back rather than asserted, because
-    /// half this story's matrix is about which refusal a caller gets.
+    /// Asks for a status change. The response is handed back rather than asserted, because half the
+    /// status matrix is about which refusal a caller gets.
     /// </summary>
     public static Task<HttpResponseMessage> ChangeStatusAsync(
         HttpClient client,
@@ -257,11 +257,11 @@ internal static class DeliveryApi
             $"/api/deliveries/{deliveryId}/status",
             token,
 
-            // AD-21 puts the member name on the wire, so the payload says what the enum says.
+            // The member name goes on the wire, so the payload says what the enum says.
             new { status = status.ToString(), note },
             cancellationToken);
 
-    /// <summary>Appends a standalone note (FR-107).</summary>
+    /// <summary>Appends a standalone note.</summary>
     public static Task<HttpResponseMessage> AddNoteAsync(
         HttpClient client,
         string? token,
@@ -276,7 +276,7 @@ internal static class DeliveryApi
             new { note },
             cancellationToken);
 
-    /// <summary>Reads a delivery's history (FR-108).</summary>
+    /// <summary>Reads a delivery's history.</summary>
     public static Task<HttpResponseMessage> TimelineAsync(
         HttpClient client,
         string? token,

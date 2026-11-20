@@ -1,7 +1,7 @@
 namespace DriveTrack.Application.Common;
 
 /// <summary>
-/// AD-23's absent-versus-null wrapper: a value a partial update either carries or does not.
+/// The absent-versus-null wrapper: a value a partial update either carries or does not.
 /// <para>
 /// A nullable field cannot express the difference. <c>null</c> on an update command has to mean two
 /// incompatible things at once — "leave this alone" and "clear this" — and every codebase that tries
@@ -63,7 +63,7 @@ public readonly struct Optional<T> : IEquatable<Optional<T>>
     public static bool operator !=(Optional<T> left, Optional<T> right) => !left.Equals(right);
 
     /// <summary>
-    /// The merge (AD-23): what the caller sent, or the state already stored when they sent nothing.
+    /// The merge: what the caller sent, or the state already stored when they sent nothing.
     /// This is the one call that turns a partial payload into a whole one.
     /// </summary>
     /// <param name="fallback">The current value, used only when this is absent.</param>

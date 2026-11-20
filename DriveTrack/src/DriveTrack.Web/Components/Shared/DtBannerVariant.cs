@@ -3,7 +3,7 @@ namespace DriveTrack.Web.Components.Shared;
 /// <summary>
 /// The three faces a <c>DtFailureBanner</c> can wear.
 /// <para>
-/// Three, and there is deliberately no fourth for information. NFR-23's vocabulary has no
+/// Three, and there is deliberately no fourth for information. The design's state vocabulary has no
 /// informational state and the palette declares no hue for one, so a banner that merely told the
 /// reader something would have nothing to be drawn in - which is the point: a sentence that is
 /// neither a refusal, a rule the reader can satisfy, nor a confirmation belongs in the screen's

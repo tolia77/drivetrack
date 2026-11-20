@@ -1,5 +1,5 @@
 /*
-    NFR-29: every palette value here is a `--dt-*` token. Positions and the rail's offset are
+    Every palette value here is a `--dt-*` token. Positions and the rail's offset are
     geometry - where a line sits relative to a circle - and are outside the scan, as the status
     shapes in `_theme.scss` are; they are still written in tokens, so the rail moves with the dot.
 */

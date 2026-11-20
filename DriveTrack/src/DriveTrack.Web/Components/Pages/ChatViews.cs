@@ -7,7 +7,7 @@ namespace DriveTrack.Web.Components.Pages;
 /// <para>
 /// These mirror the chat capability's contracts with one deliberate difference: the thread key is a
 /// plain <see cref="int"/>. A payload from the hub crosses two serializers — the hub protocol's,
-/// which carries AD-22's typed identities as the numbers they are, and Blazor's JS interop, whose
+/// which carries the typed identities as the numbers they are, and Blazor's JS interop, whose
 /// options are the framework's and take no converters of ours. A typed identity would leave the
 /// server as <c>7</c> and be read back as an object that is not there.
 /// </para>
@@ -52,7 +52,7 @@ public sealed record ChatThreadSummaryView(
     bool OnDuty);
 
 /// <summary>
-/// The decisions the chat screen takes, lifted out of it so a test can reach them (DW-17, DW-18).
+/// The decisions the chat screen takes, lifted out of it so a test can reach them.
 /// <para>
 /// A Blazor component rendered statically dispatches no events: a decision written inside an
 /// <c>@onclick</c> handler or behind a live hub connection is a decision no test in this solution
@@ -62,7 +62,7 @@ public sealed record ChatThreadSummaryView(
 /// them is a pure function of a role, a selection, an instant or an id.
 /// </para>
 /// <para>
-/// FR-12 unchanged: none of this is authorization. <c>IAccessGuard.RequireChatParticipant</c> inside
+/// None of this is authorization. <c>IAccessGuard.RequireChatParticipant</c> inside
 /// the chat service refuses a caller whatever this screen decided to draw.
 /// </para>
 /// </summary>
@@ -98,16 +98,16 @@ internal static class ChatViews
     internal const string OpenThreadMarkValue = "true";
 
     /// <summary>
-    /// Whether this caller is one of chat's two participants (FR-68, FR-69). A client and an
+    /// Whether this caller is one of chat's two participants. A client and an
     /// administrator are not, which is why the screen has a refusal to show rather than an empty
     /// conversation.
     /// </summary>
-    /// <param name="role">The caller's single role (AD-4).</param>
+    /// <param name="role">The caller's single role.</param>
     internal static bool IsParticipant(UserRole role) =>
         role is UserRole.Dispatcher or UserRole.Driver;
 
     /// <summary>
-    /// Whether this caller is offered a roster of conversations (FR-68). A driver has exactly one
+    /// Whether this caller is offered a roster of conversations. A driver has exactly one
     /// and nothing to pick between, so the picker is absent rather than disabled.
     /// </summary>
     /// <param name="role">The caller's single role.</param>
@@ -115,7 +115,7 @@ internal static class ChatViews
 
     /// <summary>
     /// Whether the header names the dispatch desk — which is who a driver is talking to, and the
-    /// one side of the conversation that is not a person with a row (FR-69).
+    /// one side of the conversation that is not a person with a row.
     /// </summary>
     /// <param name="role">The caller's single role.</param>
     internal static bool NamesTheDispatchDesk(UserRole role) => role == UserRole.Driver;
@@ -160,7 +160,7 @@ internal static class ChatViews
     /// <summary>
     /// Whether a line begins a new day of the conversation, and so is preceded by a separator.
     /// <para>
-    /// Chat keeps its whole history (FR-71), so a conversation is read as a run of days rather than
+    /// Chat keeps its whole history, so a conversation is read as a run of days rather than
     /// as one list: the separator is what stops a message from March being read as one from this
     /// morning. The first line of a conversation begins a day as much as any later one does — a
     /// conversation that opened with no separator at all would leave its oldest day the only

@@ -5,8 +5,8 @@ using DriveTrack.Web.Account;
 namespace DriveTrack.Integration.Tests.Identity;
 
 /// <summary>
-/// FR-13, asserted at the two levels it is decided: the rule that recognises an expired session, and
-/// the wiring that gives every screen exactly one handler for it.
+/// Session expiry, asserted at the two levels it is decided: the rule that recognises an expired
+/// session, and the wiring that gives every screen exactly one handler for it.
 /// <para>
 /// No circuit is driven here, and that is the honest limit of this file: a Blazor circuit whose
 /// cookie has gone needs a render harness this suite does not carry. What can be settled without one
@@ -32,7 +32,8 @@ public class SessionExpiryTests
     public void A_wrapped_unauthenticated_failure_is_still_recognised()
     {
         // A failure raised inside OnInitializedAsync reaches an ErrorBoundary wrapped, so a branch
-        // that only read the outermost exception would miss the one case FR-13 exists for.
+        // that only read the outermost exception would miss the one case the expiry handler exists
+        // for.
         var wrapped = new InvalidOperationException(
             "Rendering failed.",
             new InvalidOperationException(
@@ -78,7 +79,7 @@ public class SessionExpiryTests
     [Fact]
     public void The_boundary_is_the_only_one_in_the_shell()
     {
-        // FR-13's "no screen implements its own", as an absence. A second ErrorBoundary anywhere
+        // "No screen implements its own", as an absence. A second ErrorBoundary anywhere
         // under Components/ would catch a failure before the shared one ever saw it.
         var offenders = Directory
             .GetFiles(ComponentsDirectory, "*.razor", SearchOption.AllDirectories)

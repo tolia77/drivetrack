@@ -8,10 +8,10 @@ namespace DriveTrack.Infrastructure.Persistence;
 
 /// <summary>
 /// Rewrites every table, column, key, foreign key, index and check-constraint name in the
-/// model to snake_case (Consistency Conventions).
+/// model to snake_case.
 /// <para>
 /// It runs as a model-finalizing convention rather than as a statement at the end of
-/// <c>OnModelCreating</c>, so it cannot be outrun by configuration a later story adds after
+/// <c>OnModelCreating</c>, so it cannot be outrun by configuration added after
 /// that call — finalizing conventions see the completed model whatever order it was built in.
 /// </para>
 /// </summary>
@@ -73,7 +73,7 @@ public sealed class SnakeCaseNamingConvention : IModelFinalizingConvention
                 }
             }
 
-            // Story 1.2 declares most of AD-20's invariants as check constraints; their names
+            // Most of the schema's invariants are check constraints; their names
             // are part of the schema and follow the same policy.
             foreach (var checkConstraint in entity.GetCheckConstraints().ToList())
             {

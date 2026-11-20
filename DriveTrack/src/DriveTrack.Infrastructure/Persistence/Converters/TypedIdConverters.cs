@@ -8,7 +8,7 @@ namespace DriveTrack.Infrastructure.Persistence.Converters;
 /// <para>
 /// Registered once through <c>ConfigureConventions</c> rather than per property, so every use
 /// site converts identically and a new entity cannot acquire a differently-shaped column by
-/// forgetting a line (AD-22).
+/// forgetting a line.
 /// </para>
 /// </summary>
 public sealed class UserIdConverter() : ValueConverter<UserId, int>(id => id.Value, value => new UserId(value));

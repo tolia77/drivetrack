@@ -11,10 +11,10 @@ using ValidationException = DriveTrack.Application.Common.ValidationException;
 namespace DriveTrack.Integration.Tests.Persistence;
 
 /// <summary>
-/// AD-8's translation, driven through <c>IUnitOfWork.CommitAsync</c> against a real PostgreSQL 18
-/// container.
+/// The constraint-violation translation, driven through <c>IUnitOfWork.CommitAsync</c> against a
+/// real PostgreSQL 18 container.
 /// <para>
-/// Story 1.2 put the invariants in the schema; on their own they surface as a raw
+/// The invariants live in the schema; on their own they surface as a raw
 /// <c>DbUpdateException</c>, which is precisely the 500-instead-of-409 defect this rewrite exists to
 /// remove. Neither half satisfies the concurrency requirements alone, so this suite asserts the
 /// join: the constraint refuses the row, and the commit path turns that refusal into a typed
@@ -50,14 +50,14 @@ public class ConstraintTranslationTests(PostgresFixture postgres)
 
         Assert.Equal(ErrorCode.PERSISTENCE_UNIQUE_VIOLATION, failure.Code);
 
-        // The cause is kept, so the log still has the SQL detail the wire never sees (NFR-3).
+        // The cause is kept, so the log still has the SQL detail the wire never sees.
         Assert.IsType<DbUpdateException>(failure.InnerException);
     }
 
     [Fact]
     public async Task A_second_proof_for_one_delivery_becomes_the_capability_s_own_conflict()
     {
-        // The one constraint the translator names. FR-123's "one proof per delivery" is stated twice
+        // The one constraint the translator names. "One proof per delivery" is stated twice
         // - by ProofOfDeliveryService's re-check inside its writing transaction, and by
         // ix_proof_of_deliveries_delivery_id behind it - and two captures closer together than a
         // round trip are refused by the second rather than the first. Without this arm the same
@@ -87,7 +87,7 @@ public class ConstraintTranslationTests(PostgresFixture postgres)
         Assert.Equal(ErrorCode.DELIVERY_PROOF_ALREADY_CAPTURED, failure.Code);
 
         // Still 23505, and the constraint name is still in the message for the log - the code is
-        // what changed, and the wire never sees either (NFR-3).
+        // what changed, and the wire never sees either.
         Assert.IsType<DbUpdateException>(failure.InnerException);
         Assert.Contains("ix_proof_of_deliveries_delivery_id", failure.Message, StringComparison.Ordinal);
     }
@@ -95,9 +95,9 @@ public class ConstraintTranslationTests(PostgresFixture postgres)
     [Fact]
     public async Task A_check_violation_becomes_a_validation_failure()
     {
-        // A rating of 6: SQLSTATE 23514, and a value the caller should not have sent. AD-8 splits
-        // this from the unique case, which is what makes 422 the answer whether the validator or
-        // the database catches it (NFR-2).
+        // A rating of 6: SQLSTATE 23514, and a value the caller should not have sent. The
+        // translator splits this from the unique case, which is what makes 422 the answer whether
+        // the validator or the database catches it.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var database = await TestDatabase.CreateAsync(postgres.ConnectionString, cancellationToken);
 
@@ -137,7 +137,7 @@ public class ConstraintTranslationTests(PostgresFixture postgres)
     [Fact]
     public void PostgresException_is_named_in_exactly_one_source_file()
     {
-        // AD-8's "one place in Infrastructure" is the claim; the scan is what keeps it true. Without
+        // "One place in Infrastructure" is the claim; the scan is what keeps it true. Without
         // it, the second capability that needs a 409 translates its own violation inline and the
         // vocabulary quietly stops being closed.
         var root = RepositoryLayout.Source.FullName;

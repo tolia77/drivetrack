@@ -1,7 +1,7 @@
 // =============================================================================
 // Bootstrap 5.3.3 <- design tokens.
 //
-// Bootstrap stays the substrate (AD-28) and is *themed*, not overridden: every
+// Bootstrap stays the substrate and is *themed*, not overridden: every
 // variable below is assigned before `@import "bootstrap/bootstrap"`, so the
 // `!default` in Bootstrap's own `_variables.scss` never fires and the framework
 // derives its whole cascade - `.btn`, `.card`, `.table`, `--bs-*` custom
@@ -11,15 +11,15 @@
 // the fact leaves two sources of truth and a specificity war; assigning the
 // variables leaves one.
 //
-// Only *semantic* tokens appear here, and nothing but a token reference: NFR-29
-// reads every `$variable:` declaration in this file as a visual one, so a bare
+// Only *semantic* tokens appear here, and nothing but a token reference: the
+// design-token gate reads every `$variable:` declaration in this file as a visual one, so a bare
 // `0.875rem` fails the gate exactly as a bare `#0c6f62` would. Anything that
 // needs a map or a sum is assembled in `_tokens.scss` and named here.
 // =============================================================================
 
 
 // -----------------------------------------------------------------------------
-// One light theme (NFR-21)
+// One light theme
 //
 // `$enable-dark-mode: false` drops Bootstrap's `[data-bs-theme="dark"]` custom
 // property block and every component's dark colour-mode variant. There is no
@@ -45,10 +45,10 @@ $enable-dark-mode:            false;
 // still on the palette, and `No_component_uses_the_info_variant` refuses any
 // component that reaches for one.
 //
-// `info` goes because NFR-23's vocabulary is create / edit / destructive with
+// `info` goes because the colour vocabulary is create / edit / destructive with
 // success / warning / danger for feedback. There is no informational action in
 // this product, so the palette declares no hue for one, and inventing a sixth
-// would be design this spec never asked for. `light` and `dark` go because the
+// would be design nobody asked for. `light` and `dark` go because the
 // page tint and the navigation surface are reached by name, and a sweep found no
 // `.bg-light` or `.bg-dark` anywhere in the component tree.
 //
@@ -315,7 +315,7 @@ $table-border-color:          $dt-border;
 // than a line of text. Top-aligned, the values then sit on the row's first line
 // while the buttons beside them are centred, and the row reads as two rows that
 // failed to line up. Set on the framework's own variable rather than as a rule of
-// ours, so the value and the rule that applies it stay in one place (AD-28).
+// ours, so the value and the rule that applies it stay in one place.
 $table-cell-vertical-align:   middle;
 $table-cell-padding-y:        $dt-space-2;
 $table-cell-padding-x:        $dt-space-2;

@@ -4,8 +4,8 @@ using DriveTrack.Application.Users;
 namespace DriveTrack.Application.Tests.Users;
 
 /// <summary>
-/// The 422 rows of story 7.1's I/O matrix, driven through the real <c>EnsureValidAsync</c>
-/// seam (AD-9) so the assertions are about the <see cref="FieldError"/> list the adapter will
+/// The account administration 422 cases, driven through the real <c>EnsureValidAsync</c>
+/// seam so the assertions are about the <see cref="FieldError"/> list the adapter will
 /// actually receive.
 /// <para>
 /// Every one of these runs without a database, and that is the point of validating the merged state
@@ -32,7 +32,7 @@ public class AccountAdministrationValidationTests
     [Fact]
     public async Task A_merged_client_with_no_password_passes()
     {
-        // FR-50 / AD-23: null here is the absent case - the caller left the password box empty -
+        // Null here is the absent case - the caller left the password box empty -
         // and a rule that refused it would make "leave the password alone" impossible to express.
         await ClientState.EnsureValidAsync(
             ValidClient() with { Password = null },
@@ -106,8 +106,9 @@ public class AccountAdministrationValidationTests
     [InlineData("@drivetrack.test")]
     public async Task A_merged_client_email_that_is_not_an_address_is_refused(string email)
     {
-        // FR-92's administrator half. The merged state carries the stored address when the body
-        // omits one, so the only way to reach this rule is to have actually sent something.
+        // The administrator half of an email change. The merged state carries the stored address
+        // when the body omits one, so the only way to reach this rule is to have actually sent
+        // something.
         var failure = await Refuse(ClientState, ValidClient() with { Email = email });
 
         AssertField(failure, "Email", nameof(ErrorCode.AUTH_EMAIL_INVALID));
@@ -134,7 +135,7 @@ public class AccountAdministrationValidationTests
     [Fact]
     public async Task A_merged_dispatcher_with_a_blank_password_passes()
     {
-        // The matrix row: "Admin edits a dispatcher, blank password" changes the name and leaves
+        // "Admin edits a dispatcher, blank password" changes the name and leaves
         // the existing password signing in.
         await DispatcherState.EnsureValidAsync(
             ValidDispatcher() with { Password = null },
@@ -189,10 +190,10 @@ public class AccountAdministrationValidationTests
     [Fact]
     public async Task Every_message_is_an_error_code_name_rather_than_a_sentence()
     {
-        // NFR-14 by construction: the adapter resolves a field message through the same Ukrainian
-        // catalogue as error.code, so a sentence here would reach a user untranslated. Asserted
-        // across the whole validator rather than row by row, because the failure mode is one rule
-        // somebody wrote in prose.
+        // Translation by construction: the adapter resolves a field message through the same
+        // Ukrainian catalogue as error.code, so a sentence here would reach a user untranslated.
+        // Asserted across the whole validator rather than row by row, because the failure mode is
+        // one rule somebody wrote in prose.
         var codes = Enum.GetNames<ErrorCode>().ToHashSet(StringComparer.Ordinal);
 
         var failures = new List<ValidationException>
@@ -231,7 +232,7 @@ public class AccountAdministrationValidationTests
     private static void AssertField(ValidationException failure, string field, string messageKey)
     {
         // Contains rather than Single, as the registration suite does: an empty value breaks two
-        // rules on the same field at once, and NFR-4 wants both reported rather than one.
+        // rules on the same field at once, and both are reported rather than one.
         Assert.Equal(ErrorCode.COMMON_VALIDATION_FAILED, failure.Code);
         Assert.Contains(
             failure.FieldErrors,

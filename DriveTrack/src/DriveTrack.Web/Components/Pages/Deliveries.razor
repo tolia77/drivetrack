@@ -1,7 +1,7 @@
 @page "/deliveries"
-@* FR-18 to FR-24, FR-101: the dispatch board.
+@* The dispatch board.
 
-   The Roles argument routes a wrong role to /access-denied (FR-79) rather than into an error
+   The Roles argument routes a wrong role to /access-denied rather than into an error
    boundary. It is a convenience, not the decision: IAccessGuard inside IDeliveryService settles
    whether this caller may run dispatch, and it runs whether or not this screen was ever rendered.
 
@@ -10,7 +10,7 @@
    and a shared link all reproduce it - and the page that answers it is what the table draws.
 
    The @if blocks below are independent rather than if/else chains: an `else` at markup level reads
-   to NFR-14's source scan as a rendered English word. *@
+   to the localization source scan as a rendered English word. *@
 @attribute [Authorize(Roles = "Dispatcher,Admin")]
 @* Named for what it does rather than for the capability: a member called `Deliveries` on a
    component called `Deliveries` does not compile. *@
@@ -38,13 +38,13 @@
     </button>
 </div>
 
-@* FR-29 and FR-103 arrive here: a missing driver, a missing client and an overloaded vehicle each
-   resolve through the same catalogue the REST envelope uses, so the two cannot disagree (NFR-3).
+@* The assignment refusals arrive here: a missing driver, a missing client and an overloaded vehicle
+   each resolve through the same catalogue the REST envelope uses, so the two cannot disagree.
    None of the three names a field, so all three stay here; the form's own refusals are said under
    the boxes that produced them. *@
 <DtFailureBanner Failures="_failures" InlineFields="@InlineFields" />
 
-@* FR-20 and FR-101: every filter in one bounded panel rather than three loose rows floating on the
+@* Every filter in one bounded panel rather than three loose rows floating on the
    page, and one action at the end of it that clears all ten. A per-field clear would leave a
    dispatcher hunting for the box still narrowing the list.
 
@@ -99,8 +99,8 @@
             <label class="form-label" for="delivery-filter-status">@Localizer["Status"]</label>
             <DtSelect Id="delivery-filter-status" @bind-Value="_filter.Status" @bind-Value:after="FilterChosenAsync">
                 <option value="">@Localizer["FilterAll"]</option>
-                @* The value is the enum member rendered, not a literal beside it: AD-21 makes the
-                   member name the wire form, and writing it out here would be a second copy to
+                @* The value is the enum member rendered, not a literal beside it: the member name
+                   is the wire form, and writing it out here would be a second copy to
                    keep in step. *@
                 <option value="@DeliveryStatus.Pending">@Localizer["StatusPending"]</option>
                 <option value="@DeliveryStatus.InTransit">@Localizer["StatusInTransit"]</option>
@@ -141,7 +141,7 @@
     </div>
 </form>
 
-@* NFR-27: one page of the board at a time, filtered and sorted by the server over every delivery,
+@* One page of the board at a time, filtered and sorted by the server over every delivery,
    with the pager under the table saying how many matched and how far through them the page is. *@
 @* `dt-table-cards` is where this screen opts into the shared collapse: below the phone breakpoint
    the table's rows stop being rows and become cards. Ten columns is the widest table in the
@@ -249,13 +249,13 @@
             </th>
         </HeaderTemplate>
         <RowTemplate Context="delivery">
-            @* FR-19 and FR-100: the window the delivery was promised in, and - when the clock has passed
+            @* The window the delivery was promised in, and - when the clock has passed
                its far bound - the badge saying so, inside this cell rather than in a column of its own.
                Overdue is derived from the window, so a column apart from it would have been the same
                fact twice with a gap between them; beside the hours it is a mark on the value it is
-               about. Routed through a method rather than formatted in markup: NFR-14's scan strips a
-               Razor expression only up to its first closing bracket, so a `.ToString(...)` tail would be
-               left behind in the text node and read as a rendered English word. *@
+               about. Routed through a method rather than formatted in markup: the localization scan
+               strips a Razor expression only up to its first closing bracket, so a `.ToString(...)`
+               tail would be left behind in the text node and read as a rendered English word. *@
             <td class="dt-table-window">
                 @* The per-cell name, carried by the cell rather than only by the column heading.
                    Above the breakpoint it is dropped - the `<th>` already names the column, and a
@@ -304,8 +304,8 @@
                     <span>@delivery.Client.Name</span>
                 }
             </td>
-            @* FR-21: the cell is the way to the map. The label is the address when one has been
-               resolved and the coordinates when none has (FR-94), so the cell is never empty.
+            @* The cell is the way to the map. The label is the address when one has been
+               resolved and the coordinates when none has, so the cell is never empty.
 
                The design draws these two as plain text with a single Map action in the row, and that is
                the one place this screen departs from it: one button cannot mean two places. DtMap takes
@@ -359,16 +359,17 @@
                    below the breakpoint the head is dropped outright, so without this the group of
                    actions would be the one part of a card that announces nothing at all. *@
                 <span class="dt-visually-hidden dt-delivery-label">@Localizer["Actions"]</span>
-                @* FR-108: the history is a row action rather than a column, because it is a
+                @* The history is a row action rather than a column, because it is a
                    conversation about one delivery and not a value to be compared across the table. *@
                 <button type="button" class="btn btn-outline-secondary btn-sm dt-delivery-timeline"
                         @onclick="TimelineHandler(delivery)">
                     <Icon Name="IconName.Timeline" />@Localizer["Timeline"]
                 </button>
-                @* FR-122: dispatch reads the evidence, and is one of the two roles told who captured it
-                   (AD-17). There is no capture action here - FR-119 puts that at the door, and a
-                   dispatcher behind a desk has nothing to photograph; the note arm of FR-120 is what
-                   dispatch has instead, and it lives on the history panel beside this button. *@
+                @* Dispatch reads the evidence, and is one of the two roles told who captured it.
+                   There is no capture action here - capture happens at the door, and a
+                   dispatcher behind a desk has nothing to photograph; the note arm of the
+                   proof-required gate is what dispatch has instead, and it lives on the history
+                   panel beside this button. *@
                 <button type="button" class="btn btn-outline-secondary btn-sm dt-proof-open"
                         @onclick="ProofHandler(delivery)">
                     <Icon Name="IconName.Proof" />@Localizer["ProofOpen"]
@@ -379,9 +380,9 @@
                         @onclick="EditHandler(delivery)">
                     <Icon Name="IconName.Edit" />@Localizer["Edit"]
                 </button>
-                @* FR-24 reserves deletion to an administrator, and the service refuses a dispatcher who
-                   asks. Offering an action that could only ever fail is worse than not offering it.
-                   FR-12 unchanged: this hides, IAccessGuard decides. *@
+                @* Deletion is reserved to an administrator, and the service refuses a dispatcher
+                   who asks. Offering an action that could only ever fail is worse than not offering
+                   it. This hides, IAccessGuard decides. *@
                 @if (_isAdmin)
                 {
                     <button type="button" class="btn btn-danger btn-sm dt-delivery-delete"
@@ -394,7 +395,7 @@
     </DtDataTable>
 </div>
 
-@* FR-85: the shared dialog. One heading for both create and edit - a title composed at run time
+@* The shared dialog. One heading for both create and edit - a title composed at run time
    would be a key no test can see, and the catalogue is closed against the keys components ask for. *@
 <DtDialog @ref="_formDialog" Title="@Localizer["DeliveryForm"]" OnClosed="ClearFailures" Wide="true">
     <ChildContent>
@@ -403,7 +404,7 @@
            is a form that fails to close and says nothing. *@
         <DtFailureBanner Failures="_failures" InlineFields="@InlineFields" />
 
-        @* FR-15 and FR-104: a point is set by clicking the map, or by searching for an address and
+        @* A point is set by clicking the map, or by searching for an address and
            choosing one of the answers. Both end at the same assignment - the chosen match writes the
            same MapLocation a click writes - so the two are one input with two ways in rather than
            two fields that could disagree. DtLocationPicker is that column, and this screen renders
@@ -449,19 +450,19 @@
             @* Clearing a number or a date field leaves a parse failure on the EditContext, and
                OnValidSubmit then never fires - so without this the Save button would do nothing and
                say nothing. ValidationSummary rather than per-field ValidationMessage: a
-               `For="@(() => ...)"` lambda inside an attribute is what NFR-14's scan misreads. *@
+               `For="@(() => ...)"` lambda inside an attribute is what the localization scan misreads. *@
             <ValidationSummary />
 
-            @* FR-16: both are optional, and the empty choice is how a dispatcher says so - on an
-               edit it is also how they unassign, which AD-23 carries as a present null. The two are
-               one question - who carries this, and for whom - so they are one row of two columns
-               that stacks when the panel is too narrow to hold both. *@
+            @* Both are optional, and the empty choice is how a dispatcher says so - on an
+               edit it is also how they unassign, which the command carries as a present null. The
+               two are one question - who carries this, and for whom - so they are one row of two
+               columns that stacks when the panel is too narrow to hold both. *@
             <div class="dt-cols mb-4">
                 <div>
                     <label class="form-label" for="delivery-driver">@Localizer["Driver"]</label>
                     <DtSelect Id="delivery-driver" @bind-Value="_form.DriverId">
                         <option value="">@Localizer["NoDriver"]</option>
-                        @* FR-98: the standing travels with the name, because this is the moment a
+                        @* The standing travels with the name, because this is the moment a
                            dispatcher chooses who carries a parcel. Built in C# rather than as three
                            markup branches inside an <option>, which may only hold text. *@
                         @foreach (var driver in _drivers)
@@ -493,19 +494,19 @@
                 <div>
                     <label class="form-label" for="delivery-weight">@Localizer["PackageWeightKg"]</label>
                     @* No {0} in the message: the framework fills it with the CLR property name, which
-                       would put a Latin word in front of a user (NFR-14). *@
+                       would put a Latin word in front of a user. *@
                     <InputNumber id="delivery-weight" class="form-control"
                                  ParsingErrorMessage="@Localizer["NumberParseError"]"
                                  @bind-Value="_form.PackageWeightKg" />
-                    @* FR-103's second figure. NFR-3 gives one wire message per code, so the refusal
-                       itself cannot name the numbers - this is where the dispatcher sees the one they
-                       are about to exceed, at the moment they could exceed it. *@
+                    @* The capacity check's second figure. There is one wire message per code, so
+                       the refusal itself cannot name the numbers - this is where the dispatcher
+                       sees the one they are about to exceed, at the moment they could exceed it. *@
                     <DtFieldError Field="PackageWeightKg" Failures="_failures" />
                     <div class="form-text">@Localizer["VehicleCapacityHint"] @CapacityText</div>
                 </div>
             </div>
 
-            @* FR-100: either bound may stand alone and both may be absent; only an inverted pair is
+            @* Either bound may stand alone and both may be absent; only an inverted pair is
                refused, by the validator and by the check constraint behind it. Side by side, because
                that is the only arrangement in which an inverted pair is visible as one. *@
             <div class="dt-cols mb-4">
@@ -547,7 +548,7 @@
     </Actions>
 </DtDialog>
 
-@* FR-21: the same map component, with picking off. One map, two jobs (NFR-26). *@
+@* The same map component, with picking off. One map, two jobs. *@
 <DtDialog @ref="_mapDialog" Title="@Localizer["LocationTitle"]">
     <ChildContent>
         @if (_viewed is not null)
@@ -557,7 +558,7 @@
     </ChildContent>
 </DtDialog>
 
-@* FR-105 to FR-108: the delivery's history, and the two things dispatch may append to it. The panel
+@* The delivery's history, and the two things dispatch may append to it. The panel
    is built only once a row has been chosen, so the screen costs no timeline read until somebody
    asks for one.
 
@@ -567,7 +568,7 @@
    delivery was when it was last opened, with the last comment still in the box.
 
    AllowStatusChange is true for every caller who reaches this screen: the Roles attribute already
-   narrowed them to dispatch, and RequireAssignedDriver is what actually decides (FR-12, FR-34). *@
+   narrowed them to dispatch, and RequireAssignedDriver is what actually decides. *@
 @if (_timeline is not null)
 {
     <DeliveryTimeline DeliveryId="_timeline.Id"
@@ -577,7 +578,7 @@
                       OnClosed="CloseTimeline" />
 }
 
-@* FR-122. Built only once a row has been chosen, for the reason the history panel is: the board
+@* Built only once a row has been chosen, for the reason the history panel is: the board
    costs no proof read until somebody asks for one, and dropping the row on close makes each open a
    fresh read rather than a panel holding whatever the last row had. *@
 <DtDialog @ref="_proofDialog" Title="@Localizer["ProofViewTitle"]" OnClosed="CloseProof">
@@ -589,7 +590,7 @@
     </ChildContent>
 </DtDialog>
 
-@* FR-81: a destructive action is confirmed through the shared prompt, and only where it could
+@* A destructive action is confirmed through the shared prompt, and only where it could
    succeed. *@
 @if (_isAdmin)
 {
@@ -604,7 +605,7 @@
     /// <summary>
     /// Drops the refusals when the form is dismissed, however it was dismissed.
     /// <para>
-    /// FR-83. A refusal claimed by a box inside the dialog is subtracted from the banner outside it,
+    /// A refusal claimed by a box inside the dialog is subtracted from the banner outside it,
     /// so leaving the list populated past the close would leave that sentence with nowhere on the
     /// page to render - invisible, which is the outcome this whole change exists to prevent.
     /// Hung off <c>OnClosed</c> rather than off the cancel handler because Escape and the backdrop
@@ -614,7 +615,7 @@
     private void ClearFailures() => _failures = [];
     /// <summary>
     /// The boxes this screen renders a <c>DtFieldError</c> for. Stated once and bound by every
-    /// banner on the page: the list repeated per banner is exactly the drift FR-83 is broken by,
+    /// banner on the page: the list repeated per banner is exactly the drift that loses a refusal,
     /// and a screen carries the banner more than once because a dialog opened with showModal()
     /// leaves the page behind it inert.
     /// </summary>
@@ -679,7 +680,7 @@
     private IReadOnlyList<VehicleSummary> _vehicles = [];
     /// <summary>
     /// Why the last save or delete was refused. Not the address boxes' — each of those keeps its
-    /// own (DW-41), so a search that succeeds cannot clear a refusal still on screen.
+    /// own, so a search that succeeds cannot clear a refusal still on screen.
     /// </summary>
     private IReadOnlyList<ScreenFailure> _failures = [];
 
@@ -688,8 +689,8 @@
     /// create action and takes the create colour, and changing one that already exists is an edit.
     /// <para>
     /// One dialog serves both modes, so the button is the only thing on screen that can say which
-    /// one the reader is in - and AD-28 gives the two actions different colours precisely so that
-    /// it does. Resolved here rather than as a ternary in the attribute, for the reason
+    /// one the reader is in - and the palette gives the two actions different colours precisely so
+    /// that it does. Resolved here rather than as a ternary in the attribute, for the reason
     /// <c>DtDialog</c> resolves its panel class into a property.
     /// </para>
     /// <para>
@@ -735,7 +736,7 @@
 
     /// <summary>
     /// The capacity of the vehicle the selected driver holds, or null when there is no driver or
-    /// they hold nothing — which is the case FR-38 makes legal and FR-103 leaves unchecked.
+    /// they hold nothing — which is a legal case the capacity check leaves unchecked.
     /// </summary>
     private decimal? SelectedCapacityKg => CapacityOf(_drivers, _vehicles, _form.DriverId);
 
@@ -778,7 +779,7 @@
     {
         // The circuit outlives the request that opened it, so the cookie can be gone by the time a
         // screen calls a service. Raising the contract's own code here is what puts that case
-        // through FR-13's single boundary instead of a per-screen redirect.
+        // through the single session-expiry boundary instead of a per-screen redirect.
         if (!Caller.IsAuthenticated)
         {
             throw new ForbiddenException(
@@ -905,7 +906,7 @@
     private Func<Task> ProofHandler(DeliverySummary delivery) => () => ShowProofAsync(delivery);
 
     /// <summary>
-    /// The creation instant in local time (AD-13: storage is offset zero, and the conversion
+    /// The creation instant in local time (storage is at offset zero, and the conversion
     /// happens here, in the presentation layer, and nowhere else).
     /// </summary>
     /// <remarks>
@@ -918,7 +919,7 @@
         delivery.CreatedAt.ToLocalTime().ToString("g", System.Globalization.CultureInfo.CurrentCulture);
 
     /// <summary>
-    /// The figures of a delivery window as the board's first column shows them (FR-100), in local
+    /// The figures of a delivery window as the board's first column shows them, in local
     /// time for the reason <see cref="Created" /> is.
     /// </summary>
     /// <remarks>
@@ -931,8 +932,7 @@
         CellText.Window(delivery.WindowEarliestAt, delivery.WindowLatestAt);
 
     /// <summary>
-    /// One driver as the assignment picker names them: who they are, and how they are thought of
-    /// (FR-98).
+    /// One driver as the assignment picker names them: who they are, and how they are thought of.
     /// </summary>
     /// <remarks>
     /// Composed here rather than in markup because an <c>&lt;option&gt;</c> holds text and nothing
@@ -941,11 +941,11 @@
     /// nobody has reviewed gets the "no value" text and never a zero — which is a rating, and the
     /// worst one the scale has.
     /// <para>
-    /// FR-116's marker is appended and nothing else happens: an off-duty driver stays in the list
-    /// and stays selectable. Dispatch routinely assigns a parcel to a driver whose shift starts
-    /// later, so the requirement asks the form to <em>flag</em> rather than to refuse — and the
-    /// words are <c>ShiftOpen</c>/<c>ShiftClosed</c>, the pickers' own pair, which are about the
-    /// driver: whether this person is on duty now. <c>ShiftStateLabel</c> deliberately says
+    /// The off-duty marker is appended and nothing else happens: an off-duty driver stays in the
+    /// list and stays selectable. Dispatch routinely assigns a parcel to a driver whose shift
+    /// starts later, so the requirement asks the form to <em>flag</em> rather than to refuse — and
+    /// the words are <c>ShiftOpen</c>/<c>ShiftClosed</c>, the pickers' own pair, which are about
+    /// the driver: whether this person is on duty now. <c>ShiftStateLabel</c> deliberately says
     /// something else with <c>ShiftRunning</c>/<c>ShiftFinished</c>, because a row in a history is
     /// a claim about a shift rather than about where its driver is. Do not merge the two pairs.
     /// </para>
@@ -1124,7 +1124,7 @@
                 // Every field present: this screen edits the whole card, so there is nothing for it
                 // to leave alone. The Optional wrapper is still what carries them, because a later
                 // caller sending only one field must mean the same thing to the same service - and
-                // because an empty driver box has to reach the service as a present null (FR-16).
+                // because an empty driver box has to reach the service as a present null.
                 await Dispatch.UpdateAsync(
                     deliveryId,
                     new UpdateDeliveryCommand(
@@ -1223,7 +1223,7 @@
         point is { } value ? new LocationInput(value.Latitude, value.Longitude) : null;
 
     /// <summary>
-    /// What the dispatcher has narrowed the board by (FR-20, FR-101), as the panel's boxes hold it. A
+    /// What the dispatcher has narrowed the board by, as the panel's boxes hold it. A
     /// plain settable class rather than a record: every field is two-way bound to an input, and
     /// resetting is a new instance. The server does the narrowing; this is only what the boxes say.
     /// </summary>
@@ -1256,7 +1256,7 @@
         /// <summary>The latest creation date to show, or null.</summary>
         public DateOnly? CreatedTo { get; set; }
 
-        /// <summary>True to show only the deliveries whose window has passed (FR-19).</summary>
+        /// <summary>True to show only the deliveries whose window has passed.</summary>
         public bool OverdueOnly { get; set; }
     }
 
@@ -1279,7 +1279,7 @@
         public MapLocation? Dropoff { get; set; }
 
         /// <summary>
-        /// FR-104's box above the pickup map, wired to <em>this</em> form's pickup point.
+        /// The address box above the pickup map, wired to <em>this</em> form's pickup point.
         /// </summary>
         /// <remarks>
         /// Owned by the form rather than by the screen, and constructed here rather than assigned

@@ -6,7 +6,7 @@
 @inject IStringLocalizer<UiText> Localizer
 @inherits CircuitScopedComponent
 
-@* FR-5 / FR-87 / FR-88 / FR-92: what a signed-in user of any role reads about themselves, and the
+@* What a signed-in user of any role reads about themselves, and the
    three things they can change about it.
 
    One screen rather than three, because they are one thing a user came here to do. Three dialogs
@@ -16,11 +16,11 @@
 
    [Authorize] carries no roles, and there is no <AuthorizeView> anywhere below. Who may read or
    change *this* profile is decided by IAccessGuard.RequireSelf inside IUserService and nowhere else
-   (AD-2, FR-12) - which is also what gives an administrator the client's half of FR-92 without a
-   second guard member.
+   - which is also what lets an administrator act on a client's profile without a second guard
+   member.
 
    Written as independent @if blocks rather than if/else chains: an `else` at markup level is a
-   rendered text node as far as the source is concerned, and NFR-14's scan reads it as an
+   rendered text node as far as the source is concerned, and the localization scan reads it as an
    untranslated word. The conditions are mutually exclusive, so the result is the same. *@
 
 <PageTitle>@Localizer["ProfileTitle"]</PageTitle>
@@ -89,7 +89,7 @@
                             }
                         </dd>
 
-                        @* DR-3 gives no role but a client a row to keep a number in, so the row
+                        @* No role but a client has a row to keep a number in, so the row
                            appears exactly when there is one to show. *@
                         @if (_profile.PhoneNumber is not null)
                         {
@@ -124,7 +124,7 @@
             <div class="dt-credential">
                 <div>
                     <span class="dt-credential__label">@Localizer["CurrentPassword"]</span>
-                    @* A mask, not a value: only a hash is stored (FR-8), so there is nothing to show
+                    @* A mask, not a value: only a hash is stored, so there is nothing to show
                        but the fact that one is set. *@
                     <span class="dt-credential__value dt-credential__mask" aria-hidden="true">••••••••••</span>
                 </div>
@@ -145,7 +145,7 @@
 
            InlineFields is computed rather than written out, because the phone box is only offered
            to a client: claiming a field this render does not show would be the one way a refusal
-           could go missing (FR-83). *@
+           could go missing. *@
         <DtFailureBanner Failures="_failures" InlineFields="@InlineFields" />
         <div class="mb-4">
             <label class="form-label" for="profile-first-name">@Localizer["FirstName"]</label>
@@ -157,7 +157,7 @@
             <input id="profile-last-name" class="form-control" @bind="_form.LastName" />
             <DtFieldError Field="LastName" Failures="_failures" />
         </div>
-        @* FR-87 / DR-3: only a client has a row to store a number in, so only a client is offered
+        @* Only a client has a row to store a number in, so only a client is offered
            the box. ProfileEdit.ToProfileCommand leaves the field absent for everybody else, which is
            what stops a dispatcher's own rename being refused for a number they were never shown. *@
         @if (_isClient)
@@ -172,8 +172,8 @@
     </ChildContent>
     <Actions>
         @* The handler is a method rather than a lambda in the attribute: a `=>` here would close the
-           tag as far as NFR-14's markup scan is concerned, and everything after it would be read as
-           rendered English. *@
+           tag as far as the localization markup scan is concerned, and everything after it would be
+           read as rendered English. *@
         @* Disabled while this save is in flight, and only this one: the circuit yields at the
            await, so a second click would dispatch a second write. Each dialog carries its own
            flag, so a save here leaves the other two dialogs alone. *@
@@ -249,7 +249,7 @@
     /// <summary>
     /// Drops the refusals when the form is dismissed, however it was dismissed.
     /// <para>
-    /// FR-83. A refusal claimed by a box inside the dialog is subtracted from the banner outside it,
+    /// A refusal claimed by a box inside the dialog is subtracted from the banner outside it,
     /// so leaving the list populated past the close would leave that sentence with nowhere on the
     /// page to render - invisible, which is the outcome this whole change exists to prevent.
     /// Hung off <c>OnClosed</c> rather than off the cancel handler because Escape and the backdrop
@@ -265,7 +265,7 @@
     /// would leave a password refusal showing twice - inline in its own dialog, and again in the
     /// banner of the other two.
     /// <para>
-    /// The phone number joins it only for a client, for the reason DR-3 offers that box only to a
+    /// The phone number joins it only for a client, for the reason that box is offered only to a
     /// client. Everything not named here still reaches the banner. <c>AUTH_CURRENT_PASSWORD_INCORRECT</c>
     /// and <c>AUTH_EMAIL_ALREADY_IN_USE</c> are raised with no field, but <c>FailureKeys</c> pins
     /// them to <c>CurrentPassword</c> and <c>Email</c>. Only one dialog renders each of those boxes
@@ -307,7 +307,7 @@
     {
         // The circuit outlives the request that opened it, so the cookie can be gone by the time a
         // screen calls a service. Raising the contract's own code here is what puts that case
-        // through FR-13's single boundary instead of a per-screen redirect.
+        // through the single session-expiry boundary instead of a per-screen redirect.
         if (!Caller.IsAuthenticated)
         {
             throw new ForbiddenException(
@@ -348,7 +348,7 @@
     {
         _failures = [];
 
-        // Never pre-filled: only a hash is stored (FR-8), so there is nothing to pre-fill them with.
+        // Never pre-filled: only a hash is stored, so there is nothing to pre-fill them with.
         ClearPasswords();
 
         if (_passwordDialog is not null)
@@ -461,9 +461,9 @@
 
         await ClosePasswordAsync();
 
-        // DW-11 owns revoking the session, so nothing here signs the user out: the cookie keys on
-        // the user id and survives the change. There is nothing on this screen to refetch either -
-        // a password has no readable form (FR-8).
+        // Nothing here signs the user out: ending sessions is the session revalidation's job, not
+        // this screen's. There is nothing on this screen to refetch either -
+        // a password has no readable form.
     }
 
     private async Task SaveEmailAsync()

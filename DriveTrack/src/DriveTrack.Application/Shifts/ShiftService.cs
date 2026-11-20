@@ -9,21 +9,21 @@ using FluentValidation;
 namespace DriveTrack.Application.Shifts;
 
 /// <summary>
-/// AD-3's pipeline over a driver's duty log: open a scope → load → guard → not found → validate →
+/// The fixed operation pipeline over a driver's duty log: open a scope → load → guard → not found → validate →
 /// act → commit → map.
 /// <para>
-/// AD-2: every method calls <see cref="IAccessGuard"/> through the interface, inline in its own
+/// Every method calls <see cref="IAccessGuard"/> through the interface, inline in its own
 /// body. Folding <c>RequireShiftOwner</c> into a private helper would read better and would not
 /// count — <c>GuardCoverageTests</c> walks each public method's own IL and does not follow a call it
 /// makes.
 /// </para>
 /// <para>
-/// <b>What this capability reads that it does not own (AD-24).</b> Only
+/// <b>What this capability reads that it does not own.</b> Only
 /// <c>unitOfWork.Users.ListByDriverIdsAsync(…)</c>, and only to put a name beside a
 /// driver row id — the same door <c>DeliveryService</c> opens for the parties it names, and the
 /// only place a driver's name lives at all. There is no <c>unitOfWork.Drivers</c> and no
 /// <c>IDriverService</c> anywhere in this file, and there must not be: the Drivers capability
-/// injects <see cref="IShiftService"/> for FR-116's flag, so a dependency back would be a
+/// injects <see cref="IShiftService"/> for the on-duty flag, so a dependency back would be a
 /// constructor cycle the container cannot resolve.
 /// </para>
 /// <para>
@@ -32,7 +32,7 @@ namespace DriveTrack.Application.Shifts;
 /// defeats: two requests in flight both find nothing. <c>IX_Shifts_DriverId_Open</c> is what
 /// actually enforces one open shift per driver, and the loser of a race leaves here as
 /// <c>PERSISTENCE_UNIQUE_VIOLATION</c> — the same 409, through the one translation point in
-/// Infrastructure (AD-20, NFR-2).
+/// Infrastructure.
 /// </para>
 /// </summary>
 public sealed class ShiftService(
@@ -50,7 +50,7 @@ public sealed class ShiftService(
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        // AD-3: the narrowing comes from the guard, never from the payload. A driver gets their own
+        // The narrowing comes from the guard, never from the payload. A driver gets their own
         // driver row id back and it overrides whatever the query asked for, so naming somebody else
         // in the query string narrows to the caller rather than widening to the other driver.
         var scope = accessGuard.RequireShiftScope();
@@ -78,7 +78,7 @@ public sealed class ShiftService(
     {
         await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
 
-        // AD-3: load, then guard. The row is read before the decision because the decision is about
+        // Load, then guard. The row is read before the decision because the decision is about
         // the row - whose shift it is - and nothing about it is disclosed unless the guard passes.
         var shift = await unitOfWork.Shifts.GetByIdAsync(id, cancellationToken);
 
@@ -115,7 +115,7 @@ public sealed class ShiftService(
         var name = await RequireDriverNameAsync(unitOfWork, command.DriverId, cancellationToken);
 
         // The friendly answer. The partial unique index behind it is the race backstop and surfaces
-        // as PERSISTENCE_UNIQUE_VIOLATION, which is also a 409 (NFR-2).
+        // as PERSISTENCE_UNIQUE_VIOLATION, which is also a 409.
         if (await unitOfWork.Shifts.FindOpenAsync(command.DriverId, cancellationToken) is not null)
         {
             throw AlreadyOpen(command.DriverId);
@@ -135,7 +135,7 @@ public sealed class ShiftService(
         {
             DriverId = command.DriverId,
 
-            // AD-13: the injected clock, at offset zero. DateTimeOffset.UtcNow here would fail
+            // The injected clock, at offset zero. DateTimeOffset.UtcNow here would fail
             // PersistenceContractTests and, more to the point, let a caller backdate going on duty.
             StartedAt = startedAt,
         };
@@ -170,7 +170,7 @@ public sealed class ShiftService(
 
         var endedAt = timeProvider.GetUtcNow();
 
-        // FR-111 on the one write path whose instant nobody typed. Create and edit now refuse an open
+        // The end-after-start rule on the one write path whose instant nobody typed. Create and edit now refuse an open
         // shift dated in the future, so this is the backstop for a row written before that rule or
         // a clock that stepped backwards: either would otherwise close a window that runs backwards.
         await stateValidator.EnsureValidAsync(
@@ -197,7 +197,7 @@ public sealed class ShiftService(
 
         await createValidator.EnsureValidAsync(command, cancellationToken);
 
-        // AD-13: the screens send local instants (+02:00/+03:00), and Npgsql writes timestamptz only
+        // The screens send local instants (+02:00/+03:00), and Npgsql writes timestamptz only
         // at offset zero - so normalize before the value reaches a query or the row.
         var state = new ShiftState(command.StartedAt.ToUniversalTime(), command.EndedAt?.ToUniversalTime());
 
@@ -209,7 +209,7 @@ public sealed class ShiftService(
 
         // Only when the new row would itself be open. A closed window recorded after the fact is
         // never in conflict with an open shift, because the index only looks at open rows - so
-        // refusing one would refuse the very correction FR-113 exists for.
+        // refusing one would refuse the very correction this path exists for.
         if (command.EndedAt is null
             && await unitOfWork.Shifts.FindOpenAsync(command.DriverId, cancellationToken) is not null)
         {
@@ -261,13 +261,13 @@ public sealed class ShiftService(
             throw NotFoundException.For("shift", id);
         }
 
-        // AD-23: the validator reads the state the shift will hold, not the payload - so an edit
-        // that moves only the start is judged on the window it actually produces (FR-111).
+        // The validator reads the state the shift will hold, not the payload - so an edit
+        // that moves only the start is judged on the window it actually produces.
         var merged = command.MergedOnto(shift);
 
         await stateValidator.EnsureValidAsync(merged, cancellationToken);
 
-        // AD-13, as on the create path: offset zero before the instant reaches a query or the row.
+        // As on the create path: offset zero before the instant reaches a query or the row.
         merged = new ShiftState(merged.StartedAt.ToUniversalTime(), merged.EndedAt?.ToUniversalTime());
 
         RefuseOpenInFuture(merged, timeProvider.GetUtcNow());
@@ -287,7 +287,7 @@ public sealed class ShiftService(
 
         shift.StartedAt = merged.StartedAt;
 
-        // FR-117: the merge cannot produce a null where the row held an instant, because the
+        // The merge cannot produce a null where the row held an instant, because the
         // command's EndedAt is Optional<DateTimeOffset> - present means a real instant and absent
         // means the row's own value. There is no assignment here that can reopen a closed shift.
         shift.EndedAt = merged.EndedAt;
@@ -351,7 +351,7 @@ public sealed class ShiftService(
     /// <summary>
     /// An open shift may not start in the future: "on duty from tomorrow" is not a state anybody is
     /// in. A future start with an end is a shift rostered ahead and stays allowed. Here rather than
-    /// in <see cref="ShiftStateValidator"/> because it needs the injected clock (AD-13).
+    /// in <see cref="ShiftStateValidator"/> because it needs the injected clock.
     /// </summary>
     private static void RefuseOpenInFuture(ShiftState state, DateTimeOffset now)
     {
@@ -367,7 +367,7 @@ public sealed class ShiftService(
     /// <summary>
     /// The names of the named drivers, keyed by the driver row id a shift refers to them by.
     /// <para>
-    /// AD-24: a driver's name lives on their Identity account and nowhere else, so this is the one
+    /// A driver's name lives on their Identity account and nowhere else, so this is the one
     /// door the capability opens outside its own table. Read once per call for exactly the drivers
     /// asked about - not once per row, and not the whole driver roster to name one of them.
     /// </para>
@@ -402,8 +402,8 @@ public sealed class ShiftService(
     /// The lookup is not a second authorization decision and is not extra work: every write answers
     /// a <see cref="ShiftSummary"/>, which carries the driver's name, so the account has to be read
     /// on this path anyway. Answering the miss rather than writing the row is what keeps a
-    /// dispatcher's typo a 404 instead of a foreign-key violation surfacing as a 500 — AD-8
-    /// deliberately leaves 23503 untranslated, because an unreachable constraint failure is a defect
+    /// dispatcher's typo a 404 instead of a foreign-key violation surfacing as a 500 — the
+    /// exception translation deliberately leaves 23503 untranslated, because an unreachable constraint failure is a defect
     /// rather than a caller error.
     /// </para>
     /// <para>
@@ -443,6 +443,6 @@ public sealed class ShiftService(
             shift.EndedAt,
 
             // Derived here and stored nowhere: there is no status column, and the one predicate the
-            // index filters on is the one answer the whole system gives (FR-117).
+            // index filters on is the one answer the whole system gives.
             shift.EndedAt is null);
 }

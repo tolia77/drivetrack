@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DriveTrack.Infrastructure.Persistence.Configurations;
 
-/// <summary>Mapping for <see cref="Driver"/> (DR-3, FR-44).</summary>
+/// <summary>Mapping for <see cref="Driver"/>.</summary>
 internal sealed class DriverConfiguration : IEntityTypeConfiguration<Driver>
 {
     /// <inheritdoc />
@@ -20,7 +20,7 @@ internal sealed class DriverConfiguration : IEntityTypeConfiguration<Driver>
         // One driver row per user; the foreign key itself is in the migration.
         builder.HasIndex(driver => driver.UserId).IsUnique();
 
-        // FR-44: a vehicle is held by at most one driver. Filtered, so any number of drivers
+        // A vehicle is held by at most one driver. Filtered, so any number of drivers
         // may hold none. The filter is raw SQL that reaches PostgreSQL unrewritten, which is
         // why it names the column and not the property (the naming convention rewrites
         // identifiers in the model, never the inside of a string).
@@ -28,8 +28,8 @@ internal sealed class DriverConfiguration : IEntityTypeConfiguration<Driver>
             .IsUnique()
             .HasFilter("vehicle_id IS NOT NULL");
 
-        // FR-43: deleting a vehicle leaves its driver standing, holding none. Blocking the
-        // delete while it is assigned is an application rule and belongs to story 4.1.
+        // Deleting a vehicle leaves its driver standing, holding none. Blocking the delete while
+        // it is assigned is an application rule, not a schema one.
         builder.HasOne(driver => driver.Vehicle)
             .WithMany()
             .HasForeignKey(driver => driver.VehicleId)

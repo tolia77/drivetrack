@@ -185,7 +185,7 @@ public class ObjectStoreDaemonTests(GarageFixture garage) : IDisposable
     [Fact]
     public async Task A_write_to_a_bucket_nobody_created_throws()
     {
-        // AD-26: a save that failed quietly would let a capture answer 200 with none of its evidence
+        // A save that failed quietly would let a capture answer 200 with none of its evidence
         // in the bucket. The refusal here comes from Garage rather than from a canned status line,
         // so it also pins that the adapter does not swallow a real NoSuchBucket.
         var cancellationToken = TestContext.Current.CancellationToken;

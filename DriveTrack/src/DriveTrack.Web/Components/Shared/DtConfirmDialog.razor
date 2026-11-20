@@ -1,9 +1,9 @@
 @inject IStringLocalizer<UiText> Localizer
 
-@* FR-81: the one place a destructive action is confirmed.
+@* The one place a destructive action is confirmed.
 
    The baseline shipped deletes that happened the moment the link was clicked. Making the prompt a
-   component - rather than a convention - is what stops a later epic forgetting it: a screen wires
+   component - rather than a convention - is what stops a later screen forgetting it: a screen wires
    OnConfirmed and gets the prompt, the destructive colour and the cancel route for free.
 
    The default labels are rendered through independent @if blocks rather than a `??` in C#, because

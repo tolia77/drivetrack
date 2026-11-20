@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 namespace DriveTrack.Infrastructure.Persistence;
 
 /// <summary>
-/// The single deterministic entry point to AD-20: the schema is produced only by EF Core
+/// The single deterministic entry point to the schema: it is produced only by EF Core
 /// migrations, applied at container start before the web host accepts traffic.
 /// <para>
 /// This type never calls <c>EnsureCreated</c> and never swallows a connection or migration

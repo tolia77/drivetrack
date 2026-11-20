@@ -1,12 +1,12 @@
 namespace DriveTrack.Application.Common;
 
 /// <summary>
-/// One page of a list, and how many rows the whole filtered list holds (NFR-27).
+/// One page of a list, and how many rows the whole filtered list holds.
 /// <para>
 /// Every list in the product answers this shape, so a screen's pager and a REST caller read the same
 /// four facts the same way. <see cref="Total"/> counts the set the page was cut from - after the
 /// caller's access scope and every filter, before OFFSET and LIMIT - so "41–50 of 86" is a claim
-/// about rows the caller could actually page to, never about rows they may not see (AD-3).
+/// about rows the caller could actually page to, never about rows they may not see.
 /// </para>
 /// </summary>
 /// <typeparam name="T">The row type.</typeparam>

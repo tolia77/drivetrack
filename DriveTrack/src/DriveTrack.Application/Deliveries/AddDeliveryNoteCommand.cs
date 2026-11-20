@@ -5,10 +5,10 @@ using FluentValidation;
 namespace DriveTrack.Application.Deliveries;
 
 /// <summary>
-/// A standalone note on a delivery's timeline, changing nothing else (FR-107).
+/// A standalone note on a delivery's timeline, changing nothing else.
 /// <para>
-/// The entry it produces carries neither status, which is the shape FR-107 asks for and the shape
-/// FR-108 makes a correction out of: the timeline is append-only, so the way to correct a line is
+/// The entry it produces carries neither status, which is the shape a standalone note takes and the
+/// shape a correction is made of: the timeline is append-only, so the way to correct a line is
 /// to write another one.
 /// </para>
 /// </summary>
@@ -19,7 +19,7 @@ namespace DriveTrack.Application.Deliveries;
 public sealed record AddDeliveryNoteCommand(string? Note);
 
 /// <summary>
-/// FR-107's one rule: there has to be something to say, and it has to fit the column.
+/// A standalone note's one rule: there has to be something to say, and it has to fit the column.
 /// <para>
 /// <c>NotEmpty</c> rather than <c>NotNull</c>, so a note of spaces is refused as well as a missing
 /// one — an entry holding a single space is a line that renders as blank and reads as a correction

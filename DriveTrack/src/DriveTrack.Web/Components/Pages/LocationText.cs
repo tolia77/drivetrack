@@ -4,13 +4,12 @@ using DriveTrack.Application.Common;
 namespace DriveTrack.Web.Components.Pages;
 
 /// <summary>
-/// FR-94's fallback, in one place: how a stored point reads in a table cell when nothing has
+/// The coordinate fallback, in one place: how a stored point reads in a table cell when nothing has
 /// resolved an address for it.
 /// <para>
-/// Story 5.2 owns the reverse geocoder, and story 5.1 has to work while there is none — so every
-/// location this milestone stores has a null address, and a screen that rendered
-/// <c>@location.Address</c> would show a column of empty cells and nothing would say why. The
-/// coordinates are what the record actually holds (DR-11), so they are what is shown.
+/// A location's address can be null — nothing has resolved one for it — and a screen that
+/// rendered <c>@location.Address</c> would show an empty cell and nothing would say why. The
+/// coordinates are what the record actually holds, so they are what is shown.
 /// </para>
 /// <para>
 /// Shared by both delivery screens rather than written on one of them, because the fallback is the

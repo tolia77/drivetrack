@@ -8,7 +8,7 @@ using DriveTrack.Integration.Tests.Support;
 namespace DriveTrack.Integration.Tests.Identity;
 
 /// <summary>
-/// Story 7.3's I/O matrix over HTTP (FR-87, FR-88, FR-92), against the real <c>Program.cs</c>
+/// The self-service account I/O matrix over HTTP, against the real <c>Program.cs</c>
 /// pipeline with the real JWT scheme.
 /// <para>
 /// These claims are only true over the wire and against the schema. "The new password signs in and
@@ -58,8 +58,8 @@ public class SelfServiceAccountTests(PostgresFixture postgres)
     [Fact]
     public async Task A_body_naming_one_field_changes_one_field()
     {
-        // AD-23's whole point, over the wire: the last name and the phone number are not
-        // "unspecified" here, they are untouched.
+        // The point of absent-versus-null, over the wire: the last name and the phone number are
+        // not "unspecified" here, they are untouched.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await AdministrationApi.CreateHostAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -88,7 +88,7 @@ public class SelfServiceAccountTests(PostgresFixture postgres)
     [Fact]
     public async Task A_caller_with_no_client_row_may_not_send_a_phone_number()
     {
-        // DR-3 gives a dispatcher no row to store one in. Silently dropping the field would leave
+        // A dispatcher has no subtype row to store one in. Silently dropping the field would leave
         // the caller believing something was saved, which is the failure Optional<T> exists to
         // prevent - so it is refused, and the name in the same body goes with it.
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -115,7 +115,7 @@ public class SelfServiceAccountTests(PostgresFixture postgres)
                 nameof(ErrorCode.COMMON_VALIDATION_FAILED),
                 error.GetProperty("code").GetString());
 
-            // NFR-4: the key is the name the caller sent, so a form can attach it to the input.
+            // The key is the name the caller sent, so a form can attach it to the input.
             var message = error.GetProperty("fields").GetProperty("phoneNumber")[0].GetString();
 
             Assert.False(string.IsNullOrWhiteSpace(message));
@@ -275,7 +275,7 @@ public class SelfServiceAccountTests(PostgresFixture postgres)
         {
             Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
-            // 204 forbids a body, and the envelope stops where HTTP does (NFR-1).
+            // 204 forbids a body, and the envelope stops where HTTP does.
             Assert.Empty(await response.Content.ReadAsByteArrayAsync(cancellationToken));
         }
 
@@ -284,7 +284,7 @@ public class SelfServiceAccountTests(PostgresFixture postgres)
         Assert.True(await AdministrationApi.CanSignInAsync(
             client, subject.Email, "New-Passw0rd", cancellationToken));
 
-        // FR-8: what landed is a hash, and the plaintext is nowhere in the row.
+        // What landed is a hash, and the plaintext is nowhere in the row.
         Assert.Equal(
             0L,
             await AdministrationApi.CountAsync(
@@ -293,8 +293,8 @@ public class SelfServiceAccountTests(PostgresFixture postgres)
                 $"id = {subject.UserId} AND password_hash LIKE '%New-Passw0rd%'",
                 cancellationToken));
 
-        // DW-11 owns revocation, and this story does not pretend to close it: the cookie and the
-        // bearer token key on the user id, so the session that made the change still works.
+        // Revocation is not this route's job: the cookie and the bearer token key on the user id,
+        // so the session that made the change still works.
         var stored = await GetAsync(client, token, subject.UserId, cancellationToken);
 
         Assert.Equal(subject.Email, stored.GetProperty("email").GetString());
@@ -322,7 +322,7 @@ public class SelfServiceAccountTests(PostgresFixture postgres)
             cancellationToken))
         {
             // 422 rather than 401: the caller is signed in, and it is one field of their request
-            // that was wrong. A 401 would reach FR-13's boundary as an expired session.
+            // that was wrong. A 401 would reach the session-expiry boundary as an expired session.
             Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
             await AdministrationApi.AssertFailureAsync(
                 response, ErrorCode.AUTH_CURRENT_PASSWORD_INCORRECT, cancellationToken);
@@ -452,7 +452,7 @@ public class SelfServiceAccountTests(PostgresFixture postgres)
             $"id = {subject.UserId} AND normalized_user_name = '{replacement.ToUpperInvariant()}'",
             cancellationToken));
 
-        // DW-11 again: the session that made the change keeps working, with its email claim stale.
+        // Again, the session that made the change keeps working, with its email claim stale.
         Assert.Equal(
             replacement,
             (await GetAsync(client, token, subject.UserId, cancellationToken))
@@ -512,8 +512,8 @@ public class SelfServiceAccountTests(PostgresFixture postgres)
     [Fact]
     public async Task An_admin_edits_another_user_through_the_same_self_service_routes()
     {
-        // AD-4 puts "an admin satisfies every check" inside AccessGuard, once, so RequireSelf already
-        // reads as "the user themselves, or an admin". That is the stated reason this story adds no
+        // "An admin satisfies every check" lives inside AccessGuard, once, so RequireSelf already
+        // reads as "the user themselves, or an admin". That is the stated reason there is no
         // second guard member - and it is untested unless an admin token actually drives these
         // routes. It is also the only route that reaches a dispatcher: /api/clients refuses a
         // non-client id as absent.
@@ -648,8 +648,8 @@ public class SelfServiceAccountTests(PostgresFixture postgres)
     [Fact]
     public async Task An_admin_changes_a_client_address_through_the_edit_they_already_perform()
     {
-        // FR-92's administrator half. RequireSelf reads as "the user themselves, or an admin"
-        // (AD-4), so the same guard answers both halves and there is no second member for it.
+        // The administrator half of changing an email. RequireSelf reads as "the user themselves,
+        // or an admin", so the same guard answers both halves and there is no second member for it.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await AdministrationApi.CreateHostAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();
@@ -676,7 +676,7 @@ public class SelfServiceAccountTests(PostgresFixture postgres)
             Assert.Equal("Оксана", updated.GetProperty("firstName").GetString());
         }
 
-        // One transaction: the name, the address and the password all landed (AD-5).
+        // One transaction: the name, the address and the password all landed.
         Assert.True(await AdministrationApi.CanSignInAsync(
             client, replacement, "New-Passw0rd", cancellationToken));
         Assert.False(await AdministrationApi.CanSignInAsync(
@@ -687,7 +687,7 @@ public class SelfServiceAccountTests(PostgresFixture postgres)
     public async Task An_admin_edit_naming_a_taken_address_writes_nothing_at_all()
     {
         // The half that is easy to miss: the name in the same body must not survive the refusal,
-        // because the whole edit is one unit of work (AD-5).
+        // because the whole edit is one unit of work.
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = await AdministrationApi.CreateHostAsync(postgres.ConnectionString, cancellationToken);
         using var client = factory.CreateClient();

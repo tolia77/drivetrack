@@ -1,7 +1,7 @@
 namespace DriveTrack.Application.Common;
 
 /// <summary>
-/// The base of AD-8's closed failure set. Failure travels as one of exactly five subclasses, each
+/// The base of the closed failure set. Failure travels as one of exactly five subclasses, each
 /// carrying an <see cref="ErrorCode"/>, and nothing catches and reshapes one between the throw site
 /// and the adapter.
 /// <para>
@@ -11,7 +11,7 @@ namespace DriveTrack.Application.Common;
 /// </para>
 /// <para>
 /// <see cref="Exception.Message"/> is for logs only. The wire message is always the localized
-/// resource string for <see cref="Code"/> (NFR-3), so no stack trace, SQL text or constraint name
+/// resource string for <see cref="Code"/>, so no stack trace, SQL text or constraint name
 /// can reach a client through this type.
 /// </para>
 /// </summary>

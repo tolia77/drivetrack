@@ -4,18 +4,18 @@ using FluentValidation;
 namespace DriveTrack.Application.Deliveries;
 
 /// <summary>
-/// FR-104's address search, as a request rather than a loose string.
+/// The address search, as a request rather than a loose string.
 /// <para>
 /// Nullable, because the wire can omit it and the query has to carry that absence as far as the
-/// refusal — the same shape every other command here takes for the same reason (AD-23's sibling
-/// argument on a required field).
+/// refusal — the same shape every other command here takes for the same reason (the
+/// absent-versus-null argument, on a required field).
 /// </para>
 /// </summary>
 /// <param name="Query">What the dispatcher typed.</param>
 public sealed record SearchPlacesQuery(string? Query);
 
 /// <summary>
-/// AD-9's explicit validation over the address search.
+/// Explicit validation over the address search.
 /// <para>
 /// The three-character floor is not cosmetic. Every keystroke in the box would otherwise be a
 /// request to a public geocoding service, which is both wasteful and the sort of traffic such a

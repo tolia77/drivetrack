@@ -13,17 +13,17 @@ using Microsoft.Extensions.Localization;
 namespace DriveTrack.Integration.Tests.Deliveries;
 
 /// <summary>
-/// FR-119 to FR-123 over HTTP, against the real <c>Program.cs</c> pipeline and a real PostgreSQL,
+/// Proof of delivery over HTTP, against the real <c>Program.cs</c> pipeline and a real PostgreSQL,
 /// with the object store answered inside the process.
 /// <para>
-/// Three halves of this story can only be asserted here. The first is AD-26's ordering: that a
-/// capture the guard refuses leaves the store untouched, and that a store which throws leaves no
+/// Three halves of this can only be asserted here. The first is the guard-then-store ordering: that
+/// a capture the guard refuses leaves the store untouched, and that a store which throws leaves no
 /// proof row — claims about what happens on either side of the port, which is what the fake exists
-/// to make visible. The second is FR-120's precondition, which has to hold identically for an
-/// administrator, a dispatcher and the assigned driver, because the whole point of putting it at one
-/// site was that it could not be role-branched. The third is FR-122's disclosure matrix: who is told
-/// the capturer's name is decided in the capability's mapping step against the caller, so the claim
-/// is about what a particular signed-in caller receives on the wire.
+/// to make visible. The second is the proof-required precondition, which has to hold identically
+/// for an administrator, a dispatcher and the assigned driver, because the whole point of putting
+/// it at one site was that it could not be role-branched. The third is the proof disclosure matrix:
+/// who is told the capturer's name is decided in the capability's mapping step against the caller,
+/// so the claim is about what a particular signed-in caller receives on the wire.
 /// </para>
 /// </summary>
 public class ProofOfDeliveryTests(PostgresFixture postgres)
@@ -83,7 +83,7 @@ public class ProofOfDeliveryTests(PostgresFixture postgres)
 
         // And they arrived on a token nobody can cancel. These writes run after CommitAsync, so a
         // client that hangs up between the commit and the first upload would otherwise abandon the
-        // evidence a committed, immutable proof (FR-123) already names - unfixable afterwards,
+        // evidence a committed, immutable proof already names - unfixable afterwards,
         // because a second capture is refused with DELIVERY_PROOF_ALREADY_CAPTURED. Passing the
         // request's token down here instead looks like an ordinary tidy-up and breaks nothing else
         // in this suite, which is why the token is asserted rather than left to the reader.
@@ -178,7 +178,7 @@ public class ProofOfDeliveryTests(PostgresFixture postgres)
             store.Saved.Select(saved => saved.Key).Order(StringComparer.Ordinal),
             keys);
 
-        // And the column holds a key rather than anything a browser could follow (DR-14).
+        // And the column holds a key rather than anything a browser could follow.
         Assert.All(stored.Assets, asset =>
         {
             Assert.DoesNotContain("://", asset.StorageKey, StringComparison.Ordinal);
@@ -191,12 +191,12 @@ public class ProofOfDeliveryTests(PostgresFixture postgres)
     {
         // The permissive half of RequireAssignedDriver, which nothing else here reaches: every other
         // capture in this suite is the assigned driver's, so "or dispatch" was asserted only by its
-        // refusals. FR-119 does not reserve the capture to a driver - it reserves it to whoever the
-        // status change is reserved to (FR-34) - and dispatch closing a delivery from the board with
+        // refusals. Capture is not reserved to a driver - it is reserved to whoever the status
+        // change is reserved to - and dispatch closing a delivery from the board with
         // the evidence in hand is the case that says so.
         //
         // It is also the only path in the product that both writes a proof and answers a non-null
-        // capturedByName, because AD-17 discloses the capturer to dispatch alone: a driver capturing
+        // capturedByName, because the capturer is disclosed to dispatch alone: a driver capturing
         // their own proof is told nothing about themselves. So the mapping step's populated arm runs
         // here and nowhere else.
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -228,8 +228,8 @@ public class ProofOfDeliveryTests(PostgresFixture postgres)
     [Fact]
     public async Task A_capture_on_a_delivered_parcel_is_allowed()
     {
-        // FR-121. The parcel arrived before anyone had a chance to photograph it, and refusing the
-        // evidence afterwards would leave the gap this capability exists to close.
+        // Late capture. The parcel arrived before anyone had a chance to photograph it, and
+        // refusing the evidence afterwards would leave the gap this capability exists to close.
         var cancellationToken = TestContext.Current.CancellationToken;
         var store = new FakeAssetStore();
 
@@ -248,8 +248,8 @@ public class ProofOfDeliveryTests(PostgresFixture postgres)
 
         await MoveAsync(client, driver.Token, deliveryId, DeliveryStatus.InTransit, cancellationToken);
 
-        // Closed on the note arm of FR-120, which is exactly the case FR-121 is about: there was no
-        // proof at the time.
+        // Closed on the note arm of the proof-required gate, which is exactly the case late capture
+        // is about: there was no proof at the time.
         await MoveAsync(
             client,
             driver.Token,
@@ -266,9 +266,9 @@ public class ProofOfDeliveryTests(PostgresFixture postgres)
     [Fact]
     public async Task A_second_capture_is_refused_and_the_first_is_untouched()
     {
-        // FR-123: a proof is evidence, and evidence that can be replaced is not evidence. The claim
-        // is both halves - refused, and the existing row unchanged - because a path that deleted
-        // before it inserted would satisfy the first alone.
+        // Immutable proof: a proof is evidence, and evidence that can be replaced is not evidence.
+        // The claim is both halves - refused, and the existing row unchanged - because a path that
+        // deleted before it inserted would satisfy the first alone.
         var cancellationToken = TestContext.Current.CancellationToken;
         var store = new FakeAssetStore();
 
@@ -365,9 +365,9 @@ public class ProofOfDeliveryTests(PostgresFixture postgres)
 
             Assert.Equal([HttpStatusCode.OK, HttpStatusCode.Conflict], statuses);
 
-            // The loser hears FR-123's own refusal, whichever guard produced it - and AssertFailureAsync
-            // is also where NFR-3 is checked, so a message carrying the index name or a SQLSTATE
-            // would fail here.
+            // The loser hears the already-captured refusal, whichever guard produced it - and
+            // AssertFailureAsync is also where "no internals on the wire" is checked, so a message
+            // carrying the index name or a SQLSTATE would fail here.
             var loser = responses.Single(response => response.StatusCode == HttpStatusCode.Conflict);
 
             await FleetApi.AssertFailureAsync(
@@ -409,7 +409,7 @@ public class ProofOfDeliveryTests(PostgresFixture postgres)
     [Fact]
     public async Task A_client_may_not_capture_and_nothing_reaches_the_store()
     {
-        // The ordering claim AD-26 exists for, stated as an absence. Store first and guard second
+        // The guard-then-store ordering claim, stated as an absence. Store first and guard second
         // would be one method shorter and would let any signed-in caller push bytes into the bucket
         // before being refused - and the refusal would look identical from the outside.
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -481,7 +481,7 @@ public class ProofOfDeliveryTests(PostgresFixture postgres)
     [Fact]
     public async Task An_asset_of_a_type_a_proof_may_not_carry_is_refused_before_the_store()
     {
-        // NFR-28, and "before" is the load-bearing half: the store is written before the
+        // Upload validation, and "before" is the load-bearing half: the store is written before the
         // transaction opens, so an upload refused afterwards would be an object in the bucket that
         // no row will ever name.
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -507,10 +507,10 @@ public class ProofOfDeliveryTests(PostgresFixture postgres)
                 ErrorCode.COMMON_VALIDATION_FAILED,
                 cancellationToken);
 
-            // The per-field explanation, which is where NFR-4 puts it: a driver is told the file was
-            // the wrong sort rather than that something about the request was. Asserted as the
-            // localized sentence, because that is what the envelope carries - the key is resolved
-            // through the same catalogue error.code is (NFR-3).
+            // The per-field explanation, which is where the contract puts it: a driver is told the
+            // file was the wrong sort rather than that something about the request was. Asserted as
+            // the localized sentence, because that is what the envelope carries - the key is
+            // resolved through the same catalogue error.code is.
             await AssertFieldMessageAsync(
                 factory,
                 refused,
@@ -565,8 +565,8 @@ public class ProofOfDeliveryTests(PostgresFixture postgres)
     [Fact]
     public async Task A_capture_missing_its_signature_or_its_photograph_is_refused()
     {
-        // FR-119 reads as one sentence and is two refusals, because the two are different things to
-        // fix for whoever is standing at a door.
+        // "A signature and at least one photograph" reads as one sentence and is two refusals,
+        // because the two are different things to fix for whoever is standing at a door.
         var cancellationToken = TestContext.Current.CancellationToken;
         var store = new FakeAssetStore();
 
@@ -611,10 +611,10 @@ public class ProofOfDeliveryTests(PostgresFixture postgres)
         double? latitude,
         double? longitude)
     {
-        // FR-119 records where the hand-over happened, and 0 is a real point rather than an absent
-        // one - so a form value that is missing must reach the validator as null and not as zero.
-        // Asserted over HTTP because the decision lives in ProofCaptureForm.Coordinate, which only
-        // the REST adapter runs: a capture that answered 200 here would have committed a proof
+        // A capture records where the hand-over happened, and 0 is a real point rather than an
+        // absent one - so a form value that is missing must reach the validator as null and not as
+        // zero. Asserted over HTTP because the decision lives in ProofCaptureForm.Coordinate, which
+        // only the REST adapter runs: a capture that answered 200 here would have committed a proof
         // placed in the Atlantic or the Gulf of Guinea, which is worse than no proof at all.
         var cancellationToken = TestContext.Current.CancellationToken;
         var store = new FakeAssetStore();
@@ -648,8 +648,9 @@ public class ProofOfDeliveryTests(PostgresFixture postgres)
     {
         // The port's contract is that a failed save throws, so the capture is still a 500 - a 200
         // whose assets do not resolve would be the system asserting evidence it does not hold. The
-        // proof row was already committed, and it is removed again: kept, FR-123 would refuse every
-        // recapture and FR-120 would accept evidence that is not there.
+        // proof row was already committed, and it is removed again: kept, the immutability rule
+        // would refuse every recapture and the proof-required gate would accept evidence that is
+        // not there.
         var cancellationToken = TestContext.Current.CancellationToken;
         var store = new FakeAssetStore
         {
@@ -749,7 +750,7 @@ public class ProofOfDeliveryTests(PostgresFixture postgres)
     }
 
     // =====================================================================================
-    // FR-120: the precondition on Delivered
+    // The precondition on Delivered
     // =====================================================================================
 
     [Theory]
@@ -759,10 +760,10 @@ public class ProofOfDeliveryTests(PostgresFixture postgres)
     public async Task Delivered_without_a_proof_or_a_note_is_refused_for_every_caller_alike(
         UserRole role)
     {
-        // FR-120 at one site, and the reason it is one site: an administrator, a dispatcher and the
-        // assigned driver reach ChangeStatusAsync through the same method, so a role branch in the
-        // condition would be a second, unwritten lifecycle. Asserted for all three because that is
-        // the only thing that can notice one appearing.
+        // The proof-required gate at one site, and the reason it is one site: an administrator, a
+        // dispatcher and the assigned driver reach ChangeStatusAsync through the same method, so a
+        // role branch in the condition would be a second, unwritten lifecycle. Asserted for all
+        // three because that is the only thing that can notice one appearing.
         var cancellationToken = TestContext.Current.CancellationToken;
         var store = new FakeAssetStore();
 
@@ -818,7 +819,8 @@ public class ProofOfDeliveryTests(PostgresFixture postgres)
     [Fact]
     public async Task Delivered_with_a_note_and_no_proof_succeeds_and_the_note_lands_on_the_entry()
     {
-        // The second arm of FR-120, which is what dispatch has when there is nothing to photograph.
+        // The second arm of the proof-required gate, which is what dispatch has when there is
+        // nothing to photograph.
         var cancellationToken = TestContext.Current.CancellationToken;
         var store = new FakeAssetStore();
 
@@ -879,16 +881,16 @@ public class ProofOfDeliveryTests(PostgresFixture postgres)
     }
 
     // =====================================================================================
-    // FR-122: who is told what
+    // Who is told what
     // =====================================================================================
 
     [Fact]
     public async Task A_client_reads_the_proof_without_learning_who_captured_it()
     {
-        // AD-17 reaching the evidence. A client learning the assigned driver's name through a proof
-        // would be the disclosure FR-96 closes on the delivery itself, arriving by another door - so
-        // the claim is not merely that the field is null, but that the driver's name appears nowhere
-        // in the response at all.
+        // The disclosure rule reaching the evidence. A client learning the assigned driver's name
+        // through a proof would be the disclosure the delivery itself already closes, arriving by
+        // another door - so the claim is not merely that the field is null, but that the driver's
+        // name appears nowhere in the response at all.
         var cancellationToken = TestContext.Current.CancellationToken;
         var store = new FakeAssetStore();
 
@@ -922,8 +924,8 @@ public class ProofOfDeliveryTests(PostgresFixture postgres)
             Assert.DoesNotContain("Шевченко", body, StringComparison.Ordinal);
             Assert.DoesNotContain("Тарас", body, StringComparison.Ordinal);
 
-            // And the rest of FR-122 is present, because "discloses nothing" must not be achieved by
-            // answering nothing.
+            // And the rest of the proof is present, because "discloses nothing" must not be
+            // achieved by answering nothing.
             Assert.Equal("Олена Петренко", view.GetProperty("recipientName").GetString());
             Assert.Equal(2, view.GetProperty("assets").GetArrayLength());
         }
@@ -938,11 +940,12 @@ public class ProofOfDeliveryTests(PostgresFixture postgres)
     [Fact]
     public async Task The_assigned_driver_reads_the_proof_and_is_told_no_capturer()
     {
-        // The fourth of FR-122's audiences, and the only one nothing else here reads the proof as.
-        // Two claims, and the second is the one worth the test: a driver's scope admits the row, so
-        // the read succeeds - and AD-17 still withholds the capturer, even though the driver is the
-        // capturer. The disclosure rule is about the caller's role and not about whether they would
-        // be learning anything new, which is what keeps it a rule rather than a judgement.
+        // The fourth of the proof's audiences, and the only one nothing else here reads the proof
+        // as. Two claims, and the second is the one worth the test: a driver's scope admits the
+        // row, so the read succeeds - and the disclosure rule still withholds the capturer, even
+        // though the driver is the capturer. The disclosure rule is about the caller's role and not
+        // about whether they would be learning anything new, which is what keeps it a rule rather
+        // than a judgement.
         var cancellationToken = TestContext.Current.CancellationToken;
         var store = new FakeAssetStore();
 
@@ -1049,7 +1052,7 @@ public class ProofOfDeliveryTests(PostgresFixture postgres)
     /// resolves to, and that it is not the generic one.
     /// <para>
     /// The envelope carries the localized sentence rather than the key — the adapter resolves a
-    /// field's message through the same catalogue <c>error.code</c> is resolved through (NFR-3) — so
+    /// field's message through the same catalogue <c>error.code</c> is resolved through — so
     /// the claim is made in the same terms. The second half matters more than the first: a rule that
     /// forgot its own message key would still produce a 422 with a field name on it, and only the
     /// sentence shows which rule refused.

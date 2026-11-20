@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 namespace DriveTrack.Infrastructure.SideEffects;
 
 /// <summary>
-/// The running half of AD-12: one background loop draining
+/// The running half of the outbound side effects: one background loop draining
 /// <see cref="DeliverySideEffectQueue"/> and handing each job to
 /// <see cref="IDeliverySideEffectRunner"/>.
 /// <para>
@@ -70,7 +70,7 @@ public sealed class DeliverySideEffectWorker(
                 catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
                 {
                     // The host is stopping, and this job went with it. Ordinary shutdown rather than
-                    // a defect: the work is by definition allowed to be absent (DR-11, FR-95), and
+                    // a defect: the work is by definition allowed to be absent, and
                     // logging an error for every job in flight at shutdown would teach whoever reads
                     // the log to ignore this message.
                 }
@@ -101,7 +101,7 @@ public sealed class DeliverySideEffectWorker(
         {
             // The host is stopping while the loop was waiting for its next job. Whatever is still
             // queued dies with the process, which is the right trade for work that is by definition
-            // allowed to be absent (DR-11, FR-95).
+            // allowed to be absent.
         }
     }
 }

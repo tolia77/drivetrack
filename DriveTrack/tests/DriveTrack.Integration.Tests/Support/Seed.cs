@@ -16,10 +16,10 @@ namespace DriveTrack.Integration.Tests.Support;
 /// </summary>
 internal static class Seed
 {
-    /// <summary>A fixed instant at offset zero — the only offset AD-13 permits in storage.</summary>
+    /// <summary>A fixed instant at offset zero — the only offset storage permits.</summary>
     public static readonly DateTimeOffset Instant = new(2026, 9, 7, 12, 0, 0, TimeSpan.Zero);
 
-    /// <summary>A location with no resolved address, which is the state every location starts in (DR-11).</summary>
+    /// <summary>A location with no resolved address, which is the state every location starts in.</summary>
     public static Location Location(double latitude = 50.4501, double longitude = 30.5234) =>
         new(latitude, longitude, null, null);
 
@@ -112,7 +112,7 @@ internal static class Seed
     /// <remarks>
     /// A non-<c>Pending</c> <paramref name="status"/> is reached by walking the lifecycle rather
     /// than by assigning the property, which has no public setter: <c>TryChangeStatus</c> is the
-    /// only mutator (AD-10), so a seeded row is one the production write path could actually have
+    /// only mutator, so a seeded row is one the production write path could actually have
     /// produced. A helper that could fabricate an unreachable state would seed tests with rows the
     /// system cannot hold.
     /// </remarks>
@@ -245,7 +245,7 @@ internal static class Seed
             actorUserId,
             "Test Person",
 
-            // The enum rather than a free string (AD-21). The column still holds the member name,
+            // The enum rather than a free string. The column still holds the member name,
             // so what lands in the database is unchanged.
             UserRole.Dispatcher,
             previousStatus,

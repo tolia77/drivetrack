@@ -9,11 +9,12 @@ namespace DriveTrack.Integration.Tests.Authorization;
 /// The other half of a boundary: not what a caller may <em>do</em>, but what they are told while
 /// doing something they are allowed to do.
 /// <para>
-/// AD-17 asks for a direct assertion on the payload rather than for an argument about the shape of a
-/// DTO. A type with no field for a counterparty proves the field cannot be populated; it proves
-/// nothing about the seven other routes that answer a different type, and nothing at all about a
-/// field added later. So the seeded driver's family name and the seeded client's telephone number
-/// are distinctive strings, and these tests look for them in the raw bytes of the response.
+/// The disclosure rule asks for a direct assertion on the payload rather than for an argument about
+/// the shape of a DTO. A type with no field for a counterparty proves the field cannot be
+/// populated; it proves nothing about the seven other routes that answer a different type, and
+/// nothing at all about a field added later. So the seeded driver's family name and the seeded
+/// client's telephone number are distinctive strings, and these tests look for them in the raw
+/// bytes of the response.
 /// </para>
 /// <para>
 /// Each one is paired with a dispatcher reading the same route. Without that pair, a test that the
@@ -25,10 +26,10 @@ public class DisclosureBoundaryTests(PostgresFixture postgres)
     [Fact]
     public async Task A_client_is_never_told_the_name_of_the_driver_carrying_their_parcel()
     {
-        // FR-27 and FR-96 across all three routes a client can reach the delivery by. The timeline
-        // is the one that needs saying out loud: every entry carries an actor, the actor of the
-        // status changes was the driver, and the disclosure decision is a null in the mapping step
-        // rather than a row that was not written.
+        // The client's view hides the driver across all three routes a client can reach the
+        // delivery by. The timeline is the one that needs saying out loud: every entry carries an
+        // actor, the actor of the status changes was the driver, and the disclosure decision is a
+        // null in the mapping step rather than a row that was not written.
         var cancellationToken = TestContext.Current.CancellationToken;
         var world = await AuthorizationWorld.InstanceAsync(postgres.ConnectionString, cancellationToken);
 
@@ -51,7 +52,7 @@ public class DisclosureBoundaryTests(PostgresFixture postgres)
     public async Task The_same_routes_hand_dispatch_the_driver_by_name()
     {
         // The pair. Dispatch reads the identical routes and is told who acted, which is what makes
-        // the absences above a decision rather than an empty payload - and FR-106's "who did this"
+        // the absences above a decision rather than an empty payload - and "who did this"
         // is what a dispatch desk is for.
         var cancellationToken = TestContext.Current.CancellationToken;
         var world = await AuthorizationWorld.InstanceAsync(postgres.ConnectionString, cancellationToken);
@@ -115,9 +116,9 @@ public class DisclosureBoundaryTests(PostgresFixture postgres)
     [Fact]
     public async Task A_driver_is_never_told_their_clients_name_telephone_number_or_email()
     {
-        // FR-27 from the other side. A driver needs the parcel, the two points and the window; the
-        // person is the dispatch desk's to hold, and a delivery screen that showed a number would
-        // be a disclosure no route intends and no type declares.
+        // The disclosure rule from the other side. A driver needs the parcel, the two points and
+        // the window; the person is the dispatch desk's to hold, and a delivery screen that showed
+        // a number would be a disclosure no route intends and no type declares.
         //
         // Name, telephone number and email address, which is every identifying field a client
         // account has: there is no postal address anywhere in this product for a client, so there is
@@ -142,7 +143,7 @@ public class DisclosureBoundaryTests(PostgresFixture postgres)
     public async Task The_client_roster_does_carry_the_number_the_driver_never_sees()
     {
         // The pair again, and the reason the absences above are not a property of an empty
-        // database: FR-48 gives dispatch the roster with the telephone number on it.
+        // database: dispatch is given the roster with the telephone number on it.
         var cancellationToken = TestContext.Current.CancellationToken;
         var world = await AuthorizationWorld.InstanceAsync(postgres.ConnectionString, cancellationToken);
 

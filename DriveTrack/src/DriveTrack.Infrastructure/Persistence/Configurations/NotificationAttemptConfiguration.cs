@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DriveTrack.Infrastructure.Persistence.Configurations;
 
-/// <summary>Mapping for <see cref="NotificationAttempt"/> (FR-28, AD-12).</summary>
+/// <summary>Mapping for <see cref="NotificationAttempt"/>.</summary>
 internal sealed class NotificationAttemptConfiguration : IEntityTypeConfiguration<NotificationAttempt>
 {
     /// <inheritdoc />
@@ -28,7 +28,7 @@ internal sealed class NotificationAttemptConfiguration : IEntityTypeConfiguratio
         builder.Property(attempt => attempt.Error).HasMaxLength(1000);
 
         // No navigation on Delivery: an attempt is written after the delivery's transaction has
-        // already committed (AD-12), so it never belongs to the delivery's tracked graph.
+        // already committed, so it never belongs to the delivery's tracked graph.
         builder.HasOne<Delivery>()
             .WithMany()
             .HasForeignKey(attempt => attempt.DeliveryId)

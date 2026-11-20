@@ -6,7 +6,7 @@ using DriveTrack.Integration.Tests.Support;
 namespace DriveTrack.Integration.Tests.Components;
 
 /// <summary>
-/// FR-79 asserted over HTTP, beside <c>NotFoundDeliveryTests</c>.
+/// The access-denied page asserted over HTTP, beside <c>NotFoundDeliveryTests</c>.
 /// <para>
 /// The page is the destination of the cookie handler's <c>AccessDeniedPath</c> and of the route
 /// view's refusal, so two redirects lead here — and neither of them would notice the page becoming

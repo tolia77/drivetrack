@@ -95,7 +95,7 @@ public class FieldNameTests
     {
         // The forward direction. A validator that names a property with no entry here renders a
         // banner with no label at all - the fallback is safe, but it is silence where the whole
-        // point of the change was to say which box was refused (NFR-4).
+        // point of the change was to say which box was refused.
         var named = FieldsValidatorsCanName();
 
         Assert.NotEmpty(named);
@@ -114,7 +114,7 @@ public class FieldNameTests
     public void Every_field_label_is_reachable_from_a_validator()
     {
         // The reverse direction, for the reason the other two catalogues have one: an entry nothing
-        // can reach is dead weight (NFR-6) and makes the forward test look more thorough than it is.
+        // can reach is dead weight and makes the forward test look more thorough than it is.
         var named = FieldsValidatorsCanName();
 
         var unreachable = Labels()

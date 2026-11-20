@@ -29,7 +29,7 @@ public class CircuitCancellationTests
     /// <summary>
     /// Every component that is rendered into a circuit <em>and</em> calls a capability taking a
     /// <see cref="CancellationToken"/>. Mostly screens, and one shared component: DtLocationPicker
-    /// runs FR-104's address lookup itself, so it has work of its own to scope and is torn down on
+    /// runs the address lookup itself, so it has work of its own to scope and is torn down on
     /// its own schedule - the dialog that holds it can go before the screen does. Both halves are
     /// load-bearing, and two kinds of screen sit outside the rule for two different reasons:
     /// <list type="bullet">
@@ -41,7 +41,7 @@ public class CircuitCancellationTests
     /// <item><description>
     /// <c>Components/Account/SignIn.razor</c> and <c>Components/Account/Register.razor</c> do call a
     /// capability that takes a token, but they carry <c>[ExcludeFromInteractiveRouting]</c> and
-    /// render statically so that the form POST can reach <c>HttpContext.SignInAsync</c> (AD-14).
+    /// render statically so that the form POST can reach <c>HttpContext.SignInAsync</c>.
     /// There is no circuit behind them and no component lifetime to scope to, so they hand over
     /// <c>HttpContext.RequestAborted</c> — the request's own lifetime, which is the right one.
     /// </description></item>
@@ -368,8 +368,8 @@ public class CircuitCancellationTests
     [Fact]
     public void A_capture_that_really_failed_is_still_reported()
     {
-        // The other half, and the one that keeps the fix honest: AD-26's whole reason for the
-        // blanket arm is an unreachable or unconfigured object store, and narrowing it must not
+        // The other half, and the one that keeps the fix honest: the asset store's whole reason for
+        // the blanket arm is an unreachable or unconfigured object store, and narrowing it must not
         // have cost that. The panel is alive here, which is the state a real capture runs in.
         var panel = new Web.Components.Pages.ProofCapture();
 

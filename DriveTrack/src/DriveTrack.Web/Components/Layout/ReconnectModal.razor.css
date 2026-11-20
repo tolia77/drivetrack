@@ -1,5 +1,5 @@
 /*
-    ConnectionDock, in the element the framework owns (AD-28, NFR-29). Every palette value is a
+    ConnectionDock, in the element the framework owns. Every palette value is a
     `--dt-*` token and the depth is `z-dock`, which the palette declares for this and for the
     circuit-failure bar and for nothing else: a connection that has gone is the one thing that
     outranks whatever is on screen.

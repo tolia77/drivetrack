@@ -4,9 +4,9 @@ using DriveTrack.Integration.Tests.Support;
 namespace DriveTrack.Integration.Tests.Localization;
 
 /// <summary>
-/// NFR-14 as a standing guard rather than a one-off clean-up.
+/// Translated user-facing text as a standing guard rather than a one-off clean-up.
 /// <para>
-/// The scaffolded English this story removed by hand would reappear the first time a later story
+/// The scaffolded English removed by hand would reappear the first time a later change
 /// pastes in a generated component - which is how it arrived in the first place. So the rule is
 /// asserted over the source: no rendered text node in any <c>.razor</c> file may contain a run of
 /// Latin letters, because a literal that survives there is by definition one that never became a
@@ -133,7 +133,7 @@ public class UserFacingTextTests
     [Fact]
     public void No_component_renders_a_literal_Latin_word_in_a_user_facing_attribute()
     {
-        // NavMenu.razor's title="Navigation menu" was one of the six leaks this story fixed by hand,
+        // NavMenu.razor's title="Navigation menu" was one of the leaks fixed by hand,
         // and it lives in an attribute - invisible to a scan that only reads text nodes. A tooltip is
         // as user-facing as a paragraph, so the same rule and the same allowlist apply.
         var offenders = new List<string>();
@@ -169,7 +169,7 @@ public class UserFacingTextTests
     [Fact]
     public void The_error_page_no_longer_carries_the_development_mode_block()
     {
-        // Scaffold noise, English and dead weight all at once (NFR-6, NFR-14). Deleted rather than
+        // Scaffold noise, English and dead weight all at once. Deleted rather than
         // translated - nobody wants a Ukrainian explanation of the ASPNETCORE_ENVIRONMENT variable.
         var errorPage = File.ReadAllText(Path.Combine(
             RepositoryLayout.ProjectDirectory("DriveTrack.Web"),
