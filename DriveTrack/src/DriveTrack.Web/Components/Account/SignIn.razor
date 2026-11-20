@@ -1,7 +1,7 @@
 @page "/sign-in"
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Components.Endpoints
-@* A circuit has no response to write Set-Cookie to, and AD-14 turns prerendering off - so this
+@* A circuit has no response to write Set-Cookie to, and prerendering is off - so this
    page renders statically, which is the branch App.razor already has for the error and not-found
    pages, and HttpContext.SignInAsync is available on the form POST. *@
 @attribute [ExcludeFromInteractiveRouting]
@@ -34,7 +34,7 @@
 
         @* In the card, on the same measure as the form it refuses. It keeps what no box below
            claims - AUTH_INVALID_CREDENTIALS names no field, and saying so under one of the two
-           inputs would tell an attacker which one was wrong (FR-4). *@
+           inputs would tell an attacker which one was wrong. *@
         <DtFailureBanner Failures="_failures" InlineFields="@InlineFields" />
 
         @* No `required` and no `type="email"` on the boxes, whatever the artboard's markup says: a
@@ -66,7 +66,7 @@
                 @Localizer["RememberMe"]
             </label>
 
-            @* NFR-24: the glyph the navigation gives this destination, beside the word. No
+            @* The glyph the navigation gives this destination, beside the word. No
                `disabled` binding, and there is nowhere for one to come from - the page renders
                once per request with no circuit behind it to flip an attribute, and the browser's
                own navigation is what ends the submission. `SubmitGuardTests` records exactly that
@@ -83,7 +83,7 @@
 @code {
     /// <summary>
     /// The boxes this screen renders a <c>DtFieldError</c> for. Stated once and bound by every
-    /// banner on the page: the list repeated per banner is exactly the drift FR-83 is broken by,
+    /// banner on the page: the list repeated per banner is exactly the drift that loses a refusal,
     /// and a screen carries the banner more than once because a dialog opened with showModal()
     /// leaves the page behind it inert.
     /// </summary>
@@ -131,7 +131,7 @@
             Form!.Password = null;
 
             // The code, resolved through the same catalogue the REST envelope reads, so the same
-            // refusal reads the same way in both adapters (NFR-3).
+            // refusal reads the same way in both adapters.
             _failures = FailureKeys.For(failure);
         }
     }

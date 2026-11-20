@@ -2,13 +2,13 @@
 @inject IStringLocalizer<UiText> Localizer
 @implements IAsyncDisposable
 
-@* FR-85 / NFR-19: the one dialog every screen opens.
+@* The one dialog every screen opens.
 
    A native <dialog> opened with showModal() - never with the `open` attribute - is what supplies
    focus trapping, Escape dismissal and focus restoration to the element that opened it. Those are
-   three of NFR-19's four requirements, and the platform implements them better than a hand-rolled
-   focus trap would. Bootstrap's modal would have meant wiring its JS bundle and a spray of
-   framework data attributes for behaviour we already have.
+   three of the dialog's four accessibility requirements, and the platform implements them better
+   than a hand-rolled focus trap would. Bootstrap's modal would have meant wiring its JS bundle and
+   a spray of framework data attributes for behaviour we already have.
 
    The ARIA trio is written out rather than left implicit: browsers do imply role="dialog" and
    modality from showModal(), but the attributes are what a test - and an audit - can read. *@

@@ -1,5 +1,5 @@
 /*
-    NFR-29: every colour, size, spacing figure and radius here resolves to a `--dt-*` token. The
+    Every colour, size, spacing figure and radius here resolves to a `--dt-*` token. The
     figures that are geometry rather than palette - `display`, `flex-direction`, `list-style`,
     `text-align`, `overflow-wrap`, and the breakpoint in the one media query below - name no palette
     value and are outside the scan, as they are in DtDataTable's stylesheet. The breakpoint is

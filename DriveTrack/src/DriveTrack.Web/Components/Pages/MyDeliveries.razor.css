@@ -18,7 +18,7 @@
     board and lives in `_theme.scss` with the rest of the shared vocabulary. What this file releases
     is the part of it a two-track card cannot keep.
 
-    NFR-29: every palette value here is a `--dt-*` reference. What is literal is geometry the
+    Every palette value here is a `--dt-*` reference. What is literal is geometry the
     palette does not name - the grid's two tracks and the breakpoint itself, which a media query
     cannot read from a custom property at all.
 */
@@ -102,7 +102,7 @@ td.dt-my-delivery-package > span:not(.dt-my-delivery-label) {
         the gap between its cells are a frame the fill never reaches, and an odd card shows its text
         lines painted inside bare white space. The other nine screens answer that by leaving the
         padding on the cells where `dt-table-cards` puts it; this one cannot follow them without a
-        decision about its two tracks. Recorded in the deferred-work ledger rather than left as a
+        decision about its two tracks. Noted here rather than left as a
         claim that the striping carries over, which it does not.
 
         The card's own edge is not restated: `dt-table-cards` rules one row from the next, and this

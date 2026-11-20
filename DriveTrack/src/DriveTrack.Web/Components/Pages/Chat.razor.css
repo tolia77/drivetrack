@@ -1,5 +1,5 @@
 /*
-    FR-68 / FR-69 / NFR-22 / NFR-29: the chat screen's own layer.
+    The chat screen's own layer.
 
     One card, not two panels floating on the page. The roster and the conversation are two halves of
     a single surface - a dispatcher's eye travels from a name on the left to that person's messages
@@ -7,13 +7,13 @@
     look like two screens. So the card owns the edge and the shadow, and the divider inside it is
     the only rule between the halves.
 
-    Every palette value here is a `--dt-*` token. What stays literal is geometry NFR-29's scan
-    deliberately does not read - the roster's width, the card's height, `flex`, `overflow` - and the
-    breakpoint itself, which a media query cannot read from a custom property at all. It is written
-    as `640.98px` for the reason `Home.razor.css` and `MyDeliveries.razor.css` write it that way:
-    `_theme.scss` states the shell's own edge as `$dt-breakpoint-phone-max`, and a plain stylesheet
-    cannot see a Sass variable. Approximating it as `min-width: 641px` would leave a sliver of
-    widths where the shell is already a sidebar and this card is still one column.
+    Every palette value here is a `--dt-*` token. What stays literal is geometry the design-token
+    scan deliberately does not read - the roster's width, the card's height, `flex`, `overflow` -
+    and the breakpoint itself, which a media query cannot read from a custom property at all. It is
+    written as `640.98px` for the reason `Home.razor.css` and `MyDeliveries.razor.css` write it that
+    way: `_theme.scss` states the shell's own edge as `$dt-breakpoint-phone-max`, and a plain
+    stylesheet cannot see a Sass variable. Approximating it as `min-width: 641px` would leave a
+    sliver of widths where the shell is already a sidebar and this card is still one column.
 
     The bubbles are not here. They are ChatLine's, in `ChatLine.razor.css`: a scoped stylesheet only
     reaches the markup its own component writes, and the <li> is written there. That exact mistake
@@ -180,7 +180,7 @@
     message did not send still needs to see what they typed.
 */
 .dt-chat-dock {
-    /* The app ships one light theme (NFR-21), and this element must not be repainted by a
+    /* The app ships one light theme, and this element must not be repainted by a
        user-agent dark preference - the same guard DtConnectionDock's own rule carries. */
     color-scheme: light only;
     display: flex;

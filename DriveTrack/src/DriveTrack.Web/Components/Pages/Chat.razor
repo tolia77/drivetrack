@@ -2,36 +2,37 @@
 @attribute [Authorize]
 @inject ICurrentUser Caller
 @inject IJSRuntime JS
-@* AD-13's clock rather than the ambient one, for the day separators: "today" is a claim about the
-   present, and a screen that read DateTimeOffset.Now would be the one place in the product that
+@* The injected clock rather than the ambient one, for the day separators: "today" is a claim about
+   the present, and a screen that read DateTimeOffset.Now would be the one place in the product that
    answered it from a clock no test can set. The zone it is reckoned in is the host's - this is a
    Blazor Server circuit, so nothing here can see the browser's offset without asking for it. *@
 @inject TimeProvider Clock
 @inject IStringLocalizer<UiText> Localizer
 @implements IAsyncDisposable
 
-@* FR-68 to FR-76: the one chat screen, for both of its participants.
+@* The one chat screen, for both of its participants.
 
    A driver sees their own conversation and no picker - they have exactly one thread and no reason
    to choose between them. A dispatcher sees the roster of drivers beside the conversation they
    picked. A client or an administrator sees neither: chat has two participants by product decision,
    and an admin is deliberately not one of them.
 
-   FR-12, and it is the part worth repeating: what is rendered here is a convenience. IAccessGuard
-   inside IChatService is what refuses a caller, and it runs whether or not this screen offered them
-   anything - which is why [Authorize] carries no role and there is no <AuthorizeView> below.
+   The authorization point, and it is the part worth repeating: what is rendered here is a
+   convenience. IAccessGuard inside IChatService is what refuses a caller, and it runs whether or
+   not this screen offered them anything - which is why [Authorize] carries no role and there is
+   no <AuthorizeView> below.
 
    Every branch below is a call into ChatViews. The decisions are there rather than here because a
    statically rendered component dispatches no events: a rule written inside an @onclick handler or
-   behind a live socket is a rule no test in this solution can reach (DW-17, DW-18).
+   behind a live socket is a rule no test in this solution can reach.
 
    The connection lives in the browser, not in the circuit. A server-side HubConnection would carry
    no session cookie and would need a token the application minted for itself; the browser already
    holds drivetrack.session, and the hub sits outside /api, so it connects with nothing added.
 
    Independent @if blocks and one literal localizer key per string, for the reasons the other
-   screens state: an `else` at markup level reads to NFR-14's scan as a rendered English word, and a
-   key composed at run time is a key the closed-catalogue test cannot see. *@
+   screens state: an `else` at markup level reads to the localization scan as a rendered English
+   word, and a key composed at run time is a key the closed-catalogue test cannot see. *@
 
 <PageTitle>@Localizer["ChatTitle"]</PageTitle>
 
@@ -40,9 +41,9 @@
    that separator carrying two labels or none at all.
 
    At the top of the markup rather than beside the list it serves, and that is forced: a bare
-   statement inside a `@@if` block is markup as far as NFR-14's scan is concerned, and it reads
-   `var now = Now;` as three rendered English words. A `@@{ }` block is code the scan removes, and
-   Razor only accepts one where it is not already inside a code block. *@
+   statement inside a `@@if` block is markup as far as the localization scan is concerned, and it
+   reads `var now = Now;` as three rendered English words. A `@@{ }` block is code the scan removes,
+   and Razor only accepts one where it is not already inside a code block. *@
 @{ var now = Now; }
 
 @* The screen is a column that fills what the shell gives it, and the card takes whatever is left
@@ -189,9 +190,9 @@
                            position, and turning that position into the instants the decision takes is
                            the whole of their job.
 
-                           A range rather than a `for` header, and the reason is NFR-14's scan: a `<` in
-                           markup-level C# opens a tag as far as that scan is concerned, and everything
-                           in front of it is then read as rendered English.
+                           A range rather than a `for` header, and the reason is the localization
+                           scan: a `<` in markup-level C# opens a tag as far as that scan is
+                           concerned, and everything in front of it is then read as rendered English.
 
                            Both children are keyed, because this list interleaves two component types
                            and grows from the top as history is rejoined: diffed by position, Blazor
@@ -308,8 +309,8 @@
 
     /// <summary>
     /// The name the header shows a dispatcher. A property rather than <c>@_thread!.DriverName</c> in
-    /// the markup: the null-forgiving operator is not part of the Razor expression grammar NFR-14's
-    /// scan parses, so everything after it reads to that scan as rendered English.
+    /// the markup: the null-forgiving operator is not part of the Razor expression grammar the
+    /// localization scan parses, so everything after it reads to that scan as rendered English.
     /// </summary>
     private string SelectedDriverName => _thread?.DriverName ?? string.Empty;
 
@@ -449,7 +450,7 @@
     {
         // The circuit outlives the request that opened it, so the cookie can be gone by the time a
         // screen reads the caller. Raising the contract's own code here is what puts that case
-        // through FR-13's single boundary instead of a per-screen redirect.
+        // through the single session-expiry boundary instead of a per-screen redirect.
         if (!Caller.IsAuthenticated)
         {
             throw new ForbiddenException(
@@ -491,7 +492,7 @@
                 _threads = await _module.InvokeAsync<ChatThreadSummaryView[]>("listThreads", _handle);
             }
 
-            // FR-69: a driver's own conversation is the screen. Nothing to pick, so nothing to pick
+            // A driver's own conversation is the screen. Nothing to pick, so nothing to pick
             // from.
             if (!_showsRoster && Caller.DriverId is { } own)
             {
@@ -538,7 +539,7 @@
         // Asked before the line is appended, because the question is where the reader already was.
         // A dispatcher scrolled up into last week is reading; pulling them to the newest line
         // because somebody typed takes the page away mid-sentence. A reader already at the bottom is
-        // following the conversation, and for them the newest line is the whole point (FR-74).
+        // following the conversation, and for them the newest line is the whole point.
         var following = await IsAtBottomAsync();
 
         // Read again, because the await above yielded the circuit: a dispatcher who picked another
@@ -563,7 +564,7 @@
     }
 
     /// <summary>
-    /// Called by the module when the hub connection drops, gives up, or comes back (FR-75).
+    /// Called by the module when the hub connection drops, gives up, or comes back.
     /// <para>
     /// The one thing that can say the conversation is dead. <c>withAutomaticReconnect()</c> retries
     /// in the background and announces nothing, so without this a driver at a doorstep goes on
@@ -624,8 +625,8 @@
 
     /// <summary>
     /// The handler for a roster entry, built in C# rather than written as a lambda in the attribute:
-    /// a `=&gt;` there closes the tag as far as NFR-14's markup scan is concerned, and everything
-    /// after it is read as rendered English.
+    /// a `=&gt;` there closes the tag as far as the localization markup scan is concerned, and
+    /// everything after it is read as rendered English.
     /// </summary>
     private Func<Task> Open(ChatThreadSummaryView summary) => () => OpenAsync(summary.DriverId);
 
@@ -713,7 +714,7 @@
 
         _failures = [];
 
-        // FR-73: no optimistic echo. The box is cleared because the server accepted the message;
+        // No optimistic echo. The box is cleared because the server accepted the message;
         // the line itself appears when the broadcast arrives, so what is on screen is what is in
         // the database.
         _draft = null;
@@ -770,9 +771,9 @@
     /// The resource key behind a refusal that arrived over the hub.
     /// <para>
     /// A <c>HubException</c>'s message crosses the wire verbatim, and the hub puts exactly one of
-    /// AD-8's keys in it; the JavaScript client wraps that in its own sentence on the way back. So
-    /// the key is looked for rather than parsed out, and anything unrecognised is the unexpected
-    /// failure it is rather than a raw string put in front of a user (NFR-3).
+    /// the error-code keys in it; the JavaScript client wraps that in its own sentence on the way
+    /// back. So the key is looked for rather than parsed out, and anything unrecognised is the
+    /// unexpected failure it is rather than a raw string put in front of a user.
     /// </para>
     /// </summary>
     private static string KeyOf(JSException failure) =>

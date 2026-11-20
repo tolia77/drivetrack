@@ -1,4 +1,4 @@
-@* FR-30's four statuses, named once.
+@* The four delivery statuses, named once.
 
    Before this component the same four keys were written out on the dispatch board, on the
    own-deliveries screen and would have been again on every timeline entry - three copies of one
@@ -11,11 +11,11 @@
    The face is a total switch rather than a fifth @@if block, and that is the difference from what
    this file used to be: the four arms below decide the word, and a status nobody wrote an arm for
    used to render an empty, unclassed span onto a delivery table and a timeline line. It now fails
-   loudly, in the same shape AD-10's own Delivery.NextStatuses fails.
+   loudly, in the same shape Domain's own Delivery.NextStatuses fails.
 
    The words stay independent @@if blocks with their own literal localizer keys: an `else` at markup
-   level reads to NFR-14's source scan as a rendered English word, and a key composed at run time
-   ("Status" + Status) is a key the closed-catalogue test cannot see. *@
+   level reads to the localization source scan as a rendered English word, and a key composed at run
+   time ("Status" + Status) is a key the closed-catalogue test cannot see. *@
 @inject IStringLocalizer<UiText> Localizer
 
 <DtStatusLabel Face="@Face">

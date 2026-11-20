@@ -1,5 +1,5 @@
 /*
-    The dashboard's layout (NFR-29: every palette and type value is a `--dt-*` token; grid tracks,
+    The dashboard's layout (every palette and type value is a `--dt-*` token; grid tracks,
     widths and the phone breakpoint are geometry, which the scan does not read).
 
     Almost everything below sits inside a DtCard, and the card's own boxes - `.dt-card`,

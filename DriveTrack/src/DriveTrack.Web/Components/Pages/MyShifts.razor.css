@@ -7,7 +7,7 @@
     part that is genuinely this screen's: the name each cell carries, which is what replaces the
     column heading the collapse drops.
 
-    NFR-29: every palette value here is a `--dt-*` reference. What is literal is geometry the
+    Every palette value here is a `--dt-*` reference. What is literal is geometry the
     palette does not name - the breakpoint itself, which a media query cannot read from a custom
     property at all.
 */

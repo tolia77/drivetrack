@@ -1,13 +1,13 @@
 /*
-    The roster row (FR-68). Scoped to the component that writes the <button> rather than to the
+    The roster row. Scoped to the component that writes the <button> rather than to the
     screen around it: a `.razor.css` is compiled against its own component's markup, so a row rule
     left in `Chat.razor.css` would carry the screen's scope attribute and match nothing at all -
     the mistake that once left the bubble rules matching nothing.
 
-    Every palette value is a `--dt-*` token. What stays literal is geometry NFR-29's scan does not
-    read - the grid's two tracks, `width`, `justify-self` - and the breakpoint, which a media query
-    cannot read from a custom property. It is written as `640.98px` for the reason the other
-    stylesheets write it that way: `_theme.scss` states the shell's edge as
+    Every palette value is a `--dt-*` token. What stays literal is geometry the design-token scan
+    does not read - the grid's two tracks, `width`, `justify-self` - and the breakpoint, which a
+    media query cannot read from a custom property. It is written as `640.98px` for the reason the
+    other stylesheets write it that way: `_theme.scss` states the shell's edge as
     `$dt-breakpoint-phone-max`, and plain CSS cannot see a Sass variable.
 */
 

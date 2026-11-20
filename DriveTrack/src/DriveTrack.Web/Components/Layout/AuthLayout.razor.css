@@ -3,7 +3,7 @@
     screens' and its rules are the theme's `dt-auth-panel`; the language menu is DtLanguageMenu's and
     its rules are the theme's too.
 
-    NFR-29: every palette value is a `--dt-*` reference. What is literal is geometry the palette does
+    Every palette value is a `--dt-*` reference. What is literal is geometry the palette does
     not name - the bar's height, the viewport's, the phone breakpoint.
 */
 

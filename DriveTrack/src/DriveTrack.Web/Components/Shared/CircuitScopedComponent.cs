@@ -30,9 +30,9 @@ namespace DriveTrack.Web.Components.Shared;
 /// source is collected with the component.
 /// </para>
 /// <para>
-/// Closes DW-13, DW-22 and DW-42: the eager disposal, the blanket <c>catch</c> in the capture
-/// panel that reported a cancelled capture as a failure, and the fourteen copies of one lifetime
-/// rule that let the first two happen independently of each other.
+/// One base class rather than a copy of this lifetime rule on every screen, so eager disposal or
+/// a blanket <c>catch</c> that reports a cancelled call as a failure cannot creep back into one
+/// screen independently of the others.
 /// </para>
 /// </summary>
 public abstract class CircuitScopedComponent : ComponentBase, IDisposable

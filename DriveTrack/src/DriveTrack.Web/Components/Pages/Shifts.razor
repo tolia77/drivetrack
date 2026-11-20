@@ -1,10 +1,10 @@
 @page "/shifts"
-@* FR-113 and FR-114: every driver's shifts, and dispatch's way of correcting one.
+@* Every driver's shifts, and dispatch's way of correcting one.
 
-   The Roles argument routes a wrong role to /access-denied (FR-79) rather than into an error
+   The Roles argument routes a wrong role to /access-denied rather than into an error
    boundary. It is a convenience, not the decision: IAccessGuard.RequireShiftScope and
    RequireShiftOwner inside IShiftService settle whose shifts this caller may see and change, and
-   they run whether or not this screen was ever rendered (FR-12).
+   they run whether or not this screen was ever rendered.
 
    There is no on-duty button here, and its absence is the product decision rather than an omission.
    Going on duty is a driver reporting that they have started work, and the instant is the server's
@@ -12,7 +12,7 @@
    names a window. The two are different acts, so they are different controls on different screens.
 
    The @if blocks below are independent rather than if/else chains: an `else` at markup level reads
-   to NFR-14's source scan as a rendered English word. *@
+   to the localization source scan as a rendered English word. *@
 @attribute [Authorize(Roles = "Dispatcher,Admin")]
 @* Named for what it does rather than for the capability: a member called `Shifts` on a component
    called `Shifts` does not compile. *@
@@ -39,9 +39,9 @@
     </button>
 </div>
 
-@* FR-110 and FR-111 arrive here: a driver who is already on duty and a window that runs backwards
-   both resolve through the same catalogue the REST envelope uses, so the two cannot disagree
-   (NFR-3). Rendered at page level as well as inside the dialog - a refused delete is raised with no
+@* The shift refusals arrive here: a driver who is already on duty and a window that runs backwards
+   both resolve through the same catalogue the REST envelope uses, so the two cannot disagree.
+   Rendered at page level as well as inside the dialog - a refused delete is raised with no
    dialog open and would otherwise have nowhere to appear.
 
    SHIFT_ALREADY_OPEN and SHIFT_NOT_OPEN name no field and so stay here; a window that runs
@@ -61,7 +61,7 @@
     </div>
 </div>
 
-@* NFR-27: one page of shifts at a time, newest first, searched and sorted by the server over every
+@* One page of shifts at a time, newest first, searched and sorted by the server over every
    shift, with the pager under the table saying how many there are. *@
 @* `dt-table-cards` is where this screen opts into the shared collapse: below the phone breakpoint
    the table's rows stop being rows and become cards. The collapse is stated once, in
@@ -154,7 +154,7 @@
     </DtDataTable>
 </div>
 
-@* FR-85: the shared dialog. One heading for both recording and correcting - a title composed at run
+@* The shared dialog. One heading for both recording and correcting - a title composed at run
    time would be a key no test can see, and the catalogue is closed against the keys components ask
    for. *@
 <DtDialog @ref="_formDialog" Title="@Localizer["ShiftForm"]" OnClosed="ClearFailures">
@@ -169,7 +169,7 @@
             @* Clearing a date field leaves a parse failure on the EditContext, and OnValidSubmit
                then never fires - so without this the Save button would do nothing and say nothing.
                ValidationSummary rather than per-field ValidationMessage: a `For="@(() => ...)"`
-               lambda inside an attribute is the construct NFR-14's source scan misreads. *@
+               lambda inside an attribute is the construct the localization source scan misreads. *@
             <ValidationSummary />
 
             @* Only when recording a new shift. A shift is one driver's stretch of time, so moving
@@ -202,9 +202,10 @@
                            Type="InputDateType.DateTimeLocal"
                            ParsingErrorMessage="@Localizer["DateParseError"]"
                            @bind-Value="_form.EndedAt" />
-                @* FR-117 said in a sentence: an empty box opens a shift when one is being recorded,
-                   and leaves a closed one closed when one is being corrected. Clearing an end is not
-                   something the contract can express, so it is not something this box can do. *@
+                @* The never-un-ended rule said in a sentence: an empty box opens a shift when one
+                   is being recorded, and leaves a closed one closed when one is being corrected.
+                   Clearing an end is not something the contract can express, so it is not
+                   something this box can do. *@
                 <DtFieldError Field="EndedAt" Failures="_failures" />
                 <div class="form-text">@Localizer["ShiftEndedAtHint"]</div>
             </div>
@@ -223,7 +224,7 @@
     </Actions>
 </DtDialog>
 
-@* FR-81: a destructive action is confirmed through the shared prompt. *@
+@* A destructive action is confirmed through the shared prompt. *@
 <DtConfirmDialog @ref="_deleteDialog"
                  Title="@Localizer["DeleteShiftTitle"]"
                  Message="@Localizer["DeleteShiftMessage"]"
@@ -234,7 +235,7 @@
     /// <summary>
     /// Drops the refusals when the form is dismissed, however it was dismissed.
     /// <para>
-    /// FR-83. A refusal claimed by a box inside the dialog is subtracted from the banner outside it,
+    /// A refusal claimed by a box inside the dialog is subtracted from the banner outside it,
     /// so leaving the list populated past the close would leave that sentence with nowhere on the
     /// page to render - invisible, which is the outcome this whole change exists to prevent.
     /// Hung off <c>OnClosed</c> rather than off the cancel handler because Escape and the backdrop
@@ -244,7 +245,7 @@
     private void ClearFailures() => _failures = [];
     /// <summary>
     /// The boxes this screen renders a <c>DtFieldError</c> for. Stated once and bound by every
-    /// banner on the page: the list repeated per banner is exactly the drift FR-83 is broken by,
+    /// banner on the page: the list repeated per banner is exactly the drift that loses a refusal,
     /// and a screen carries the banner more than once because a dialog opened with showModal()
     /// leaves the page behind it inert.
     /// </summary>
@@ -257,8 +258,8 @@
     /// create action and takes the create colour, and changing one that already exists is an edit.
     /// <para>
     /// One dialog serves both modes, so the button is the only thing on screen that can say which
-    /// one the reader is in - and AD-28 gives the two actions different colours precisely so that
-    /// it does. Resolved here rather than as a ternary in the attribute, for the reason
+    /// one the reader is in - and the palette gives the two actions different colours precisely so
+    /// that it does. Resolved here rather than as a ternary in the attribute, for the reason
     /// <c>DtDialog</c> resolves its panel class into a property.
     /// </para>
     /// <para>
@@ -295,7 +296,7 @@
     {
         // The circuit outlives the request that opened it, so the cookie can be gone by the time a
         // screen calls a service. Raising the contract's own code here is what puts that case
-        // through FR-13's single boundary instead of a per-screen redirect.
+        // through the single session-expiry boundary instead of a per-screen redirect.
         if (!Caller.IsAuthenticated)
         {
             throw new ForbiddenException(
@@ -408,7 +409,7 @@
             // zero is a 404 about a question the dispatcher did not mean to ask.
             DriverId = _drivers.Count > 0 ? _drivers[0].Id.Value : null,
 
-            // AD-13: the injected clock, read as local time because that is what the control shows.
+            // The injected clock, read as local time because that is what the control shows.
             // A blank start would be submitted as the zero instant, which is a shift in the year one.
             StartedAt = Clock.GetUtcNow().ToLocalTime(),
         };
@@ -428,7 +429,7 @@
             DriverId = shift.DriverId.Value,
 
             // Local time, because the control shows local time and the circuit runs on the server -
-            // the same reading every other screen in the product gives a stored instant (NFR-15).
+            // the same reading every other screen in the product gives a stored instant.
             StartedAt = shift.StartedAt.ToLocalTime(),
             EndedAt = shift.EndedAt?.ToLocalTime(),
         };
@@ -547,7 +548,7 @@
     }
 
     /// <summary>
-    /// One driver as the picker names them, with the marker FR-116 puts beside an off-duty one.
+    /// One driver as the picker names them, with the marker beside an off-duty one.
     /// </summary>
     /// <remarks>
     /// Composed here rather than in markup because an <c>&lt;option&gt;</c> holds text and nothing
@@ -562,7 +563,7 @@
             + (driver.OnDuty ? Localizer["ShiftOpen"] : Localizer["ShiftClosed"]);
 
     /// <summary>
-    /// An instant as this screen shows it. Local time against the current culture (NFR-15); the
+    /// An instant as this screen shows it. Local time against the current culture; the
     /// circuit runs interactively on the server, so <c>ToLocalTime</c> resolves against the host -
     /// the same reading every other screen in the product gives a stored instant.
     /// </summary>
@@ -588,12 +589,12 @@
         public DateTimeOffset? EndedAt { get; set; }
 
         /// <summary>
-        /// The correction this form describes (AD-23, FR-117).
+        /// The correction this form describes.
         /// <para>
         /// An empty box is <em>absent</em> rather than a present null, and that is the whole of
-        /// FR-117 on this screen: <c>Optional&lt;DateTimeOffset&gt;</c> has no case for a clear, so
-        /// a dispatcher who empties the end box leaves the stored one alone instead of reopening a
-        /// shift that is over.
+        /// the never-un-ended rule on this screen: <c>Optional&lt;DateTimeOffset&gt;</c> has no
+        /// case for a clear, so a dispatcher who empties the end box leaves the stored one alone
+        /// instead of reopening a shift that is over.
         /// </para>
         /// </summary>
         public UpdateShiftCommand AsUpdate() =>

@@ -5,7 +5,7 @@ using DriveTrack.Web.Account;
 namespace DriveTrack.Web.Components.Shared;
 
 /// <summary>
-/// One address box beside a map (FR-104): what was typed, what it found, whether a lookup is in
+/// One address box beside a map: what was typed, what it found, whether a lookup is in
 /// flight, and what choosing a match does.
 /// <para>
 /// Two forms build a pair of these — the dispatch board's <c>DeliveryForm</c> and the client's
@@ -51,7 +51,7 @@ public sealed class PlaceSearch(Action<MapLocation> assign)
 
     /// <summary>
     /// Why the last search was refused, or empty when it was not. This box's own sink, and the
-    /// whole of DW-41.
+    /// whole point of the type.
     /// <para>
     /// It used to be the screen's single <c>_failures</c> field, which the submit path also
     /// writes: a successful address search then silently erased a refusal the client had not
@@ -78,7 +78,7 @@ public sealed class PlaceSearch(Action<MapLocation> assign)
     /// </summary>
     /// <remarks>
     /// Returns <see cref="Task"/> rather than the failures, deliberately: a caller that is
-    /// handed them can put them anywhere, and where they used to be put is what DW-41 is about.
+    /// handed them can put them anywhere, and where they used to be put is the bug this prevents.
     /// With nothing to assign, a search can only ever write this box's own sink.
     /// </remarks>
     /// <param name="search">The capability's search method.</param>
@@ -122,7 +122,7 @@ public sealed class PlaceSearch(Action<MapLocation> assign)
         ArgumentNullException.ThrowIfNull(match);
 
         // The same assignment a map click makes. DtMap re-centres when its Value changes, so the
-        // map follows the chosen address without this having to tell it to (FR-104, FR-15).
+        // map follows the chosen address without this having to tell it to.
         assign(match.Point);
 
         // Cleared on the way out: a list left standing beside a map that has already moved

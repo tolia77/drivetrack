@@ -8,7 +8,7 @@
 
 <PageTitle>DriveTrack</PageTitle>
 
-@* FR-99: one landing page, two audiences.
+@* One landing page, two audiences.
 
    The public marketing page the design draws ("Landing page (public)"): its own header and footer
    rather than the application's sidebar - LandingLayout is the frame - and between them the hero,
@@ -29,7 +29,7 @@
    and the button names the place it goes to. Their name opens a small account menu - their own
    profile, and signing out - so a session started here can also be ended here.
 
-   NFR-24: every action carries an icon AND its text. An icon on its own is a guess.
+   Every action carries an icon AND its text. An icon on its own is a guess.
 
    Independent @if blocks rather than if/else, and ICurrentUser rather than <AuthorizeView>, so the
    signed-in branch can read the role it needs without a second notion of who the caller is. *@
@@ -41,7 +41,7 @@
        draws it here and in the sign-in frame's white header too. *@
     <header class="dt-landing-header dt-landing-header--on-photo">
         <div class="dt-landing-wrap dt-landing-wrap--wide dt-landing-headrow">
-            @* NFR-25: the shell's own lock-up - the same mark, the same glyph - so the page a visitor
+            @* The shell's own lock-up - the same mark, the same glyph - so the page a visitor
                starts on and the frame they sign in to are recognisably one product. *@
             <a class="dt-landing-brand" href="#top">
                 <span class="dt-nav__mark dt-icon-only"><Icon Name="IconName.Location" /></span>DriveTrack

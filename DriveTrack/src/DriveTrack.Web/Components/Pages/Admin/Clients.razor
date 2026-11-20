@@ -5,16 +5,17 @@
 @inject IStringLocalizer<UiText> Localizer
 @inherits PagedScreen<ListClientsQuery, ClientAccount, ClientSort>
 
-@* FR-46 / FR-47 / FR-48: the client roster, and the two operations an administrator performs on it.
+@* The client roster, and the two operations an administrator performs on it.
 
    [Authorize] carries no roles on purpose. Who may open this screen, and who may change what is on
    it, is decided by IAccessGuard inside IClientAdministrationService - reads are dispatcher-or-admin
-   so FR-48 works, writes are admin. A role on the attribute would be a second copy of that rule,
-   worded slightly differently, in a place no test of the rule would read (AD-2, FR-12).
+   so a dispatcher can attach a client to a delivery, writes are admin. A role on the attribute
+   would be a second copy of that rule, worded slightly differently, in a place no test of the rule
+   would read.
 
    Independent @if blocks and one literal localizer key per string, for the two reasons the shell
-   components already state: an `else` at markup level reads to NFR-14's scan as a rendered English
-   word, and a key composed at run time is a key the closed-catalogue test cannot see. *@
+   components already state: an `else` at markup level reads to the localization scan as a rendered
+   English word, and a key composed at run time is a key the closed-catalogue test cannot see. *@
 
 <PageTitle>@Localizer["ClientsTitle"]</PageTitle>
 
@@ -106,18 +107,18 @@
                nowrapped actions column is DtDataTable's own rule, and the cell has to wear the
                class its heading already wears to be reached by it. *@
             <td class="dt-table-actions">
-                @* FR-48 brings a dispatcher to this screen to read the roster, and both writes
+                @* A dispatcher comes to this screen to read the roster, and both writes
                    behind these buttons are RequireRole(Admin) - so for a dispatcher they could
                    only ever fail. Offering an action that cannot succeed is worse than not
                    offering it.
 
-                   FR-12 unchanged: this hides, it does not decide. IAccessGuard inside the service
+                   This hides, it does not decide. IAccessGuard inside the service
                    is still what refuses the write, and it runs whether or not the button was
                    rendered.
 
                    The handler is built in C# rather than written as a lambda in the attribute: a
-                   `=>` here would close the tag as far as NFR-14's markup scan is concerned, and
-                   everything after it would be read as rendered English. *@
+                   `=>` here would close the tag as far as the localization markup scan is
+                   concerned, and everything after it would be read as rendered English. *@
                 @if (_isAdmin)
                 {
                     @* The cell's own name goes inside the same branch as the buttons it names: for
@@ -152,8 +153,9 @@
             <input id="client-last-name" class="form-control" @bind="_form.LastName" />
             <DtFieldError Field="LastName" Failures="_failures" />
         </div>
-        @* FR-92's administrator half, in the dialog that already edits the rest of the account: one
-           Save, one transaction, so a taken address takes the name back with it (AD-5). *@
+        @* The client's address, changed by an administrator in the dialog that already edits the
+           rest of the account: one Save, one transaction, so a taken address takes the name back
+           with it. *@
         <div class="mb-4">
             <label class="form-label" for="client-email">@Localizer["Email"]</label>
             <input id="client-email" type="email" class="form-control" @bind="_form.Email" />
@@ -172,7 +174,7 @@
             <input id="client-password" type="password" autocomplete="new-password"
                    class="form-control" @bind="_form.Password" />
             <DtFieldError Field="Password" Failures="_failures" />
-            @* FR-50 / AD-23: an empty box is the absent case, which is why it does not have to be
+            @* An empty box is the absent case, which is why it does not have to be
                spelled as a magic empty string anywhere below. *@
             <div class="form-text">@Localizer["PasswordUnchangedHint"]</div>
         </div>
@@ -200,7 +202,7 @@
     /// <summary>
     /// Drops the refusals when the form is dismissed, however it was dismissed.
     /// <para>
-    /// FR-83. A refusal claimed by a box inside the dialog is subtracted from the banner outside it,
+    /// A refusal claimed by a box inside the dialog is subtracted from the banner outside it,
     /// so leaving the list populated past the close would leave that sentence with nowhere on the
     /// page to render - invisible, which is the outcome this whole change exists to prevent.
     /// Hung off <c>OnClosed</c> rather than off the cancel handler because Escape and the backdrop
@@ -210,7 +212,7 @@
     private void ClearFailures() => _failures = [];
     /// <summary>
     /// The boxes this screen renders a <c>DtFieldError</c> for. Stated once and bound by every
-    /// banner on the page: the list repeated per banner is exactly the drift FR-83 is broken by,
+    /// banner on the page: the list repeated per banner is exactly the drift that loses a refusal,
     /// and a screen carries the banner more than once because a dialog opened with showModal()
     /// leaves the page behind it inert.
     /// </summary>
@@ -236,7 +238,7 @@
     {
         // The circuit outlives the request that opened it, so the cookie can be gone by the time a
         // screen calls a service. Raising the contract's own code here is what puts that case
-        // through FR-13's single boundary instead of a per-screen redirect.
+        // through the single session-expiry boundary instead of a per-screen redirect.
         if (!Caller.IsAuthenticated)
         {
             throw new ForbiddenException(
@@ -296,7 +298,7 @@
         _selected = client;
         _failures = [];
 
-        // Including the password, which Fill always clears: only a hash is stored (FR-8), so there
+        // Including the password, which Fill always clears: only a hash is stored, so there
         // is nothing to pre-fill it with, and an empty box is exactly what "leave it alone" means.
         _form.Fill(client);
 

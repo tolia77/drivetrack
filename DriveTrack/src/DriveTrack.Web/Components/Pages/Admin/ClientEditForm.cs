@@ -12,7 +12,7 @@ namespace DriveTrack.Web.Components.Pages.Admin;
 /// a static first render only, so no test can click Edit, and until this lift nothing in the tree
 /// observed either decision. Dropping the address out of <see cref="Fill"/> would have sent a
 /// present-null address on every administrator edit — refused 422 by
-/// <c>ClientAccountStateValidator</c>, which FR-92 gave a rule — with the whole suite still green.
+/// <c>ClientAccountStateValidator</c>, which has a rule for it — with the whole suite still green.
 /// </para>
 /// </summary>
 internal sealed class ClientEditForm
@@ -23,7 +23,7 @@ internal sealed class ClientEditForm
     /// <summary>The bound family-name box.</summary>
     public string? LastName { get; set; }
 
-    /// <summary>The bound address box (FR-92).</summary>
+    /// <summary>The bound address box.</summary>
     public string? Email { get; set; }
 
     /// <summary>The bound phone box.</summary>
@@ -37,10 +37,10 @@ internal sealed class ClientEditForm
     /// </summary>
     /// <param name="client">The client account as the roster last read it.</param>
     /// <remarks>
-    /// Every stored field is carried, because AD-23 makes the command say what the form shows: a box
+    /// Every stored field is carried, because the command says what the form shows: a box
     /// left as the administrator found it has to send the value that was already there, and an empty
     /// address box is refused rather than read as "unchanged". The password is the one exception —
-    /// only a hash is stored (FR-8), so there is nothing to pre-fill it with, and empty is exactly
+    /// only a hash is stored, so there is nothing to pre-fill it with, and empty is exactly
     /// what "leave the password alone" looks like.
     /// </remarks>
     public void Fill(ClientAccount client)
@@ -54,7 +54,7 @@ internal sealed class ClientEditForm
         Password = null;
     }
 
-    /// <summary>The command for a filled-in edit form (AD-23).</summary>
+    /// <summary>The command for a filled-in edit form.</summary>
     /// <returns>The partial edit this form describes.</returns>
     /// <remarks>
     /// Named arguments throughout: the command's last two parameters are both

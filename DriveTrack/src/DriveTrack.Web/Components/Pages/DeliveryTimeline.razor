@@ -1,25 +1,25 @@
-@* FR-105 to FR-108: a delivery's append-only history, and the two things a viewer may append to it.
+@* A delivery's append-only history, and the two things a viewer may append to it.
 
    One component for both screens, and it owns its dialog. The dispatch board and the own-deliveries
    screen show the same history and offer the same compose box; what differs is whether the status
    select is drawn, and that is a parameter rather than a role test - the guard inside
    IDeliveryService is the decision, and this only avoids offering an action that could only ever be
-   refused (FR-12).
+   refused.
 
    The dialog lives here rather than in the host because its footer is this panel's: the one submit
    reads both the select and the comment, and a host-owned footer would have to reach into the panel
    to press it. A host renders this component only while a row is chosen; it opens itself after its
    first render, and OnClosed hands the row back so the next open is a fresh panel with an empty box.
 
-   The moves come from Delivery.NextStatuses, which is AD-10's single declaration of the lifecycle.
+   The moves come from Delivery.NextStatuses, which is the single declaration of the lifecycle.
    Reading it is not writing it: re-listing the transitions here would be exactly the second copy
    that decision exists to prevent. No Delivery instance crosses the boundary - only the static call
    and the DeliveryStatus enum both screens already bind.
 
    The @@if blocks below are independent rather than if/else chains, and every handler is built in
-   code rather than written as a lambda in an attribute: an `else` reads to NFR-14's source scan as
-   a rendered English word, and a `=>` inside an attribute closes the tag as far as that scan is
-   concerned. *@
+   code rather than written as a lambda in an attribute: an `else` reads to the localization source
+   scan as a rendered English word, and a `=>` inside an attribute closes the tag as far as that
+   scan is concerned. *@
 @inject IDeliveryService Timeline
 @inject IStringLocalizer<UiText> Localizer
 @inherits CircuitScopedComponent
@@ -28,7 +28,7 @@
           Title="@Localizer["TimelineTitle"]"
           OnClosed="ClosedAsync">
     <ChildContent>
-        @* NFR-3: a refusal resolves through the same catalogue the REST envelope uses, so the dialog
+        @* A refusal resolves through the same catalogue the REST envelope uses, so the dialog
            and the wire cannot disagree about what went wrong. It keeps what the comment box below
            has not claimed: DELIVERY_INVALID_STATUS_TRANSITION and DELIVERY_PROOF_REQUIRED are about
            the delivery rather than about anything typed here, and neither names a field. *@
@@ -48,7 +48,7 @@
             }
 
             <ol class="dt-timeline-list">
-                @* Oldest first, as the repository ordered them (FR-108). Nothing here re-sorts: a
+                @* Oldest first, as the repository ordered them. Nothing here re-sorts: a
                    second ordering would be a second answer to "what happened when". *@
                 @foreach (var entry in _entries)
                 {
@@ -62,7 +62,7 @@
                                      Note="@entry.Note"
                                      Current="IsCurrent(entry)">
                         <Actor>
-                            @* AD-17: the name when this viewer may be told it, the role badge either
+                            @* The name when this viewer may be told it, the role badge either
                                way. The service decided which; a null name here means "withheld",
                                never "missing" - a client who may not be told who drove still reads
                                that a driver did.
@@ -96,8 +96,8 @@
             </ol>
         </section>
 
-        @* FR-107: anyone who can see the delivery may say something about it, including the client
-           who may never change its status. FR-106: a status change carries its comment on the same
+        @* Anyone who can see the delivery may say something about it, including the client
+           who may never change its status. A status change carries its comment on the same
            entry, so the select and the box are one compose step with one submit. *@
         <section class="dt-timeline-compose" aria-labelledby="@_composeHeadingId">
             <h3 id="@_composeHeadingId" class="dt-type-h3 dt-timeline-heading">@Localizer["TimelineAddHeading"]</h3>
@@ -167,7 +167,7 @@
 @code {
     /// <summary>
     /// The boxes this screen renders a <c>DtFieldError</c> for. Stated once and bound by every
-    /// banner on the page: the list repeated per banner is exactly the drift FR-83 is broken by.
+    /// banner on the page: the list repeated per banner is exactly the drift that loses a refusal.
     /// </summary>
     private const string InlineFields = "Note";
 
@@ -237,7 +237,7 @@
     /// <summary>
     /// Whether to draw the status select. False hides it; it does not authorize anything -
     /// <c>IAccessGuard.RequireAssignedDriver</c> decides, and it runs whether or not this panel was
-    /// ever rendered (FR-12).
+    /// ever rendered.
     /// </summary>
     [Parameter]
     public bool AllowStatusChange { get; set; }
@@ -258,7 +258,7 @@
 
     /// <summary>
     /// The statuses the select offers: what the lifecycle allows from where the delivery is, or
-    /// nothing at all when this viewer has no lifecycle action (FR-90).
+    /// nothing at all when this viewer has no lifecycle action.
     /// </summary>
     private IReadOnlyList<DeliveryStatus> Offered =>
         AllowStatusChange ? Delivery.NextStatuses(_status) : [];
@@ -313,7 +313,7 @@
     /// Internal and static so it can be asserted directly: static rendering dispatches no events,
     /// so the reload this feeds is unreachable from a render test.
     /// <para>
-    /// Walked from the end because the repository orders entries oldest-first (FR-108), and skipping
+    /// Walked from the end because the repository orders entries oldest-first, and skipping
     /// the ones with no status is what keeps a note appended after the last move from reading as a
     /// move backwards.
     /// </para>
@@ -359,13 +359,13 @@
         _currentEntry >= 0 && ReferenceEquals(_entries[_currentEntry], entry);
 
     /// <summary>
-    /// The instant in local time (AD-13: storage is offset zero, and the conversion happens here,
+    /// The instant in local time (storage is at offset zero, and the conversion happens here,
     /// in the presentation layer, and nowhere else).
     /// </summary>
     /// <remarks>
-    /// Routed through a method rather than formatted in markup: NFR-14's scan strips a Razor
-    /// expression only up to its first closing bracket, so a <c>.ToString(...)</c> tail would be
-    /// left in the text node and read as a rendered English word.
+    /// Routed through a method rather than formatted in markup: the localization scan strips a
+    /// Razor expression only up to its first closing bracket, so a <c>.ToString(...)</c> tail would
+    /// be left in the text node and read as a rendered English word.
     /// </remarks>
     private static string Occurred(TimelineEntryView entry) =>
         entry.OccurredAt.ToLocalTime().ToString("g", System.Globalization.CultureInfo.CurrentCulture);
@@ -440,7 +440,7 @@
 
     /// <summary>
     /// What the submit sends: a note on its own for "keep", or a status change carrying the
-    /// comment on the same entry (FR-106). Internal and static so the routing can be asserted
+    /// comment on the same entry. Internal and static so the routing can be asserted
     /// directly - static rendering dispatches no events.
     /// </summary>
     /// <param name="next">The select's choice, null for "keep".</param>
@@ -453,7 +453,7 @@
 
     /// <summary>
     /// The footer's one submit: "keep" appends a note, a chosen status moves the delivery and
-    /// carries the comment on the same entry (FR-106).
+    /// carries the comment on the same entry.
     /// </summary>
     private async Task SubmitAsync()
     {

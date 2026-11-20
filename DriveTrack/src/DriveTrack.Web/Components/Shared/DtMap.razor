@@ -2,7 +2,7 @@
 @inject IStringLocalizer<UiText> Localizer
 @implements IAsyncDisposable
 
-@* NFR-26 / FR-15 / FR-21: one map component, two jobs.
+@* One map component, two jobs.
 
    Picking a point and showing one are the same map with one flag between them, so a delivery's
    pickup address and a driver's last known position cannot drift into two different maps with two
@@ -51,7 +51,7 @@
     [Parameter]
     public EventCallback<MapLocation> ValueChanged { get; set; }
 
-    /// <summary>True to let the user choose a point by clicking the map (FR-15).</summary>
+    /// <summary>True to let the user choose a point by clicking the map.</summary>
     [Parameter]
     public bool Picker { get; set; }
 
@@ -93,7 +93,7 @@
             _handle = await _module.InvokeAsync<IJSObjectReference>(
                 "create", _containerId, _self, latitude, longitude, Zoom, Picker);
 
-            // FR-21: a map opened on a delivery that already has a location shows that location,
+            // A map opened on a delivery that already has a location shows that location,
             // rather than opening on the fallback and making the user find it.
             _centred = Value;
 

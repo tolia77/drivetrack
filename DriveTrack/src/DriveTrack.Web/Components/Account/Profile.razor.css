@@ -7,10 +7,10 @@
     which carries DtCard's scope rather than this screen's. Everything else styled here is written
     in this component's own markup and carries its scope.
 
-    NFR-29: every value is a `--dt-*` reference; the width cap is `content-narrow`. The avatar's 56px is the touch target plus a
-    space step rather than a literal. The breakpoint is geometry the palette does not name, and a
-    media query cannot read a custom property in any case - `_theme.scss` writes the same edge as
-    `$dt-breakpoint-phone-max`.
+    Every value is a `--dt-*` reference; the width cap is `content-narrow`. The avatar's 56px is the
+    touch target plus a space step rather than a literal. The breakpoint is geometry the palette
+    does not name, and a media query cannot read a custom property in any case - `_theme.scss`
+    writes the same edge as `$dt-breakpoint-phone-max`.
 */
 .dt-profile-layout {
     display: grid;

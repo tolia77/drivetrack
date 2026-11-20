@@ -1,5 +1,5 @@
 /*
-    The disc-and-title shape (NFR-4, NFR-29). Every palette value is a `--dt-*` token; the disc's
+    The disc-and-title shape. Every palette value is a `--dt-*` token; the disc's
     box is geometry, sized against the text beside it so the mark follows the type scale.
 
     No border and no side stripe. The tinted fill marks the area and the disc carries the kind,

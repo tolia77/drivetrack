@@ -4,8 +4,8 @@ using DriveTrack.Application.Users;
 namespace DriveTrack.Web.Components.Account;
 
 /// <summary>
-/// FR-87's one screen-side decision, in one place: what the profile form sends when the caller has
-/// no phone number to send.
+/// The profile form's one screen-side decision, in one place: what the profile form sends when the
+/// caller has no phone number to send.
 /// <para>
 /// It lives in a class rather than in <c>Profile.razor</c>'s <c>@code</c> block for the reason
 /// <c>PasswordBox</c> does: a private method inside a generated component class is reachable by no
@@ -27,7 +27,7 @@ internal static class ProfileEdit
     /// The names are always present: the form renders them for every role, and an emptied box is a
     /// caller asking to clear a name, which the merged state refuses rather than quietly restores.
     /// <para>
-    /// The phone number is absent for anyone but a client, because DR-3 gives them no row to store
+    /// The phone number is absent for anyone but a client, because no other role has a row to store
     /// one in — sending the field at all is refused, which is right for a caller who typed one and
     /// wrong for a screen that never offered the box.
     /// </para>
@@ -62,13 +62,13 @@ internal sealed class ProfileEditForm
     /// <summary>The bound family-name box.</summary>
     public string? LastName { get; set; }
 
-    /// <summary>The bound phone box; a client is the only caller ever shown one (DR-3).</summary>
+    /// <summary>The bound phone box; a client is the only caller ever shown one.</summary>
     public string? PhoneNumber { get; set; }
 
-    /// <summary>The bound address box (FR-92).</summary>
+    /// <summary>The bound address box.</summary>
     public string? Email { get; set; }
 
-    /// <summary>The bound current-password box (FR-88).</summary>
+    /// <summary>The bound current-password box.</summary>
     public string? CurrentPassword { get; set; }
 
     /// <summary>The bound new-password box.</summary>
@@ -78,12 +78,12 @@ internal sealed class ProfileEditForm
     public string? NewPasswordConfirmation { get; set; }
 
     /// <summary>
-    /// Loads the stored profile into the edit dialog's boxes (FR-87).
+    /// Loads the stored profile into the edit dialog's boxes.
     /// </summary>
     /// <param name="profile">The profile as the screen last read it.</param>
     /// <remarks>
     /// The address is left alone: it is the email dialog's box, and that dialog fills it when it
-    /// opens. The password boxes are never pre-filled at all — only a hash is stored (FR-8).
+    /// opens. The password boxes are never pre-filled at all — only a hash is stored.
     /// </remarks>
     public void Fill(UserProfile profile)
     {

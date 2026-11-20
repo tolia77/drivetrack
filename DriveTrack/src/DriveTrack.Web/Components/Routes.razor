@@ -2,13 +2,13 @@
 
 <Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(Pages.NotFound)">
     <Found Context="routeData">
-        @* AD-2: the route view's NotAuthorized branch is a convenience, not the decision. It keeps
+        @* The route view's NotAuthorized branch is a convenience, not the decision. It keeps
            an anonymous visitor off a signed-in screen; whether a caller may perform an operation is
            still settled by IAccessGuard inside the service.
 
-           FR-80: neither of the two fragments below renders a route view or a body, so the
+           Neither of the two fragments below renders a route view or a body, so the
            protected component's markup cannot reach the response while the decision is still being
-           made or after it has gone against the caller. With prerendering off (AD-14) there is no
+           made or after it has gone against the caller. With prerendering off there is no
            second, earlier pass in which it could either. *@
         <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
             <Authorizing>

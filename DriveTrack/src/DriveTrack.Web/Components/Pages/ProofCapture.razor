@@ -1,4 +1,4 @@
-@* FR-119 and FR-121: what a driver fills in at the door.
+@* What a driver fills in at the door.
 
    Dialog content rather than a route. The parcel is handed over while the driver is standing on the
    list of their own deliveries, so the capture belongs over that row - a route would lose which row
@@ -10,19 +10,19 @@
    against the wrong row is evidence about the wrong delivery, and the dialog's own title says only
    that a hand-over is being recorded.
 
-   The coordinates are read from the device and are neither typed nor editable, which is FR-119 read
-   literally: the point recorded is where the capture happened. A browser that refuses geolocation
-   therefore cannot capture, and the panel says so - inventing a fallback, the dropoff point say,
-   would record a place the hand-over did not happen. The design draws none of this block, and it
-   stays all the same: without it every capture is refused 422 naming a field this panel never
-   offered to fill in, after five photographs have already been streamed up the circuit.
+   The coordinates are read from the device and are neither typed nor editable, which is the capture
+   rule read literally: the point recorded is where the capture happened. A browser that refuses
+   geolocation therefore cannot capture, and the panel says so - inventing a fallback, the dropoff
+   point say, would record a place the hand-over did not happen. The design draws none of this
+   block, and it stays all the same: without it every capture is refused 422 naming a field this
+   panel never offered to fill in, after five photographs have already been streamed up the circuit.
 
    Failures render through FailureKeys.For, exactly as the dispatch board does, so the dialog and the
-   REST envelope resolve the same refusal through the same catalogue (NFR-3).
+   REST envelope resolve the same refusal through the same catalogue.
 
    The @@if blocks are independent rather than if/else chains and every handler is built in code: an
-   `else` reads to NFR-14's source scan as a rendered English word, and a `=>` inside an attribute
-   closes the tag as far as that scan is concerned. *@
+   `else` reads to the localization source scan as a rendered English word, and a `=>` inside an
+   attribute closes the tag as far as that scan is concerned. *@
 @* The picker ids are built here, and an id is a token rather than a formatted quantity - so the
    figure in it is written under the invariant culture like every other identifier in this product. *@
 @using System.Globalization
@@ -33,7 +33,7 @@
 @implements IAsyncDisposable
 
 @* CaptureLocation is the matrix row this keeps: the panel draws no coordinate box, so a refusal
-   naming it has no input to sit under and would vanish if the banner hid it (FR-83). *@
+   naming it has no input to sit under and would vanish if the banner hid it. *@
 <DtFailureBanner Failures="_failures" InlineFields="@InlineFields" />
 
 <div class="dt-proof-form">
@@ -42,7 +42,7 @@
        named nothing was a panel a driver could only trust by remembering which button they pressed.
 
        The dropoff rather than the pickup: this is the door being stood at. Address when one has
-       resolved and coordinates when none has (FR-94), which is the same reading both delivery
+       resolved and coordinates when none has, which is the same reading both delivery
        screens give the same value. *@
     @if (Summary is { } delivery)
     {
@@ -124,7 +124,7 @@
            Adding a photograph adds one: the chosen files accumulate and each tile carries its own
            Remove, so a driver who picked the wrong picture takes it out rather than starting the
            whole capture again. Nothing here refuses a file - the panel is not a second, stricter
-           definition of a valid proof (AD-9) - so a selection over the limit is still sent and
+           definition of a valid proof - so a selection over the limit is still sent and
            still refused by CaptureProofCommandValidator with the rule that names the ceiling,
            which is the same answer the REST surface gives. *@
         <ul class="dt-proof-photos" role="list">
@@ -199,7 +199,7 @@
        belongs to DtDialog, and putting the capture there would move it out of the component two
        tests already read as one piece.
 
-       Disabled while there is no capture point as well as while a capture is in flight. FR-119
+       Disabled while there is no capture point as well as while a capture is in flight. A proof
        records where the hand-over happened and the form draws no coordinate field, so a submit
        without one can only ever return a 422 naming CaptureLocation - a refusal about something
        this panel never offered to fill in, paid for with every photograph streamed up the circuit
@@ -226,7 +226,7 @@
 @code {
     /// <summary>
     /// The boxes this screen renders a <c>DtFieldError</c> for. Stated once and bound by every
-    /// banner on the page: the list repeated per banner is exactly the drift FR-83 is broken by,
+    /// banner on the page: the list repeated per banner is exactly the drift that loses a refusal,
     /// and a screen carries the banner more than once because a dialog opened with showModal()
     /// leaves the page behind it inert.
     /// </summary>
@@ -290,7 +290,7 @@
 
     /// <summary>
     /// Raised once a proof has committed, so the screen behind the dialog can withdraw the capture
-    /// action and refetch. A proof is captured once (FR-123), so this fires at most once per dialog.
+    /// action and refetch. A proof is captured once, so this fires at most once per dialog.
     /// </summary>
     [Parameter]
     public EventCallback OnCaptured { get; set; }
@@ -358,9 +358,9 @@
         // instead of showing a message.
         //
         // Every file therefore reaches the command, and CaptureProofCommandValidator refuses a
-        // selection over the limit with the rule that names it (FR-119). That is the same answer the
-        // REST surface gives, which is what AD-9 is for: this panel is not a second, stricter
-        // definition of a valid proof, and it is not a kinder one either.
+        // selection over the limit with the rule that names it. That is the same answer the
+        // REST surface gives, which is the point of one validator for both: this panel is not a
+        // second, stricter definition of a valid proof, and it is not a kinder one either.
         //
         // Appended rather than assigned: the tile grid and an Add action promise that a second pick
         // adds to the first, and replacing meant a driver who took four photographs and then added
@@ -451,7 +451,7 @@
             // Nothing is judged here. An absent signature, no photographs, too many, a disallowed
             // type and an oversized file are all refused by CaptureProofCommandValidator, which runs
             // whether the capture came from this panel or from the REST surface - so this screen
-            // cannot be the second, kinder definition of a valid proof (AD-9).
+            // cannot be the second, kinder definition of a valid proof.
             await Proofs.CaptureAsync(
                 DeliveryId,
                 new CaptureProofCommand(
@@ -472,7 +472,7 @@
         }
         catch (Exception failure) when (Reports(failure))
         {
-            // The arm no other screen in this product needs, and the reason is AD-26: this is the
+            // The arm no other screen in this product needs, and the reason is that this is the
             // only action whose capability calls a network port inline - it mints a key before its
             // transaction and writes the bytes after the commit, and either can fail. An unreachable
             // object store raises the SDK's own exception and an unconfigured one raises
@@ -489,14 +489,14 @@
             // reported below.
             //
             // Reported as COMMON_UNEXPECTED_ERROR, which is what the REST surface answers for the
-            // same failure (AD-7). What it leaves behind depends on where the store failed, and the
+            // same failure. What it leaves behind depends on where the store failed, and the
             // panel cannot tell: a refusal while minting leaves nothing at all, and a refusal while
             // writing leaves a committed proof whose assets are missing. So the message says only
             // that the capture failed, and this arm returns - the dialog stays open with the failure
             // on it rather than closing as a success would, and the screen behind is left as it was.
             //
             // A retry is the driver's next move only in the first case. In the second the proof
-            // exists, so a second capture is refused as DELIVERY_PROOF_ALREADY_CAPTURED (FR-123) and
+            // exists, so a second capture is refused as DELIVERY_PROOF_ALREADY_CAPTURED and
             // the evidence has to be sorted out by someone who can see both the row and the bucket.
             // Telling the two apart from here would need the capability to say which side of its
             // commit it failed on, which it does not.
@@ -582,14 +582,14 @@
     /// </summary>
     /// <remarks>
     /// A method rather than the comparison written in the <c>@@if</c>, for two reasons. The first is
-    /// NFR-14's source scan: a <c>&lt;</c> inside a markup condition opens a tag as far as that scan
-    /// is concerned, and everything before it is then read as rendered English. The second is that
-    /// static rendering dispatches no events, so nothing in the suite can choose a file — lifted
-    /// here, the rule is asserted directly for every count including the ones only a caller going
-    /// round this control can produce.
+    /// the localization source scan: a <c>&lt;</c> inside a markup condition opens a tag as far as
+    /// that scan is concerned, and everything before it is then read as rendered English. The
+    /// second is that static rendering dispatches no events, so nothing in the suite can choose a
+    /// file — lifted here, the rule is asserted directly for every count including the ones only a
+    /// caller going round this control can produce.
     /// <para>
     /// Withdrawing the tile is the whole of the rule. Nothing here refuses a file: the panel is not
-    /// a second, stricter definition of a valid proof (AD-9), so a sixth photograph picked another
+    /// a second, stricter definition of a valid proof, so a sixth photograph picked another
     /// way still reaches <c>CaptureProofCommandValidator</c> and is refused there by the rule that
     /// names the limit — which is the same answer the REST surface gives.
     /// </para>
@@ -608,7 +608,7 @@
     /// instead, and the sentence beneath it still names the ceiling.
     /// <para>
     /// Not a refusal. The files are still sent and <c>CaptureProofCommandValidator</c> is still what
-    /// turns them down (AD-9); this only decides what the pill says.
+    /// turns them down; this only decides what the pill says.
     /// </para>
     /// </remarks>
     /// <param name="chosen">How many files the driver has picked.</param>
@@ -616,7 +616,7 @@
 
     /// <summary>
     /// The dropoff as the summary card shows it: its resolved address, or its coordinates when none
-    /// has resolved (FR-94).
+    /// has resolved.
     /// </summary>
     /// <remarks>
     /// <see cref="LocationText"/>'s reading, shared with both delivery screens. A second copy of the
@@ -626,7 +626,7 @@
     /// <param name="location">The stored point.</param>
     private static string Describe(LocationView location) => LocationText.Describe(location);
 
-    /// <summary>The figures of the delivery window, as the own-deliveries row states them (FR-100).</summary>
+    /// <summary>The figures of the delivery window, as the own-deliveries row states them.</summary>
     /// <remarks>
     /// <see cref="CellText"/>'s reading, for the reason <see cref="Describe"/> is shared: the window
     /// is the promise this capture is closing, and the panel must not word it differently from the

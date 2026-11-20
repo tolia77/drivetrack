@@ -1,4 +1,4 @@
-// NFR-26: Leaflet, vendored rather than fetched from a CDN.
+// Leaflet, vendored rather than fetched from a CDN.
 //
 // The library, its stylesheet and its marker images all live under wwwroot/lib/leaflet/ at the
 // pinned 1.9.4, so the code the map runs on is served by this application and by nothing else.

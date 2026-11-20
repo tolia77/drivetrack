@@ -2,7 +2,7 @@
 @inject IStringLocalizer<UiText> Localizer
 @inherits CircuitScopedComponent
 
-@* FR-104's place picker: one address box, its answers, and the map it fills.
+@* The place picker: one address box, its answers, and the map it fills.
 
    Written four times before this - a pickup and a dropoff on the dispatch board, a pickup and a
    dropoff on the client's request dialog - which is how the two dialogs drifted apart in the first
@@ -16,8 +16,8 @@
    wrong one.
 
    Every handler is built in C# below rather than written as a lambda in an attribute: a `=>` here
-   would close the tag as far as NFR-14's markup scan is concerned, and everything after it would be
-   read as rendered English.
+   would close the tag as far as the localization markup scan is concerned, and everything after it
+   would be read as rendered English.
 
    The row and the two columns stay on the screens. A picker knows what it renders; how two of them
    are laid out beside each other is the dialog's question, and a component that answered it would
@@ -39,7 +39,7 @@
     </button>
 </div>
 <div class="form-text">@Localizer["AddressSearchHint"]</div>
-@* The box's own banner, under the box it is about (DW-41). The dialog's banner above belongs to
+@* The box's own banner, under the box it is about. The dialog's banner above belongs to
    whatever the form submits, and a search that writes into it is a search that can erase a refusal
    nobody has read. *@
 <DtFailureBanner Failures="Search.Failures" />
@@ -47,7 +47,7 @@
 {
     @* role="status", like the timeline's empty line: "the search found nothing" is the one outcome
        with no visible change to notice, and a user who cannot see the box is otherwise told nothing
-       at all (NFR-22). *@
+       at all. *@
     <div class="form-text @EmptyHook" role="status">@Localizer["AddressSearchEmpty"]</div>
 }
 @if (Search.Matches.Count > 0)
@@ -145,7 +145,7 @@
 
     /// <summary>
     /// The screen's own refusal sink, for the message under the map. Not this box's search failures,
-    /// which are its own and are rendered above (DW-41).
+    /// which are its own and are rendered above.
     /// </summary>
     [Parameter]
     public IReadOnlyList<ScreenFailure> Failures { get; set; } = [];
@@ -166,7 +166,7 @@
     /// The search action.
     /// </summary>
     /// <remarks>
-    /// Nothing is assigned here, and that is DW-41: the box keeps its own failures, so a search that
+    /// Nothing is assigned here: the box keeps its own failures, so a search that
     /// succeeds cannot clear a save refusal the user has not read - nor the other box's. The
     /// three-character floor is the capability's, not this column's, and is deliberately not
     /// repeated: a rule stated twice is a rule that can disagree with itself, and the hint under the

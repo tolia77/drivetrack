@@ -1,16 +1,16 @@
-@* NFR-24: the one icon set. The design system's 31 line glyphs, drawn on a 24px grid and rendered
+@* The one icon set. The design system's 31 line glyphs, drawn on a 24px grid and rendered
    inline, so an action's glyph costs no webfont, no sprite request and no third stylesheet link -
    App.razor is pinned to exactly two.
 
    The paint is declared once, on the wrapper: `fill="none"` and `stroke="currentColor"`, which is
-   the only colour keyword NFR-29's scanner allows. Every glyph is therefore an outline in the
-   colour of the text it sits beside, and follows a token wherever it is placed - including onto the
-   dark navigation. `stroke-width` and the round caps live here too rather than on each path, so
+   the only colour keyword the design-token scanner allows. Every glyph is therefore an outline in
+   the colour of the text it sits beside, and follows a token wherever it is placed - including onto
+   the dark navigation. `stroke-width` and the round caps live here too rather than on each path, so
    thirty-one glyphs cannot drift into thirty-one weights.
 
    Path data is transcribed from `design-system/assets/Icons/icons.json`. Independent @if blocks
-   rather than a switch expression in markup: an `else` reads to NFR-14's scan as a rendered English
-   word, and the conditions are mutually exclusive anyway. *@
+   rather than a switch expression in markup: an `else` reads to the localization scan as a rendered
+   English word, and the conditions are mutually exclusive anyway. *@
 
 <svg class="dt-icon"
      viewBox="0 0 24 24"

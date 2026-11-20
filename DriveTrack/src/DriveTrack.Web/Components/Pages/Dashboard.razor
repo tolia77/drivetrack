@@ -11,7 +11,7 @@
    conversations is an administrator's, and it draws neither the Conversations action nor the card.
 
    The @@if blocks are independent rather than if/else chains: an `else` at markup level reads to
-   NFR-14's source scan as a rendered English word. *@
+   the localization source scan as a rendered English word. *@
 @attribute [Authorize(Roles = "Dispatcher,Admin")]
 @using System.Globalization
 @inject IDashboardService Dashboards
@@ -326,7 +326,8 @@
     {
         // The circuit outlives the request that opened it, so the cookie can be gone by the time a
         // screen calls a service. Raising the contract's own code here puts that case through
-        // FR-13's single boundary instead of a per-screen redirect, as every other screen does.
+        // the single session-expiry boundary instead of a per-screen redirect, as every other
+        // screen does.
         if (!Caller.IsAuthenticated)
         {
             throw new ForbiddenException(
@@ -545,7 +546,7 @@
     }
 
     /// <summary>
-    /// An instant in local time, in the "g" every other screen renders one with (AD-13: storage is
+    /// An instant in local time, in the "g" every other screen renders one with (storage is at
     /// offset zero, and the conversion happens here, in the presentation layer).
     /// </summary>
     private static string When(DateTimeOffset instant) => CellText.Moment(instant.ToLocalTime());

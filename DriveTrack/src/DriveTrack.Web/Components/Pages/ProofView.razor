@@ -1,17 +1,17 @@
-@* FR-122: the evidence, as whoever may see it reads it.
+@* The evidence, as whoever may see it reads it.
 
    One panel for every role. What differs is whether the capturer is named, and that is not decided
-   here - the capability nulls the name for everybody but an administrator and a dispatcher (AD-17),
+   here - the capability nulls the name for everybody but an administrator and a dispatcher,
    so this renders the field when it was given one and renders nothing when it was not. A component
    that asked the caller's role would be the second place that decision lived, and the two would
    eventually disagree.
 
    The images are <img src="/proof-assets/{id}">. That route is authenticated and asks the capability
    again for every single request, so a copied URL is worth nothing to anybody who may not already
-   read the proof (DR-14) - which is exactly what a presigned link would not give us.
+   read the proof - which is exactly what a presigned link would not give us.
 
-   The @@if blocks are independent rather than if/else chains: an `else` reads to NFR-14's source scan
-   as a rendered English word. *@
+   The @@if blocks are independent rather than if/else chains: an `else` reads to the localization
+   source scan as a rendered English word. *@
 @inject IProofOfDeliveryService Proofs
 @inject IStringLocalizer<UiText> Localizer
 @inherits CircuitScopedComponent
@@ -92,7 +92,7 @@
     /// <summary>
     /// The authenticated route an image is fetched from. Built from the asset's id and nothing else:
     /// the storage key never leaves the system, and there is no URL a browser could use without a
-    /// session (DR-14).
+    /// session.
     /// </summary>
     /// <remarks>
     /// Internal and static so it can be asserted directly. Getting the prefix wrong renders a broken
@@ -117,12 +117,12 @@
             : Localizer["ProofPhotos"];
 
     /// <summary>
-    /// The capture instant in local time (AD-13: storage is offset zero, and the conversion happens
+    /// The capture instant in local time (storage is at offset zero, and the conversion happens
     /// here, in the presentation layer, and nowhere else).
     /// </summary>
     /// <remarks>
     /// Routed through a method rather than formatted in markup, as the two delivery tables do it:
-    /// NFR-14's scan strips a Razor expression only up to its first closing bracket, so a
+    /// the localization scan strips a Razor expression only up to its first closing bracket, so a
     /// <c>.ToString(...)</c> tail would be left in the text node and read as a rendered English word.
     /// </remarks>
     private static string Captured(ProofOfDeliveryView proof) =>

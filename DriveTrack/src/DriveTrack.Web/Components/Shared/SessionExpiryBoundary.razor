@@ -1,20 +1,20 @@
 @inject IStringLocalizer<UiText> Localizer
 @inject NavigationManager Navigation
 @implements IDisposable
-@* FR-13: the single handler for an expired session. No screen implements its own - one place
+@* The single handler for an expired session. No screen implements its own - one place
    recognises AUTH_UNAUTHENTICATED, says so in Ukrainian and offers the way back to sign-in.
    Which notice a failure gets is SessionExpiry.NoticeKey, so the choice can be asserted directly
    rather than by matching this file's text. Two independent @if blocks rather than if/else: an
-   `else` at markup level reads as a rendered English word to NFR-14's source scan. *@
+   `else` at markup level reads as a rendered English word to the localization source scan. *@
 
 <ErrorBoundary @ref="_boundary">
     <ChildContent>
         @ChildContent
     </ChildContent>
     <ErrorContent Context="failure">
-        @* Read once into a local: NFR-14's source scan strips a Razor expression up to its first
-           closing bracket, so a nested call inside the @if condition would leave the comparison
-           behind as a rendered English fragment. *@
+        @* Read once into a local: the localization source scan strips a Razor expression up to its
+           first closing bracket, so a nested call inside the @if condition would leave the
+           comparison behind as a rendered English fragment. *@
         @{
             var notice = SessionExpiry.NoticeKey(failure);
         }

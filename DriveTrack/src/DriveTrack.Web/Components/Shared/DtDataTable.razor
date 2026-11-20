@@ -1,17 +1,17 @@
 @typeparam TItem
 @inject IStringLocalizer<UiText> Localizer
 
-@* FR-82 / FR-84 / NFR-22: one table, three states, and none of them is a blank rectangle.
+@* One table, three states, and none of them is a blank rectangle.
 
    The baseline's lists rendered nothing at all while loading and nothing at all when there was
    nothing to show, which reads identically to a broken screen. Here the three states are mutually
    exclusive and every one of them puts a row on the page.
 
    Written as three independent @if blocks rather than an if/else chain: an `else` at markup level
-   reads to NFR-14's source scan as a rendered English word (Profile.razor already branches this
-   way for the same reason), and the conditions exclude each other regardless.
+   reads to the localization source scan as a rendered English word (Profile.razor already branches
+   this way for the same reason), and the conditions exclude each other regardless.
 
-   Striping and hover come from the themed Bootstrap build, not from a new rule: AD-28 themed the
+   Striping and hover come from the themed Bootstrap build, not from a new rule: the theme sets the
    framework's own variables, so `table-striped` is already wearing the palette.
 
    This component does not collapse to cards on a phone, deliberately: what a row looks like once
@@ -201,9 +201,9 @@
 
     /// <summary>
     /// One item's cells, or nothing when no template was supplied. Routed through a method rather
-    /// than written as `@@RowTemplate?.Invoke(item)` in markup: NFR-14's scan strips a Razor
-    /// expression only up to its first closing bracket, so the `.Invoke(...)` tail would be left
-    /// behind in the text node and read as a rendered English word.
+    /// than written as `@@RowTemplate?.Invoke(item)` in markup: the localization scan strips a
+    /// Razor expression only up to its first closing bracket, so the `.Invoke(...)` tail would be
+    /// left behind in the text node and read as a rendered English word.
     /// </summary>
     private RenderFragment? Row(TItem item) => RowTemplate?.Invoke(item);
 }

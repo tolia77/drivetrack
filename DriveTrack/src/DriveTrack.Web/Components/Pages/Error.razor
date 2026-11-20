@@ -3,7 +3,7 @@
 @using DriveTrack.Web.Resources
 @using Microsoft.AspNetCore.Components.Endpoints
 @using Microsoft.Extensions.Localization
-@* AD-14 turns prerendering off globally, so without this the cascading HttpContext is
+@* Prerendering is off globally, so without this the cascading HttpContext is
    always null and RequestId never resolves. Static rendering is also what an error page
    wants: it must not depend on a circuit that may be the thing that failed. *@
 @attribute [ExcludeFromInteractiveRouting]
