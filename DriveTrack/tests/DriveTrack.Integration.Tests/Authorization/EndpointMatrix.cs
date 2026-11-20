@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Accounts;
 using DriveTrack.Integration.Tests.Deliveries;
 
 namespace DriveTrack.Integration.Tests.Authorization;

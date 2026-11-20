@@ -2,7 +2,9 @@ using System.Globalization;
 using DriveTrack.Application.Abstractions.Persistence;
 using DriveTrack.Application.Accounts;
 using DriveTrack.Application.Accounts.Authentication;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Accounts;
+using DriveTrack.Domain.Clients;
+using DriveTrack.Domain.Drivers;
 
 namespace DriveTrack.Application.Authorization;
 

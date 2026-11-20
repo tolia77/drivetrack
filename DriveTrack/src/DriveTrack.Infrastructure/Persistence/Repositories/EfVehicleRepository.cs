@@ -2,7 +2,7 @@ using DriveTrack.Application.Abstractions.Persistence;
 using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Paging;
 using DriveTrack.Application.Vehicles;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Drivers;
 using DriveTrack.Domain.Vehicles;
 using Microsoft.EntityFrameworkCore;
 

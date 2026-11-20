@@ -4,6 +4,8 @@ using System.Net.Http.Json;
 using DriveTrack.Application.Chat;
 using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Errors;
+using DriveTrack.Domain.Accounts;
+using DriveTrack.Domain.Drivers;
 using DriveTrack.Integration.Tests.Identity;
 using DriveTrack.Integration.Tests.Persistence;
 using Microsoft.AspNetCore.SignalR;

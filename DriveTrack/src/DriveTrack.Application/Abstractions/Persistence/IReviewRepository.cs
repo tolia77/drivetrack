@@ -2,7 +2,7 @@ using DriveTrack.Application.Authorization;
 using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Paging;
 using DriveTrack.Application.Reviews;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Drivers;
 using DriveTrack.Domain.Reviews;
 
 namespace DriveTrack.Application.Abstractions.Persistence;

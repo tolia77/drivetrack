@@ -1,6 +1,6 @@
 using DriveTrack.Application.Abstractions.Persistence;
 using DriveTrack.Application.Authorization;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Accounts;
 
 namespace DriveTrack.Application.Accounts.Authentication;
 

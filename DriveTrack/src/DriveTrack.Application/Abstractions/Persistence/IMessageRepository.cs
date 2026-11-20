@@ -1,5 +1,5 @@
 using DriveTrack.Domain.Chat;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Drivers;
 
 namespace DriveTrack.Application.Abstractions.Persistence;
 

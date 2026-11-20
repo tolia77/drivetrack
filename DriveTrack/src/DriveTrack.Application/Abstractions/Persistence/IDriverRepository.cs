@@ -2,7 +2,6 @@ using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Paging;
 using DriveTrack.Application.Drivers;
 using DriveTrack.Domain.Drivers;
-using DriveTrack.Domain.Identity;
 
 namespace DriveTrack.Application.Abstractions.Persistence;
 

@@ -1,4 +1,4 @@
-namespace DriveTrack.Domain.Identity;
+namespace DriveTrack.Domain.Accounts;
 
 /// <summary>
 /// The four roles a user can hold. One user holds exactly one of these — the unique index

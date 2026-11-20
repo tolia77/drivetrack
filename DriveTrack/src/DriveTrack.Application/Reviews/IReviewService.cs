@@ -1,5 +1,5 @@
 using DriveTrack.Application.Common.Paging;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Drivers;
 
 namespace DriveTrack.Application.Reviews;
 

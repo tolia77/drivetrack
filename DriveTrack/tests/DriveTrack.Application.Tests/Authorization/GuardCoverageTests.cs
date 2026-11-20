@@ -3,6 +3,7 @@ using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using DriveTrack.Application;
 using DriveTrack.Application.Authorization;
+using DriveTrack.Domain.Accounts;
 
 namespace DriveTrack.Application.Tests.Authorization;
 
@@ -371,7 +372,7 @@ public class GuardCoverageTests
 public sealed class GuardCoverageProbe(IAccessGuard guard)
 {
     /// <summary>Calls the guard, awaiting either side of it so the state-machine detour is exercised.</summary>
-    public async Task GuardedAsync(DriveTrack.Domain.Identity.UserId userId)
+    public async Task GuardedAsync(DriveTrack.Domain.Accounts.UserId userId)
     {
         await Task.Yield();
 
@@ -379,7 +380,7 @@ public sealed class GuardCoverageProbe(IAccessGuard guard)
     }
 
     /// <summary>Deliberately does not call the guard.</summary>
-    public async Task UnguardedAsync(DriveTrack.Domain.Identity.UserId userId)
+    public async Task UnguardedAsync(DriveTrack.Domain.Accounts.UserId userId)
     {
         await Task.Yield();
 

@@ -3,7 +3,7 @@ using DriveTrack.Application.Accounts.Authentication;
 using DriveTrack.Application.Chat;
 using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Errors;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Drivers;
 using DriveTrack.Web.Account;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;

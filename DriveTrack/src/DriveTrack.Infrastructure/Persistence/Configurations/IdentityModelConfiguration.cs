@@ -1,3 +1,4 @@
+using DriveTrack.Domain.Accounts;
 using DriveTrack.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;

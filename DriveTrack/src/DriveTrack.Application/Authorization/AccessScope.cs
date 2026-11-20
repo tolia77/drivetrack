@@ -1,4 +1,6 @@
-using DriveTrack.Domain.Identity;
+
+using DriveTrack.Domain.Clients;
+using DriveTrack.Domain.Drivers;
 
 namespace DriveTrack.Application.Authorization;
 
@@ -14,8 +16,8 @@ namespace DriveTrack.Application.Authorization;
 /// </para>
 /// <para>
 /// One role per user, so a caller is at most one of driver or client and the pair is total.
-/// Both null is the unrestricted case, which is what <see cref="Domain.Identity.UserRole.Admin"/>
-/// and <see cref="Domain.Identity.UserRole.Dispatcher"/> receive.
+/// Both null is the unrestricted case, which is what <see cref="Domain.Accounts.UserRole.Admin"/>
+/// and <see cref="Domain.Accounts.UserRole.Dispatcher"/> receive.
 /// </para>
 /// </summary>
 /// <param name="DriverId">The only driver whose rows may be shown, or null for every driver.</param>

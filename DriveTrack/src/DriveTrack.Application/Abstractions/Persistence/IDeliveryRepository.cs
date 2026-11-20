@@ -3,7 +3,7 @@ using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Paging;
 using DriveTrack.Application.Deliveries;
 using DriveTrack.Domain.Deliveries;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Drivers;
 
 namespace DriveTrack.Application.Abstractions.Persistence;
 

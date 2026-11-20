@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace DriveTrack.Domain.Identity;
+namespace DriveTrack.Domain.Accounts;
 
 /// <summary>
 /// The identity of an application user row.

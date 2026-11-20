@@ -1,7 +1,7 @@
 using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Paging;
 using DriveTrack.Application.Shifts;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Drivers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

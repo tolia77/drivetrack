@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Net;
+using DriveTrack.Domain.Accounts;
 using DriveTrack.Integration.Tests.Deliveries;
 using DriveTrack.Integration.Tests.Persistence;
 using DriveTrack.Integration.Tests.Support;

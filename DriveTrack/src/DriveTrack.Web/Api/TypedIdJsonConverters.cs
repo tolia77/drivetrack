@@ -1,6 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Accounts;
+using DriveTrack.Domain.Clients;
+using DriveTrack.Domain.Drivers;
 
 namespace DriveTrack.Web.Api;
 

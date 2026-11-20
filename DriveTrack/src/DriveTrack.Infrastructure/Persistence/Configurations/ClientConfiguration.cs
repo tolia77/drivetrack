@@ -1,3 +1,4 @@
+using DriveTrack.Domain.Accounts;
 using DriveTrack.Domain.Clients;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;

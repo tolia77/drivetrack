@@ -1,6 +1,6 @@
 using DriveTrack.Application.Accounts.Authentication;
 using DriveTrack.Application.Accounts.Profile;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Accounts;
 
 namespace DriveTrack.Application.Accounts;
 

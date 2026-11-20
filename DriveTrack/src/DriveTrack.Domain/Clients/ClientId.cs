@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace DriveTrack.Domain.Identity;
+namespace DriveTrack.Domain.Clients;
 
 /// <summary>
 /// The identity of a client row — deliberately not the identity of the client's user.

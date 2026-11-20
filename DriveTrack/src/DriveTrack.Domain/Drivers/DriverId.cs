@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace DriveTrack.Domain.Identity;
+namespace DriveTrack.Domain.Drivers;
 
 /// <summary>
 /// The identity of a driver row — deliberately not the identity of the driver's user.

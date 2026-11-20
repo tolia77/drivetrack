@@ -1,6 +1,8 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Accounts;
+using DriveTrack.Domain.Clients;
+using DriveTrack.Domain.Drivers;
 
 namespace DriveTrack.Integration.Tests.Domain;
 

@@ -1,6 +1,6 @@
 using DriveTrack.Application.Abstractions.Persistence;
 using DriveTrack.Domain.Chat;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Drivers;
 using Microsoft.EntityFrameworkCore;
 
 namespace DriveTrack.Infrastructure.Persistence.Repositories;

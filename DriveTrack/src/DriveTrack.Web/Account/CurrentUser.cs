@@ -1,7 +1,9 @@
 using System.Globalization;
 using System.Security.Claims;
 using DriveTrack.Application.Authorization;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Accounts;
+using DriveTrack.Domain.Clients;
+using DriveTrack.Domain.Drivers;
 using Microsoft.AspNetCore.Components.Authorization;
 
 namespace DriveTrack.Web.Account;

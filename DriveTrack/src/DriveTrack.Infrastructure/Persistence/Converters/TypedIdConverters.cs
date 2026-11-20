@@ -1,4 +1,6 @@
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Accounts;
+using DriveTrack.Domain.Clients;
+using DriveTrack.Domain.Drivers;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace DriveTrack.Infrastructure.Persistence.Converters;

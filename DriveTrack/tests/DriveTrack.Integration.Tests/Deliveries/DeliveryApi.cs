@@ -1,7 +1,9 @@
 using System.Net;
 using System.Text.Json;
+using DriveTrack.Domain.Accounts;
+using DriveTrack.Domain.Clients;
 using DriveTrack.Domain.Deliveries;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Drivers;
 using DriveTrack.Integration.Tests.Fleet;
 using DriveTrack.Integration.Tests.Support;
 

@@ -1,7 +1,7 @@
 using DriveTrack.Application.Chat;
 using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Errors;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Drivers;
 
 namespace DriveTrack.Application.Tests.Chat;
 

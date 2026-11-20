@@ -1,7 +1,8 @@
 using System.Globalization;
 using DriveTrack.Application.Abstractions.Persistence;
+using DriveTrack.Domain.Accounts;
 using DriveTrack.Domain.Clients;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Drivers;
 using DriveTrack.Integration.Tests.Persistence;
 using DriveTrack.Integration.Tests.Support;
 

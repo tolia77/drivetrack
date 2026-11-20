@@ -1,7 +1,6 @@
 using DriveTrack.Application.Accounts;
 using DriveTrack.Application.Accounts.Dispatchers;
 using DriveTrack.Application.Common;
-using DriveTrack.Domain.Identity;
 
 namespace DriveTrack.Application.Abstractions.Persistence;
 

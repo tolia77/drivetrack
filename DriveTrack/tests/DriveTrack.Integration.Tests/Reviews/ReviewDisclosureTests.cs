@@ -1,7 +1,7 @@
 using System.Net.Http;
 using System.Text.Json;
 using DriveTrack.Application.Reviews;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Clients;
 using DriveTrack.Infrastructure.Persistence;
 using DriveTrack.Integration.Tests.Deliveries;
 using DriveTrack.Integration.Tests.Fleet;

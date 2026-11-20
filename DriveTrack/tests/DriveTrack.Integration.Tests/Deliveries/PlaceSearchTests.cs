@@ -3,7 +3,7 @@ using DriveTrack.Application.Abstractions.Outbound;
 using DriveTrack.Application.Abstractions.Persistence;
 using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Errors;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Accounts;
 using DriveTrack.Integration.Tests.Fleet;
 using DriveTrack.Integration.Tests.Persistence;
 using DriveTrack.Integration.Tests.Support;

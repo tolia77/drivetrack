@@ -1,4 +1,5 @@
-using DriveTrack.Domain.Identity;
+
+using DriveTrack.Domain.Accounts;
 
 namespace DriveTrack.Application.Accounts.Profile;
 

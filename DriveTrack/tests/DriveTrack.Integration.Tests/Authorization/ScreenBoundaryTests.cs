@@ -2,7 +2,6 @@ using System.Net;
 using System.Reflection;
 using DriveTrack.Application;
 using DriveTrack.Application.Authorization;
-using DriveTrack.Domain.Identity;
 using DriveTrack.Integration.Tests.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Testing;

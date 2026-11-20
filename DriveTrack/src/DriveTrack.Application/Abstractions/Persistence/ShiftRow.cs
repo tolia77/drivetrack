@@ -1,6 +1,5 @@
 using DriveTrack.Application.Common;
 using DriveTrack.Application.Shifts;
-using DriveTrack.Domain.Identity;
 using DriveTrack.Domain.Shifts;
 
 namespace DriveTrack.Application.Abstractions.Persistence;

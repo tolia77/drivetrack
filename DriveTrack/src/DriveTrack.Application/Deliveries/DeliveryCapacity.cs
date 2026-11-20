@@ -2,7 +2,7 @@ using System.Globalization;
 using DriveTrack.Application.Abstractions.Persistence;
 using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Errors;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Drivers;
 
 namespace DriveTrack.Application.Deliveries;
 

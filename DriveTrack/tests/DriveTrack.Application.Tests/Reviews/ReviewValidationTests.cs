@@ -1,6 +1,7 @@
 using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Errors;
 using DriveTrack.Application.Reviews;
+using DriveTrack.Domain.Clients;
 using DriveTrack.Domain.Reviews;
 using FluentValidation.Results;
 
@@ -143,7 +144,7 @@ public class ReviewValidationTests
         var stored = new Review
         {
             DeliveryId = 7,
-            ClientId = new Domain.Identity.ClientId(3),
+            ClientId = new Domain.Clients.ClientId(3),
             Rating = 2,
             Text = "було погано",
             CreatedAt = DateTimeOffset.UnixEpoch,
@@ -166,7 +167,7 @@ public class ReviewValidationTests
         var stored = new Review
         {
             DeliveryId = 7,
-            ClientId = new Domain.Identity.ClientId(3),
+            ClientId = new Domain.Clients.ClientId(3),
             Rating = 4,
             Text = "було добре",
             CreatedAt = DateTimeOffset.UnixEpoch,
@@ -210,7 +211,7 @@ public class ReviewValidationTests
         new UpdateReviewCommand(Optional<int>.Absent, text).MergedOnto(new Review
         {
             DeliveryId = 7,
-            ClientId = new Domain.Identity.ClientId(3),
+            ClientId = new Domain.Clients.ClientId(3),
             Rating = RatingScale.Default,
             Text = "було добре",
             CreatedAt = DateTimeOffset.UnixEpoch,

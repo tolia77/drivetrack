@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Errors;
+using DriveTrack.Domain.Accounts;
 using DriveTrack.Integration.Tests.Support;
 
 namespace DriveTrack.Integration.Tests.Identity;

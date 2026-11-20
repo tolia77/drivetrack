@@ -5,9 +5,10 @@ using DriveTrack.Application.Authorization;
 using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Errors;
 using DriveTrack.Application.Common.Locations;
+using DriveTrack.Domain.Accounts;
 using DriveTrack.Domain.Common;
 using DriveTrack.Domain.Deliveries;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Drivers;
 using FluentValidation;
 
 namespace DriveTrack.Application.Deliveries.Proof;

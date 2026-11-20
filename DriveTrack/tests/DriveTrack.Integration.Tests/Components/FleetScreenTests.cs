@@ -4,7 +4,9 @@ using DriveTrack.Application.Common;
 using DriveTrack.Application.Common.Paging;
 using DriveTrack.Application.Drivers;
 using DriveTrack.Application.Vehicles;
-using DriveTrack.Domain.Identity;
+using DriveTrack.Domain.Accounts;
+using DriveTrack.Domain.Clients;
+using DriveTrack.Domain.Drivers;
 using DriveTrack.Integration.Tests.Support;
 using Microsoft.Extensions.DependencyInjection;
 
