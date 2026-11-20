@@ -6,11 +6,11 @@ namespace DriveTrack.Domain.Clients;
 
 /// <summary>
 /// The client subtype of an application user. Like <c>Driver</c> it exists because it carries
-/// a real field of its own; admin and dispatcher do not and get no table (DR-3).
+/// a real field of its own; admin and dispatcher do not and get no table.
 /// </summary>
 public sealed class Client
 {
-    /// <summary>Surrogate key of the client row, distinct from <see cref="UserId"/> (AD-22).</summary>
+    /// <summary>Surrogate key of the client row, distinct from <see cref="UserId"/>.</summary>
     public ClientId Id { get; set; }
 
     /// <summary>
@@ -21,9 +21,9 @@ public sealed class Client
     /// <summary>Contact number in international form.</summary>
     public required string PhoneNumber { get; set; }
 
-    /// <summary>Deliveries this client requested. Survives the client's deletion with a null owner (FR-47).</summary>
+    /// <summary>Deliveries this client requested. Survives the client's deletion with a null owner.</summary>
     public ICollection<Delivery> Deliveries { get; } = [];
 
-    /// <summary>Reviews this client wrote. Deleted with the client (FR-47).</summary>
+    /// <summary>Reviews this client wrote. Deleted with the client.</summary>
     public ICollection<Review> Reviews { get; } = [];
 }

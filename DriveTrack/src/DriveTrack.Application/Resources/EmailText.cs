@@ -5,12 +5,13 @@ using DriveTrack.Domain.Deliveries;
 namespace DriveTrack.Application.Resources;
 
 /// <summary>
-/// The words an outbound message is built from (NFR-14), read from <c>EmailText.resx</c> through a
+/// The words an outbound message is built from, read from <c>EmailText.resx</c> through a
 /// BCL <see cref="ResourceManager"/>.
 /// <para>
 /// A <see cref="ResourceManager"/> rather than <c>IStringLocalizer</c> because that interface is an
-/// ASP.NET abstraction and this is a class library AD-1 keeps free of one. The resx is embedded by
-/// the SDK's default item globbing, so the manifest name is the root namespace plus the folder.
+/// ASP.NET abstraction and this is a class library the layering rule keeps free of one. The resx is
+/// embedded by the SDK's default item globbing, so the manifest name is the root namespace plus the
+/// folder.
 /// </para>
 /// </summary>
 internal static class EmailText

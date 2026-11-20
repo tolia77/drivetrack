@@ -3,8 +3,8 @@ using DriveTrack.Domain.Deliveries;
 namespace DriveTrack.Application.Deliveries;
 
 /// <summary>
-/// NFR-27's paging over a delivery list, with the dispatch board's sort and its ten filters (FR-20,
-/// FR-101), all answered by the database over every row the caller may see.
+/// Paging over a delivery list, with the dispatch board's sort and its ten filters, all answered by
+/// the database over every row the caller may see.
 /// <para>
 /// The filters and the sort are applied in SQL after the access scope and before OFFSET and LIMIT,
 /// so a delivery past the first page is still found by a filter and still sorted into its place,
@@ -13,12 +13,12 @@ namespace DriveTrack.Application.Deliveries;
 /// </para>
 /// <para>
 /// There is no scope here. The caller does not get to say whose rows it wants: that answer comes
-/// from <c>IAccessGuard.RequireScope</c> and reaches the repository as a separate argument (AD-3).
+/// from <c>IAccessGuard.RequireScope</c> and reaches the repository as a separate argument.
 /// </para>
 /// <para>
 /// The own-deliveries list takes the same query and refuses the two parts of it that are about a
 /// counterparty - the driver and client filters and the two name sorts - because that list carries
-/// no counterparty identity at all (AD-17), and ordering or narrowing by a name is a way of reading
+/// no counterparty identity at all, and ordering or narrowing by a name is a way of reading
 /// one.
 /// </para>
 /// </summary>
@@ -38,7 +38,7 @@ namespace DriveTrack.Application.Deliveries;
 /// <param name="Status">The only status to list, or null for every status.</param>
 /// <param name="CreatedFrom">The first local day a listed delivery may have been opened on.</param>
 /// <param name="CreatedTo">The last local day a listed delivery may have been opened on, inclusive.</param>
-/// <param name="OverdueOnly">True to list only deliveries whose window has passed (FR-19).</param>
+/// <param name="OverdueOnly">True to list only deliveries whose window has passed.</param>
 public sealed record ListDeliveriesQuery(
     int Offset,
     int Limit,
@@ -55,7 +55,7 @@ public sealed record ListDeliveriesQuery(
     DateOnly? CreatedTo = null,
     bool OverdueOnly = false);
 
-/// <summary>The columns a delivery list can be ordered by (FR-20).</summary>
+/// <summary>The columns a delivery list can be ordered by.</summary>
 public enum DeliverySort
 {
     /// <summary>

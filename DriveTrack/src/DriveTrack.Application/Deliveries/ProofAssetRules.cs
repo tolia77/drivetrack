@@ -1,7 +1,7 @@
 namespace DriveTrack.Application.Deliveries;
 
 /// <summary>
-/// What a proof's artefacts may be (NFR-28), in one place.
+/// What a proof's artefacts may be, in one place.
 /// <para>
 /// The figures are read by three different callers — the validator that refuses a bad upload, the
 /// REST adapter that sizes its request limits, and the capture screen that opens a browser file at a
@@ -36,7 +36,7 @@ public static class ProofAssetRules
     public const long MaximumAssetBytes = 5L * 1024 * 1024;
 
     /// <summary>
-    /// How many photographs one proof may carry. FR-119 asks for at least one; the ceiling is here
+    /// How many photographs one proof may carry. A proof needs at least one; the ceiling is here
     /// so a capture cannot become an unbounded upload, and five is more angles than a doorstep has.
     /// </summary>
     public const int MaximumPhotos = 5;

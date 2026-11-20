@@ -4,7 +4,7 @@ using DriveTrack.Domain.Deliveries;
 namespace DriveTrack.Application.Deliveries;
 
 /// <summary>
-/// FR-101, derived and stored nowhere: the latest bound has passed and the parcel is still open -
+/// Overdue, derived and stored nowhere: the latest bound has passed and the parcel is still open -
 /// Pending or In transit. A finished delivery is never overdue however long the window has been
 /// shut: a delivered parcel arrived, and a failed one is closed - there is nothing left to chase,
 /// and counting it would keep the dashboard's overdue warning lit by history alone.

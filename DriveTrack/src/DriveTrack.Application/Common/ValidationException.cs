@@ -4,7 +4,7 @@ namespace DriveTrack.Application.Common;
 
 /// <summary>
 /// One offending field of a rejected request: the CLR property name, and the resource key of the
-/// message explaining why (NFR-4). The key, not a message - the adapter resolves it through the same
+/// message explaining why. The key, not a message - the adapter resolves it through the same
 /// localized catalogue as <c>error.code</c>, so nothing here can put untranslated or caller-derived
 /// prose on the wire.
 /// <para>

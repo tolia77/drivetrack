@@ -8,18 +8,18 @@ using FluentValidation;
 namespace DriveTrack.Application.Notifications;
 
 /// <summary>
-/// AD-3's pipeline over the notification log, which on a read-only capability is guard → validate →
-/// read → map.
+/// The operation pipeline over the notification log, which on a read-only capability is guard →
+/// validate → read → map.
 /// <para>
-/// AD-2: the guard is called through the interface, inline in this method's own body. Folding it
+/// The guard is called through the interface, inline in this method's own body. Folding it
 /// into a helper would read no better and would not count — the coverage gate walks the method's IL
 /// and does not follow a call it makes.
 /// </para>
 /// <para>
 /// <c>RequireRole(UserRole.Admin)</c> rather than <c>Dispatcher</c>, and the difference matters
-/// here: AD-4 makes an administrator satisfy every check by rule inside the guard, so naming
+/// here: an administrator satisfies every check by rule inside the guard, so naming
 /// <c>Dispatcher</c> would admit both. The log is an operations record — it carries the address of
-/// every client the system has written to — and FR-28 addresses it to the administrator.
+/// every client the system has written to — and it is addressed to the administrator.
 /// </para>
 /// </summary>
 public sealed class NotificationLogService(
@@ -36,8 +36,8 @@ public sealed class NotificationLogService(
 
         accessGuard.RequireRole(UserRole.Admin);
 
-        // NFR-27: refused before any query is built. After the guard, so a caller who may not read
-        // the log is told that rather than told their paging is wrong.
+        // Bad paging is refused before any query is built. After the guard, so a caller who may not
+        // read the log is told that rather than told their paging is wrong.
         await listValidator.EnsureValidAsync(query, cancellationToken);
 
         await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);

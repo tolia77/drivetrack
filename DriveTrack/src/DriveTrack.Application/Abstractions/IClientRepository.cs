@@ -8,11 +8,11 @@ namespace DriveTrack.Application.Abstractions;
 /// <summary>
 /// Persistence for <see cref="Client"/>.
 /// <para>
-/// AD-6: every method returns a materialized entity, never an <c>IQueryable</c> and never a
+/// Every method returns a materialized entity, never an <c>IQueryable</c> and never a
 /// stream over a live context, and every I/O method takes a cancellation token. The surface is
 /// deliberately narrow — a repository gains a query method only when a requirement asks for one.
-/// <see cref="ListAsync"/> is the first requirement that has: FR-46 and FR-48 need the whole
-/// roster, so it arrived with them rather than in advance of them.
+/// <see cref="ListAsync"/> is the first requirement that has: the admin and dispatcher client
+/// lists need the whole roster, so it arrived with them rather than in advance of them.
 /// </para>
 /// </summary>
 public interface IClientRepository
@@ -21,14 +21,14 @@ public interface IClientRepository
     Task<Client?> GetByIdAsync(ClientId id, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Every client row (FR-46, FR-48). Materialized and ordered, and unpaged: it feeds the delivery
+    /// Every client row. Materialized and ordered, and unpaged: it feeds the delivery
     /// form's client picker, which has to offer every client rather than a table's page.
     /// </summary>
     Task<IReadOnlyList<Client>> ListAsync(CancellationToken cancellationToken);
 
     /// <summary>
     /// One page of the client roster with each client's account fields, sorted in SQL over every
-    /// client, and the size of the roster (FR-46, NFR-27). Surname order when no column is named;
+    /// client, and the size of the roster. Surname order when no column is named;
     /// every order ends on the id.
     /// </summary>
     /// <param name="query">The page and the direction. Already validated.</param>

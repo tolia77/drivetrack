@@ -10,7 +10,7 @@ namespace DriveTrack.Application;
 public static class DependencyInjection
 {
     /// <summary>
-    /// Registers every <c>IValidator&lt;T&gt;</c> declared in this assembly (AD-9).
+    /// Registers every <c>IValidator&lt;T&gt;</c> declared in this assembly.
     /// <para>
     /// Discovery is from <see cref="ApplicationAssembly.Assembly"/>, the one assembly handle this
     /// layer exposes. Registration only makes a validator resolvable - it is still an application

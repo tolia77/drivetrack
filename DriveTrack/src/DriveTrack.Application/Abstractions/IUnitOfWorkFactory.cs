@@ -1,7 +1,7 @@
 namespace DriveTrack.Application.Abstractions;
 
 /// <summary>
-/// Creates the per-operation persistence scope (AD-5). Application services depend on this
+/// Creates the per-operation persistence scope. Application services depend on this
 /// rather than on a context, which is what keeps the database context out of every constructor
 /// in the system and out of the Blazor circuit's lifetime entirely. Application never names an
 /// Infrastructure type, this sentence included.

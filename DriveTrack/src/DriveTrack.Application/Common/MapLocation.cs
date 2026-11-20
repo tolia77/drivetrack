@@ -1,12 +1,12 @@
 namespace DriveTrack.Application.Common;
 
 /// <summary>
-/// A point a map component can show, expressed once for every capability epic (AD-17).
+/// A point a map component can show, expressed once for every capability.
 /// <para>
-/// AD-17 keeps a DTO beside the feature that owns it; this is the deliberate exception. The one
+/// A DTO normally lives beside the feature that owns it; this is the deliberate exception. The one
 /// shared map is a UI component, and a component that bound to
 /// <c>DriveTrack.Domain.Common.Location</c> would tie the shell to the domain model — so
-/// coordinates cross the boundary as this pair instead, and every epic from 4 onward hands the
+/// coordinates cross the boundary as this pair instead, and every capability hands the
 /// same shape to the same component.
 /// </para>
 /// <para>

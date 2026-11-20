@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
   <!--
-    NFR-14 for the words that leave the product by mail rather than through a screen.
+    Localized text for the words that leave the product by mail rather than through a screen.
 
     This is not UiText.resx, and it cannot be. That catalogue is closed in both directions against
     the keys components ask for - a key no `@Localizer["Key"]` reads fails the build - so a subject
     line no component renders could not live there. Nor can these be read through
     IStringLocalizer: that is an ASP.NET abstraction, and DriveTrack.Application is a class library
-    that takes no ASP.NET dependency (AD-1). A BCL ResourceManager over this file keeps the text out
+    that takes no ASP.NET dependency. A BCL ResourceManager over this file keeps the text out
     of code without adding either.
 
     The four status labels are duplicated from UiText.resx on purpose, and LocalizationTests pins
@@ -86,7 +86,7 @@
 
 Це повідомлення сформовано автоматично, відповідати на нього не потрібно.</value>
   </data>
-  <!-- FR-30's four statuses, worded exactly as the screens word them. -->
+  <!-- The four delivery statuses, worded exactly as the screens word them. -->
   <data name="StatusPending" xml:space="preserve">
     <value>Очікує</value>
   </data>

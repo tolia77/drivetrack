@@ -7,12 +7,12 @@ using DriveTrack.Domain.Deliveries;
 namespace DriveTrack.Application.Deliveries;
 
 /// <summary>
-/// FR-28's notice, composed here rather than in the transport.
+/// The status-change notice, composed here rather than in the transport.
 /// <para>
 /// <see cref="IEmailSender"/> takes a written message precisely so that this — the only part a
 /// client ever reads — stays in the layer that owns the product's vocabulary. An adapter that
-/// composed its own subject line would be a second place NFR-14 applied, and the one place nobody
-/// would look for it.
+/// composed its own subject line would be a second place localization applied, and the one place
+/// nobody would look for it.
 /// </para>
 /// </summary>
 internal static class StatusChangeEmail

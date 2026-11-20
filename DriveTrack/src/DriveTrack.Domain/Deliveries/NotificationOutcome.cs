@@ -1,7 +1,7 @@
 namespace DriveTrack.Domain.Deliveries;
 
 /// <summary>
-/// How a notification attempt ended. Persisted as the member name (AD-21).
+/// How a notification attempt ended. Persisted as the member name.
 /// </summary>
 public enum NotificationOutcome
 {

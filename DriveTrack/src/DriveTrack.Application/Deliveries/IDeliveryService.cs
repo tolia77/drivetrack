@@ -1,41 +1,41 @@
 namespace DriveTrack.Application.Deliveries;
 
 /// <summary>
-/// The Deliveries capability (FR-14 to FR-27, FR-101 to FR-103): the only writer of the
-/// <c>deliveries</c> table, and the only reader other capabilities go through (AD-24).
+/// The Deliveries capability: the only writer of the
+/// <c>deliveries</c> table, and the only reader other capabilities go through.
 /// <para>
-/// Two list methods rather than one with a role branch inside it. AD-1 keeps domain branching out
-/// of adapters, and AD-17 makes "a role that sees less gets a distinct DTO" a type rather than a
+/// Two list methods rather than one with a role branch inside it. Domain branching stays out of
+/// adapters, and "a role that sees less gets a distinct DTO" is a type rather than a
 /// convention — so the dispatch list and the own-deliveries list answer different shapes and are
 /// reached by different routes. A driver calling <see cref="ListAsync"/> is refused; a driver
-/// calling <see cref="ListMineAsync"/> gets exactly their own rows, narrowed in SQL (AD-3).
+/// calling <see cref="ListMineAsync"/> gets exactly their own rows, narrowed in SQL.
 /// </para>
 /// </summary>
 public interface IDeliveryService
 {
     /// <summary>
     /// One page of every delivery with both parties named, filtered and sorted over every row, and
-    /// the number that matched (FR-18, FR-20, FR-101). Newest first when no column is named.
+    /// the number that matched. Newest first when no column is named.
     /// Dispatcher or admin; a driver or a client is refused rather than quietly narrowed.
     /// </summary>
     /// <exception cref="Common.ForbiddenException">The caller runs neither dispatch nor the system.</exception>
     /// <exception cref="Common.ValidationException">
     /// The paging parameters are out of range, the sort names no column, or the status is not one
-    /// the system has (NFR-27).
+    /// the system has.
     /// </exception>
     Task<Common.Paged<DeliverySummary>> ListAsync(
         ListDeliveriesQuery query,
         CancellationToken cancellationToken);
 
     /// <summary>
-    /// One page of the caller's own deliveries (FR-25, FR-27), carrying no counterparty identity at
+    /// One page of the caller's own deliveries, carrying no counterparty identity at
     /// all. The narrowing comes from <c>IAccessGuard.RequireScope</c> and reaches the query, so
     /// paging stays correct for a caller whose rows are not the first hundred.
     /// </summary>
     /// <remarks>
     /// The page is sorted and filtered over all of the caller's rows, and carries their total. The
     /// driver and client sorts are refused and the driver and client filters ignored: this list
-    /// carries no counterparty identity, and ordering by a name is a way of reading it (AD-17).
+    /// carries no counterparty identity, and ordering by a name is a way of reading it.
     /// </remarks>
     /// <exception cref="Common.ForbiddenException">The caller has no session, or no row scope.</exception>
     /// <exception cref="Common.ValidationException">
@@ -62,18 +62,18 @@ public interface IDeliveryService
     Task<DeliverySummary> GetAsync(int id, CancellationToken cancellationToken);
 
     /// <summary>
-    /// One of the caller's own deliveries (FR-26, FR-27), carrying no counterparty identity at all.
+    /// One of the caller's own deliveries, carrying no counterparty identity at all.
     /// <para>
     /// <see cref="ListMineAsync"/>'s singular, and the only scoped single-delivery read the system
     /// has. <see cref="GetAsync"/> cannot serve here: it is dispatcher-gated, so a client asking
     /// about their own parcel is refused by it.
     /// </para>
     /// <para>
-    /// It exists because AD-24 needs it to. The Reviews capability has to know whether the delivery
-    /// a client is reviewing is theirs and whether it has finished, and it may not read
-    /// <c>unitOfWork.Deliveries</c> to find out — another capability's rows are read through that
-    /// capability's service. This is that door, and it is a narrow one: the narrowing is the
-    /// guard's scope reaching the <c>WHERE</c> clause (AD-3), so a delivery outside it is answered
+    /// It exists because the single-owner rule needs it to. The Reviews capability has to know
+    /// whether the delivery a client is reviewing is theirs and whether it has finished, and it may
+    /// not read <c>unitOfWork.Deliveries</c> to find out — another capability's rows are read
+    /// through that capability's service. This is that door, and it is a narrow one: the narrowing
+    /// is the guard's scope reaching the <c>WHERE</c> clause, so a delivery outside it is answered
     /// as a 404 rather than a 403 and its existence is never disclosed.
     /// </para>
     /// </summary>
@@ -86,7 +86,7 @@ public interface IDeliveryService
 
     /// <summary>
     /// Several deliveries at once, as dispatch reads them, for a caller that already holds a page of
-    /// rows naming them (FR-64).
+    /// rows naming them.
     /// <para>
     /// <see cref="GetAsync"/>'s plural, and the difference is not convenience. Party names are not
     /// on the delivery row: a client's name lives on the Identity account, so every summary this
@@ -96,11 +96,12 @@ public interface IDeliveryService
     /// two hundred roster reads; asking this once costs one transaction and two roster reads.
     /// </para>
     /// <para>
-    /// It exists because AD-24 needs it to, exactly as <see cref="GetMineAsync"/> does. The Reviews
-    /// capability's moderation list names both parties to each reviewed delivery and may not read
-    /// <c>unitOfWork.Deliveries</c> or <c>.Users</c> to find them. This is that door, and it is the
-    /// mirror of <c>IReviewService.ListDriverRatingsAsync</c>, which the Drivers capability reads
-    /// its ratings through: a capability that needs N rows of somebody else's data asks once.
+    /// It exists because the single-owner rule needs it to, exactly as <see cref="GetMineAsync"/>
+    /// does. The Reviews capability's moderation list names both parties to each reviewed delivery
+    /// and may not read <c>unitOfWork.Deliveries</c> or <c>.Users</c> to find them. This is that
+    /// door, and it is the mirror of <c>IReviewService.ListDriverRatingsAsync</c>, which the
+    /// Drivers capability reads its ratings through: a capability that needs N rows of somebody
+    /// else's data asks once.
     /// </para>
     /// <para>
     /// An id with no row — a delivery deleted between the caller's page read and this call — is
@@ -117,35 +118,35 @@ public interface IDeliveryService
         CancellationToken cancellationToken);
 
     /// <summary>
-    /// Opens a delivery (FR-14 to FR-17). It starts <c>Pending</c> and is timestamped from the
-    /// injected clock (AD-13).
+    /// Opens a delivery. It starts <c>Pending</c> and is timestamped from the
+    /// injected clock.
     /// </summary>
     /// <exception cref="Common.ValidationException">The command describes a delivery that may not exist.</exception>
-    /// <exception cref="Common.NotFoundException">The named driver or client has no row (FR-29).</exception>
-    /// <exception cref="Common.DomainRuleException">The assigned driver's vehicle cannot carry it (FR-103).</exception>
+    /// <exception cref="Common.NotFoundException">The named driver or client has no row.</exception>
+    /// <exception cref="Common.DomainRuleException">The assigned driver's vehicle cannot carry it.</exception>
     Task<DeliverySummary> CreateAsync(
         CreateDeliveryCommand command,
         CancellationToken cancellationToken);
 
     /// <summary>
-    /// Opens a delivery the caller asked for themselves (FR-89, FR-90, FR-91).
+    /// Opens a delivery the caller asked for themselves.
     /// <para>
     /// <see cref="CreateAsync"/>'s sibling rather than an overload of it, because the two differ in
     /// who the row is attached to and in who may call them. The requester is the guard's answer,
     /// never a field of the command, so a client cannot ask on another client's behalf; the driver
-    /// and the status are absent from the command entirely, so FR-90's "the client sets neither" is
+    /// and the status are absent from the command entirely, so "the client sets neither" is
     /// a shape rather than a rule someone has to enforce.
     /// </para>
     /// <para>
     /// Answers <see cref="AssignedDeliverySummary"/> rather than <see cref="DeliverySummary"/>, and
-    /// that is AD-17 rather than economy: the row a client just created is a row they read on
-    /// <c>/my-deliveries</c>, and a payload with a <c>Driver</c> field on it would be a
-    /// counterparty's name one mapping mistake away from a client's screen (FR-27).
+    /// that is the distinct-DTO rule rather than economy: the row a client just created is a row
+    /// they read on <c>/my-deliveries</c>, and a payload with a <c>Driver</c> field on it would be
+    /// a counterparty's name one mapping mistake away from a client's screen.
     /// </para>
     /// <para>
     /// Dispatch needs nothing new for the result. The row lands in <see cref="ListAsync"/> with its
     /// client named and no driver, and <see cref="UpdateAsync"/> assigns one with the vehicle
-    /// capacity re-checked (FR-103) — the same edit path a dispatcher's own delivery takes.
+    /// capacity re-checked — the same edit path a dispatcher's own delivery takes.
     /// </para>
     /// </summary>
     /// <exception cref="Common.ForbiddenException">
@@ -161,8 +162,8 @@ public interface IDeliveryService
         CancellationToken cancellationToken);
 
     /// <summary>
-    /// Changes a delivery (FR-22, FR-23). Absent fields are left alone and a present null clears
-    /// what may be cleared (AD-23); every rule is judged against the merged state.
+    /// Changes a delivery. Absent fields are left alone and a present null clears
+    /// what may be cleared; every rule is judged against the merged state.
     /// </summary>
     /// <exception cref="Common.NotFoundException">No delivery has that id, or a named party has no row.</exception>
     /// <exception cref="Common.ValidationException">The merged state is one the row may not hold.</exception>
@@ -174,29 +175,29 @@ public interface IDeliveryService
 
     /// <summary>
     /// Deletes a delivery and, through the database's own cascade, its timeline, proof, review and
-    /// notification attempts (FR-24, DR-9). Admin only — a dispatcher is refused.
+    /// notification attempts. Admin only — a dispatcher is refused.
     /// </summary>
     /// <exception cref="Common.NotFoundException">No delivery has that id.</exception>
     /// <exception cref="Common.ForbiddenException">The caller is not an administrator.</exception>
     Task DeleteAsync(int id, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Advances a delivery's lifecycle and records the change (FR-30 to FR-34, FR-105, FR-106).
+    /// Advances a delivery's lifecycle and records the change.
     /// <para>
-    /// The system's only status write path, whichever role or adapter initiated it (AD-10). The
-    /// timeline entry is written inside the same transaction as the change it records (AD-27), so a
+    /// The system's only status write path, whichever role or adapter initiated it. The
+    /// timeline entry is written inside the same transaction as the change it records, so a
     /// status that moved without a record — or a record of a move that did not happen — is not a
     /// state the database can hold.
     /// </para>
     /// <para>
-    /// Answers the entry rather than the delivery, and that is AD-17 rather than economy: a driver
-    /// advancing their own parcel must not be handed a payload with the client's name on it, and a
-    /// type with no party field cannot carry one.
+    /// Answers the entry rather than the delivery, and that is the distinct-DTO rule rather than
+    /// economy: a driver advancing their own parcel must not be handed a payload with the client's
+    /// name on it, and a type with no party field cannot carry one.
     /// </para>
     /// </summary>
     /// <exception cref="Common.ForbiddenException">
     /// The caller is anonymous, is a driver this delivery is not assigned to, holds a role with no
-    /// part in the lifecycle — a client, always (FR-90) — or presents a still-valid token for an
+    /// part in the lifecycle — a client, always — or presents a still-valid token for an
     /// account that has since been deleted (<c>AUTH_UNAUTHENTICATED</c>, 401).
     /// </exception>
     /// <exception cref="Common.NotFoundException">No delivery has that id.</exception>
@@ -207,8 +208,8 @@ public interface IDeliveryService
     /// <exception cref="Common.DomainRuleException">
     /// The delivery's current status does not lead to the one asked for
     /// (<c>DELIVERY_INVALID_STATUS_TRANSITION</c>, 409). The exception's own message names both
-    /// statuses (FR-32); what reaches the caller is the one catalogue sentence the code maps to,
-    /// because NFR-3 gives every code exactly one message and the envelope carries no other text.
+    /// statuses; what reaches the caller is the one catalogue sentence the code maps to,
+    /// because every code has exactly one message and the envelope carries no other text.
     /// </exception>
     Task<TimelineEntryView> ChangeStatusAsync(
         int id,
@@ -216,7 +217,7 @@ public interface IDeliveryService
         CancellationToken cancellationToken);
 
     /// <summary>
-    /// Appends a note to a delivery's timeline without changing anything else (FR-107).
+    /// Appends a note to a delivery's timeline without changing anything else.
     /// <para>
     /// Open to anyone who may see the delivery, which is precisely <c>IAccessGuard.RequireScope</c>
     /// — including the client, who may never change a status and may always say something about
@@ -238,12 +239,12 @@ public interface IDeliveryService
         CancellationToken cancellationToken);
 
     /// <summary>
-    /// A delivery's history, oldest first (FR-108).
+    /// A delivery's history, oldest first.
     /// <para>
     /// Every viewer of the delivery gets the same entries; what differs is whether each one names
-    /// its actor. A dispatcher or an admin sees the name, a driver or a client sees only the role
-    /// (FR-27, FR-96, FR-105), decided in this service's mapping step against the current user and
-    /// nowhere else (AD-17).
+    /// its actor. A dispatcher or an admin sees the name, a driver or a client sees only the role,
+    /// decided in this service's mapping step against the current user and
+    /// nowhere else.
     /// </para>
     /// </summary>
     /// <exception cref="Common.ForbiddenException">The caller has no session, or no row scope.</exception>
@@ -251,10 +252,10 @@ public interface IDeliveryService
     Task<IReadOnlyList<TimelineEntryView>> ListTimelineAsync(int id, CancellationToken cancellationToken);
 
     /// <summary>
-    /// The places matching a typed address (FR-104), each with the point a map click would have
+    /// The places matching a typed address, each with the point a map click would have
     /// produced.
     /// <para>
-    /// This capability's rather than a new one's, because the search exists for one screen: FR-104
+    /// This capability's rather than a new one's, because the search exists for one screen: it
     /// is the delivery form's second way of setting a pickup or a dropoff, beside the map. A
     /// capability of its own would be a capability with one caller and one reason to exist, and the
     /// guard decision would have to be restated in it.
@@ -262,8 +263,8 @@ public interface IDeliveryService
     /// <para>
     /// Open to the roles that compose a delivery and closed to the one that does not — precisely
     /// <c>IAccessGuard.RequireDeliveryComposer</c>, the same question <see cref="RequestAsync"/>
-    /// asks. FR-104 is unqualified about who sets a location by typing, and since story 7.4 a
-    /// client's request form sets two of them, so a dispatcher-only reservation would refuse the
+    /// asks. Nothing restricts who sets a location by typing, and a client's request form
+    /// sets two of them, so a dispatcher-only reservation would refuse the
     /// second caller the requirement is about. A driver stays refused: they read the parcel they
     /// are carrying and compose nothing, so a public geocoder is still not reachable by every
     /// session that exists.

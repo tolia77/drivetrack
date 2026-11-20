@@ -3,7 +3,7 @@
 namespace DriveTrack.Application.Common;
 
 /// <summary>
-/// AD-9's explicit validation seam: the one bridge between FluentValidation and the error
+/// The explicit validation seam: the one bridge between FluentValidation and the error
 /// vocabulary. An application service calls this itself, after authorization and before acting.
 /// No MVC filter, model binder or other adapter pipeline invokes a validator - which is why the
 /// deprecated auto-validation package is absent and why <c>FluentValidation</c> is named nowhere
@@ -18,7 +18,7 @@ public static class ValidatorExtensions
     /// </summary>
     /// <exception cref="ValidationException">
     /// The instance is invalid. Carries one <see cref="FieldError"/> per failure, so every
-    /// offending field survives to the wire (NFR-4).
+    /// offending field survives to the wire.
     /// </exception>
     public static async Task EnsureValidAsync<T>(
         this IValidator<T> validator,
@@ -35,8 +35,8 @@ public static class ValidatorExtensions
         }
 
         // A validator's message is a resource key, not a sentence: the adapter resolves it through
-        // the same catalogue as error.code, so NFR-14 holds for field messages too and nothing a
-        // validator writes reaches a user untranslated.
+        // the same catalogue as error.code, so localization holds for field messages too and
+        // nothing a validator writes reaches a user untranslated.
         var fieldErrors = result.Errors
             .Select(failure => new FieldError(failure.PropertyName, failure.ErrorMessage))
             .ToArray();
