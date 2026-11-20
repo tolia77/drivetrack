@@ -1,6 +1,6 @@
 using DriveTrack.Application.Abstractions;
+using DriveTrack.Application.Accounts.Clients;
 using DriveTrack.Application.Common;
-using DriveTrack.Application.Users;
 using DriveTrack.Domain.Clients;
 using DriveTrack.Domain.Identity;
 using Microsoft.EntityFrameworkCore;

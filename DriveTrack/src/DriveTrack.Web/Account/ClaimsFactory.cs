@@ -1,6 +1,6 @@
 using System.Security.Claims;
+using DriveTrack.Application.Accounts.Authentication;
 using DriveTrack.Application.Authorization;
-using DriveTrack.Application.Users;
 
 namespace DriveTrack.Web.Account;
 

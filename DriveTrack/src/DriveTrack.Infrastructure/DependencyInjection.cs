@@ -8,7 +8,6 @@ using DriveTrack.Application.Drivers;
 using DriveTrack.Application.Notifications;
 using DriveTrack.Application.Reviews;
 using DriveTrack.Application.Shifts;
-using DriveTrack.Application.Users;
 using DriveTrack.Application.Vehicles;
 using DriveTrack.Infrastructure.Email;
 using DriveTrack.Infrastructure.Geocoding;
@@ -24,6 +23,11 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using DriveTrack.Application.Accounts;
+using DriveTrack.Application.Accounts.Clients;
+using DriveTrack.Application.Accounts.Dispatchers;
+using DriveTrack.Application.Deliveries.Proof;
+using DriveTrack.Application.Deliveries.SideEffects;
 
 namespace DriveTrack.Infrastructure;
 

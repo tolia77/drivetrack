@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using DriveTrack.Application.Common;
+using DriveTrack.Application.Deliveries.Proof;
 using DriveTrack.Domain.Deliveries;
 using DriveTrack.Domain.Identity;
 using DriveTrack.Integration.Tests.Fleet;
@@ -536,7 +537,7 @@ public class ProofOfDeliveryTests(PostgresFixture postgres)
         // One byte over the per-asset cap and comfortably under the request cap, so the refusal
         // comes from the validator with a contract code rather than from the framework with a 413
         // no localized catalogue has a message for.
-        var oversized = new byte[DriveTrack.Application.Deliveries.ProofAssetRules.MaximumAssetBytes + 1];
+        var oversized = new byte[DriveTrack.Application.Deliveries.Proof.ProofAssetRules.MaximumAssetBytes + 1];
 
         using (var refused = await ProofApi.CaptureAsync(
                    client,

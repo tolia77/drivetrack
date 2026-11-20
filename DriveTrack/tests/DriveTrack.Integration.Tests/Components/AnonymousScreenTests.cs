@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
-using DriveTrack.Application.Users;
+using DriveTrack.Application.Accounts.Authentication;
 using DriveTrack.Integration.Tests.Persistence;
 using DriveTrack.Integration.Tests.Support;
 

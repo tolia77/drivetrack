@@ -2,7 +2,6 @@ using DriveTrack.Application.Abstractions;
 using DriveTrack.Application.Authorization;
 using DriveTrack.Application.Deliveries;
 using DriveTrack.Application.Notifications;
-using DriveTrack.Application.Users;
 using DriveTrack.Infrastructure;
 using DriveTrack.Infrastructure.Email;
 using DriveTrack.Infrastructure.Geocoding;
@@ -18,6 +17,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using DriveTrack.Application.Accounts;
+using DriveTrack.Application.Deliveries.Proof;
+using DriveTrack.Application.Deliveries.SideEffects;
 
 namespace DriveTrack.Integration.Tests.Configuration;
 

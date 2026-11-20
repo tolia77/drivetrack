@@ -1,7 +1,7 @@
 using System.Globalization;
+using DriveTrack.Application.Accounts.Authentication;
 using DriveTrack.Application.Chat;
 using DriveTrack.Application.Common;
-using DriveTrack.Application.Users;
 using DriveTrack.Domain.Identity;
 using DriveTrack.Web.Account;
 using Microsoft.AspNetCore.Authentication.JwtBearer;

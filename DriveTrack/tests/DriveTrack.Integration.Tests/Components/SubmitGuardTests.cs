@@ -1,10 +1,10 @@
 using DriveTrack.Application.Common;
 using System.Text.RegularExpressions;
 using DriveTrack.Application.Authorization;
-using DriveTrack.Application.Users;
 using DriveTrack.Domain.Identity;
 using DriveTrack.Integration.Tests.Support;
 using Microsoft.Extensions.DependencyInjection;
+using DriveTrack.Application.Accounts.Dispatchers;
 
 namespace DriveTrack.Integration.Tests.Components;
 

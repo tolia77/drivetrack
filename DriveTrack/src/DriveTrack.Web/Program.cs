@@ -3,7 +3,6 @@ using System.Text;
 using DriveTrack.Application;
 using DriveTrack.Application.Authorization;
 using DriveTrack.Application.Deliveries;
-using DriveTrack.Application.Users;
 using DriveTrack.Infrastructure;
 using DriveTrack.Infrastructure.Identity;
 using DriveTrack.Infrastructure.Persistence;
@@ -22,6 +21,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.IdentityModel.Tokens;
+using DriveTrack.Application.Accounts.Authentication;
+using DriveTrack.Application.Deliveries.Proof;
 
 // This file is the composition root and the only file in DriveTrack.Web
 // permitted to name a DriveTrack.Infrastructure type. LayeringTests enforces that.

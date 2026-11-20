@@ -156,7 +156,7 @@ public class GuardCoverageTests
         Assert.Equal(["DeliverySideEffectRunner"], NoCaller.Order(StringComparer.Ordinal).ToArray());
 
         var runner = ApplicationAssembly.Assembly.GetType(
-            "DriveTrack.Application.Deliveries.DeliverySideEffectRunner");
+            "DriveTrack.Application.Deliveries.SideEffects.DeliverySideEffectRunner");
 
         Assert.NotNull(runner);
         Assert.DoesNotContain(runner, Services);

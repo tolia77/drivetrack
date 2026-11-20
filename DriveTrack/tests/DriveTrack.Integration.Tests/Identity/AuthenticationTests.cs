@@ -7,7 +7,6 @@ using System.Text.Json;
 using DriveTrack.Application.Abstractions;
 using DriveTrack.Application.Authorization;
 using DriveTrack.Application.Common;
-using DriveTrack.Application.Users;
 using DriveTrack.Integration.Tests.Persistence;
 using DriveTrack.Integration.Tests.Support;
 using DriveTrack.Domain.Identity;
@@ -17,6 +16,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.Extensions.Localization;
+using DriveTrack.Application.Accounts.Authentication;
 
 namespace DriveTrack.Integration.Tests.Identity;
 
