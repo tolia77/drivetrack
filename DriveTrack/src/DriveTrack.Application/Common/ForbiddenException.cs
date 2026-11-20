@@ -1,8 +1,8 @@
 namespace DriveTrack.Application.Common;
 
 /// <summary>
-/// The caller is known and may not do this (403). AD-2's guard throws this rather than returning a
-/// boolean, so a forgotten check cannot be mistaken for a passed one.
+/// The caller is known and may not do this (403). The access guard throws this rather than
+/// returning a boolean, so a forgotten check cannot be mistaken for a passed one.
 /// </summary>
 public sealed class ForbiddenException : DriveTrackException
 {

@@ -2,7 +2,7 @@ namespace DriveTrack.Application.Common;
 
 /// <summary>
 /// The request collides with a row that already exists (409). Unique-constraint violations are
-/// translated into this by <c>PostgresConstraintTranslator</c> (AD-8).
+/// translated into this by <c>PostgresConstraintTranslator</c>.
 /// </summary>
 public sealed class ConflictException : DriveTrackException
 {

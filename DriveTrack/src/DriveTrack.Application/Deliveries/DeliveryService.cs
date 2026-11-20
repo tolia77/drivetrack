@@ -9,17 +9,17 @@ using FluentValidation;
 namespace DriveTrack.Application.Deliveries;
 
 /// <summary>
-/// AD-3's pipeline over the product's central record: load resource → guard → validate → act →
-/// commit → map.
+/// The operation pipeline over the product's central record: load resource → guard → validate → act
+/// → commit → map.
 /// <para>
-/// AD-2: every method calls <see cref="IAccessGuard"/> through the interface, inline in its own
+/// Every method calls <see cref="IAccessGuard"/> through the interface, inline in its own
 /// body. Folding the call into a private helper would read better and would not count — the
 /// coverage gate walks each public method's IL and does not follow a call it makes.
 /// </para>
 /// <para>
 /// "Dispatcher or admin" is written <c>RequireRole(UserRole.Dispatcher)</c> throughout, because
-/// AD-4 makes admin satisfy every check by rule inside the guard. <see cref="DeleteAsync"/> is the
-/// exception and says <c>RequireRole(UserRole.Admin)</c> outright: FR-24 reserves deletion to an
+/// admin satisfies every check by rule inside the guard. <see cref="DeleteAsync"/> is the
+/// exception and says <c>RequireRole(UserRole.Admin)</c> outright: deletion is reserved to an
 /// administrator, so a dispatcher is refused there and nowhere else.
 /// </para>
 /// </summary>
@@ -47,14 +47,14 @@ public sealed class DeliveryService(
 
         accessGuard.RequireRole(UserRole.Dispatcher);
 
-        // AD-3's "the predicate comes from the guard", satisfied rather than optimized away. On
+        // "The predicate comes from the guard", satisfied rather than optimized away. On
         // this route it can only ever be unrestricted - the role check above has already narrowed
         // the caller to the two roles the guard answers unrestricted for - but the scope still
         // travels from the guard into the query, so the day a fourth role is given the dispatch
         // list there is no second place deciding what it may see.
         var scope = accessGuard.RequireScope();
 
-        // NFR-27: refused before any query is built.
+        // Bad paging is refused before any query is built.
         await listValidator.EnsureValidAsync(query, cancellationToken);
 
         await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
@@ -86,7 +86,7 @@ public sealed class DeliveryService(
 
         await listValidator.EnsureValidAsync(query, cancellationToken);
 
-        // AD-17: this list carries no counterparty identity, and ordering a caller's rows by the
+        // This list carries no counterparty identity, and ordering a caller's rows by the
         // other party's name is a way of reading it. The two name sorts are refused as columns this
         // list does not have, and the two name filters are dropped for the same reason.
         if (ListSort.Parse<DeliverySort>(query.Sort) is DeliverySort.Driver or DeliverySort.Client)
@@ -105,7 +105,7 @@ public sealed class DeliveryService(
             cancellationToken);
 
         // No party lookup at all, and nothing to strip: the type has no field a counterparty's
-        // name could be written into (AD-17).
+        // name could be written into.
         return page.Map(row => Assigned(row.Delivery));
     }
 
@@ -129,7 +129,7 @@ public sealed class DeliveryService(
     {
         await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
 
-        // AD-3: load, then guard. The row is read before the decision so a future rule can be about
+        // Load, then guard. The row is read before the decision so a future rule can be about
         // the row; nothing about it is disclosed unless the guard passes.
         var delivery = await unitOfWork.Deliveries.GetByIdAsync(id, cancellationToken);
 
@@ -150,7 +150,7 @@ public sealed class DeliveryService(
     {
         // No role check, exactly as ListMineAsync has none: this route is for whoever the scope
         // narrows to. The scope is asked for first because it is an argument to the read rather
-        // than a judgement on its result - AD-3's whole point.
+        // than a judgement on its result - the scoping rule's whole point.
         var scope = accessGuard.RequireScope();
 
         await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
@@ -165,7 +165,7 @@ public sealed class DeliveryService(
         }
 
         // No party lookup at all, and nothing to strip: the type has no field a counterparty's name
-        // could be written into (AD-17).
+        // could be written into.
         return Assigned(delivery);
     }
 
@@ -178,7 +178,7 @@ public sealed class DeliveryService(
 
         accessGuard.RequireRole(UserRole.Dispatcher);
 
-        // AD-3's "the predicate comes from the guard", on the same terms ListAsync states it: the
+        // "The predicate comes from the guard", on the same terms ListAsync states it: the
         // role check above has already narrowed the caller to the two roles the scope is
         // unrestricted for, and the scope still travels into the query so there is never a second
         // place deciding what a caller may see.
@@ -217,7 +217,7 @@ public sealed class DeliveryService(
 
         await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
 
-        // FR-29: a reference to a row that is not there is refused by name, so a dispatcher who
+        // A reference to a row that is not there is refused by name, so a dispatcher who
         // picked a driver deleted a moment ago is told which half of the request was wrong.
         var driverId = await ResolveDriverAsync(unitOfWork, command.DriverId, cancellationToken);
         var clientId = await ResolveClientAsync(unitOfWork, command.ClientId, cancellationToken);
@@ -244,12 +244,12 @@ public sealed class DeliveryService(
             WindowEarliestAt = Utc(command.WindowEarliestAt),
             WindowLatestAt = Utc(command.WindowLatestAt),
 
-            // No Status here, and its absence is the point: FR-30's "a delivery is only ever born
+            // No Status here, and its absence is the point: "a delivery is only ever born
             // Pending" is the entity's own initializer now, and the setter is private, so this path
-            // could not say otherwise even if a command grew a status field (AD-10, AD-25).
+            // could not say otherwise even if a command grew a status field.
 
-            // AD-13: the injected clock, at offset zero. DateTimeOffset.UtcNow here would fail
-            // PersistenceContractTests and, more to the point, make FR-19's overdue rule untestable.
+            // The injected clock, at offset zero. DateTimeOffset.UtcNow here would fail
+            // PersistenceContractTests and, more to the point, make the overdue rule untestable.
             CreatedAt = timeProvider.GetUtcNow(),
         };
 
@@ -257,12 +257,12 @@ public sealed class DeliveryService(
 
         // Read before the commit, inside the transaction that is about to close: the names do not
         // depend on the write, and a query issued after CommitAsync would run outside the scope
-        // AD-5 gave this operation.
+        // this operation was given.
         var parties = await PartiesAsync(unitOfWork, [delivery], cancellationToken);
 
         await unitOfWork.CommitAsync(cancellationToken);
 
-        // FR-94 / FR-95 / AD-12: queued after the commit, outside the transaction, and not awaited.
+        // Queued after the commit, outside the transaction, and not awaited.
         // The delivery exists and its id is known, so there is something to resolve an address for;
         // the response below is built and returned with both addresses still null, which is what
         // "filled in later or left absent" means. The method returns void and takes no token
@@ -282,7 +282,7 @@ public sealed class DeliveryService(
         ArgumentNullException.ThrowIfNull(command);
 
         // A request loads nothing, so the guard is the first step - and it is the only step that
-        // decides anything, inline in this method's own body so the coverage gate can see it (AD-2).
+        // decides anything, inline in this method's own body so the coverage gate can see it.
         // The answer is the client row this delivery will be attached to, which is why it is read
         // from the guard rather than from the command: there is no ClientId on the wire to compare
         // it against, and so no way for a client to ask on somebody else's behalf.
@@ -303,7 +303,7 @@ public sealed class DeliveryService(
         await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
 
         // No capacity check to make: there is no driver, and DeliveryCapacity's own rule is that an
-        // unassigned delivery has no vehicle to exceed (FR-103, FR-16).
+        // unassigned delivery has no vehicle to exceed.
         //
         // The client row is read even though the caller did not name it, and for the reason
         // ActorNameAsync reads the account: a bearer token carries no revocation, so a client whose
@@ -311,7 +311,7 @@ public sealed class DeliveryService(
         // on that id would be SQLSTATE 23503 - a foreign-key violation the constraint translator
         // deliberately passes through, which would leave as a 500. AUTH_UNAUTHENTICATED rather than
         // a 404, because what is gone is the identity behind the credentials: the caller's next move
-        // is to sign in again, and FR-13's session-expiry flow branches on exactly this code.
+        // is to sign in again, and the session-expiry flow branches on exactly this code.
         var requester = await unitOfWork.Clients.GetByIdAsync(clientId, cancellationToken)
             ?? throw new ForbiddenException(
                 ErrorCode.AUTH_UNAUTHENTICATED,
@@ -322,7 +322,7 @@ public sealed class DeliveryService(
         {
             ClientId = requester.Id,
 
-            // No DriverId, and no field on the command that could have carried one: FR-90's "the
+            // No DriverId, and no field on the command that could have carried one: "the
             // client assigns nobody" is the command's shape, and this line is where that shape
             // stops being a claim.
             PickupLocation = Point(command.Pickup!),
@@ -331,19 +331,18 @@ public sealed class DeliveryService(
             PackageWeightKg = command.PackageWeightKg,
             DeliveryNotes = Blank(command.DeliveryNotes),
 
-            // No window either - FR-89 leaves the bounds to dispatch - and no Status, for the
-            // reason CreateAsync sets none: the entity is born Pending and the setter is private
-            // (AD-10, AD-25).
+            // No window either - the bounds are left to dispatch - and no Status, for the
+            // reason CreateAsync sets none: the entity is born Pending and the setter is private.
             CreatedAt = timeProvider.GetUtcNow(),
         };
 
         unitOfWork.Deliveries.Add(delivery);
 
         // No party lookup, unlike the create path: the type this method answers has no field a
-        // counterparty's name could be written into, so there is nothing to read them for (AD-17).
+        // counterparty's name could be written into, so there is nothing to read them for.
         await unitOfWork.CommitAsync(cancellationToken);
 
-        // FR-94 / FR-95 / AD-12: queued after the commit, outside the transaction, and not awaited,
+        // Queued after the commit, outside the transaction, and not awaited,
         // exactly as CreateAsync queues it. A client waiting on a public geocoder is a client
         // watching a spinner for a field the response does not carry yet anyway.
         sideEffects.ResolveAddresses(delivery.Id);
@@ -370,7 +369,7 @@ public sealed class DeliveryService(
             throw NotFoundException.For("delivery", id);
         }
 
-        // AD-23: the validator reads the state the row will hold, not the payload. An update that
+        // The validator reads the state the row will hold, not the payload. An update that
         // mentions only the weight must not be refused for a window it never sent, and the window
         // rule has to see the bound already stored.
         var merged = command.MergedOnto(delivery);
@@ -380,8 +379,8 @@ public sealed class DeliveryService(
         var driverId = await ResolveDriverAsync(unitOfWork, merged.DriverId.Value, cancellationToken);
         var clientId = await ResolveClientAsync(unitOfWork, merged.ClientId.Value, cancellationToken);
 
-        // FR-103 against the merged state: raising the weight and reassigning the driver are the
-        // same question asked of two different halves of the pair.
+        // The capacity invariant against the merged state: raising the weight and reassigning the
+        // driver are the same question asked of two different halves of the pair.
         await DeliveryCapacity.EnsureDeliveryFitsAsync(
             unitOfWork,
             driverId,
@@ -391,9 +390,9 @@ public sealed class DeliveryService(
         delivery.DriverId = driverId;
         delivery.ClientId = clientId;
 
-        // DR-11: coordinates are authoritative and the address is their cache, so a point that
-        // moved loses the address that described where it used to be. Story 5.2's reverse geocoder
-        // refills it; leaving a stale address beside new coordinates is the one thing DR-11 forbids.
+        // Coordinates are authoritative and the address is their cache, so a point that moved
+        // loses the address that described where it used to be. The reverse geocoder refills it;
+        // leaving a stale address beside new coordinates is the one thing the cache must never do.
         delivery.PickupLocation = Moved(delivery.PickupLocation, merged.Pickup.Value!);
         delivery.DropoffLocation = Moved(delivery.DropoffLocation, merged.Dropoff.Value!);
 
@@ -409,9 +408,10 @@ public sealed class DeliveryService(
 
         await unitOfWork.CommitAsync(cancellationToken);
 
-        // The refill half of DR-11's rule. Moved(...) above cleared the address of whichever point
-        // actually moved and kept the one belonging to the point that did not, so this asks the
-        // geocoder about the moved point only - an edit to the weight costs no outbound call at all.
+        // The refill half of the address-cache rule. Moved(...) above cleared the address of
+        // whichever point actually moved and kept the one belonging to the point that did not, so
+        // this asks the geocoder about the moved point only - an edit to the weight costs no
+        // outbound call at all.
         sideEffects.ResolveAddresses(delivery.Id);
 
         return Summary(delivery, parties);
@@ -425,10 +425,10 @@ public sealed class DeliveryService(
         // Loaded without its timeline, and that is not an accident of the repository: EF
         // client-cascades tracked dependents by issuing its own DELETE at trigger depth 1, where
         // the append-only guard raises. Nothing tracked means the database's own cascade runs
-        // inside the referential-integrity trigger at depth 2, which the guard permits (AD-27).
+        // inside the referential-integrity trigger at depth 2, which the guard permits.
         var delivery = await unitOfWork.Deliveries.GetByIdAsync(id, cancellationToken);
 
-        // FR-24: deletion is an administrator's. This is the one method here that names Admin.
+        // Deletion is an administrator's. This is the one method here that names Admin.
         accessGuard.RequireRole(UserRole.Admin);
 
         if (delivery is null)
@@ -451,11 +451,11 @@ public sealed class DeliveryService(
 
         await using var unitOfWork = await unitOfWorkFactory.CreateAsync(cancellationToken);
 
-        // AD-3: load, then guard, because this decision is about the row - specifically about which
+        // Load, then guard, because this decision is about the row - specifically about which
         // driver it names. Tracked, unlike the two read paths below: this one writes.
         var delivery = await unitOfWork.Deliveries.GetByIdAsync(id, cancellationToken);
 
-        // One guard call covering every role (AD-2, FR-34), inline in this method's own body so the
+        // One guard call covering every role, inline in this method's own body so the
         // coverage gate can see it. It runs on a null row deliberately: a driver asking about a
         // delivery that does not exist is refused before being told it does not exist.
         accessGuard.RequireAssignedDriver(delivery?.DriverId);
@@ -474,12 +474,12 @@ public sealed class DeliveryService(
         // absence as far as the refusal.
         var requested = command.Status!.Value;
 
-        // FR-120, at the one site the epic reserved for it and before the move: a parcel is marked
-        // delivered on evidence, or on an explanation of why there is none.
+        // The proof-required gate, at the one site reserved for it and before the move: a parcel is
+        // marked delivered on evidence, or on an explanation of why there is none.
         //
         // There is no role test in the condition, and its absence is the rule rather than an
         // omission. A dispatcher closing a delivery from the board and the driver closing it at the
-        // door reach this line through the same method (AD-10), so a branch admitting one of them
+        // door reach this line through the same method, so a branch admitting one of them
         // would be a second, unwritten lifecycle - and the "note" arm is precisely what dispatch
         // needs when there is no proof to capture from behind a desk.
         //
@@ -487,18 +487,18 @@ public sealed class DeliveryService(
         // nothing, and it is what an empty form field sends.
         //
         // The lifecycle is asked first, and the order is the point rather than an optimization.
-        // FR-120 is a precondition on a move the delivery can actually make; asked of one it cannot,
-        // it would answer "capture a proof" to a caller whose real problem is that a Pending parcel
-        // has not been picked up yet - and a caller who did as they were told would then be refused
-        // a second time, by FR-32, for the reason that applied all along. So an illegal transition
-        // is FR-32's refusal and nothing else, and NextStatuses is read rather than restated,
-        // because AD-10 declares the table exactly once.
+        // The proof-required gate is a precondition on a move the delivery can actually make; asked
+        // of one it cannot, it would answer "capture a proof" to a caller whose real problem is
+        // that a Pending parcel has not been picked up yet - and a caller who did as they were told
+        // would then be refused a second time, by the lifecycle, for the reason that applied all
+        // along. So an illegal transition is the lifecycle's refusal and nothing else, and
+        // NextStatuses is read rather than restated, because the table is declared exactly once.
         if (requested == DeliveryStatus.Delivered
             && Delivery.NextStatuses(previous).Contains(requested)
             && Blank(command.Note) is null
             && !await unitOfWork.ProofOfDeliveries.ExistsForDeliveryAsync(id, cancellationToken))
         {
-            // A domain-rule failure and therefore a 409, never a 422 (AD-10): the payload named a
+            // A domain-rule failure and therefore a 409, never a 422: the payload named a
             // status the system has, and what refused it is the state of the delivery. Thrown before
             // TryChangeStatus, so nothing moved and no entry was staged.
             throw new DomainRuleException(
@@ -509,9 +509,9 @@ public sealed class DeliveryService(
 
         if (!delivery.TryChangeStatus(requested))
         {
-            // FR-32: the message names the status the delivery is in and the one that was asked
-            // for, so a caller can see which half of their assumption was wrong. AD-10 makes this a
-            // domain-rule failure and therefore a 409, never a 422.
+            // The message names the status the delivery is in and the one that was asked
+            // for, so a caller can see which half of their assumption was wrong. The lifecycle
+            // makes this a domain-rule failure and therefore a 409, never a 422.
             throw new DomainRuleException(
                 ErrorCode.DELIVERY_INVALID_STATUS_TRANSITION,
                 "A delivery in status " + previous + " cannot move to " + requested + ".");
@@ -525,22 +525,22 @@ public sealed class DeliveryService(
             previous,
             requested,
 
-            // FR-106: the same entry carries both the change and whatever was said about it.
+            // The same entry carries both the change and whatever was said about it.
             Blank(command.Note),
             timeProvider.GetUtcNow());
 
-        // AD-27: staged, not saved - so the status row and its record land in the one transaction
+        // Staged, not saved - so the status row and its record land in the one transaction
         // this scope commits, and a refusal above leaves neither.
         unitOfWork.TimelineEntries.Add(entry);
 
         await unitOfWork.CommitAsync(cancellationToken);
 
-        // FR-28 / AD-12: the client's email, queued after the commit and outside the transaction.
+        // The client's email, queued after the commit and outside the transaction.
         // A send that fails is recorded as a notification attempt and never fails the status write,
         // which is why this cannot move above the line before it - inside the transaction, an SMTP
         // timeout would roll back a status change the driver already made.
         //
-        // One line for every role (FR-34): the driver advancing their own delivery and the
+        // One line for every role: the driver advancing their own delivery and the
         // dispatcher advancing it from the board arrive here through the same method, so there is no
         // second path that could forget to notify.
         sideEffects.NotifyStatusChanged(delivery.Id, previous, requested);
@@ -556,8 +556,8 @@ public sealed class DeliveryService(
     {
         ArgumentNullException.ThrowIfNull(command);
 
-        // FR-107's audience is "anyone who can view the delivery", which is what the scope answers.
-        // A fifth guard member would be a second way of saying AD-3.
+        // A note's audience is "anyone who can view the delivery", which is what the scope answers.
+        // A fifth guard member would be a second way of saying the same thing.
         var scope = accessGuard.RequireScope();
 
         await noteValidator.EnsureValidAsync(command, cancellationToken);
@@ -577,7 +577,8 @@ public sealed class DeliveryService(
             await ActorNameAsync(unitOfWork, cancellationToken),
             currentUser.Role,
 
-            // Both null: FR-107's entry records that something was said, not that something moved.
+            // Both null: a standalone note records that something was said, not that something
+            // moved.
             previousStatus: null,
             newStatus: null,
             command.Note!.Trim(),
@@ -606,7 +607,7 @@ public sealed class DeliveryService(
 
         var entries = await unitOfWork.TimelineEntries.ListForDeliveryAsync(id, cancellationToken);
 
-        // The mapping step AD-17 puts the disclosure decision in. Nothing was written, so the scope
+        // The mapping step the disclosure decision lives in. Nothing was written, so the scope
         // is disposed without a commit, as on every read path here.
         return [.. entries.Select(View)];
     }
@@ -620,10 +621,10 @@ public sealed class DeliveryService(
 
         // The guard first and the validator second, which is the order the matrix asks for: a driver
         // who types two characters is refused for being a driver, not told their query was short.
-        // Inline in this method's own body, so the coverage gate can see it (AD-2).
+        // Inline in this method's own body, so the coverage gate can see it.
         //
         // The same question RequestAsync asks, and deliberately the same member: this search is the
-        // delivery form's second way of setting a point (FR-104), so whoever may compose a delivery
+        // delivery form's second way of setting a point, so whoever may compose a delivery
         // may type an address for it. The answer - which client row - is nothing to a geocoder, and
         // is discarded; what matters is that the member refuses a driver, who composes nothing.
         _ = accessGuard.RequireDeliveryComposer();
@@ -646,7 +647,7 @@ public sealed class DeliveryService(
     /// judged at.
     /// <para>
     /// The days are the reader's local days, in <see cref="TimeProvider.LocalTimeZone"/> - the same
-    /// zone every screen renders a creation instant in (AD-13) - so a delivery opened at 23:30 on the
+    /// zone every screen renders a creation instant in - so a delivery opened at 23:30 on the
     /// last day of the range is inside it, and one opened at 00:10 the next morning is not. The upper
     /// bound is exclusive: midnight at the start of the day after.
     /// </para>
@@ -707,7 +708,7 @@ public sealed class DeliveryService(
         id is { } value ? new DeliveryParty(value, name ?? string.Empty) : null;
 
     /// <summary>
-    /// The acting user's display name for the snapshot AD-20 asks for.
+    /// The acting user's display name for the timeline's actor snapshot.
     /// <para>
     /// Read from the account because <see cref="ICurrentUser"/> carries identities and a role and
     /// no name — deliberately, since a name in a token is a name that goes stale. Snapshotting it
@@ -721,7 +722,7 @@ public sealed class DeliveryService(
     /// <c>actor_user_id</c> names no row, which is SQLSTATE 23503 — a foreign-key violation the
     /// constraint translator deliberately passes through, so it would leave as a 500. It is
     /// <c>AUTH_UNAUTHENTICATED</c> rather than <c>AUTH_FORBIDDEN</c> because the account behind the
-    /// credentials is gone: the caller's next move is to sign in again, and FR-13's session-expiry
+    /// credentials is gone: the caller's next move is to sign in again, and the session-expiry
     /// flow branches on exactly this code.
     /// </remarks>
     /// <exception cref="ForbiddenException">The account the token names no longer exists.</exception>
@@ -749,12 +750,13 @@ public sealed class DeliveryService(
     }
 
     /// <summary>
-    /// AD-17's final step: the entry as this caller may read it.
+    /// The final mapping step: the entry as this caller may read it.
     /// <para>
-    /// Dispatch sees who acted; a driver and a client see only what role they held. That is FR-27
-    /// and FR-96 reaching the timeline — a client must not learn the assigned driver's name through
-    /// the history any more than through the delivery — and it is decided here, against the current
-    /// user, rather than in a component that has no way to know who is looking.
+    /// Dispatch sees who acted; a driver and a client see only what role they held. That is the
+    /// client and driver disclosure rules reaching the timeline — a client must not learn the
+    /// assigned driver's name through the history any more than through the delivery — and it is
+    /// decided here, against the current user, rather than in a component that has no way to know
+    /// who is looking.
     /// </para>
     /// </summary>
     private TimelineEntryView View(TimelineEntry entry) =>
@@ -810,14 +812,14 @@ public sealed class DeliveryService(
         return client.Id;
     }
 
-    /// <summary>A new location at the given coordinates, with no cached address (DR-11).</summary>
+    /// <summary>A new location at the given coordinates, with no cached address.</summary>
     private static Location Point(LocationInput input) =>
         new(input.Latitude!.Value, input.Longitude!.Value, Address: null, AddressResolvedAt: null);
 
     /// <summary>
     /// The stored location moved to new coordinates, keeping its address only when it did not
     /// actually move. Comparing rather than always resetting is what stops an edit to the weight
-    /// throwing away an address story 5.2 resolved, since the merge fills an absent location in
+    /// throwing away an address the geocoder resolved, since the merge fills an absent location in
     /// from the row and hands back the coordinates it already had.
     /// </summary>
     private static Location Moved(Location current, LocationInput input) =>
@@ -826,7 +828,7 @@ public sealed class DeliveryService(
             : Point(input);
 
     /// <summary>
-    /// The same instant at offset zero (AD-13).
+    /// The same instant at offset zero.
     /// <para>
     /// A window bound arrives from wherever the caller is: a browser's datetime input carries the
     /// local offset, and a REST client may send any offset at all. The column is
@@ -963,7 +965,7 @@ public sealed class DeliveryService(
         /// </summary>
         /// <remarks>
         /// A missing name yields an empty one rather than a null party, deliberately: null has to
-        /// keep meaning "unassigned" and nothing else (AD-17). The foreign key makes the miss
+        /// keep meaning "unassigned" and nothing else. The foreign key makes the miss
         /// unreachable - a delivery naming a driver names a row that exists, and every driver row
         /// has an account - so this is the answer to a state the schema forbids, not a fallback
         /// anything depends on.

@@ -5,7 +5,7 @@ namespace DriveTrack.Application.Deliveries;
 
 /// <summary>
 /// The same rules <see cref="CreateDeliveryCommandValidator"/> applies, over the fields a client
-/// actually sends (FR-89, FR-102).
+/// actually sends.
 /// <para>
 /// A second validator rather than a shared base or a cast, because the two commands are different
 /// shapes and FluentValidation is typed to the shape. What is <em>not</em> duplicated is the
@@ -13,7 +13,7 @@ namespace DriveTrack.Application.Deliveries;
 /// <see cref="LocationInputValidator"/> is the same instance-per-rule the create path uses, so a
 /// column that widens widens for both callers at once. A client's 422 must name the same fields a
 /// dispatcher's does — a weight of zero is refused by name on both paths or the form on one of them
-/// has nothing to attach the refusal to (NFR-4).
+/// has nothing to attach the refusal to.
 /// </para>
 /// <para>
 /// Nothing here says anything about a driver, a client or a window. There is no rule to write: the
@@ -47,7 +47,7 @@ public sealed class RequestDeliveryCommandValidator : AbstractValidator<RequestD
             .MaximumLength(CreateDeliveryCommandValidator.PackageDetailsMaximumLength)
                 .WithMessage(nameof(ErrorCode.DELIVERY_PACKAGE_DETAILS_TOO_LONG));
 
-        // Bounded only, as on the create path: FR-17 makes notes free text, and a guess about their
+        // Bounded only, as on the create path: notes are free text, and a guess about their
         // shape is how a legitimate instruction gets refused.
         RuleFor(command => command.DeliveryNotes)
             .MaximumLength(CreateDeliveryCommandValidator.DeliveryNotesMaximumLength)

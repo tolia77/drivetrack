@@ -17,16 +17,17 @@ namespace DriveTrack.Application.Deliveries;
 public sealed record DeliveryParty(int Id, string Name);
 
 /// <summary>
-/// A delivery as a dispatcher or an admin sees one (FR-18 to FR-24).
+/// A delivery as a dispatcher or an admin sees one.
 /// <para>
-/// A null <see cref="Driver"/> or <see cref="Client"/> means unassigned and only that (FR-16). It
+/// A null <see cref="Driver"/> or <see cref="Client"/> means unassigned and only that. It
 /// never means "withheld from you": a role that may not see a party gets
-/// <see cref="AssignedDeliverySummary"/>, which has no party fields at all (AD-17). That split is
-/// what makes FR-27 and FR-96 impossible to regress by editing a mapping.
+/// <see cref="AssignedDeliverySummary"/>, which has no party fields at all. That split is
+/// what makes hiding the driver from a client and the client's contact details from a
+/// driver impossible to regress by editing a mapping.
 /// </para>
 /// <para>
 /// <see cref="IsOverdue"/> is derived here from the window and the injected clock and is stored
-/// nowhere (FR-19): a column would be a second answer that goes stale the moment the clock moves,
+/// nowhere: a column would be a second answer that goes stale the moment the clock moves,
 /// and "overdue" is not a status the lifecycle has.
 /// </para>
 /// </summary>
@@ -40,8 +41,8 @@ public sealed record DeliveryParty(int Id, string Name);
 /// <param name="DeliveryNotes">Free-text instructions, or null.</param>
 /// <param name="WindowEarliestAt">Earliest acceptable arrival, or null.</param>
 /// <param name="WindowLatestAt">Latest acceptable arrival, or null.</param>
-/// <param name="Status">Where the delivery is in its lifecycle (FR-30).</param>
-/// <param name="CreatedAt">When it was created, at offset zero (AD-13).</param>
+/// <param name="Status">Where the delivery is in its lifecycle.</param>
+/// <param name="CreatedAt">When it was created, at offset zero.</param>
 /// <param name="IsOverdue">Derived: the latest bound has passed and the parcel is not delivered.</param>
 public sealed record DeliverySummary(
     int Id,

@@ -6,21 +6,20 @@ using DriveTrack.Domain.Reviews;
 
 namespace DriveTrack.Application.Abstractions;
 
-/// <summary>Persistence for <see cref="Review"/>. See <see cref="IClientRepository"/> for the shape rules (AD-6).</summary>
+/// <summary>Persistence for <see cref="Review"/>. See <see cref="IClientRepository"/> for the shape rules.</summary>
 public interface IReviewRepository
 {
     /// <summary>Loads a review, or null when there is none with that id.</summary>
     Task<Review?> GetByIdAsync(int id, CancellationToken cancellationToken);
 
     /// <summary>
-    /// One page of reviews, newest first, narrowed to the rows the caller may see (FR-63, FR-64,
-    /// NFR-27).
+    /// One page of reviews, newest first, narrowed to the rows the caller may see.
     /// </summary>
     /// <remarks>
-    /// There is no overload without <paramref name="scope"/>, and AD-3 is why: a page fetched
-    /// unscoped and filtered afterwards answers an empty page for a client whose reviews fall
-    /// outside the first hundred, and no amount of paging further finds them. The narrowing has to
-    /// be part of the query, so it is part of the signature.
+    /// There is no overload without <paramref name="scope"/>, and the scoping rule is why: a page
+    /// fetched unscoped and filtered afterwards answers an empty page for a client whose reviews
+    /// fall outside the first hundred, and no amount of paging further finds them. The narrowing
+    /// has to be part of the query, so it is part of the signature.
     /// <para>
     /// "Newest first" is the row id descending, for the reason <see cref="IDeliveryRepository"/>
     /// gives: the id comes from a sequence, so it is insertion order, and insertion order is
@@ -41,13 +40,13 @@ public interface IReviewRepository
 
     /// <summary>
     /// One page of reviews narrowed to the rows the caller may see, sorted in SQL over all of them,
-    /// with the size of the narrowed set (FR-63, FR-64, NFR-27). Newest first when no column is
+    /// with the size of the narrowed set. Newest first when no column is
     /// named, and every order ends on the id so OFFSET never repeats or skips a row.
     /// <para>
     /// The two party sorts read the names off the Identity accounts here - the author through the
     /// client row, the driver through the reviewed delivery - because a sort has to run over every
     /// review rather than over a page already cut. Which names a screen then shows is still the
-    /// Deliveries capability's answer (AD-24).
+    /// Deliveries capability's answer.
     /// </para>
     /// </summary>
     /// <param name="scope">The guard's answer to "whose rows may this caller see".</param>
@@ -70,7 +69,7 @@ public interface IReviewRepository
 
     /// <summary>
     /// The standing of each of the named drivers, derived from the reviews of the deliveries they
-    /// carried (FR-98, DR-18).
+    /// carried.
     /// </summary>
     /// <remarks>
     /// One grouped query over every named driver rather than one query per driver: a roster of
@@ -97,6 +96,6 @@ public interface IReviewRepository
     /// <summary>Stages a new review for the next commit.</summary>
     void Add(Review review);
 
-    /// <summary>Stages a review for deletion (FR-66).</summary>
+    /// <summary>Stages a review for deletion.</summary>
     void Remove(Review review);
 }

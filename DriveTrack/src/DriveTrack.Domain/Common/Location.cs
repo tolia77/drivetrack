@@ -1,14 +1,14 @@
 namespace DriveTrack.Domain.Common;
 
 /// <summary>
-/// A point on the map, embedded in the row of whatever owns it (AD-11): there is no
+/// A point on the map, embedded in the row of whatever owns it: there is no
 /// <c>locations</c> table and no location identity.
 /// <para>
 /// The coordinates are the record; <paramref name="Address"/> is a cache of whatever a
-/// geocoder last resolved for them and is never read as authoritative (DR-11). This type has
+/// geocoder last resolved for them and is never read as authoritative. This type has
 /// no method that touches the network — the original's <c>Location.get_address()</c> issued
-/// an HTTP call from inside a model class, which is exactly what DR-12 and NFR-8 forbid.
-/// Resolving an address is a port call made by Application, after the transaction (AD-12).
+/// an HTTP call from inside a model class, and an entity never makes a network call.
+/// Resolving an address is a port call made by Application, after the transaction.
 /// </para>
 /// </summary>
 /// <param name="Latitude">Latitude in decimal degrees.</param>

@@ -11,20 +11,20 @@ namespace DriveTrack.Application.Deliveries;
 /// <see cref="Content"/> is a <see cref="Stream"/> and not a byte array, so a five-megabyte
 /// photograph is not copied onto the large-object heap on its way through three layers. It is an
 /// <em>ASP.NET-free</em> stream: <c>IFormFile</c> and <c>IBrowserFile</c> stop at the adapter, which
-/// is what keeps this command — and everything below it — free of a web framework (AD-1).
+/// is what keeps this command — and everything below it — free of a web framework.
 /// </para>
 /// <para>
 /// <see cref="Length"/> is declared rather than measured, because the streams this carries are
 /// forward-only and a validator that measured one would consume the bytes the store is about to
-/// write. Both adapters know the length before they open the stream, and NFR-28's check has to run
-/// before the first byte reaches the store rather than after.
+/// write. Both adapters know the length before they open the stream, and the upload check has to
+/// run before the first byte reaches the store rather than after.
 /// </para>
 /// <para>
 /// Because a stream is consumed by being read, a command is single-use: it is a message, not a value
 /// to keep. Nothing retries one.
 /// </para>
 /// </summary>
-/// <param name="Kind">Whether this is the signature or a photograph (FR-119).</param>
+/// <param name="Kind">Whether this is the signature or a photograph.</param>
 /// <param name="ContentType">The MIME type the caller declared, or null when it declared none.</param>
 /// <param name="Length">The length in bytes the caller declared.</param>
 /// <param name="Content">The bytes. The caller owns the stream and disposes it.</param>
@@ -35,14 +35,15 @@ public sealed record ProofAssetUpload(
     Stream Content);
 
 /// <summary>
-/// A request to record that a parcel changed hands (FR-119).
+/// A request to record that a parcel changed hands.
 /// <para>
 /// There is no delivery id here: the id is the route, as it is for every other single-row operation
-/// in this capability. There is no captured-at either — AD-13's clock supplies it, and a caller who
-/// could name the instant could name any instant, which is the one thing evidence must not permit.
+/// in this capability. There is no captured-at either — the injected clock supplies it, and a
+/// caller who could name the instant could name any instant, which is the one thing evidence must
+/// not permit.
 /// </para>
 /// <para>
-/// The coordinates arrive as a <see cref="LocationInput"/> and have no fallback: FR-119 records
+/// The coordinates arrive as a <see cref="LocationInput"/> and have no fallback: a proof records
 /// where the hand-over happened, read from the device rather than typed, and inventing a substitute —
 /// the dropoff point, say — would record a place the capture did not happen.
 /// </para>
@@ -56,7 +57,7 @@ public sealed record CaptureProofCommand(
     IReadOnlyList<ProofAssetUpload>? Assets);
 
 /// <summary>
-/// FR-119 and NFR-28's rules for a capture, applied before a single byte reaches the store.
+/// The rules for a capture, applied before a single byte reaches the store.
 /// <para>
 /// Every rule here is one nothing downstream can undo. The capture commits its row before it writes
 /// a single byte, so a set refused halfway through the writing would leave a committed proof naming
@@ -68,7 +69,7 @@ public sealed record CaptureProofCommand(
 /// Every failure carries its own message key, and each is keyed to the control that produced it —
 /// the recipient's name, the photographs, the signature pad, the point on the map. They all still
 /// leave as <c>COMMON_VALIDATION_FAILED</c> at 422; the key rides in <c>error.fields</c>, which is
-/// where NFR-4 puts the per-field explanation.
+/// where the contract puts the per-field explanation.
 /// </para>
 /// </summary>
 public sealed class CaptureProofCommandValidator : AbstractValidator<CaptureProofCommand>
@@ -95,9 +96,9 @@ public sealed class CaptureProofCommandValidator : AbstractValidator<CaptureProo
             .SetValidator(new LocationInputValidator())
             .OverridePropertyName(nameof(CaptureProofCommand.CaptureLocation));
 
-        // FR-119 reads as one sentence - a signature and at least one photograph - and it is four
-        // rules across two names, because the panel has two controls and the refusals are different
-        // sentences to whoever is standing at a door holding a phone.
+        // The proof rule reads as one sentence - a signature and at least one photograph - and it
+        // is four rules across two names, because the panel has two controls and the refusals are
+        // different sentences to whoever is standing at a door holding a phone.
         //
         // Cascade.Stop, and it is load-bearing rather than tidy. Count() answers 0 for a null set,
         // so with no cascade an absent Assets breaks the NotNull *and* both photograph rules, and

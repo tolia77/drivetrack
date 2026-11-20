@@ -2,7 +2,7 @@ namespace DriveTrack.Application;
 
 /// <summary>
 /// Marker type used to resolve the Application assembly from compiled metadata.
-/// Exists for the same reason as <c>DomainAssembly</c>: AD-1's layering test resolves
+/// Exists for the same reason as <c>DomainAssembly</c>: the layering test resolves
 /// the assembly through a type instead of a name.
 /// </summary>
 public static class ApplicationAssembly

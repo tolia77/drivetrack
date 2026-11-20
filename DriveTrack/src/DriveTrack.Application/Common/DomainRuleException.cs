@@ -1,8 +1,8 @@
 namespace DriveTrack.Application.Common;
 
 /// <summary>
-/// A domain rule refused the operation - an illegal status transition being the archetype (AD-10).
-/// Maps to 409, the same status as <see cref="ConflictException"/>: NFR-2 makes one kind of failure
+/// A domain rule refused the operation - an illegal status transition being the archetype.
+/// Maps to 409, the same status as <see cref="ConflictException"/>: one kind of failure is
 /// one status everywhere, and both of these are "the current state does not permit this".
 /// </summary>
 public sealed class DomainRuleException : DriveTrackException

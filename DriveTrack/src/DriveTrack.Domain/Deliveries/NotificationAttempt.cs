@@ -1,11 +1,11 @@
 namespace DriveTrack.Domain.Deliveries;
 
 /// <summary>
-/// A record of one outbound notification and how it ended (FR-28).
+/// A record of one outbound notification and how it ended.
 /// <para>
-/// The original swallowed a failed notification silently. FR-28's remediation is a row an admin
+/// The original swallowed a failed notification silently. The remediation is a row an admin
 /// can read, not a log line — so failure gets a named entity with a home, written after the
-/// transaction commits (AD-12) so an SMTP timeout can never roll back a legitimate write.
+/// transaction commits so an SMTP timeout can never roll back a legitimate write.
 /// </para>
 /// </summary>
 public sealed class NotificationAttempt
@@ -22,7 +22,7 @@ public sealed class NotificationAttempt
     /// <summary>The address the notification was sent to.</summary>
     public required string Recipient { get; set; }
 
-    /// <summary>When the attempt was made, at offset zero (AD-13).</summary>
+    /// <summary>When the attempt was made, at offset zero.</summary>
     public DateTimeOffset AttemptedAt { get; set; }
 
     /// <summary>How it ended.</summary>

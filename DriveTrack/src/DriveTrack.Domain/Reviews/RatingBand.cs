@@ -1,12 +1,12 @@
 namespace DriveTrack.Domain.Reviews;
 
 /// <summary>
-/// How a rating reads as a judgement (FR-98): favourable, neutral or unfavourable.
+/// How a rating reads as a judgement: favourable, neutral or unfavourable.
 /// <para>
-/// A band rather than a colour, and that is AD-18/AD-28 rather than fastidiousness. "Four and above
-/// is good" is a product rule, and a component that chose <c>text-success</c> for it would be a
-/// place where a product rule lived in markup — invisible to every test of the rule, and quietly
-/// different on the next screen that renders a rating.
+/// A band rather than a colour, and that is the no-literal and design-token rules rather than
+/// fastidiousness. "Four and above is good" is a product rule, and a component that chose
+/// <c>text-success</c> for it would be a place where a product rule lived in markup — invisible to
+/// every test of the rule, and quietly different on the next screen that renders a rating.
 /// </para>
 /// </summary>
 public enum RatingBand
@@ -22,7 +22,7 @@ public enum RatingBand
 }
 
 /// <summary>
-/// The rating scale itself (FR-67, FR-98): its bounds, the value a form starts on, and the
+/// The rating scale itself: its bounds, the value a form starts on, and the
 /// thresholds that turn a number into a <see cref="RatingBand"/>.
 /// <para>
 /// Domain rather than Application, because both users of it are: a single review's own rating and
@@ -34,7 +34,7 @@ public enum RatingBand
 /// <see cref="Minimum"/> and <see cref="Maximum"/> restate the <c>CK_Reviews_Rating</c> check
 /// constraint. The column is the authority — a race cannot slip a 6 past it — and stating the bound
 /// here is what lets a validator refuse one as a 422 naming the field instead of letting PostgreSQL
-/// answer it (NFR-2, NFR-4).
+/// answer it.
 /// </para>
 /// </summary>
 public static class RatingScale

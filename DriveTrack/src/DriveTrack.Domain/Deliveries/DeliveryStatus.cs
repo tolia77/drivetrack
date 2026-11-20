@@ -1,8 +1,8 @@
 namespace DriveTrack.Domain.Deliveries;
 
 /// <summary>
-/// The lifecycle of a delivery (FR-30). Persisted and serialized as the member name, never as
-/// an ordinal (AD-21), so reordering this enum cannot silently remap existing rows.
+/// The lifecycle of a delivery. Persisted and serialized as the member name, never as
+/// an ordinal, so reordering this enum cannot silently remap existing rows.
 /// </summary>
 public enum DeliveryStatus
 {
