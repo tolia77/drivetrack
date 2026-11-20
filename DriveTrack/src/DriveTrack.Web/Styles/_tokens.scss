@@ -317,6 +317,13 @@ $dt-control-font-size-phone:  $dt-font-size-16;
 // answer for when something does.
 // -----------------------------------------------------------------------------
 
+// How far the dialog's close button reaches past the row it sits in. Its hit area is a full touch
+// target - taller than the title's line and wider than a control - so it hands the difference back
+// as negative margin: the head stays as tall as the title, and the glyph lands on the body's edge
+// rather than a target's width inside it. Derived, so it follows the tokens it is made of.
+$dt-dialog-dismiss-overhang-block:  math.div($dt-h2-line-height - $dt-touch-target, 2);
+$dt-dialog-dismiss-overhang-inline: math.div($dt-control-height - $dt-touch-target, 2) - $dt-space-2;
+
 $dt-tokens: (
     "surface-page":             $dt-surface-page,
     "surface-card":             $dt-surface-card,
@@ -437,6 +444,8 @@ $dt-tokens: (
     "nav-width":                $dt-nav-width,
     "dialog-narrow":            $dt-dialog-narrow,
     "dialog-wide":              $dt-dialog-wide,
+    "dialog-dismiss-overhang-block":  $dt-dialog-dismiss-overhang-block,
+    "dialog-dismiss-overhang-inline": $dt-dialog-dismiss-overhang-inline,
     "content-narrow":           $dt-content-narrow,
     "map-height":               $dt-map-height,
     "breakpoint-phone":         $dt-breakpoint-phone,

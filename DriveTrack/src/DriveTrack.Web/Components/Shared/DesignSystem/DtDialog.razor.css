@@ -92,7 +92,8 @@
     negative block margin hands the difference back, so the row is as tall as the title and the
     hit area overhangs into the head's own padding - still the full target, no longer the thing
     the head is sized by. The inline-end margin does the same at the edge, putting the glyph on
-    the body's right edge instead of a target's width inside it.
+    the body's right edge instead of a target's width inside it. Both offsets are derived tokens
+    (`dialog-dismiss-overhang-*`), so they follow the title line, the control and the target.
 */
 .dt-dialog-dismiss {
     position: relative;
@@ -102,8 +103,8 @@
     justify-content: center;
     min-width: var(--dt-touch-target);
     min-height: var(--dt-touch-target);
-    margin-block: calc((var(--dt-h2-line-height) - var(--dt-touch-target)) / 2);
-    margin-inline-end: calc((var(--dt-control-height) - var(--dt-touch-target)) / 2 - var(--dt-space-2));
+    margin-block: var(--dt-dialog-dismiss-overhang-block);
+    margin-inline-end: var(--dt-dialog-dismiss-overhang-inline);
     padding: 0;
     color: var(--dt-ink-muted);
 }
